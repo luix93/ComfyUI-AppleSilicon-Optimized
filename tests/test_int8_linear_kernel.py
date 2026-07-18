@@ -105,3 +105,85 @@ def test_kernel_matches_original_bit_exact():
     run(512, 6144, 6144, convrot=True, bias=True, three_d=False)
     run(188, 4096, 2560, convrot=True, bias=True, three_d=True)
     run(1, 6144, 6144, convrot=True, bias=False, three_d=False)
+
+
+@requires_int8_ext
+def test_quant_rowwise_matches_eager_bit_exact():
+    """Metal i8_quant_rowwise == comfy_kitchen quantize_int8_rowwise (finite inputs).
+
+    Known boundary: fp16 inputs containing inf produce NaN garbage in BOTH
+    implementations (inf/inf), just different garbage — finite inputs only.
+    """
+    from _patches.int8_ext import loader
+    from comfy_kitchen.backends.eager.quantization import quantize_int8_rowwise
+
+    mod = loader.module()
+    assert mod is not None and hasattr(mod, "i8_quant_rowwise")
+
+    g = torch.Generator().manual_seed(3)
+    for dtype in (torch.bfloat16, torch.float16):
+        for M, K in ((33, 6144), (7, 100), (1, 256), (128, 300), (64, 16384)):
+            x = (torch.randn((M, K), generator=g) * 3).to("mps").to(dtype)
+            q_ref, s_ref = quantize_int8_rowwise(x)
+            q_k, s_k = mod.i8_quant_rowwise(x)
+            assert torch.equal(q_ref, q_k), f"q mismatch {dtype} {M}x{K}"
+            assert torch.equal(s_ref.float(), s_k), f"scale mismatch {dtype} {M}x{K}"
+        for edge in (torch.zeros(4, 512), torch.full((4, 512), 1e-30)):
+            x = edge.to("mps").to(dtype)
+            q_ref, s_ref = quantize_int8_rowwise(x)
+            q_k, s_k = mod.i8_quant_rowwise(x)
+            assert torch.equal(q_ref, q_k) and torch.equal(s_ref.float(), s_k)
+
+
+@requires_int8_ext
+def test_activation_cache_reuse_and_invalidation():
+    """Same live tensor -> cached quant reused (bit-identical); new tensor -> miss."""
+    from _patches.int8_ext import loader
+
+    patch._kernel = loader.module()
+    assert patch._kernel is not None
+
+    x = torch.randn(64, 512, device="mps", dtype=torch.bfloat16)
+    patch._act_cache = None
+    q1, s1 = patch._quant_cached(x, True, 256)
+    q2, s2 = patch._quant_cached(x, True, 256)
+    assert q1 is q2 and s1 is s2  # hit: identical objects, zero recompute
+
+    q3, s3 = patch._quant_cached(x.clone(), True, 256)  # different tensor -> miss
+    assert q3 is not q1
+    assert torch.equal(q1, q3) and torch.equal(s1, s3)
+
+    q4, _ = patch._quant_cached(x, False, 256)  # different settings -> miss
+    assert q4 is not q1
+
+
+@requires_int8_ext
+def test_channelwise_fused_matches_chunked_bit_exact():
+    """i8_matmul2d_nt_fused_cs == the chunked epilogue for [N,1] weight scales
+    (the layout Z-Image / Krea2 convrot checkpoints actually ship)."""
+    from _patches.int8_ext import loader
+
+    mod = loader.module()
+    assert mod is not None and hasattr(mod, "i8_matmul2d_nt_fused_cs")
+    patch._kernel = mod
+
+    class _NoCS:  # hide the cs entry to force the chunked reference path
+        def __getattr__(self, name):
+            if name == "i8_matmul2d_nt_fused_cs":
+                raise AttributeError(name)
+            return getattr(mod, name)
+
+    g = torch.Generator().manual_seed(11)
+    for M, K, N, convrot, bias in ((256, 2560, 1024, False, True),
+                                   (512, 3840, 1152, True, False),
+                                   (33, 512, 256, True, True),
+                                   (1, 2560, 512, False, False)):
+        x = (torch.randn((M, K), generator=g, dtype=torch.bfloat16) * 0.5).to("mps")
+        w = torch.randint(-128, 128, (N, K), generator=g, dtype=torch.int8).to("mps")
+        ws = (torch.rand((N, 1), generator=g) * 0.01 + 0.001).to("mps")
+        b = torch.randn(N, generator=g, dtype=torch.bfloat16).to("mps") if bias else None
+        patch._kernel = _NoCS(); patch._act_cache = None
+        ref = patch._int8_linear_kernel(x, w, ws, b, torch.bfloat16, convrot, 256)
+        patch._kernel = mod; patch._act_cache = None
+        out = patch._int8_linear_kernel(x, w, ws, b, torch.bfloat16, convrot, 256)
+        assert torch.equal(ref, out), f"cs mismatch M={M} N={N} convrot={convrot} bias={bias}"

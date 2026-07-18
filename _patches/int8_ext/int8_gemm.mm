@@ -39,6 +39,16 @@ static const char* kSrc = R"MTL(
 #include <MetalPerformancePrimitives/MetalPerformancePrimitives.h>
 using namespace metal;
 
+// Deterministic round-to-nearest-even float -> bfloat. The compiler's own
+// float->bfloat conversion truncates in store paths (observed at midpoints),
+// which diverges from torch's RTE casts by 1 ulp. Finite values only.
+inline bfloat bf16_rte(float f) {
+  uint u = as_type<uint>(f);
+  uint lsb = (u >> 16) & 1u;
+  u += 0x7FFFu + lsb;
+  return as_type<bfloat>(ushort(u >> 16));
+}
+
 // ── NAXFrag layout constants ────────────────────────────────────
 constant constexpr short kElemsPerFrag = 8;
 constant constexpr short kElemCols = 4;
@@ -98,9 +108,9 @@ inline void nax_frag_store_dequant(const thread int32_t *src, device OutT *dst,
       uint ni = n_base + sc.x + off_n + j;
       if (mi < M && ni < N) {
         float acc = float(src[i * kElemCols + j]) * row_scale[mi];
-        OutT r = OutT(acc);
+        OutT r = bf16_rte(acc);
         if (has_bias) {
-          r = r + bias[ni];
+          r = bf16_rte(float(r) + float(bias[ni]));
         }
         dst[(sc.y + off_m + i * kElemRowsJump) * ld + (sc.x + off_n + j)] = r;
       }
@@ -371,6 +381,166 @@ kernel void int8_matmul_fused_small(
                                      m_base, n_base, row_scale, bias,
                                      has_bias != 0u);
 }
+
+// ── Fragment store: per-column (channelwise) dequant + optional bias ────────
+// D[m,n] = OutT(float(C[m,n]) * (col_scale[n] * row_scale[m])) + OutT(bias[n]).
+// Matches the eager chunked epilogue for channelwise weight scales exactly:
+// torch computes (weight_scale[n] * x_scale[m]) FIRST, then multiplies C.
+template <typename OutT>
+inline void nax_frag_store_dequant_cs(const thread int32_t *src, device OutT *dst,
+                                      int ld, short2 sc, short off_m, short off_n,
+                                      uint M, uint N, uint m_base, uint n_base,
+                                      const device float *row_scale,
+                                      const device float *col_scale,
+                                      const device OutT *bias, bool has_bias) {
+  for (short i = 0; i < 2; i++) {
+    for (short j = 0; j < kElemCols; j++) {
+      uint mi = m_base + sc.y + off_m + i * kElemRowsJump;
+      uint ni = n_base + sc.x + off_n + j;
+      if (mi < M && ni < N) {
+        float s = col_scale[ni] * row_scale[mi];
+        float acc = float(src[i * kElemCols + j]) * s;
+        OutT r = bf16_rte(acc);
+        if (has_bias) {
+          r = bf16_rte(float(r) + float(bias[ni]));
+        }
+        dst[(sc.y + off_m + i * kElemRowsJump) * ld + (sc.x + off_n + j)] = r;
+      }
+    }
+  }
+}
+
+kernel void int8_matmul_fused_cs(
+    const device int8_t *A [[buffer(0)]], const device int8_t *B [[buffer(1)]],
+    device bfloat *D [[buffer(2)]], constant uint &M [[buffer(3)]],
+    constant uint &N [[buffer(4)]], constant uint &K [[buffer(5)]],
+    constant uint &swizzle_log [[buffer(6)]],
+    constant uint &tiles_m [[buffer(7)]], constant uint &tiles_n [[buffer(8)]],
+    const device float *row_scale [[buffer(9)]],
+    const device bfloat *bias [[buffer(10)]],
+    constant uint &has_bias [[buffer(11)]],
+    const device float *col_scale [[buffer(12)]],
+    uint2 tgid [[threadgroup_position_in_grid]],
+    uint sgid [[simdgroup_index_in_threadgroup]],
+    uint lid [[thread_index_in_simdgroup]]) {
+  constexpr short TM = ((128 / 4) / 16), TN = ((128 / 4) / 16);
+  int32_t c_frags[TM * TN][kElemsPerFrag];
+  short2 sc;
+  uint m_base, n_base;
+  if (!w8a8_gemm_compute<128, 128, 512, 32, 4, 4>(
+          A, B, c_frags, sc, m_base, n_base, M, N, K, swizzle_log, tiles_m,
+          tiles_n, tgid, sgid, lid))
+    return;
+  device bfloat *Dp = D + m_base * N + n_base;
+  for (short mm = 0; mm < TM; mm++)
+    for (short nn = 0; nn < TN; nn++)
+      nax_frag_store_dequant_cs<bfloat>(c_frags[mm * TN + nn], Dp, int(N), sc,
+                                        short(mm * 16), short(nn * 16), M, N,
+                                        m_base, n_base, row_scale, col_scale,
+                                        bias, has_bias != 0u);
+}
+
+kernel void int8_matmul_fused_cs_small(
+    const device int8_t *A [[buffer(0)]], const device int8_t *B [[buffer(1)]],
+    device bfloat *D [[buffer(2)]], constant uint &M [[buffer(3)]],
+    constant uint &N [[buffer(4)]], constant uint &K [[buffer(5)]],
+    constant uint &swizzle_log [[buffer(6)]],
+    constant uint &tiles_m [[buffer(7)]], constant uint &tiles_n [[buffer(8)]],
+    const device float *row_scale [[buffer(9)]],
+    const device bfloat *bias [[buffer(10)]],
+    constant uint &has_bias [[buffer(11)]],
+    const device float *col_scale [[buffer(12)]],
+    uint2 tgid [[threadgroup_position_in_grid]],
+    uint sgid [[simdgroup_index_in_threadgroup]],
+    uint lid [[thread_index_in_simdgroup]]) {
+  constexpr short TM = ((32 / 1) / 16), TN = ((128 / 4) / 16);
+  int32_t c_frags[TM * TN][kElemsPerFrag];
+  short2 sc;
+  uint m_base, n_base;
+  if (!w8a8_gemm_compute<32, 128, 512, 32, 1, 4>(
+          A, B, c_frags, sc, m_base, n_base, M, N, K, swizzle_log, tiles_m,
+          tiles_n, tgid, sgid, lid))
+    return;
+  device bfloat *Dp = D + m_base * N + n_base;
+  for (short mm = 0; mm < TM; mm++)
+    for (short nn = 0; nn < TN; nn++)
+      nax_frag_store_dequant_cs<bfloat>(c_frags[mm * TN + nn], Dp, int(N), sc,
+                                        short(mm * 16), short(nn * 16), M, N,
+                                        m_base, n_base, row_scale, col_scale,
+                                        bias, has_bias != 0u);
+}
+
+// ── Rowwise int8 activation quant (bit-exact vs comfy_kitchen eager) ────────
+// Replicates quantize_int8_rowwise(stochastic_rounding=0) step for step:
+//   abs_max = x.abs().amax(-1)                    (exact — comparisons only)
+//   scale   = clamp(float(abs_max)/127, min=1e-30)  -> returned fp32 scale
+//   s_math  = scale.to(x.dtype); s_math==0 -> finfo(x.dtype).tiny
+//   q       = int8(clamp(rint(x / s_math), -128, 127))
+// The x.dtype division is emulated as float-divide + RTE cast to InT, which is
+// how MPS itself lowers half/bfloat arithmetic — verified bit-identical in the
+// extension tests. One threadgroup (256 threads, 8 simdgroups) per row.
+template <typename InT>
+void i8_quant_rowwise_body(const device InT *x, device char *q,
+                           device float *scales, uint M, uint K, uint row,
+                           ushort lid, ushort simd_lane, ushort simd_id,
+                           threadgroup float *tg) {
+  if (row >= M) return;
+  const device InT *xr = x + ulong(row) * K;
+  float local_max = 0.0f;
+  for (uint i = lid; i < K; i += 256) {
+    local_max = fmax(local_max, fabs(float(xr[i])));
+  }
+  float smax = simd_max(local_max);
+  if (simd_lane == 0) tg[simd_id] = smax;
+  threadgroup_barrier(mem_flags::mem_threadgroup);
+  if (lid == 0) {
+    float m = tg[0];
+    for (ushort s = 1; s < 8; s++) m = fmax(m, tg[s]);
+    // precise::divide: default fast-math lowers `/` to reciprocal-multiply,
+    // which is 1-ulp off torch's correctly-rounded fp32 divide.
+    float sc = fmax(precise::divide(m, 127.0f), 1e-30f);
+    scales[row] = sc;
+    tg[0] = sc;
+  }
+  threadgroup_barrier(mem_flags::mem_threadgroup);
+  InT s_cast = InT(tg[0]);
+  if (float(s_cast) == 0.0f) {
+    s_cast = numeric_limits<InT>::min();  // finfo tiny (smallest normal)
+  }
+  float s_math = float(s_cast);
+  device char *qr = q + ulong(row) * K;
+  for (uint i = lid; i < K; i += 256) {
+    float d = float(InT(precise::divide(float(xr[i]), s_math)));  // x.dtype divide
+    d = clamp(rint(d), -128.0f, 127.0f);
+    qr[i] = char(d);
+  }
+}
+
+kernel void i8_quant_rowwise_bf16(
+    const device bfloat *x [[buffer(0)]], device char *q [[buffer(1)]],
+    device float *scales [[buffer(2)]], constant uint &M [[buffer(3)]],
+    constant uint &K [[buffer(4)]],
+    uint row [[threadgroup_position_in_grid]],
+    ushort lid [[thread_position_in_threadgroup]],
+    ushort simd_lane [[thread_index_in_simdgroup]],
+    ushort simd_id [[simdgroup_index_in_threadgroup]]) {
+  threadgroup float tg[8];
+  i8_quant_rowwise_body<bfloat>(x, q, scales, M, K, row, lid, simd_lane,
+                                simd_id, tg);
+}
+
+kernel void i8_quant_rowwise_f16(
+    const device half *x [[buffer(0)]], device char *q [[buffer(1)]],
+    device float *scales [[buffer(2)]], constant uint &M [[buffer(3)]],
+    constant uint &K [[buffer(4)]],
+    uint row [[threadgroup_position_in_grid]],
+    ushort lid [[thread_position_in_threadgroup]],
+    ushort simd_lane [[thread_index_in_simdgroup]],
+    ushort simd_id [[simdgroup_index_in_threadgroup]]) {
+  threadgroup float tg[8];
+  i8_quant_rowwise_body<half>(x, q, scales, M, K, row, lid, simd_lane,
+                              simd_id, tg);
+}
 )MTL";
 
 // ── Host: pipeline cache ─────────────────────────────────────────
@@ -386,6 +556,14 @@ static id<MTLLibrary> build_library() {
   id<MTLDevice> dev = MPSDevice::getInstance()->device();
   MTLCompileOptions* opts = [MTLCompileOptions new];
   opts.languageVersion = MTLLanguageVersion4_1;
+  // Safe math: default fast-math reassociates float chains (observed:
+  // C*(cs*rs) -> (C*cs)*rs in the channelwise epilogue), breaking 1-ulp parity
+  // with torch's op order. The GEMM core is integer TensorOps — unaffected.
+  if (@available(macOS 15.0, *)) {
+    opts.mathMode = MTLMathModeSafe;
+  } else {
+    opts.fastMathEnabled = NO;
+  }
   NSError* err = nil;
   id<MTLLibrary> lib = [dev newLibraryWithSource:[NSString stringWithUTF8String:kSrc]
                                          options:opts error:&err];
@@ -574,7 +752,150 @@ torch::Tensor i8_matmul2d_nt_fused(torch::Tensor a_i8, torch::Tensor b_i8,
   return D;
 }
 
+static id<MTLComputePipelineState> g_pso_fused_cs = nil;
+static id<MTLComputePipelineState> g_pso_fused_cs_small = nil;
+
+static id<MTLComputePipelineState> pso_for_fused_cs(bool small) {
+  if (small && g_pso_fused_cs_small) return g_pso_fused_cs_small;
+  if (!small && g_pso_fused_cs) return g_pso_fused_cs;
+  id<MTLComputePipelineState> pso =
+      pso_for_name(small ? @"int8_matmul_fused_cs_small" : @"int8_matmul_fused_cs");
+  if (small) g_pso_fused_cs_small = pso; else g_pso_fused_cs = pso;
+  return pso;
+}
+
+// Channelwise-fused: D[M,N] bf16 = (A@B^T) * (col_scale[N] * row_scale[M]) +
+// optional bias[N]. For per-output-channel weight scales ([N,1] checkpoints —
+// Z-Image / Krea2 convrot), where the scalar-fused epilogue can't apply.
+torch::Tensor i8_matmul2d_nt_fused_cs(torch::Tensor a_i8, torch::Tensor b_i8,
+                                      torch::Tensor row_scale, torch::Tensor col_scale,
+                                      c10::optional<torch::Tensor> bias_opt) {
+  TORCH_CHECK(a_i8.is_mps() && b_i8.is_mps() && row_scale.is_mps() && col_scale.is_mps(),
+              "inputs must be on mps");
+  TORCH_CHECK(a_i8.scalar_type() == torch::kChar && b_i8.scalar_type() == torch::kChar,
+              "a/b must be int8");
+  TORCH_CHECK(a_i8.dim() == 2 && b_i8.dim() == 2, "a/b must be 2D");
+  TORCH_CHECK(a_i8.size(1) == b_i8.size(1), "K mismatch: A[M,K], B[N,K]");
+  TORCH_CHECK(a_i8.is_contiguous() && b_i8.is_contiguous(), "a/b must be contiguous");
+  TORCH_CHECK(row_scale.scalar_type() == torch::kFloat && row_scale.is_contiguous(),
+              "row_scale must be contiguous float32");
+  TORCH_CHECK(col_scale.scalar_type() == torch::kFloat && col_scale.is_contiguous(),
+              "col_scale must be contiguous float32");
+  TORCH_CHECK(row_scale.numel() == a_i8.size(0), "row_scale must have M elements");
+  TORCH_CHECK(col_scale.numel() == b_i8.size(0), "col_scale must have N elements");
+
+  const int M = (int)a_i8.size(0);
+  const int K = (int)a_i8.size(1);
+  const int N = (int)b_i8.size(0);
+  auto D = torch::empty({(long)M, (long)N}, a_i8.options().dtype(torch::kBFloat16));
+
+  const bool has_bias = bias_opt.has_value();
+  torch::Tensor bias = has_bias
+      ? bias_opt.value().to(torch::kBFloat16).contiguous()
+      : torch::zeros({1}, a_i8.options().dtype(torch::kBFloat16));
+  if (has_bias) {
+    TORCH_CHECK(bias.is_mps() && bias.numel() == N, "bias must be N MPS elements");
+  }
+
+  Geom g = geom_for(M, N);
+  id<MTLComputePipelineState> pso = pso_for_fused_cs(g.small);
+  MPSStream* stream = getCurrentMPSStream();
+  id<MTLBuffer> aBuf = __builtin_bit_cast(id<MTLBuffer>, a_i8.storage().data());
+  id<MTLBuffer> bBuf = __builtin_bit_cast(id<MTLBuffer>, b_i8.storage().data());
+  id<MTLBuffer> dBuf = __builtin_bit_cast(id<MTLBuffer>, D.storage().data());
+  id<MTLBuffer> sBuf = __builtin_bit_cast(id<MTLBuffer>, row_scale.storage().data());
+  id<MTLBuffer> cBuf = __builtin_bit_cast(id<MTLBuffer>, col_scale.storage().data());
+  id<MTLBuffer> biasBuf = __builtin_bit_cast(id<MTLBuffer>, bias.storage().data());
+  const NSUInteger aOff = a_i8.storage_offset() * a_i8.element_size();
+  const NSUInteger bOff = b_i8.storage_offset() * b_i8.element_size();
+  const NSUInteger dOff = D.storage_offset() * D.element_size();
+  const NSUInteger sOff = row_scale.storage_offset() * row_scale.element_size();
+  const NSUInteger cOff = col_scale.storage_offset() * col_scale.element_size();
+  const NSUInteger biasOff = bias.storage_offset() * bias.element_size();
+  uint Mu = (uint)M, Nu = (uint)N, Ku = (uint)K;
+  uint swizzle_log = g.swizzle_log, tiles_m = g.tiles_m, tiles_n = g.tiles_n;
+  uint has_bias_u = has_bias ? 1u : 0u;
+
+  dispatch_sync(stream->queue(), ^(){
+    @autoreleasepool {
+      id<MTLComputeCommandEncoder> enc = stream->commandEncoder();
+      [enc setComputePipelineState:pso];
+      [enc setBuffer:aBuf offset:aOff atIndex:0];
+      [enc setBuffer:bBuf offset:bOff atIndex:1];
+      [enc setBuffer:dBuf offset:dOff atIndex:2];
+      [enc setBytes:&Mu length:sizeof(uint) atIndex:3];
+      [enc setBytes:&Nu length:sizeof(uint) atIndex:4];
+      [enc setBytes:&Ku length:sizeof(uint) atIndex:5];
+      [enc setBytes:&swizzle_log length:sizeof(uint) atIndex:6];
+      [enc setBytes:&tiles_m length:sizeof(uint) atIndex:7];
+      [enc setBytes:&tiles_n length:sizeof(uint) atIndex:8];
+      [enc setBuffer:sBuf offset:sOff atIndex:9];
+      [enc setBuffer:biasBuf offset:biasOff atIndex:10];
+      [enc setBytes:&has_bias_u length:sizeof(uint) atIndex:11];
+      [enc setBuffer:cBuf offset:cOff atIndex:12];
+      [enc dispatchThreadgroups:MTLSizeMake(g.grid_x, g.grid_y, 1)
+          threadsPerThreadgroup:MTLSizeMake(g.THREADS, 1, 1)];
+    }
+  });
+  return D;
+}
+
+// Rowwise int8 activation quant: x[M,K] (bf16/f16) -> (q[M,K] int8,
+// scales[M,1] fp32). Bit-exact vs comfy_kitchen quantize_int8_rowwise(sr=0).
+static id<MTLComputePipelineState> g_pso_quant_bf16 = nil;
+static id<MTLComputePipelineState> g_pso_quant_f16 = nil;
+
+std::vector<torch::Tensor> i8_quant_rowwise(torch::Tensor x) {
+  TORCH_CHECK(x.is_mps(), "x must be on mps");
+  TORCH_CHECK(x.dim() == 2, "x must be 2D [M,K]");
+  TORCH_CHECK(x.is_contiguous(), "x must be contiguous");
+  const bool is_bf16 = x.scalar_type() == torch::kBFloat16;
+  TORCH_CHECK(is_bf16 || x.scalar_type() == torch::kHalf,
+              "x must be bf16 or f16");
+
+  const int M = (int)x.size(0);
+  const int K = (int)x.size(1);
+  auto q = torch::empty({(long)M, (long)K}, x.options().dtype(torch::kChar));
+  auto scales = torch::empty({(long)M, 1L}, x.options().dtype(torch::kFloat));
+
+  id<MTLComputePipelineState>& slot = is_bf16 ? g_pso_quant_bf16 : g_pso_quant_f16;
+  if (!slot) {
+    slot = pso_for_name(is_bf16 ? @"i8_quant_rowwise_bf16" : @"i8_quant_rowwise_f16");
+  }
+  id<MTLComputePipelineState> pso = slot;
+  MPSStream* stream = getCurrentMPSStream();
+  id<MTLBuffer> xBuf = __builtin_bit_cast(id<MTLBuffer>, x.storage().data());
+  id<MTLBuffer> qBuf = __builtin_bit_cast(id<MTLBuffer>, q.storage().data());
+  id<MTLBuffer> sBuf = __builtin_bit_cast(id<MTLBuffer>, scales.storage().data());
+  const NSUInteger xOff = x.storage_offset() * x.element_size();
+  const NSUInteger qOff = q.storage_offset() * q.element_size();
+  const NSUInteger sOff = scales.storage_offset() * scales.element_size();
+  uint Mu = (uint)M, Ku = (uint)K;
+
+  dispatch_sync(stream->queue(), ^(){
+    @autoreleasepool {
+      id<MTLComputeCommandEncoder> enc = stream->commandEncoder();
+      [enc setComputePipelineState:pso];
+      [enc setBuffer:xBuf offset:xOff atIndex:0];
+      [enc setBuffer:qBuf offset:qOff atIndex:1];
+      [enc setBuffer:sBuf offset:sOff atIndex:2];
+      [enc setBytes:&Mu length:sizeof(uint) atIndex:3];
+      [enc setBytes:&Ku length:sizeof(uint) atIndex:4];
+      [enc dispatchThreadgroups:MTLSizeMake((NSUInteger)M, 1, 1)
+          threadsPerThreadgroup:MTLSizeMake(256, 1, 1)];
+    }
+  });
+  return {q, scales};
+}
+
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
+  m.def("i8_matmul2d_nt_fused_cs", &i8_matmul2d_nt_fused_cs,
+        "Channelwise-fused NT int8 matmul: D = (A@B^T)*(col_scale[N]*row_scale[M]) + bias",
+        pybind11::arg("a_i8"), pybind11::arg("b_i8"), pybind11::arg("row_scale"),
+        pybind11::arg("col_scale"), pybind11::arg("bias") = c10::optional<torch::Tensor>());
+  m.def("i8_quant_rowwise", &i8_quant_rowwise,
+        "Rowwise int8 activation quant on MPS: x[M,K] -> (q int8, scales[M,1] fp32); "
+        "bit-exact vs comfy_kitchen quantize_int8_rowwise(sr=0)");
   m.def("i8_matmul2d_nt", &i8_matmul2d_nt,
         "Bit-exact NT int8 matmul: C[M,N] int32 = A[M,K] @ B[N,K]^T on MPS");
   m.def("i8_matmul2d_nt_fused", &i8_matmul2d_nt_fused,

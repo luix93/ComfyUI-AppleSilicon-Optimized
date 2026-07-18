@@ -38,6 +38,9 @@ Opt-in: only active when ``ASFP8_INT8_EXT=1`` (the kernel build flag).
 import os
 import sys
 
+import os
+import weakref
+
 import torch
 
 TAG = "[AppleSilicon-FP8/int8_kernel]"
@@ -45,6 +48,54 @@ TAG = "[AppleSilicon-FP8/int8_kernel]"
 _installed = False
 _orig_int8_linear = None
 _kernel = None
+
+# 1-slot cache of the rotated+quantized activation. Krea2-style blocks call the
+# kernel with the SAME input tensor for wq/wk/wv/gate (and SwiGLU gate/up), so
+# 3-4 of the ~2.3 ms rotate+quant passes per block are pure repeats. Keyed by a
+# weakref to the pre-rotation tensor object: a live identical object guarantees
+# identical bytes unless someone mutates it in-place between projections, which
+# comfy's functional model blocks never do. Disable: ASFP8_INT8_ACT_CACHE=0.
+_act_cache = None  # (x_weakref, convrot, groupsize, x_8, x_scale)
+
+
+def _quant_cached(x, convrot, convrot_groupsize):
+    """Rotate (if convrot) + rowwise-quantize x, reusing the previous result when
+    the same live tensor object is quantized again with the same settings."""
+    global _act_cache
+    c = _act_cache
+    if (
+        c is not None
+        and c[0]() is x
+        and c[1] == convrot
+        and c[2] == convrot_groupsize
+    ):
+        return c[3], c[4]
+
+    from comfy_kitchen.tensor.int8_utils import _build_hadamard, _rotate_activation
+
+    xr = x
+    if convrot:
+        h = _build_hadamard(convrot_groupsize, device=x.device, dtype=x.dtype)
+        xr = _rotate_activation(x, h, convrot_groupsize)
+    x_2d = xr.reshape(-1, xr.shape[-1])
+    if (
+        _kernel is not None
+        and hasattr(_kernel, "i8_quant_rowwise")
+        and x_2d.dtype in (torch.bfloat16, torch.float16)
+    ):
+        # Metal rowwise quant: single fused absmax+scale+quant pass, bit-exact
+        # vs the eager path (verified incl. zero/tiny/huge rows; ~6x faster).
+        x_8, x_scale = _kernel.i8_quant_rowwise(x_2d.contiguous())
+    else:
+        from comfy_kitchen.backends.eager.quantization import quantize_int8_rowwise
+        x_8, x_scale = quantize_int8_rowwise(x_2d)
+        x_8 = x_8.contiguous()
+    if os.environ.get("ASFP8_INT8_ACT_CACHE", "1") != "0":
+        try:
+            _act_cache = (weakref.ref(x), convrot, convrot_groupsize, x_8, x_scale)
+        except TypeError:  # tensor subclass without weakref support
+            _act_cache = None
+    return x_8, x_scale
 
 
 def _load_kernel():
@@ -82,17 +133,8 @@ def _int8_linear_kernel(
             x, weight, weight_scale, bias, out_dtype, convrot, convrot_groupsize
         )
 
-    from comfy_kitchen.backends.eager.quantization import quantize_int8_rowwise
-    from comfy_kitchen.tensor.int8_utils import _build_hadamard, _rotate_activation
-
-    if convrot:
-        h = _build_hadamard(convrot_groupsize, device=x.device, dtype=x.dtype)
-        x = _rotate_activation(x, h, convrot_groupsize)
-
     orig_shape = x.shape
-    x_2d = x.reshape(-1, x.shape[-1])
-
-    x_8, x_scale = quantize_int8_rowwise(x_2d)
+    x_8, x_scale = _quant_cached(x, convrot, convrot_groupsize)
     weight_scale = weight_scale.view(-1)
 
     # Fused fast path: when the rescale is purely per-row (tensorwise weight
@@ -109,6 +151,23 @@ def _int8_linear_kernel(
         bias_arg = bias.to(torch.bfloat16) if bias is not None else None
         result = _kernel.i8_matmul2d_nt_fused(
             x_8.contiguous(), weight.contiguous(), row_scale, bias_arg
+        )
+        return result.reshape(*orig_shape[:-1], weight.shape[0])
+
+    # Channelwise fast path: per-output-channel weight scales ([N,1] checkpoints
+    # — Z-Image / Krea2 convrot ship these, so the scalar path above never fires
+    # for them). The kernel epilogue computes (col_scale[n] * row_scale[m]) first
+    # and then rescales C, matching the chunked path's fp32 op order bit-exactly.
+    if (
+        out_dtype == torch.bfloat16
+        and weight_scale.numel() == weight.shape[0]
+        and hasattr(_kernel, "i8_matmul2d_nt_fused_cs")
+    ):
+        bias_arg = bias.to(torch.bfloat16) if bias is not None else None
+        result = _kernel.i8_matmul2d_nt_fused_cs(
+            x_8.contiguous(), weight.contiguous(),
+            x_scale.reshape(-1).float().contiguous(),
+            weight_scale.float().contiguous(), bias_arg,
         )
         return result.reshape(*orig_shape[:-1], weight.shape[0])
 
