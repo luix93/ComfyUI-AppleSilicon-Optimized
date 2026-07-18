@@ -47,6 +47,26 @@ def module():
     if shutil.which("xcrun") is None:
         print("[fp8_ext] no Metal toolchain (xcrun); fp8-native disabled.")
         return None
+
+    # torch's cpp_extension needs the `ninja` *binary* on PATH (not just the
+    # python module). When ComfyUI is launched from the Desktop app, PATH often
+    # lacks homebrew/venv bins, so add the ninja package's bundled binary dir.
+    if shutil.which("ninja") is None:
+        try:
+            import ninja  # provides a bundled `ninja` executable
+            bin_dir = getattr(ninja, "BIN_DIR", None) or os.path.join(
+                os.path.dirname(ninja.__file__), "data", "bin"
+            )
+            if os.path.isdir(bin_dir):
+                os.environ["PATH"] = bin_dir + os.pathsep + os.environ.get("PATH", "")
+        except Exception as e:
+            print(f"[fp8_ext] ninja not importable ({e!r}); fp8-native disabled.")
+            return None
+    if shutil.which("ninja") is None:
+        print("[fp8_ext] ninja binary not found on PATH; fp8-native disabled "
+              "(pip install ninja into the ComfyUI venv).")
+        return None
+
     try:
         import torch.utils.cpp_extension as cpp
         from torch.utils.cpp_extension import load as cpp_load

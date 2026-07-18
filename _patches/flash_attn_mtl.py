@@ -45,6 +45,48 @@ def _alias_legacy_env():
             os.environ[new] = val
 
 
+def _fix_v2_template_syntax():
+    """Fix mtlflashattn's v2 MSL for the macOS 27 Metal compiler.
+
+    The newer GPUCompiler enforces C++ dependent-template-name rules inside the
+    v2 kernel templates: `op.get_destination_cooperative_tensor<...>()` fails to
+    parse without the `.template` keyword, so `_v2_supported()` probes False and
+    every long sequence silently drops to the slow chunked-torch tier (measured
+    3.5-4.7x SLOWER than sub-quad at Wan/Z-Image head dims). Rewrite the MSL
+    source strings in-module before anything compiles, and reset the compile
+    caches. Idempotent; becomes a no-op once upstream ships the fix."""
+    try:
+        from metal_flash_attn import _kernel as k
+    except Exception:
+        return
+    pats = ("get_destination_cooperative_tensor<", "get_left_input_cooperative_tensor<",
+            "get_right_input_cooperative_tensor<")
+    fixed = 0
+    for name, val in list(vars(k).items()):
+        if not isinstance(val, str) or not any("." + p in val for p in pats):
+            continue
+        new = val
+        for p in pats:
+            # "." + p never matches an already-fixed ".template " + p site
+            # (the char before the call name there is a space, not a dot).
+            new = new.replace("." + p, ".template " + p)
+        if new != val:
+            setattr(k, name, new)
+            fixed += 1
+    if fixed:
+        try:
+            k._v2_support = None  # re-probe with the fixed source
+            for cache_name in ("_v2_libs", "_v2_dtype_libs", "_v2_reuse"):
+                cache = getattr(k, cache_name, None)
+                if isinstance(cache, dict):
+                    cache.clear()
+        except Exception:
+            pass
+        print(f"{TAG} patched mtlflashattn v2 MSL for the macOS 27 Metal compiler "
+              f"({fixed} source blocks: dependent-template `.template` keyword).",
+              flush=True)
+
+
 def install():
     _alias_legacy_env()
 
@@ -66,6 +108,8 @@ def install():
             flush=True,
         )
         return
+
+    _fix_v2_template_syntax()
 
     shim_on = False
     try:

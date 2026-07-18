@@ -256,7 +256,11 @@ torch::Tensor fp8fp8_matmul2d_nt(torch::Tensor a_u8, torch::Tensor w_u8, int64_t
                 threadsPerThreadgroup:MTLSizeMake(NSG * 32, 1, 1)];
         }
     });
-    stream->synchronize(SyncType::COMMIT_AND_WAIT);
+    // Do NOT COMMIT_AND_WAIT here: the kernel is encoded on torch's MPS stream,
+    // so ordering with subsequent torch ops is preserved on the same command
+    // buffer, and torch commits at its normal sync points. Forcing a full GPU
+    // sync per call serializes the pipeline (kills async overlap) — same fix as
+    // the int8 kernel (see int8_gemm.mm).
     return C;
 }
 
@@ -296,7 +300,11 @@ torch::Tensor fp8_matmul2d(torch::Tensor a, torch::Tensor w_u8, int64_t N) {
                 threadsPerThreadgroup:MTLSizeMake(NSG * 32, 1, 1)];
         }
     });
-    stream->synchronize(SyncType::COMMIT_AND_WAIT);
+    // Do NOT COMMIT_AND_WAIT here: the kernel is encoded on torch's MPS stream,
+    // so ordering with subsequent torch ops is preserved on the same command
+    // buffer, and torch commits at its normal sync points. Forcing a full GPU
+    // sync per call serializes the pipeline (kills async overlap) — same fix as
+    // the int8 kernel (see int8_gemm.mm).
     return C;
 }
 
@@ -336,7 +344,11 @@ torch::Tensor fp8_matmul2d_nt(torch::Tensor a, torch::Tensor w_u8, int64_t N) {
                 threadsPerThreadgroup:MTLSizeMake(NSG * 32, 1, 1)];
         }
     });
-    stream->synchronize(SyncType::COMMIT_AND_WAIT);
+    // Do NOT COMMIT_AND_WAIT here: the kernel is encoded on torch's MPS stream,
+    // so ordering with subsequent torch ops is preserved on the same command
+    // buffer, and torch commits at its normal sync points. Forcing a full GPU
+    // sync per call serializes the pipeline (kills async overlap) — same fix as
+    // the int8 kernel (see int8_gemm.mm).
     return C;
 }
 
