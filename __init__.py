@@ -28,6 +28,19 @@ Patches applied:
  16. strided FP8 ops -> CPU on MPS (global)        (NVFP4/MXFP8 quant+dequant: reshape/contiguous of fp8 crashes MPS)
  17. INT8 W8A8 via bit-exact Metal kernel on MPS   (opt-in ASFP8_INT8_EXT=1: int8 matmul ~1.75x over bf16,
                                                     bypasses per-step fp32 weight dequant/un-rotation; Cider-derived kernel)
+ 18. standard-fp8 Linear via W8A16 Metal kernel    (opt-in ASFP8_FP8_EXT=1: half×fp8 matmul2d skips the
+                                                    per-forward fp8->bf16 weight decode; 1.1-4.2x on MLP shapes, M5)
+ 19. per-call MPS attention routing                (opt-in ASFP8_ATTN_ROUTER=1: unmasked long-seq attention ->
+                                                    mtlflashattn flash kernel, masked long-seq -> sub-quad; the
+                                                    memory-unsafe stock-SDPA fallback path is never taken)
+ 20. fp8 fill/factory ops -> CPU on MPS            (zeros/ones/full/eye/_like/fill_: no Metal fp8 fill kernel;
+                                                    torch>=2.13 additionally regressed torch.zeros for fp8 on MPS)
+ 21. Lumina/Z-Image fused attention pre-pass       (opt-in ASFP8_DIT_EXT=1: qkv-split + QK RMSNorm + RoPE +
+                                                    head transpose in one Metal pass; ~7.5ms -> ~0.5ms per layer)
+ 22. comfy_quant missing-'format' repair            (community int8-convrot checkpoints: default int8+scale
+                                                    layers to int8_tensorwise instead of failing to load)
+ 23. fast apply_rope on MPS                          (opt-in ASFP8_DIT_EXT=1: flux-family q/k RoPE via one
+                                                    Metal pass; ~7.3ms -> ~0.7ms per attention at Flux2 shapes)
  (#15 fp8-native F.linear retired — wrong seam; the fp8-native win is patch #3's opt-in _scaled_mm fast path)
 
 See README.md for details. MIT licensed.
@@ -44,7 +57,15 @@ if __spec__ is not None and __spec__.parent:
     # string and relative imports would fail.  Checking __spec__.parent is CPython-
     # guaranteed behaviour (see importlib docs) and avoids inspecting ImportError
     # message strings that are implementation details liable to change.
-    from ._patches import comfykitchen_fp8, linear_fp8, ops_bias_fp8, psutil_vmstat, rmsnorm_mps_large, scaled_mm_fp8, flash_attn_mtl, stochastic_round_fp8, tensor_to_fp8, wan_blockswap_mps, te_device_mps, int_mm_mps, int8_linear_mps, int8_linear_kernel_mps, mlx_textgen, fp8_mps_strided, optrace, mps_profile
+    from ._patches import comfykitchen_fp8, linear_fp8, linear_fp8_w8a16, ops_bias_fp8, psutil_vmstat, rmsnorm_mps_large, scaled_mm_fp8, flash_attn_mtl, attn_router_mps, stochastic_round_fp8, tensor_to_fp8, wan_blockswap_mps, te_device_mps, int_mm_mps, int8_linear_mps, int8_linear_kernel_mps, mlx_textgen, fp8_mps_strided, fp8_fill_mps, lumina_attn_fast, quant_meta_fix, rope_fast, optrace, mps_profile
+
+    # Master switch: ASFP8_NATIVE=1 enables every opt-in native fast path at
+    # once (fp8/int8 Metal kernels, staged W8A16 backend, attention router, DiT
+    # fusions). Explicit per-feature values always win — see _common.NATIVE_IMPLIES.
+    from ._patches._common import apply_native_master_switch as _anms
+    _implied = _anms()
+    if _implied:
+        print(f"[AppleSilicon-FP8] ASFP8_NATIVE=1 -> {', '.join(v + '=1' for v in _implied)}")
 
     # Bisection switches (for debugging a regression to a single patch):
     #   ASFP8_ENABLE_ONLY=psutil_vmstat,comfykitchen_fp8   install ONLY these (by module name)
@@ -56,7 +77,7 @@ if __spec__ is not None and __spec__.parent:
 
     # optrace installs LAST (opt-in ASFP8_TRACE_OPS=1) so it sees every matmul the
     # model dispatches, on top of all the seams the other patches wrapped.
-    for _patch in (psutil_vmstat, fp8_mps_strided, comfykitchen_fp8, scaled_mm_fp8, ops_bias_fp8, stochastic_round_fp8, tensor_to_fp8, wan_blockswap_mps, rmsnorm_mps_large, flash_attn_mtl, linear_fp8, te_device_mps, int_mm_mps, int8_linear_mps, int8_linear_kernel_mps, mlx_textgen, optrace, mps_profile):
+    for _patch in (psutil_vmstat, fp8_mps_strided, fp8_fill_mps, comfykitchen_fp8, scaled_mm_fp8, ops_bias_fp8, stochastic_round_fp8, tensor_to_fp8, wan_blockswap_mps, rmsnorm_mps_large, flash_attn_mtl, attn_router_mps, linear_fp8, linear_fp8_w8a16, te_device_mps, int_mm_mps, int8_linear_mps, int8_linear_kernel_mps, mlx_textgen, lumina_attn_fast, quant_meta_fix, rope_fast, optrace, mps_profile):
         _short = _patch.__name__.rsplit(".", 1)[-1]
         if (_only and _short not in _only) or _short in _disabled:
             print(f"[AppleSilicon-FP8] skipping {_short} (ASFP8_ENABLE_ONLY/ASFP8_DISABLE)")

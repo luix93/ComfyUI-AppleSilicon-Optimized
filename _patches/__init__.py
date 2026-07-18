@@ -22,9 +22,24 @@ __all__ = [
     #   real ComfyUI fp8 routes through torch._scaled_mm (QuantizedTensor hides the fp8
     #   dtype so the F.linear gate never fired), and weight-only fp8 only won at tiny M.
     #   The fp8-native win lives in patch #3's _scaled_mm fast path (ASFP8_FP8_EXT=1).
+    #   Patch #18 revisits the idea at the RIGHT seam (forward_comfy_cast_weights) after
+    #   removing the kernel's per-call COMMIT_AND_WAIT stall — see linear_fp8_w8a16.
+    "linear_fp8_w8a16",     # patch #18 — standard-fp8 Linear via half×fp8 W8A16 kernel (opt-in)
+    "attn_router_mps",      # patch #19 — per-call MPS attention routing (opt-in ASFP8_ATTN_ROUTER=1:
+                            #   unmasked long-seq → mtlflashattn flash, masked long-seq → sub-quad, never stock SDPA)
+    "fp8_fill_mps",         # patch #20 — fp8 fill/factory ops (zeros/ones/full/eye/_like/fill_) via CPU on MPS
+                            #   (no Metal fp8 fill kernel; torch>=2.13 regressed fp8 torch.zeros on MPS)
+    "lumina_attn_fast",     # patch #21 — Lumina/Z-Image fused qkv-split+QKNorm+RoPE+transpose (opt-in
+                            #   ASFP8_DIT_EXT=1; dit_ext Metal kernel, ~7.5ms -> ~0.5ms per layer)
+    "quant_meta_fix",       # patch #22 — default missing comfy_quant "format" to int8_tensorwise
+                            #   (community int8-convrot checkpoints that omit it fail to load otherwise)
+    "rope_fast",            # patch #23 — flux-family apply_rope via dit_ext Metal kernel (opt-in
+                            #   ASFP8_DIT_EXT=1; ~7.3ms -> ~0.7ms per attention call at Flux2 shapes)
     # Internal helpers (not patches):
     # "_common"             — decode_fp8, fp8_to_float_lut, FP8_DTYPES
     # "na_gemm"             — optional NA matmul2d backend (not wired into hot path)
     # "_mlx_qwen3vl"        — MLX Qwen3-VL load/generate backend for patch #14
     # "fp8_ext"             — Metal 4.1 fp8 matmul2d ObjC++ extension (patch #3 fp8-native scaled_mm backend)
+    # "fp8s_ext"            — staged Metal 4.1 half×fp8 W8A16 extension (patch #18 preferred backend,
+    #                         opt-in ASFP8_FP8_SGEMM=1: tiled/swizzled geometry + fused bias epilogue)
 ]

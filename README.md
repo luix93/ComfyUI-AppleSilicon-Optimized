@@ -15,13 +15,14 @@
 - **Install:** ComfyUI Manager → search *AppleSilicon-FP8*; or `git clone` into
   `ComfyUI/custom_nodes/` and `pip install -r requirements.txt`. The one required
   dependency (`mtlflashattn`) installs automatically. Restart ComfyUI.
-- **Extra speed (opt-in, needs a recent macOS + M5):** the native matmul kernels
-  compile against **Metal 4.1** (a current-macOS language version — developed and
-  tested on the **macOS 27 dev beta**), and int8 additionally needs an **M5** GPU
-  for its cooperative TensorOps. Where supported, install `ninja` and set
-  `ASFP8_INT8_EXT=1` (int8) and/or `ASFP8_FP8_EXT=1` (fp8) before launching. They
-  JIT-build on first use and **fall back automatically** if the OS/GPU/toolchain
-  can't build them.
+- **Extra speed (opt-in, needs a recent macOS + M5):** the native matmul/DiT
+  kernels compile against **Metal 4.1** (a current-macOS language version —
+  developed and tested on the **macOS 27 dev beta**), and int8 additionally needs
+  an **M5** GPU for its cooperative TensorOps. Where supported, install `ninja`
+  and set **`ASFP8_NATIVE=1`** before launching — one switch for every native
+  fast path (fp8, int8, W8A16, attention router, DiT fusions). They JIT-build on
+  first use and **fall back automatically** if the OS/GPU/toolchain can't build
+  them. Per-feature vars (`ASFP8_FP8_EXT` etc.) still work and override it.
 
 ## Quick start — by machine
 
@@ -54,14 +55,25 @@ speedups:**
 xcode-select --install                 # if not already installed (Metal toolchain)
 pip install ninja                      # or:  pip install 'comfyui-applesilicon-fp8[kernels]'
 
-# enable per model type — set before launching ComfyUI:
-export ASFP8_INT8_EXT=1   # int8 models  (e.g. Krea2 convrot int8mixed) → ~24% faster renders
-export ASFP8_FP8_EXT=1    # fp8 models   (e.g. FLUX / SD3.5 fp8_scaled) → ~1.2–2.1× on the matmul
+# one switch turns on every native fast path — set before launching ComfyUI:
+export ASFP8_NATIVE=1
 ```
 
-Each kernel builds on the first eligible matmul (watch the startup log for the
-`int8_kernel` / fp8 lines) and silently falls back to the compatible path on any
-failure — including too-old macOS — so it's safe to leave enabled.
+`ASFP8_NATIVE=1` enables all of: the fp8-native matmul (`ASFP8_FP8_EXT`, FLUX /
+SD3.5 fp8_scaled ~1.2–2.1× on the matmul), the staged W8A16 backend
+(`ASFP8_FP8_SGEMM`), the int8 W8A8 kernel + fused quant/epilogue
+(`ASFP8_INT8_EXT`, Krea2/Z-Image convrot), the per-call attention router
+(`ASFP8_ATTN_ROUTER`), and the Lumina/Z-Image fused DiT kernels
+(`ASFP8_DIT_EXT`). Each kernel builds on first use and silently falls back to
+the compatible path on any failure — including too-old macOS — so it's safe to
+leave enabled everywhere.
+
+The per-feature variables still work and always win over the master switch:
+`ASFP8_NATIVE=1 ASFP8_DIT_EXT=0` enables everything except the DiT kernels.
+One numerics note: `ASFP8_DIT_EXT` trades bit-identical outputs for speed on
+Lumina-family models (its fused norms are exact-or-1-ulp vs eager, so images
+shift imperceptibly but deterministically); leave it at 0 if you need renders
+bit-stable against the eager path.
 
 It started as an FP8 compatibility layer and has grown into a broader Apple
 Silicon quantization layer: it keeps FP8 **and INT8** diffusion models running on
