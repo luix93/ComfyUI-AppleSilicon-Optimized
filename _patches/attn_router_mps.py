@@ -188,8 +188,9 @@ def _router(q, k, v, heads, mask=None, attn_precision=None, skip_reshape=False,
                                 skip_reshape=skip_reshape,
                                 skip_output_reshape=skip_output_reshape, **kwargs)
             # Default upcast only: honor an explicit fp32 attn_precision request.
+            # flash41 takes bf16 AND fp16 (Wan runs fp16); math is fp32 inside.
             if (_fa41 is not None and attn_precision is None
-                    and q.dtype == torch.bfloat16):
+                    and q.dtype in (torch.bfloat16, torch.float16)):
                 try:
                     out = _fa41_attention(q, k, v, heads, scale=kwargs.get("scale"),
                                           skip_reshape=skip_reshape,
@@ -198,7 +199,10 @@ def _router(q, k, v, heads, mask=None, attn_precision=None, skip_reshape=False,
                     return out
                 except Exception:
                     pass  # fall through to bmm / sub-quad
-            score_bytes = 2 * B * H * L * L
+            # Score size from ACTUAL Lq*Lk — long-query/short-KV cross attention
+            # (Wan 21.5k x 512) has a small score matrix despite the long max seq.
+            Lq_, Lk_ = _seqs(q, k, skip_reshape)
+            score_bytes = 2 * B * H * Lq_ * Lk_
             if attn_precision is None and score_bytes <= _BMM_MAX_SCORE_BYTES:
                 _route_log("bmm", q, k, heads, mask, attn_precision, skip_reshape)
                 return _bmm_attention(q, k, v, heads, skip_reshape=skip_reshape,

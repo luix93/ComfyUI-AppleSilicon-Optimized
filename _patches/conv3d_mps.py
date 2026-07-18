@@ -53,39 +53,47 @@ def _conv3d_decomposed(input, weight, bias, stride, padding, dilation, groups):
     Ho = (H + 2 * pH - (kH - 1) * dH - 1) // sH + 1
     Wo = (W + 2 * pW - (kW - 1) * dW - 1) // sW + 1
 
-    per_frame = max(Ci * H * W, Co * Ho * Wo)
+    per_frame = max(kT * Ci * H * W, Co * Ho * Wo)   # folded input is kT*Ci wide
     chunk = max(1, min(T_out, _MAX_ELEMS // max(per_frame, 1)))
 
-    # MPS conv2d silently miscomputes with non-contiguous weights in some
-    # layouts (verified: CPU-identical code diverges only through this slice).
-    w2 = [weight[:, :, kt].contiguous() for kt in range(kT)]
+    # Fold the temporal taps into conv2d's CHANNEL dim: conv3d(kT) over frame
+    # window [t, t+kT) == one conv2d with kT*Ci input channels. The single
+    # conv2d accumulates ALL taps in its internal fp32 accumulator and rounds
+    # once — exactly conv3d's numerics. (Summing separately-rounded per-tap
+    # conv2d outputs looks harmless in one decode (~8e-4) but Wan-style
+    # recursive causal VAEs feed each chunk's output into the next chunk's
+    # cache, and the per-tap rounding compounds into horizontal banding that
+    # grows over the clip.) Weight blocks are ordered [W[:,:,0] | W[:,:,1] |
+    # ...] to match the channel cat; .contiguous() is load-bearing — MPS
+    # conv2d silently miscomputes with non-contiguous weights.
+    # groups > 1 would interleave wrongly under the fold; use fp32-accumulated
+    # per-tap convs there (rare in VAEs).
+    fold = groups == 1 or kT == 1
+    if fold:
+        wf = weight.transpose(1, 2).reshape(Co, kT * (Ci // groups), kH, kW).contiguous()
+    else:
+        w2 = [weight[:, :, kt].float().contiguous() for kt in range(kT)]
 
-    # Half-precision inputs run the tap convs in FP32 and round ONCE at the
-    # end — matching conv3d's single internal fp32 accumulation. Rounding each
-    # tap's conv2d output to bf16 before summing looks harmless in a single
-    # decode (~8e-4 mean) but Wan-style recursive causal VAEs feed each
-    # chunk's output into the next chunk's cache, and the per-tap rounding
-    # compounds into visible horizontal banding that grows over the clip.
-    # fp32 taps cost ~2x the conv time (still ~4x faster than MPS conv3d).
-    upcast = kT > 1 and input.dtype in (torch.bfloat16, torch.float16)
-    if upcast:
-        w2 = [w.float() for w in w2]
     outs = []
     for f0 in range(0, T_out, chunk):
         f1 = min(f0 + chunk, T_out)
         n = f1 - f0
-        acc = None
-        for kt in range(kT):
-            t0 = f0 * sT + kt * dT
-            xt = input[:, :, t0:t0 + (n - 1) * sT + 1:sT]        # [B,Ci,n,H,W]
-            x2 = xt.transpose(1, 2).reshape(B * n, Ci, H, W)
-            if upcast:
-                x2 = x2.float()
-            y = F.conv2d(x2, w2[kt],
-                         None if (upcast or kt != kT - 1) else bias,
-                         (sH, sW), (pH, pW), (dH, dW), groups)
-            acc = y if acc is None else acc.add_(y)
-        if upcast:
+        if fold:
+            taps = []
+            for kt in range(kT):
+                t0 = f0 * sT + kt * dT
+                xt = input[:, :, t0:t0 + (n - 1) * sT + 1:sT]    # [B,Ci,n,H,W]
+                taps.append(xt.transpose(1, 2).reshape(B * n, Ci, H, W))
+            x2 = taps[0] if kT == 1 else torch.cat(taps, 1)      # [B*n, kT*Ci, H, W]
+            acc = F.conv2d(x2, wf, bias, (sH, sW), (pH, pW), (dH, dW), groups)
+        else:
+            acc = None
+            for kt in range(kT):
+                t0 = f0 * sT + kt * dT
+                xt = input[:, :, t0:t0 + (n - 1) * sT + 1:sT]
+                x2 = xt.transpose(1, 2).reshape(B * n, Ci, H, W).float()
+                y = F.conv2d(x2, w2[kt], None, (sH, sW), (pH, pW), (dH, dW), groups)
+                acc = y if acc is None else acc.add_(y)
             if bias is not None:
                 acc = acc.add_(bias.float().view(1, -1, 1, 1))
             acc = acc.to(input.dtype)

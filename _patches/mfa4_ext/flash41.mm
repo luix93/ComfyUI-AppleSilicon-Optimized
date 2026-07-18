@@ -53,10 +53,10 @@ constant constexpr int RPG = BR / NSG;   // rows per simdgroup
 constant constexpr int CCH = BC / 32;    // 32-lane column chunks per row
 
 kernel void flash_attn_fwd_bf16(
-    device bfloat* Q  [[buffer(0)]],
-    device bfloat* K  [[buffer(1)]],
-    device bfloat* V  [[buffer(2)]],
-    device bfloat* O  [[buffer(3)]],
+    device @DT@* Q  [[buffer(0)]],
+    device @DT@* K  [[buffer(1)]],
+    device @DT@* V  [[buffer(2)]],
+    device @DT@* O  [[buffer(3)]],
     constant int*  SH [[buffer(4)]],   // [B,Hq,Hkv,Lq,Lk,causal]
     constant float* PR [[buffer(5)]],  // [scale]
     uint3 tgid [[threadgroup_position_in_grid]],
@@ -73,9 +73,9 @@ kernel void flash_attn_fwd_bf16(
     const int hkv = hq / (Hq / Hkv);
     const int q0  = int(tgid.x) * BR;
 
-    device bfloat* Qp = Q + ulong(bh)*ulong(Lq)*DD;
-    device bfloat* Kp = K + ulong(b*Hkv+hkv)*ulong(Lk)*DD;
-    device bfloat* Vp = V + ulong(b*Hkv+hkv)*ulong(Lk)*DD;
+    device @DT@* Qp = Q + ulong(bh)*ulong(Lq)*DD;
+    device @DT@* Kp = K + ulong(b*Hkv+hkv)*ulong(Lk)*DD;
+    device @DT@* Vp = V + ulong(b*Hkv+hkv)*ulong(Lk)*DD;
 
     // Reduction dims are compile-time constants — declare them static
     // (@QKS@ = DD or dynamic, @PVS@ = BC or dynamic; templated for A/B).
@@ -94,11 +94,11 @@ kernel void flash_attn_fwd_bf16(
     // threadgroups per core.
     constexpr bool MERGEP = @MP@;
     threadgroup @ST@ tgS[BR*BC];
-    threadgroup bfloat tgP[MERGEP ? 1 : BR*BC];
+    threadgroup @DT@ tgP[MERGEP ? 1 : BR*BC];
     threadgroup float tgCorr[BR];
     threadgroup float tgInvL[BR];
     threadgroup int tgAnyCorr;
-    threadgroup bfloat* Pbuf = MERGEP ? (threadgroup bfloat*)&tgS[0] : &tgP[0];
+    threadgroup @DT@* Pbuf = MERGEP ? (threadgroup @DT@*)&tgS[0] : &tgP[0];
 
     auto mQ = tensor(Qp + q0*DD, dextents<int,2>{DD, min(BR, Lq - q0)}, array<int,2>{1, DD});
     auto tS = tensor(&tgS[0], dextents<int,2>{BC, BR}, array<int,2>{1, BC});
@@ -151,7 +151,7 @@ kernel void flash_attn_fwd_bf16(
             #pragma clang loop unroll(full)
             for (int cc = 0; cc < CCH; ++cc) {
                 const float p = (mn == -INFINITY) ? 0.0f : exp(sreg[cc] - mn);
-                Pbuf[row*BC + cc*32 + lane] = bfloat(p);
+                Pbuf[row*BC + cc*32 + lane] = @DT@(p);
                 lsum += simd_sum(p);
             }
             l[r] = l[r]*c + lsum;
@@ -185,7 +185,7 @@ kernel void flash_attn_fwd_bf16(
     }
     threadgroup_barrier(mem_flags::mem_threadgroup);
 
-    device bfloat* Ob = O + ulong(bh)*ulong(Lq)*DD;
+    device @DT@* Ob = O + ulong(bh)*ulong(Lq)*DD;
     #pragma clang loop unroll(full)
     for (uint16_t i = 0; i < ctO.get_capacity(); ++i) {
         if (!ctO.is_valid_element(i)) continue;
@@ -194,7 +194,7 @@ kernel void flash_attn_fwd_bf16(
         const int r   = q0 + row;
         const int c   = int(idx[0]);
         if (r >= Lq || c >= DD) continue;
-        Ob[r*DD + c] = bfloat(ctO[i] * tgInvL[row]);
+        Ob[r*DD + c] = @DT@(ctO[i] * tgInvL[row]);
     }
 }
 // ── v2r: register-resident P (mtlflashattn's v2r recipe, bf16) ──
@@ -380,12 +380,13 @@ static int nsg_for(int BR) { return BR <= 32 ? 4 : (BR <= 64 ? 8 : 16); }
 static id<MTLComputePipelineState> pso_for(int D, int BR, int BC, bool bf16s,
                                            int SR = 16, int BCV = 64,
                                            const char* fn_name = "flash_attn_fwd_bf16",
-                                           bool pv_static = false, int nsg = 0) {
-  const long key = ((((((((long)D * 1000 + BR) * 1000 + BC) * 2 + (bf16s ? 1 : 0))
+                                           bool pv_static = false, int nsg = 0,
+                                           bool half_io = false) {
+  const long key = (((((((((long)D * 1000 + BR) * 1000 + BC) * 2 + (bf16s ? 1 : 0))
                     * 100 + SR) * 1000 + BCV) * 4
                    + (std::string(fn_name) == "flash_attn_fwd_bf16" ? 0
                       : (std::string(fn_name) == "flash_attn_fwd_v2r_bf16" ? 1 : 2)))
-                   * 2 + (pv_static ? 1 : 0)) * 32 + nsg;
+                   * 2 + (pv_static ? 1 : 0)) * 32 + nsg) * 2 + (half_io ? 1 : 0);
   auto it = g_pso.find(key);
   if (it != g_pso.end()) return it->second;
 
@@ -393,7 +394,9 @@ static id<MTLComputePipelineState> pso_for(int D, int BR, int BC, bool bf16s,
   sub_all(src, "@D@", std::to_string(D));
   sub_all(src, "@BR@", std::to_string(BR));
   sub_all(src, "@BC@", std::to_string(BC));
-  sub_all(src, "@ST@", bf16s ? "bfloat" : "float");
+  const char* dt = half_io ? "half" : "bfloat";
+  sub_all(src, "@DT@", dt);
+  sub_all(src, "@ST@", bf16s ? dt : "float");
   sub_all(src, "@NSG@", std::to_string(nsg > 0 ? nsg : nsg_for(BR)));
   // P merges into the score tile only when the tile is bfloat (same type).
   sub_all(src, "@MP@", bf16s ? "true" : "false");
@@ -473,8 +476,11 @@ torch::Tensor flash_fwd_bf16(torch::Tensor q, torch::Tensor k, torch::Tensor v,
                              double scale, bool causal, int64_t br, int64_t bc, bool bf16s,
                              int64_t v2r, int64_t sr, int64_t bcv, int64_t nsg_ovr) {
   TORCH_CHECK(q.is_mps() && k.is_mps() && v.is_mps(), "inputs must be on mps");
-  TORCH_CHECK(q.scalar_type() == torch::kBFloat16 && k.scalar_type() == torch::kBFloat16
-              && v.scalar_type() == torch::kBFloat16, "inputs must be bf16");
+  const bool half_io = q.scalar_type() == torch::kHalf;
+  TORCH_CHECK((q.scalar_type() == torch::kBFloat16 || half_io)
+              && k.scalar_type() == q.scalar_type()
+              && v.scalar_type() == q.scalar_type(),
+              "inputs must be bf16 or fp16 (matching)");
   TORCH_CHECK(q.dim() == 4 && k.dim() == 4 && v.dim() == 4, "inputs must be [B,H,L,D]");
   const int B = (int)q.size(0), Hq = (int)q.size(1), Lq = (int)q.size(2), D = (int)q.size(3);
   const int Hkv = (int)k.size(1), Lk = (int)k.size(2);
@@ -505,6 +511,9 @@ torch::Tensor flash_fwd_bf16(torch::Tensor q, torch::Tensor k, torch::Tensor v,
   TORCH_CHECK(BCV % 32 == 0 && BCV <= 256, "bcv must be a multiple of 32, <= 256");
 
   bool use_v2r = false;
+  if (half_io) {
+    v2r = 0;   // the v2r experiment is bfloat-internal only
+  }
   if (v2r > 0) {
     TORCH_CHECK(Lk % BCV == 0, "v2r requires Lk % BCV == 0 (static-k PV descriptor)");
     TORCH_CHECK(v2r_probe(D, SR, BCV), "v2r not supported on this device for D=", D);
@@ -518,7 +527,7 @@ torch::Tensor flash_fwd_bf16(torch::Tensor q, torch::Tensor k, torch::Tensor v,
   id<MTLComputePipelineState> pso =
       use_v2r ? pso_for(D, BR, BC, bf16s, SR, BCV, "flash_attn_fwd_v2r_bf16")
               : pso_for(D, BR, BC, bf16s, SR, BCV, "flash_attn_fwd_bf16",
-                        /*pv_static=*/Lk % BC == 0, nsg);
+                        /*pv_static=*/Lk % BC == 0, nsg, half_io);
   MPSStream* stream = getCurrentMPSStream();
   id<MTLBuffer> qB = __builtin_bit_cast(id<MTLBuffer>, qc.storage().data());
   id<MTLBuffer> kB = __builtin_bit_cast(id<MTLBuffer>, kc.storage().data());
