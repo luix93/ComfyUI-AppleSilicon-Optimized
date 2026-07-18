@@ -37,6 +37,8 @@ __all__ = [
                             #   ASFP8_DIT_EXT=1; ~7.3ms -> ~0.7ms per attention call at Flux2 shapes)
     "flux_attn_fast",       # patch #24 — Flux double/single block fused qkv+QKNorm+RoPE+seq-cat
                             #   (opt-in ASFP8_DIT_EXT=1; kills 4 RMSNorms + 3 seq-cats per double block)
+    "krea2_attn_fast",      # patch #25 — Krea2 GQA-native attention: fused q/k/v norm+RoPE at native
+                            #   head counts + flash41 grouped-KV (no repeat_interleave; ASFP8_DIT_EXT=1)
     # Internal helpers (not patches):
     # "_common"             — decode_fp8, fp8_to_float_lut, FP8_DTYPES
     # "na_gemm"             — optional NA matmul2d backend (not wired into hot path)

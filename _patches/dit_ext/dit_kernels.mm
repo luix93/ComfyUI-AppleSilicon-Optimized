@@ -196,6 +196,80 @@ kernel void qkv2_norm_rope_bf16(
   outp[(((ulong)b * H + h) * S + s) * D + lid] = bf16_rte(o);
 }
 
+// Three-source GQA variant for Krea2 Attention: separate wq/wk/wv outputs
+// (q: Hq heads, k/v: Hkv heads), Krea2 RMSNorm semantics (fp32 weight already
+// including the +1, SINGLE final bf16 rounding — unlike flux's round-then-
+// bf16-weight-multiply), RoPE on q/k, v transposed copy. Outputs stay at
+// their native head counts so flash41's GQA path runs without the eager
+// repeat_interleave (which materializes 4x KV and quadruples KV reads).
+kernel void qkv3_norm_rope_bf16(
+    device const bfloat* qin   [[buffer(0)]],  // [B*S, Hq*D]
+    device const bfloat* kin   [[buffer(1)]],  // [B*S, Hkv*D]
+    device const bfloat* vin   [[buffer(2)]],  // [B*S, Hkv*D]
+    device const float*  freqs [[buffer(3)]],  // [B*S, D/2, 2, 2] fp32
+    device const float*  qw    [[buffer(4)]],  // [D] fp32, = qnorm.scale + 1
+    device const float*  kw    [[buffer(5)]],  // [D] fp32, = knorm.scale + 1
+    device bfloat* qo [[buffer(6)]],           // [B, Hq,  S, D]
+    device bfloat* ko [[buffer(7)]],           // [B, Hkv, S, D]
+    device bfloat* vo [[buffer(8)]],           // [B, Hkv, S, D]
+    constant uint&  S     [[buffer(9)]],
+    constant uint&  Hq    [[buffer(10)]],
+    constant uint&  Hkv   [[buffer(11)]],
+    constant uint&  D     [[buffer(12)]],
+    constant float& eps   [[buffer(13)]],
+    uint2  tgid      [[threadgroup_position_in_grid]],
+    ushort lid       [[thread_index_in_threadgroup]],
+    ushort simd_lane [[thread_index_in_simdgroup]],
+    ushort simd_id   [[simdgroup_index_in_threadgroup]])
+{
+  const uint token = tgid.x;           // b*S + s
+  const uint b = token / S, s = token % S;
+  const uint ht = tgid.y;
+
+  const bool is_q = ht < Hq;
+  const bool is_v = ht >= Hq + Hkv;
+  uint h;
+  const device bfloat* src;
+  uint W;
+  if (is_q)      { h = ht;            src = qin; W = Hq * D; }
+  else if (!is_v){ h = ht - Hq;       src = kin; W = Hkv * D; }
+  else           { h = ht - Hq - Hkv; src = vin; W = Hkv * D; }
+  const device bfloat* row = src + (ulong)token * W + h * D;
+
+  if (is_v) {
+    vo[(((ulong)b * Hkv + h) * S + s) * D + lid] = row[lid];
+    return;
+  }
+
+  float x = float(row[lid]);
+  float ss = simd_sum(x * x);
+  threadgroup float tg[4];
+  if (simd_lane == 0) tg[simd_id] = ss;
+  threadgroup_barrier(mem_flags::mem_threadgroup);
+  float tot = 0.0f;
+  const ushort nsg = ushort(D >> 5);
+  for (ushort i = 0; i < nsg; i++) tot += tg[i];
+
+  // Krea2 RMSNorm: fp32 normalize * fp32 weight, one rounding at the end.
+  const float inv = precise::rsqrt(precise::divide(tot, float(D)) + eps);
+  const device float* w = is_q ? qw : kw;
+  bfloat y = bf16_rte(x * inv * w[lid]);
+
+  // RoPE (flux apply_rope): fp32 pair rotation on the bf16-rounded values.
+  float yf = float(y);
+  float partner = simd_shuffle_xor(yf, ushort(1));
+  const uint i = lid >> 1;
+  const uint j = lid & 1u;
+  const device float* f = freqs + ((ulong)token * (D >> 1) + i) * 4u + j * 2u;
+  const float x0 = (j == 0u) ? yf : partner;
+  const float x1 = (j == 0u) ? partner : yf;
+  const float o = f[0] * x0 + f[1] * x1;
+
+  device bfloat* outp = is_q ? qo : ko;
+  const uint Hh = is_q ? Hq : Hkv;
+  outp[(((ulong)b * Hh + h) * S + s) * D + lid] = bf16_rte(o);
+}
+
 // RoPE-only: q/k already in attention layout [B, H, S, D]. One threadgroup per
 // (token, head-slot); slots [0,H) rotate q, [H,2H) rotate k. Same math and
 // rounding as flux apply_rope (fp32 pair rotation on bf16 values, RTE store).
@@ -483,6 +557,66 @@ std::vector<torch::Tensor> qkv2_norm_rope(torch::Tensor qkv_a, torch::Tensor qkv
   return {q, k, v};
 }
 
+// Krea2 GQA variant: separate q [B,S,Hq*D] / k,v [B,S,Hkv*D] linear outputs,
+// fp32 (scale+1) norm weights -> (q [B,Hq,S,D], k [B,Hkv,S,D], v [B,Hkv,S,D]).
+std::vector<torch::Tensor> qkv3_norm_rope(torch::Tensor qin, torch::Tensor kin,
+                                          torch::Tensor vin, torch::Tensor freqs,
+                                          torch::Tensor qw, torch::Tensor kw,
+                                          int64_t Hq, int64_t Hkv, int64_t D,
+                                          double eps) {
+  TORCH_CHECK(qin.is_mps() && kin.is_mps() && vin.is_mps() && freqs.is_mps(),
+              "inputs must be on mps");
+  TORCH_CHECK(qin.scalar_type() == torch::kBFloat16
+              && kin.scalar_type() == torch::kBFloat16
+              && vin.scalar_type() == torch::kBFloat16, "q/k/v must be bf16");
+  TORCH_CHECK(freqs.scalar_type() == torch::kFloat && freqs.is_contiguous(),
+              "freqs must be contiguous fp32");
+  TORCH_CHECK(qw.scalar_type() == torch::kFloat && kw.scalar_type() == torch::kFloat
+              && qw.numel() == D && kw.numel() == D, "weights must be fp32 [D]");
+  TORCH_CHECK(qin.dim() == 3 && qin.is_contiguous() && kin.is_contiguous()
+              && vin.is_contiguous(), "q/k/v must be [B,S,H*D] contiguous");
+  TORCH_CHECK(D <= 128 && (D % 32) == 0, "D must be <=128 and a multiple of 32");
+  TORCH_CHECK(qin.size(2) == Hq * D && kin.size(2) == Hkv * D
+              && vin.size(2) == Hkv * D, "width mismatch");
+  const int64_t B = qin.size(0), S = qin.size(1);
+  TORCH_CHECK(kin.size(0) == B && kin.size(1) == S && vin.sizes() == kin.sizes(),
+              "batch/seq mismatch");
+  TORCH_CHECK(freqs.numel() == B * S * (D / 2) * 4, "freqs numel mismatch");
+
+  auto opts = qin.options();
+  auto q = torch::empty({B, Hq, S, D}, opts);
+  auto k = torch::empty({B, Hkv, S, D}, opts);
+  auto v = torch::empty({B, Hkv, S, D}, opts);
+
+  id<MTLComputePipelineState> p = pso_named(@"qkv3_norm_rope_bf16");
+  MPSStream* stream = getCurrentMPSStream();
+  std::array<id<MTLBuffer>, 9> bufs;
+  std::array<NSUInteger, 9> offs;
+  torch::Tensor ts[9] = {qin, kin, vin, freqs, qw, kw, q, k, v};
+  for (int i = 0; i < 9; i++) {
+    bufs[i] = __builtin_bit_cast(id<MTLBuffer>, ts[i].storage().data());
+    offs[i] = ts[i].storage_offset() * ts[i].element_size();
+  }
+  uint Su = (uint)S, Hqu = (uint)Hq, Hkvu = (uint)Hkv, Du = (uint)D;
+  float ef = (float)eps;
+
+  dispatch_sync(stream->queue(), ^(){
+    @autoreleasepool {
+      id<MTLComputeCommandEncoder> enc = stream->commandEncoder();
+      [enc setComputePipelineState:p];
+      for (int i = 0; i < 9; i++) [enc setBuffer:bufs[i] offset:offs[i] atIndex:i];
+      [enc setBytes:&Su   length:sizeof(uint)  atIndex:9];
+      [enc setBytes:&Hqu  length:sizeof(uint)  atIndex:10];
+      [enc setBytes:&Hkvu length:sizeof(uint)  atIndex:11];
+      [enc setBytes:&Du   length:sizeof(uint)  atIndex:12];
+      [enc setBytes:&ef   length:sizeof(float) atIndex:13];
+      [enc dispatchThreadgroups:MTLSizeMake((NSUInteger)(B * S), (NSUInteger)(Hq + 2 * Hkv), 1)
+          threadsPerThreadgroup:MTLSizeMake((NSUInteger)D, 1, 1)];
+    }
+  });
+  return {q, k, v};
+}
+
 // Shared helper: encode an N-buffer + consts kernel on torch's MPS stream.
 struct EncArgs {
   std::array<id<MTLBuffer>, 5> bufs;
@@ -622,6 +756,8 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
         "Fused qkv split + QK RMSNorm + RoPE + head transpose (bf16, MPS)");
   m.def("qkv2_norm_rope", &qkv2_norm_rope,
         "Fused two-source (txt+img) qkv split + QK RMSNorm + RoPE + seq concat (bf16, MPS)");
+  m.def("qkv3_norm_rope", &qkv3_norm_rope,
+        "Fused three-source GQA q/k/v + Krea2 QK RMSNorm + RoPE, native head counts (bf16, MPS)");
   m.def("norm_modulate", &norm_modulate,
         "Fused rmsnorm + (1+scale) modulate (bf16, MPS)");
   m.def("norm_gate_residual", &norm_gate_residual,
