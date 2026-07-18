@@ -27,6 +27,7 @@ NATIVE_IMPLIES = (
     "ASFP8_INT8_EXT",     # patch #17 int8 W8A8 kernel + quant + channelwise epilogue
     "ASFP8_ATTN_ROUTER",  # patch #19 per-call attention routing
     "ASFP8_DIT_EXT",      # patch #21 Lumina/Z-Image fused DiT kernels
+    "ASFP8_CONV3D",       # patch #26 Conv3d -> sliced conv2d on MPS (video VAEs)
 )
 
 
