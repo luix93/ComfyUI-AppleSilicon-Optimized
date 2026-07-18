@@ -28,6 +28,7 @@
 #include <ATen/mps/MPSDevice.h>
 #import <Metal/Metal.h>
 #import <Foundation/Foundation.h>
+#include <array>
 
 using namespace at::mps;
 
@@ -302,6 +303,89 @@ kernel void rope_qk_bf16(
   const float x1 = (j == 0u) ? partner : x;
   device bfloat* dst = is_q ? qo : ko;
   dst[idx] = bf16_rte(f[0] * x0 + f[1] * x1);
+}
+
+// LTX split-RoPE: x [B,T,H*D] with per-head cos/sin [B,H,T,D/2] accessed via
+// explicit strides (the eager path materializes TWO transposed copies of x per
+// call plus ~7 elementwise passes; this is one pass, zero copies).
+// Half-pairs (i, i+D/2): out1 = bf16(bf16(x1*c) - s*x2); out2 = bf16(bf16(x2*c) + s*x1)
+// — mirroring eager's mul-store then addcmul-store rounding chain.
+kernel void rope_split_bf16(
+    device const bfloat* x    [[buffer(0)]],  // [B,T,H*D] contiguous
+    device const bfloat* cosf [[buffer(1)]],  // [B,H,T,r] via strides
+    device const bfloat* sinf [[buffer(2)]],
+    device bfloat*       out  [[buffer(3)]],  // [B,T,H*D]
+    constant uint&  T   [[buffer(4)]],
+    constant uint&  H   [[buffer(5)]],
+    constant uint&  R   [[buffer(6)]],        // D/2
+    constant uint4& cst [[buffer(7)]],        // cos strides (b,h,t,i) in elements
+    constant uint&  N   [[buffer(8)]],        // B*T*H*R pairs
+    uint gid [[thread_position_in_grid]])
+{
+  if (gid >= N) return;
+  const uint i = gid % R;
+  const uint h = (gid / R) % H;
+  const uint t = (gid / (R * H)) % T;
+  const uint b = gid / (R * H * T);
+  const uint D = 2u * R;
+
+  const ulong xrow = ((ulong)b * T + t) * (ulong)(H * D) + h * D;
+  const float x1 = float(x[xrow + i]);
+  const float x2 = float(x[xrow + R + i]);
+  const ulong f = (ulong)b * cst.x + (ulong)h * cst.y + (ulong)t * cst.z + (ulong)i * cst.w;
+  const float c = float(cosf[f]);
+  const float s = float(sinf[f]);
+
+  const bfloat o1m = bf16_rte(x1 * c);
+  const bfloat o2m = bf16_rte(x2 * c);
+  out[xrow + i]     = bf16_rte(float(o1m) - s * x2);
+  out[xrow + R + i] = bf16_rte(float(o2m) + s * x1);
+}
+
+// LTX fused no-weight RMSNorm + AdaLN modulate:
+// out = bf16(bf16(x_f32*inv) * bf16(1+scale) + shift), scale/shift [B,Sm,C]
+// with Sm in {1, S} (per-batch or per-token timesteps). One 256-thread
+// threadgroup per token row.
+kernel void rms_mod_bf16(
+    device const bfloat* x     [[buffer(0)]],  // [B*S, C]
+    device const bfloat* scale [[buffer(1)]],  // [B, Sm, C]
+    device const bfloat* shift [[buffer(2)]],  // [B, Sm, C]
+    device bfloat*       out   [[buffer(3)]],  // [B*S, C]
+    constant uint&  S    [[buffer(4)]],
+    constant uint&  Sm   [[buffer(5)]],
+    constant uint&  C    [[buffer(6)]],
+    constant float& eps  [[buffer(7)]],
+    constant uint&  PPF  [[buffer(8)]],   // tokens per modulation row (frame)
+    uint  tgid      [[threadgroup_position_in_grid]],
+    ushort lid      [[thread_index_in_threadgroup]],
+    ushort simd_lane [[thread_index_in_simdgroup]],
+    ushort simd_id   [[simdgroup_index_in_threadgroup]])
+{
+  const uint b = tgid / S;
+  const uint m = (Sm == 1u) ? 0u : ((tgid % S) / PPF);
+  const device bfloat* row = x + (ulong)tgid * C;
+  float ss = 0.0f;
+  for (uint d = lid; d < C; d += 256) {
+    float v = float(row[d]);
+    ss += v * v;
+  }
+  ss = simd_sum(ss);
+  threadgroup float tg[8];
+  if (simd_lane == 0) tg[simd_id] = ss;
+  threadgroup_barrier(mem_flags::mem_threadgroup);
+  float tot = 0.0f;
+  for (ushort i = 0; i < 8; i++) tot += tg[i];
+  const float inv = precise::rsqrt(precise::divide(tot, float(C)) + eps);
+
+  const device bfloat* sc = scale + ((ulong)b * Sm + m) * C;
+  const device bfloat* sh = shift + ((ulong)b * Sm + m) * C;
+  device bfloat* o = out + (ulong)tgid * C;
+  for (uint d = lid; d < C; d += 256) {
+    bfloat y = bf16_rte(float(row[d]) * inv);            // F.rms_norm output
+    bfloat mscale = bf16_rte(1.0f + float(sc[d]));       // (1 + scale)
+    bfloat p = bf16_rte(float(y) * float(mscale));
+    o[d] = bf16_rte(float(p) + float(sh[d]));
+  }
 }
 
 // rmsnorm(x)*w then modulate by (1+scale): out = (bf16(x_f*inv)*w) * bf16(1+scale).
@@ -636,6 +720,88 @@ static EncArgs enc_args(std::initializer_list<torch::Tensor> ts) {
   return a;
 }
 
+// LTX split-RoPE on [B,T,H*D] with strided per-head cos/sin [B,H,T,D/2].
+torch::Tensor rope_split(torch::Tensor x, torch::Tensor cosf, torch::Tensor sinf,
+                         int64_t H) {
+  TORCH_CHECK(x.is_mps() && cosf.is_mps() && sinf.is_mps(), "inputs must be on mps");
+  TORCH_CHECK(x.scalar_type() == torch::kBFloat16
+              && cosf.scalar_type() == torch::kBFloat16
+              && sinf.scalar_type() == torch::kBFloat16, "inputs must be bf16");
+  TORCH_CHECK(x.dim() == 3 && x.is_contiguous(), "x must be [B,T,H*D] contiguous");
+  TORCH_CHECK(cosf.dim() == 4 && sinf.sizes() == cosf.sizes()
+              && sinf.strides() == cosf.strides(), "cos/sin must match [B,H,T,r]");
+  const int64_t B = x.size(0), T = x.size(1), W = x.size(2);
+  const int64_t R = cosf.size(3);
+  TORCH_CHECK(W == H * 2 * R, "width mismatch: HD != H*2*r");
+  TORCH_CHECK(cosf.size(1) == H && cosf.size(2) == T
+              && (cosf.size(0) == B || cosf.size(0) == 1), "cos shape mismatch");
+
+  auto out = torch::empty_like(x);
+  id<MTLComputePipelineState> p = pso_named(@"rope_split_bf16");
+  MPSStream* stream = getCurrentMPSStream();
+  auto a = enc_args({x, cosf, sinf, out});
+  uint Tu = (uint)T, Hu = (uint)H, Ru = (uint)R;
+  const int64_t bs = (cosf.size(0) == 1) ? 0 : cosf.stride(0);  // broadcast batch
+  // std::array, not a C array: ObjC blocks cannot capture C arrays.
+  std::array<uint, 4> cst = {(uint)bs, (uint)cosf.stride(1), (uint)cosf.stride(2), (uint)cosf.stride(3)};
+  const int64_t N = B * T * H * R;
+  uint Nu = (uint)N;
+  dispatch_sync(stream->queue(), ^(){
+    @autoreleasepool {
+      id<MTLComputeCommandEncoder> enc = stream->commandEncoder();
+      [enc setComputePipelineState:p];
+      for (int i = 0; i < a.nbuf; i++) [enc setBuffer:a.bufs[i] offset:a.offs[i] atIndex:i];
+      [enc setBytes:&Tu length:sizeof(uint) atIndex:4];
+      [enc setBytes:&Hu length:sizeof(uint) atIndex:5];
+      [enc setBytes:&Ru length:sizeof(uint) atIndex:6];
+      [enc setBytes:cst.data() length:sizeof(cst) atIndex:7];
+      [enc setBytes:&Nu length:sizeof(uint) atIndex:8];
+      [enc dispatchThreadgroups:MTLSizeMake((NSUInteger)((N + 255) / 256), 1, 1)
+          threadsPerThreadgroup:MTLSizeMake(256, 1, 1)];
+    }
+  });
+  return out;
+}
+
+// LTX fused no-weight rmsnorm + (1+scale)+shift: x [B,S,C], scale/shift
+// [B,Sm,C] with Sm*ppf == S (per-frame CompressedTimestep rows) or Sm == 1.
+torch::Tensor rms_mod(torch::Tensor x, torch::Tensor scale, torch::Tensor shift,
+                      double eps, int64_t ppf) {
+  TORCH_CHECK(x.is_mps() && x.scalar_type() == torch::kBFloat16 && x.dim() == 3
+              && x.is_contiguous(), "x must be contiguous bf16 [B,S,C] on mps");
+  const int64_t B = x.size(0), S = x.size(1), C = x.size(2);
+  if (ppf <= 0) ppf = 1;
+  TORCH_CHECK(scale.dim() == 3 && scale.sizes() == shift.sizes()
+              && scale.size(0) == B && scale.size(2) == C
+              && (scale.size(1) == 1 || scale.size(1) * ppf == S),
+              "scale/shift must be [B,1,C] or [B,S/ppf,C]");
+  TORCH_CHECK(scale.scalar_type() == torch::kBFloat16
+              && shift.scalar_type() == torch::kBFloat16, "scale/shift must be bf16");
+  auto sc = scale.contiguous();
+  auto sh = shift.contiguous();
+  auto out = torch::empty_like(x);
+  auto a = enc_args({x, sc, sh, out});
+  id<MTLComputePipelineState> p = pso_named(@"rms_mod_bf16");
+  MPSStream* stream = getCurrentMPSStream();
+  uint Su = (uint)S, Smu = (uint)sc.size(1), Cu = (uint)C, Pu = (uint)ppf;
+  float ef = (float)eps;
+  dispatch_sync(stream->queue(), ^(){
+    @autoreleasepool {
+      id<MTLComputeCommandEncoder> enc = stream->commandEncoder();
+      [enc setComputePipelineState:p];
+      for (int i = 0; i < a.nbuf; i++) [enc setBuffer:a.bufs[i] offset:a.offs[i] atIndex:i];
+      [enc setBytes:&Su  length:sizeof(uint)  atIndex:4];
+      [enc setBytes:&Smu length:sizeof(uint)  atIndex:5];
+      [enc setBytes:&Cu  length:sizeof(uint)  atIndex:6];
+      [enc setBytes:&ef  length:sizeof(float) atIndex:7];
+      [enc setBytes:&Pu  length:sizeof(uint)  atIndex:8];
+      [enc dispatchThreadgroups:MTLSizeMake((NSUInteger)(B * S), 1, 1)
+          threadsPerThreadgroup:MTLSizeMake(256, 1, 1)];
+    }
+  });
+  return out;
+}
+
 // out = (rmsnorm(x)*w) * (1+scale): x [B,S,Dm] bf16, w [Dm], scale [B,Dm].
 torch::Tensor norm_modulate(torch::Tensor x, torch::Tensor w, torch::Tensor scale,
                             double eps) {
@@ -758,6 +924,10 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
         "Fused two-source (txt+img) qkv split + QK RMSNorm + RoPE + seq concat (bf16, MPS)");
   m.def("qkv3_norm_rope", &qkv3_norm_rope,
         "Fused three-source GQA q/k/v + Krea2 QK RMSNorm + RoPE, native head counts (bf16, MPS)");
+  m.def("rope_split", &rope_split,
+        "LTX split-RoPE, one pass, strided per-head cos/sin (bf16, MPS)");
+  m.def("rms_mod", &rms_mod,
+        "LTX fused no-weight RMSNorm + (1+scale)+shift modulate (bf16, MPS)");
   m.def("norm_modulate", &norm_modulate,
         "Fused rmsnorm + (1+scale) modulate (bf16, MPS)");
   m.def("norm_gate_residual", &norm_gate_residual,

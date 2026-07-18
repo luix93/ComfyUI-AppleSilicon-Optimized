@@ -41,6 +41,8 @@ __all__ = [
                             #   head counts + flash41 grouped-KV (no repeat_interleave; ASFP8_DIT_EXT=1)
     "conv3d_mps",           # patch #26 — Conv3d -> sliced conv2d on MPS (~10x at video-VAE shapes;
                             #   opt-in ASFP8_CONV3D=1, implied by ASFP8_NATIVE)
+    "ltx_fast",             # patch #27 — LTX one-pass split-RoPE + fused rms_norm+modulate with
+                            #   per-frame timestep rows (opt-in ASFP8_DIT_EXT=1)
     # Internal helpers (not patches):
     # "_common"             — decode_fp8, fp8_to_float_lut, FP8_DTYPES
     # "na_gemm"             — optional NA matmul2d backend (not wired into hot path)
