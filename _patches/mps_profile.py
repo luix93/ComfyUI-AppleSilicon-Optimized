@@ -63,17 +63,27 @@ def _dump():
     elapsed = now - _t_start
     measured = sum(v[1] for v in _stats.values())
     other = max(0.0, elapsed - measured)
-    print(f"{TAG} GPU-time breakdown after {elapsed:.1f}s wall "
-          f"({measured:.1f}s in wrapped ops, {other:.1f}s elsewhere):")
+    lines = [f"{TAG} GPU-time breakdown after {elapsed:.1f}s wall "
+             f"({measured:.1f}s in wrapped ops, {other:.1f}s elsewhere):"]
     rows = sorted(_stats.items(), key=lambda kv: -kv[1][1])
     for name, (calls, total) in rows:
         pct = (100.0 * total / elapsed) if elapsed else 0.0
         avg_ms = (1000.0 * total / calls) if calls else 0.0
-        print(f"{TAG}   {name:<14} {total:8.2f}s  {pct:5.1f}%  "
-              f"({calls} calls, {avg_ms:.3f} ms/call)")
-    print(f"{TAG}   {'<unwrapped>':<14} {other:8.2f}s  "
-          f"{(100.0 * other / elapsed) if elapsed else 0.0:5.1f}%  "
-          f"(elementwise / copies / gguf math not in a wrapped seam)")
+        lines.append(f"{TAG}   {name:<14} {total:8.2f}s  {pct:5.1f}%  "
+                     f"({calls} calls, {avg_ms:.3f} ms/call)")
+    lines.append(f"{TAG}   {'<unwrapped>':<14} {other:8.2f}s  "
+                 f"{(100.0 * other / elapsed) if elapsed else 0.0:5.1f}%  "
+                 f"(elementwise / copies / gguf math not in a wrapped seam)")
+    print("\n".join(lines), flush=True)
+    # ComfyUI intercepts/buffers stdout, which can eat these mid-run prints;
+    # a file sink (ASFP8_PROFILE_FILE=/path) is immune and survives crashes.
+    path = os.environ.get("ASFP8_PROFILE_FILE")
+    if path:
+        try:
+            with open(path, "a") as f:
+                f.write("\n".join(lines) + "\n")
+        except OSError:
+            pass
 
 
 def _maybe_dump():
@@ -146,7 +156,7 @@ def install():
 
     import torch.nn.functional as F
 
-    F.scaled_dot_product_attention = _timed("attn", F.scaled_dot_product_attention)
+    F.scaled_dot_product_attention = _timed("attn(F)", F.scaled_dot_product_attention)
     F.linear = _timed("linear", F.linear)
     F.conv2d = _timed("conv2d", F.conv2d)
     F.conv3d = _timed("conv3d", F.conv3d)
@@ -155,6 +165,46 @@ def install():
         F.rms_norm = _timed("rmsnorm", F.rms_norm)
     torch.matmul = _timed("matmul", torch.matmul)
     torch.bmm = _timed("bmm", torch.bmm)
+    # sub-quad attention's QK^T runs through baddbmm, not bmm — without this seam
+    # the router's masked route is invisible in the breakdown.
+    torch.baddbmm = _timed("baddbmm", torch.baddbmm)
+
+    # comfy funnels ALL optimized_attention variants through its own sdpa wrapper
+    # (comfy.ops.scaled_dot_product_attention); wrap it too in case a model path
+    # reaches it without touching the F-level binding. Nested with attn(F): read
+    # whichever bucket fired, they are the same GPU time, not additive.
+    try:
+        import comfy.ops as _comfy_ops
+        _comfy_ops.scaled_dot_product_attention = _timed(
+            "attn(comfy)", _comfy_ops.scaled_dot_product_attention)
+    except Exception:
+        pass
+
+    # RoPE runs eager on MPS (comfy_kitchen "Backend eager selected for apply_rope")
+    # and models import it statically (`from comfy.ldm.flux.math import apply_rope`),
+    # so patch the source module AND every module that holds the original binding.
+    try:
+        import comfy.ldm.flux.math as _flux_math
+        _rope_orig = _flux_math.apply_rope
+        _rope_timed = _timed("rope", _rope_orig)
+        for _mod in list(sys.modules.values()):
+            try:
+                if _mod is not None and _mod.__dict__.get("apply_rope") is _rope_orig:
+                    _mod.apply_rope = _rope_timed
+            except Exception:
+                continue
+    except Exception:
+        pass
+
+    # Our own int8 W8A8 Metal kernel (patch #17) replaces Linear.forward wholesale;
+    # its matmuls never pass F.linear. The forward looks the function up by module
+    # global, so wrapping the module attribute catches every call.
+    try:
+        from . import int8_linear_kernel_mps as _i8k
+        if hasattr(_i8k, "_int8_linear_kernel"):
+            _i8k._int8_linear_kernel = _timed("int8_kernel", _i8k._int8_linear_kernel)
+    except Exception:
+        pass
 
     _t_start = time.perf_counter()
     _t_last_dump = _t_start
