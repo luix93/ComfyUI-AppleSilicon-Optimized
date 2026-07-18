@@ -80,9 +80,38 @@ def _seq_and_head_dim(q, k, heads, skip_reshape):
     return max(int(q.shape[1]), int(k.shape[1])), int(q.shape[-1]) // int(heads)
 
 
+def _seqs(q, k, skip_reshape):
+    if skip_reshape:
+        return int(q.shape[2]), int(k.shape[2])
+    return int(q.shape[1]), int(k.shape[1])
+
+
+_route_seen = set()
+
+
+def _route_log(route, q, k, heads, mask, attn_precision, skip_reshape):
+    """ASFP8_ATTN_DEBUG=1: log each distinct (route, Lq, Lk, D, mask?, prec)
+    once — silent misroutes at new model shapes are otherwise invisible."""
+    if os.environ.get("ASFP8_ATTN_DEBUG") != "1":
+        return
+    Lq, Lk = _seqs(q, k, skip_reshape)
+    D = int(q.shape[-1]) if skip_reshape else int(q.shape[-1]) // int(heads)
+    key = (route, Lq, Lk, D, mask is not None, str(attn_precision), str(q.dtype))
+    if key not in _route_seen:
+        _route_seen.add(key)
+        sys.stderr.write(f"{TAG} route={route} Lq={Lq} Lk={Lk} D={D} H={heads} "
+                         f"mask={mask is not None} prec={attn_precision} {q.dtype}\n")
+
+
 # Unchunked scores above this size fall back to sub-quad (memory safety: Wan
 # at 21k tokens would materialize ~28 GB of scores).
 _BMM_MAX_SCORE_BYTES = 6 << 30
+
+# Masked attention goes to memory-safe sub-quad only above this score size;
+# below it the default path is both safe and much faster (chunked-python
+# sub-quad at LTX's 16.6k-query/512-kv text cross-attention was a large
+# regression for a 545 MB score matrix stock SDPA handles trivially).
+_MASKED_SUB_QUAD_MIN_SCORE_BYTES = 4 << 30
 
 
 # bf16 score tiles + merged P buffer: 37 TF/s vs 30 for fp32 tiles (measured
@@ -143,6 +172,8 @@ def _router(q, k, v, heads, mask=None, attn_precision=None, skip_reshape=False,
                         skip_reshape=skip_reshape,
                         skip_output_reshape=skip_output_reshape, **kwargs)
     L, D = _seq_and_head_dim(q, k, heads, skip_reshape)
+    B = int(q.shape[0])
+    H = int(heads)
     if mask is None:
         # Route 1: long unmasked attention. Small head dims → SDPA → mtlflashattn
         # flash kernel (its fast tier wins there and is memory-bounded). Large
@@ -152,35 +183,45 @@ def _router(q, k, v, heads, mask=None, attn_precision=None, skip_reshape=False,
         if (L >= _flash_min_seq() and D <= 128 and D % 8 == 0
                 and q.dtype in _SDPA_DTYPES and q.dtype == k.dtype == v.dtype):
             if _flash_ok and D <= _flash_max_head_dim():
+                _route_log("flash", q, k, heads, mask, attn_precision, skip_reshape)
                 return _pytorch(q, k, v, heads, mask=None, attn_precision=attn_precision,
                                 skip_reshape=skip_reshape,
                                 skip_output_reshape=skip_output_reshape, **kwargs)
             # Default upcast only: honor an explicit fp32 attn_precision request.
-            B = q.shape[0] if skip_reshape else q.shape[0]
-            H = heads
             if (_fa41 is not None and attn_precision is None
                     and q.dtype == torch.bfloat16):
                 try:
-                    return _fa41_attention(q, k, v, heads, scale=kwargs.get("scale"),
-                                           skip_reshape=skip_reshape,
-                                           skip_output_reshape=skip_output_reshape)
+                    out = _fa41_attention(q, k, v, heads, scale=kwargs.get("scale"),
+                                          skip_reshape=skip_reshape,
+                                          skip_output_reshape=skip_output_reshape)
+                    _route_log("flash41", q, k, heads, mask, attn_precision, skip_reshape)
+                    return out
                 except Exception:
                     pass  # fall through to bmm / sub-quad
             score_bytes = 2 * B * H * L * L
             if attn_precision is None and score_bytes <= _BMM_MAX_SCORE_BYTES:
+                _route_log("bmm", q, k, heads, mask, attn_precision, skip_reshape)
                 return _bmm_attention(q, k, v, heads, skip_reshape=skip_reshape,
                                       skip_output_reshape=skip_output_reshape)
+            _route_log("sub_quad", q, k, heads, mask, attn_precision, skip_reshape)
             return _sub_quad(q, k, v, heads, mask=None, attn_precision=attn_precision,
                              skip_reshape=skip_reshape,
                              skip_output_reshape=skip_output_reshape, **kwargs)
     elif L >= _safe_masked_min_seq():
-        # Route 2: long masked attention → sub-quad, never stock SDPA. Protects
-        # against the O(L^2) score materialization even when ComfyUI was started
-        # with --use-pytorch-cross-attention.
-        return _sub_quad(q, k, v, heads, mask=mask, attn_precision=attn_precision,
-                         skip_reshape=skip_reshape,
-                         skip_output_reshape=skip_output_reshape, **kwargs)
+        # Route 2: masked attention whose SCORE MATRIX is dangerously large →
+        # sub-quad, never stock SDPA. Gate on Lq*Lk, not max seq: cross-attention
+        # with a long query but short KV (e.g. LTX video->text, 16.6k x 512)
+        # materializes only a small score matrix and is far faster on the
+        # default path than on chunked-python sub-quad.
+        Lq, Lk = _seqs(q, k, skip_reshape)
+        score_bytes = 2 * B * H * Lq * Lk
+        if score_bytes >= _MASKED_SUB_QUAD_MIN_SCORE_BYTES:
+            _route_log("sub_quad(masked)", q, k, heads, mask, attn_precision, skip_reshape)
+            return _sub_quad(q, k, v, heads, mask=mask, attn_precision=attn_precision,
+                             skip_reshape=skip_reshape,
+                             skip_output_reshape=skip_output_reshape, **kwargs)
     # Route 3: startup default, untouched.
+    _route_log("default", q, k, heads, mask, attn_precision, skip_reshape)
     fn = _default if mask is None else _default_masked
     return fn(q, k, v, heads, mask=mask, attn_precision=attn_precision,
               skip_reshape=skip_reshape, skip_output_reshape=skip_output_reshape,

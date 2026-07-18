@@ -74,11 +74,30 @@ class TestRouting:
         q, k, v = self._qkv(1024)
         assert patch._router(q, k, v, 8) == "default"
 
-    def test_masked_long_forced_sub_quad(self, monkeypatch):
+    def test_masked_long_huge_score_forced_sub_quad(self, monkeypatch):
+        # Wan-scale masked attention (score matrix over the safety cap).
         calls = _sentinels(monkeypatch)
+        monkeypatch.setattr(patch, "_MASKED_SUB_QUAD_MIN_SCORE_BYTES", 1, raising=False)
         q, k, v = self._qkv(4096)
         mask = torch.zeros(1, 4096, 4096, dtype=torch.bool, device="mps")
         assert patch._router(q, k, v, 8, mask=mask) == "sub_quad"
+
+    def test_masked_long_small_score_stays_default(self, monkeypatch):
+        # Long but small score matrix: memory-safe on the default path, and
+        # chunked sub-quad would be a large slowdown (LTX regression class).
+        calls = _sentinels(monkeypatch)
+        q, k, v = self._qkv(4096)
+        mask = torch.zeros(1, 4096, 4096, dtype=torch.bool, device="mps")
+        assert patch._router(q, k, v, 8, mask=mask) == "default_masked"
+
+    def test_masked_cross_attn_long_q_short_kv_stays_default(self, monkeypatch):
+        # LTX text cross-attention shape: 16k queries over 512 kv — score is
+        # tiny; must NOT hit chunked sub-quad despite the long query.
+        calls = _sentinels(monkeypatch)
+        q, _, _ = self._qkv(16384)
+        _, k, v = self._qkv(512)
+        mask = torch.zeros(1, 16384, 512, dtype=torch.bool, device="mps")
+        assert patch._router(q, k, v, 8, mask=mask) == "default_masked"
 
     def test_masked_short_stays_default(self, monkeypatch):
         calls = _sentinels(monkeypatch)
