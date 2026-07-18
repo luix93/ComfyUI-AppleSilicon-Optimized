@@ -32,8 +32,10 @@ def test_reroute_runs_on_cpu_and_returns_to_device():
         return torch.ones(2, 2, dtype=torch.bfloat16)   # CPU float result
 
     wrapped = ck._cpu_dequant_on_mps(fake_orig)
-    qx = torch.zeros(2, 2, dtype=torch.float8_e4m3fn, device="mps")
-    out = wrapped(qx, torch.ones(1, device="mps"), torch.zeros(2, 2, dtype=torch.float8_e4m3fn, device="mps"))
+    # cpu-create + transfer: fp8 fill directly on MPS needs patch #20 (and regressed
+    # outright in torch 2.13); this fixture shouldn't depend on another patch.
+    qx = torch.zeros(2, 2, dtype=torch.float8_e4m3fn).to("mps")
+    out = wrapped(qx, torch.ones(1, device="mps"), torch.zeros(2, 2, dtype=torch.float8_e4m3fn).to("mps"))
 
     assert seen["devs"] == ("cpu", "cpu", "cpu")
     assert out.device.type == "mps"       # float result moved back to the device
