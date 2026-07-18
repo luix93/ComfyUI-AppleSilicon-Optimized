@@ -12,9 +12,41 @@ then decode any FP8 tensor with a gather: lut[x.view(uint8)]. This is bit-exact
 with a real FP8->float cast and runs entirely on the GPU.
 """
 
+import os
+
 import torch
 
 FP8_DTYPES = (torch.float8_e4m3fn, torch.float8_e5m2)
+
+# The opt-in native fast paths implied by the ASFP8_NATIVE=1 master switch.
+# Every one auto-falls-back where unsupported (older macOS, pre-M5 GPU, missing
+# toolchain), so turning them all on together is safe by construction.
+NATIVE_IMPLIES = (
+    "ASFP8_FP8_EXT",      # patch #3 fp8-native _scaled_mm + patch #18 build flag
+    "ASFP8_FP8_SGEMM",    # patch #18 staged W8A16 backend (preferred; auto-fallback)
+    "ASFP8_INT8_EXT",     # patch #17 int8 W8A8 kernel + quant + channelwise epilogue
+    "ASFP8_ATTN_ROUTER",  # patch #19 per-call attention routing
+    "ASFP8_DIT_EXT",      # patch #21 Lumina/Z-Image fused DiT kernels
+)
+
+
+def apply_native_master_switch(environ=None):
+    """ASFP8_NATIVE=1 turns on every opt-in native fast path at once.
+
+    Per-feature vars stay authoritative: any explicitly set value (including
+    "0") wins over the master switch, so e.g. `ASFP8_NATIVE=1 ASFP8_DIT_EXT=0`
+    enables everything except the DiT kernels. Returns the list of vars the
+    switch actually implied (for the startup log)."""
+    if environ is None:
+        environ = os.environ
+    if environ.get("ASFP8_NATIVE") != "1":
+        return []
+    implied = []
+    for var in NATIVE_IMPLIES:
+        if var not in environ:
+            environ[var] = "1"
+            implied.append(var)
+    return implied
 
 _lut_cache = {}
 
