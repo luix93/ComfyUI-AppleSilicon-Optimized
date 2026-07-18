@@ -85,11 +85,19 @@ def _seq_and_head_dim(q, k, heads, skip_reshape):
 _BMM_MAX_SCORE_BYTES = 6 << 30
 
 
+# bf16 score tiles + merged P buffer: 37 TF/s vs 30 for fp32 tiles (measured
+# M5 Max, flux/zit/krea shapes). Scores round to bf16 exactly like the stock
+# bmm path's materialized score matrix, so the error class matches ComfyUI's
+# default attention (~1.7e-3); ASFP8_FA41_F32S=1 forces fp32 score tiles
+# (tighter ~4e-4, ~15-20% slower).
+_FA41_BF16S = os.environ.get("ASFP8_FA41_F32S") != "1"
+
+
 def _fa41_attention(q, k, v, heads, scale=None, skip_reshape=False,
                     skip_output_reshape=False):
     """Metal 4.1 TensorOps flash attention (mfa4_ext): fused online-softmax,
-    no materialized score matrix. Beats the bmm path 1.1-1.3x at D=128
-    long-seq shapes with ~3x tighter error vs an fp32 reference."""
+    no materialized score matrix. Beats the bmm path 1.3-1.5x at D=128
+    long-seq shapes."""
     if skip_reshape:
         b, h, s, d = q.shape
         q4, k4, v4 = q.contiguous(), k.contiguous(), v.contiguous()
@@ -99,7 +107,8 @@ def _fa41_attention(q, k, v, heads, scale=None, skip_reshape=False,
         q4, k4, v4 = (t.reshape(b, -1, h, d).transpose(1, 2).contiguous()
                       for t in (q, k, v))
     out = _fa41.flash_fwd_bf16(q4, k4, v4,
-                               float(scale) if scale else d ** -0.5, False, 0, 0)
+                               float(scale) if scale else d ** -0.5, False, 0, 0,
+                               _FA41_BF16S)
     if not skip_output_reshape:
         out = out.transpose(1, 2).reshape(b, -1, h * d)
     return out

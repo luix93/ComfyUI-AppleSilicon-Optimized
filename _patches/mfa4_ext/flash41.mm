@@ -20,6 +20,12 @@
 // Scope (v1 port): bf16 q/k/v/out, no softcap / sliding window / alibi (the
 // ComfyUI router only routes plain non-causal SDPA); causal supported since
 // it is one flag.
+//
+// Tuning history (M5 Max, flux-edit B1 H32 S8704 D128): BC=32 port 69ms ->
+// BC=128 templated tiles 44 -> skip-rescale + setBytes 41.5 -> static
+// reduction dims + bf16 score tiles with P merged into the score buffer
+// (halves threadgroup memory -> doubles TG residency) 33.7ms = 37 TF/s.
+// NSG=8 and BC>=192 both collapse; BR must stay 32 (ctO spills).
 // ============================================================
 
 #include <torch/extension.h>
@@ -71,25 +77,32 @@ kernel void flash_attn_fwd_bf16(
     device bfloat* Kp = K + ulong(b*Hkv+hkv)*ulong(Lk)*DD;
     device bfloat* Vp = V + ulong(b*Hkv+hkv)*ulong(Lk)*DD;
 
+    // Reduction dims are compile-time constants — declare them static
+    // (@QKS@ = DD or dynamic, @PVS@ = BC or dynamic; templated for A/B).
     constexpr auto qk_desc = matmul2d_descriptor(
-        BR, BC, static_cast<int>(dynamic_extent), false, true, false,
+        BR, BC, @QKS@, false, true, false,
         matmul2d_descriptor::mode::multiply);
     matmul2d<qk_desc, execution_simdgroups<NSG>> qk_op;
 
     constexpr auto pv_desc = matmul2d_descriptor(
-        BR, DD, static_cast<int>(dynamic_extent), false, false, false,
+        BR, DD, @PVS@, false, false, false,
         matmul2d_descriptor::mode::multiply_accumulate);
     matmul2d<pv_desc, execution_simdgroups<NSG>> pv_op;
 
+    // MERGEP: P overwrites the score tile in place (bf16 score tiles only —
+    // same threadgroup buffer), halving threadgroup memory -> more resident
+    // threadgroups per core.
+    constexpr bool MERGEP = @MP@;
     threadgroup @ST@ tgS[BR*BC];
-    threadgroup bfloat tgP[BR*BC];
+    threadgroup bfloat tgP[MERGEP ? 1 : BR*BC];
     threadgroup float tgCorr[BR];
     threadgroup float tgInvL[BR];
     threadgroup int tgAnyCorr;
+    threadgroup bfloat* Pbuf = MERGEP ? (threadgroup bfloat*)&tgS[0] : &tgP[0];
 
     auto mQ = tensor(Qp + q0*DD, dextents<int,2>{DD, min(BR, Lq - q0)}, array<int,2>{1, DD});
     auto tS = tensor(&tgS[0], dextents<int,2>{BC, BR}, array<int,2>{1, BC});
-    auto tP = tensor(&tgP[0], dextents<int,2>{BC, BR}, array<int,2>{1, BC});
+    auto tP = tensor(Pbuf, dextents<int,2>{BC, BR}, array<int,2>{1, BC});
 
     using PvA = __tensor_ops_detail::__remove_addrspace_t<decltype(tP)>;
     using PvB = __tensor_ops_detail::__remove_addrspace_t<decltype(mQ)>;
@@ -138,7 +151,7 @@ kernel void flash_attn_fwd_bf16(
             #pragma clang loop unroll(full)
             for (int cc = 0; cc < CCH; ++cc) {
                 const float p = (mn == -INFINITY) ? 0.0f : exp(sreg[cc] - mn);
-                tgP[row*BC + cc*32 + lane] = bfloat(p);
+                Pbuf[row*BC + cc*32 + lane] = bfloat(p);
                 lsum += simd_sum(p);
             }
             l[r] = l[r]*c + lsum;
@@ -366,11 +379,13 @@ static int nsg_for(int BR) { return BR <= 32 ? 4 : (BR <= 64 ? 8 : 16); }
 
 static id<MTLComputePipelineState> pso_for(int D, int BR, int BC, bool bf16s,
                                            int SR = 16, int BCV = 64,
-                                           const char* fn_name = "flash_attn_fwd_bf16") {
-  const long key = ((((((long)D * 1000 + BR) * 1000 + BC) * 2 + (bf16s ? 1 : 0))
+                                           const char* fn_name = "flash_attn_fwd_bf16",
+                                           bool pv_static = false, int nsg = 0) {
+  const long key = ((((((((long)D * 1000 + BR) * 1000 + BC) * 2 + (bf16s ? 1 : 0))
                     * 100 + SR) * 1000 + BCV) * 4
                    + (std::string(fn_name) == "flash_attn_fwd_bf16" ? 0
-                      : (std::string(fn_name) == "flash_attn_fwd_v2r_bf16" ? 1 : 2));
+                      : (std::string(fn_name) == "flash_attn_fwd_v2r_bf16" ? 1 : 2)))
+                   * 2 + (pv_static ? 1 : 0)) * 32 + nsg;
   auto it = g_pso.find(key);
   if (it != g_pso.end()) return it->second;
 
@@ -379,9 +394,18 @@ static id<MTLComputePipelineState> pso_for(int D, int BR, int BC, bool bf16s,
   sub_all(src, "@BR@", std::to_string(BR));
   sub_all(src, "@BC@", std::to_string(BC));
   sub_all(src, "@ST@", bf16s ? "bfloat" : "float");
-  sub_all(src, "@NSG@", std::to_string(nsg_for(BR)));
+  sub_all(src, "@NSG@", std::to_string(nsg > 0 ? nsg : nsg_for(BR)));
+  // P merges into the score tile only when the tile is bfloat (same type).
+  sub_all(src, "@MP@", bf16s ? "true" : "false");
   sub_all(src, "@SR@", std::to_string(SR));
   sub_all(src, "@BCV@", std::to_string(BCV));
+  // Static reduction dims where safe: qk's inner dim is always exactly D;
+  // pv's inner dim (BC) is static only when the host proved Lk % BC == 0
+  // (a static-k op reads the full tile — a short tail would read OOB).
+  // ASFP8_FA41_DYNK=1 reverts both to dynamic for A/B.
+  const bool dynk = getenv("ASFP8_FA41_DYNK") && atoi(getenv("ASFP8_FA41_DYNK"));
+  sub_all(src, "@QKS@", dynk ? "static_cast<int>(dynamic_extent)" : "DD");
+  sub_all(src, "@PVS@", (pv_static && !dynk) ? "BC" : "static_cast<int>(dynamic_extent)");
 
   id<MTLDevice> dev = MPSDevice::getInstance()->device();
   MTLCompileOptions* opts = [MTLCompileOptions new];
@@ -447,7 +471,7 @@ static bool v2r_probe(int D, int SR, int BCV) {
 // forfeits the 4-SG cooperative matmul that makes BC=128 tiles fast.
 torch::Tensor flash_fwd_bf16(torch::Tensor q, torch::Tensor k, torch::Tensor v,
                              double scale, bool causal, int64_t br, int64_t bc, bool bf16s,
-                             int64_t v2r, int64_t sr, int64_t bcv) {
+                             int64_t v2r, int64_t sr, int64_t bcv, int64_t nsg_ovr) {
   TORCH_CHECK(q.is_mps() && k.is_mps() && v.is_mps(), "inputs must be on mps");
   TORCH_CHECK(q.scalar_type() == torch::kBFloat16 && k.scalar_type() == torch::kBFloat16
               && v.scalar_type() == torch::kBFloat16, "inputs must be bf16");
@@ -489,10 +513,12 @@ torch::Tensor flash_fwd_bf16(torch::Tensor q, torch::Tensor k, torch::Tensor v,
     use_v2r = (Lk % BCV == 0) && Lk >= 256 && v2r_probe(D, SR, BCV);
   }
 
-  const int nsg = nsg_for(BR);
+  const int nsg = (int)nsg_ovr > 0 ? (int)nsg_ovr : nsg_for(BR);
+  TORCH_CHECK(BR % nsg == 0, "BR must be divisible by NSG");
   id<MTLComputePipelineState> pso =
       use_v2r ? pso_for(D, BR, BC, bf16s, SR, BCV, "flash_attn_fwd_v2r_bf16")
-              : pso_for(D, BR, BC, bf16s, SR, BCV);
+              : pso_for(D, BR, BC, bf16s, SR, BCV, "flash_attn_fwd_bf16",
+                        /*pv_static=*/Lk % BC == 0, nsg);
   MPSStream* stream = getCurrentMPSStream();
   id<MTLBuffer> qB = __builtin_bit_cast(id<MTLBuffer>, qc.storage().data());
   id<MTLBuffer> kB = __builtin_bit_cast(id<MTLBuffer>, kc.storage().data());
@@ -529,7 +555,7 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
         "bf16 flash attention fwd (Metal 4.1 TensorOps) on MPS",
         py::arg("q"), py::arg("k"), py::arg("v"), py::arg("scale"),
         py::arg("causal") = false, py::arg("br") = 0, py::arg("bc") = 0, py::arg("bf16s") = false,
-        py::arg("v2r") = 0, py::arg("sr") = 0, py::arg("bcv") = 0);
+        py::arg("v2r") = 0, py::arg("sr") = 0, py::arg("bcv") = 0, py::arg("nsg") = 0);
   m.def("warmup", [](int64_t D, int64_t BR, int64_t BC) { pso_for((int)D, (int)BR, (int)BC, false); return true; },
         "compile + build pipeline for head dim D / BR rows / BC cols",
         py::arg("D") = 128, py::arg("BR") = 32, py::arg("BC") = 128);
