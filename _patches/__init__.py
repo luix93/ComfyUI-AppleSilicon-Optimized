@@ -35,6 +35,8 @@ __all__ = [
                             #   (community int8-convrot checkpoints that omit it fail to load otherwise)
     "rope_fast",            # patch #23 — flux-family apply_rope via dit_ext Metal kernel (opt-in
                             #   ASFP8_DIT_EXT=1; ~7.3ms -> ~0.7ms per attention call at Flux2 shapes)
+    "flux_attn_fast",       # patch #24 — Flux double/single block fused qkv+QKNorm+RoPE+seq-cat
+                            #   (opt-in ASFP8_DIT_EXT=1; kills 4 RMSNorms + 3 seq-cats per double block)
     # Internal helpers (not patches):
     # "_common"             — decode_fp8, fp8_to_float_lut, FP8_DTYPES
     # "na_gemm"             — optional NA matmul2d backend (not wired into hot path)

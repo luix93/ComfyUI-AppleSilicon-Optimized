@@ -47,7 +47,7 @@ inline bfloat bf16_rte(float f) {
 }
 
 kernel void qkv_norm_rope_bf16(
-    device const bfloat* qkv   [[buffer(0)]],  // [B*S, (Hq+2*Hkv)*D]
+    device const bfloat* qkv   [[buffer(0)]],  // [B*S, rowStride] (qkv slice at col 0)
     device const float*  freqs [[buffer(1)]],  // [B*S, D/2, 2, 2] fp32
     device const bfloat* qw    [[buffer(2)]],  // [D] q_norm weight
     device const bfloat* kw    [[buffer(3)]],  // [D] k_norm weight
@@ -60,6 +60,7 @@ kernel void qkv_norm_rope_bf16(
     constant uint&  D     [[buffer(10)]],
     constant float& eps_q [[buffer(11)]],
     constant float& eps_k [[buffer(12)]],
+    constant uint&  rowStride [[buffer(13)]],  // elements per token row (>= (Hq+2Hkv)*D)
     uint2  tgid      [[threadgroup_position_in_grid]],
     ushort lid       [[thread_index_in_threadgroup]],
     ushort simd_lane [[thread_index_in_simdgroup]],
@@ -68,7 +69,6 @@ kernel void qkv_norm_rope_bf16(
   const uint token = tgid.x;           // b*S + s
   const uint b = token / S, s = token % S;
   const uint ht = tgid.y;
-  const uint QS = (Hq + 2u * Hkv) * D;
 
   const bool is_q = ht < Hq;
   const bool is_v = ht >= Hq + Hkv;
@@ -76,7 +76,7 @@ kernel void qkv_norm_rope_bf16(
   if (is_q)      { h = ht;            off = h * D; }
   else if (!is_v){ h = ht - Hq;       off = (Hq + h) * D; }
   else           { h = ht - Hq - Hkv; off = (Hq + Hkv + h) * D; }
-  const device bfloat* row = qkv + (ulong)token * QS + off;
+  const device bfloat* row = qkv + (ulong)token * rowStride + off;
 
   if (is_v) {
     vo[(((ulong)b * Hkv + h) * S + s) * D + lid] = row[lid];
@@ -115,6 +115,87 @@ kernel void qkv_norm_rope_bf16(
   const uint Hh = is_q ? Hq : Hkv;
   outp[(((ulong)b * Hh + h) * S + s) * D + lid] = bf16_rte(o);
 }
+// Two-source variant for flux DoubleStreamBlock: txt_qkv (S_a tokens) and
+// img_qkv (S_b tokens) each get their own QK RMSNorm weights, RoPE over the
+// CONCATENATED position table, and are written straight into concatenated
+// attention layout [B, H, S_a+S_b, D] (txt first — matching
+// q = cat(txt_q, img_q)). Eliminates 4 eager RMSNorms over non-contiguous
+// [B,H,S,128] views, 2 view/permutes, the eager RoPE, and 3 big seq-cats.
+kernel void qkv2_norm_rope_bf16(
+    device const bfloat* qkv_a [[buffer(0)]],  // [B*S_a, 3*H*D] txt
+    device const bfloat* qkv_b [[buffer(1)]],  // [B*S_b, 3*H*D] img
+    device const float*  freqs [[buffer(2)]],  // [B*(S_a+S_b), D/2, 2, 2] fp32
+    device const bfloat* qw_a  [[buffer(3)]],  // [D] txt q_norm weight
+    device const bfloat* kw_a  [[buffer(4)]],  // [D] txt k_norm weight
+    device const bfloat* qw_b  [[buffer(5)]],  // [D] img q_norm weight
+    device const bfloat* kw_b  [[buffer(6)]],  // [D] img k_norm weight
+    device bfloat* qo [[buffer(7)]],           // [B, H, S_a+S_b, D]
+    device bfloat* ko [[buffer(8)]],
+    device bfloat* vo [[buffer(9)]],
+    constant uint&  Sa    [[buffer(10)]],
+    constant uint&  Sb    [[buffer(11)]],
+    constant uint&  H     [[buffer(12)]],
+    constant uint&  D     [[buffer(13)]],
+    constant float& eps_q [[buffer(14)]],
+    constant float& eps_k [[buffer(15)]],
+    uint2  tgid      [[threadgroup_position_in_grid]],
+    ushort lid       [[thread_index_in_threadgroup]],
+    ushort simd_lane [[thread_index_in_simdgroup]],
+    ushort simd_id   [[simdgroup_index_in_threadgroup]])
+{
+  const uint S = Sa + Sb;
+  const uint token = tgid.x;           // b*S + s (concatenated index)
+  const uint b = token / S, s = token % S;
+  const uint ht = tgid.y;
+  const uint QS = 3u * H * D;
+
+  const bool is_q = ht < H;
+  const bool is_v = ht >= 2u * H;
+  uint h, off;
+  if (is_q)      { h = ht;          off = h * D; }
+  else if (!is_v){ h = ht - H;      off = (H + h) * D; }
+  else           { h = ht - 2u * H; off = (2u * H + h) * D; }
+
+  const bool from_a = s < Sa;
+  const device bfloat* src = from_a ? qkv_a : qkv_b;
+  const uint s_loc = from_a ? s : s - Sa;
+  const uint S_loc = from_a ? Sa : Sb;
+  const device bfloat* row = src + ((ulong)b * S_loc + s_loc) * QS + off;
+
+  if (is_v) {
+    vo[(((ulong)b * H + h) * S + s) * D + lid] = row[lid];
+    return;
+  }
+
+  float x = float(row[lid]);
+  float ss = simd_sum(x * x);
+  threadgroup float tg[4];
+  if (simd_lane == 0) tg[simd_id] = ss;
+  threadgroup_barrier(mem_flags::mem_threadgroup);
+  float tot = 0.0f;
+  const ushort nsg = ushort(D >> 5);
+  for (ushort i = 0; i < nsg; i++) tot += tg[i];
+
+  const float eps = is_q ? eps_q : eps_k;
+  const float inv = precise::rsqrt(precise::divide(tot, float(D)) + eps);
+  const device bfloat* w = is_q ? (from_a ? qw_a : qw_b) : (from_a ? kw_a : kw_b);
+  bfloat y0 = bf16_rte(x * inv);
+  bfloat y = bf16_rte(float(y0) * float(w[lid]));
+
+  // RoPE indexed by the CONCATENATED token position (pe covers txt+img).
+  float yf = float(y);
+  float partner = simd_shuffle_xor(yf, ushort(1));
+  const uint i = lid >> 1;
+  const uint j = lid & 1u;
+  const device float* f = freqs + ((ulong)token * (D >> 1) + i) * 4u + j * 2u;
+  const float x0 = (j == 0u) ? yf : partner;
+  const float x1 = (j == 0u) ? partner : yf;
+  const float o = f[0] * x0 + f[1] * x1;
+
+  device bfloat* outp = is_q ? qo : ko;
+  outp[(((ulong)b * H + h) * S + s) * D + lid] = bf16_rte(o);
+}
+
 // RoPE-only: q/k already in attention layout [B, H, S, D]. One threadgroup per
 // (token, head-slot); slots [0,H) rotate q, [H,2H) rotate k. Same math and
 // rounding as flux apply_rope (fp32 pair rotation on bf16 values, RTE store).
@@ -284,8 +365,11 @@ static id<MTLComputePipelineState> pso_named(NSString* name) {
 
 static id<MTLComputePipelineState> pso() { return pso_named(@"qkv_norm_rope_bf16"); }
 
-// qkv [B, S, (Hq+2*Hkv)*D] bf16, freqs [B*S, D/2, 2, 2] fp32 (contiguous),
-// qw/kw [D] bf16 -> (q [B,Hq,S,D], k [B,Hkv,S,D], v [B,Hkv,S,D]) bf16.
+// qkv [B, S, W] bf16 with the q|k|v slice starting at column 0 and W >=
+// (Hq+2*Hkv)*D (W > that means extra columns — e.g. flux SingleStreamBlock's
+// fused qkv+mlp linear1 output feeds in directly, no split copy), freqs
+// [B*S, D/2, 2, 2] fp32 (contiguous), qw/kw [D] bf16
+// -> (q [B,Hq,S,D], k [B,Hkv,S,D], v [B,Hkv,S,D]) bf16.
 std::vector<torch::Tensor> qkv_norm_rope(torch::Tensor qkv, torch::Tensor freqs,
                                          torch::Tensor qw, torch::Tensor kw,
                                          int64_t Hq, int64_t Hkv, int64_t D,
@@ -294,14 +378,15 @@ std::vector<torch::Tensor> qkv_norm_rope(torch::Tensor qkv, torch::Tensor freqs,
               "inputs must be on mps");
   TORCH_CHECK(qkv.scalar_type() == torch::kBFloat16, "qkv must be bf16");
   TORCH_CHECK(freqs.scalar_type() == torch::kFloat, "freqs must be fp32");
-  TORCH_CHECK(qkv.dim() == 3 && qkv.is_contiguous(), "qkv must be [B,S,QS] contiguous");
+  TORCH_CHECK(qkv.dim() == 3 && qkv.is_contiguous(), "qkv must be [B,S,W] contiguous");
   TORCH_CHECK(freqs.is_contiguous(), "freqs must be contiguous");
   TORCH_CHECK(D <= 128 && (D % 32) == 0, "D must be <=128 and a multiple of 32");
-  TORCH_CHECK(qkv.size(2) == (Hq + 2 * Hkv) * D, "qkv width mismatch");
+  TORCH_CHECK(qkv.size(2) >= (Hq + 2 * Hkv) * D, "qkv width too small");
   TORCH_CHECK(freqs.numel() == qkv.size(0) * qkv.size(1) * (D / 2) * 4,
               "freqs numel mismatch");
 
   const int64_t B = qkv.size(0), S = qkv.size(1);
+  const uint rowStride = (uint)qkv.size(2);
   auto opts = qkv.options();
   auto q = torch::empty({B, Hq, S, D}, opts);
   auto k = torch::empty({B, Hkv, S, D}, opts);
@@ -330,7 +415,68 @@ std::vector<torch::Tensor> qkv_norm_rope(torch::Tensor qkv, torch::Tensor freqs,
       [enc setBytes:&Du   length:sizeof(uint)  atIndex:10];
       [enc setBytes:&eq   length:sizeof(float) atIndex:11];
       [enc setBytes:&ek   length:sizeof(float) atIndex:12];
+      [enc setBytes:&rowStride length:sizeof(uint) atIndex:13];
       [enc dispatchThreadgroups:MTLSizeMake((NSUInteger)(B * S), (NSUInteger)(Hq + 2 * Hkv), 1)
+          threadsPerThreadgroup:MTLSizeMake((NSUInteger)D, 1, 1)];
+    }
+  });
+  return {q, k, v};
+}
+
+// Two-source flux DoubleStreamBlock variant: txt_qkv [B,S_a,3HD] + img_qkv
+// [B,S_b,3HD], per-source QK norm weights, RoPE over the concatenated position
+// table -> (q, k, v) each [B, H, S_a+S_b, D] with txt tokens first.
+std::vector<torch::Tensor> qkv2_norm_rope(torch::Tensor qkv_a, torch::Tensor qkv_b,
+                                          torch::Tensor freqs,
+                                          torch::Tensor qw_a, torch::Tensor kw_a,
+                                          torch::Tensor qw_b, torch::Tensor kw_b,
+                                          int64_t H, int64_t D,
+                                          double eps_q, double eps_k) {
+  TORCH_CHECK(qkv_a.is_mps() && qkv_b.is_mps() && freqs.is_mps(), "inputs must be on mps");
+  TORCH_CHECK(qkv_a.scalar_type() == torch::kBFloat16
+              && qkv_b.scalar_type() == torch::kBFloat16, "qkv must be bf16");
+  TORCH_CHECK(freqs.scalar_type() == torch::kFloat && freqs.is_contiguous(),
+              "freqs must be contiguous fp32");
+  TORCH_CHECK(qkv_a.dim() == 3 && qkv_a.is_contiguous()
+              && qkv_b.dim() == 3 && qkv_b.is_contiguous(),
+              "qkv tensors must be [B,S,3HD] contiguous");
+  TORCH_CHECK(D <= 128 && (D % 32) == 0, "D must be <=128 and a multiple of 32");
+  TORCH_CHECK(qkv_a.size(2) == 3 * H * D && qkv_b.size(2) == 3 * H * D,
+              "qkv width mismatch");
+  TORCH_CHECK(qkv_a.size(0) == qkv_b.size(0), "batch mismatch");
+  const int64_t B = qkv_a.size(0), Sa = qkv_a.size(1), Sb = qkv_b.size(1);
+  const int64_t S = Sa + Sb;
+  TORCH_CHECK(freqs.numel() == B * S * (D / 2) * 4, "freqs numel mismatch");
+
+  auto opts = qkv_a.options();
+  auto q = torch::empty({B, H, S, D}, opts);
+  auto k = torch::empty({B, H, S, D}, opts);
+  auto v = torch::empty({B, H, S, D}, opts);
+
+  id<MTLComputePipelineState> p = pso_named(@"qkv2_norm_rope_bf16");
+  MPSStream* stream = getCurrentMPSStream();
+  std::array<id<MTLBuffer>, 10> bufs;
+  std::array<NSUInteger, 10> offs;
+  torch::Tensor ts[10] = {qkv_a, qkv_b, freqs, qw_a, kw_a, qw_b, kw_b, q, k, v};
+  for (int i = 0; i < 10; i++) {
+    bufs[i] = __builtin_bit_cast(id<MTLBuffer>, ts[i].storage().data());
+    offs[i] = ts[i].storage_offset() * ts[i].element_size();
+  }
+  uint Sau = (uint)Sa, Sbu = (uint)Sb, Hu = (uint)H, Du = (uint)D;
+  float eq = (float)eps_q, ek = (float)eps_k;
+
+  dispatch_sync(stream->queue(), ^(){
+    @autoreleasepool {
+      id<MTLComputeCommandEncoder> enc = stream->commandEncoder();
+      [enc setComputePipelineState:p];
+      for (int i = 0; i < 10; i++) [enc setBuffer:bufs[i] offset:offs[i] atIndex:i];
+      [enc setBytes:&Sau length:sizeof(uint)  atIndex:10];
+      [enc setBytes:&Sbu length:sizeof(uint)  atIndex:11];
+      [enc setBytes:&Hu  length:sizeof(uint)  atIndex:12];
+      [enc setBytes:&Du  length:sizeof(uint)  atIndex:13];
+      [enc setBytes:&eq  length:sizeof(float) atIndex:14];
+      [enc setBytes:&ek  length:sizeof(float) atIndex:15];
+      [enc dispatchThreadgroups:MTLSizeMake((NSUInteger)(B * S), (NSUInteger)(3 * H), 1)
           threadsPerThreadgroup:MTLSizeMake((NSUInteger)D, 1, 1)];
     }
   });
@@ -474,6 +620,8 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
         "RoPE on attention-layout q/k [B,H,S,D] (bf16, MPS; flux apply_rope semantics)");
   m.def("qkv_norm_rope", &qkv_norm_rope,
         "Fused qkv split + QK RMSNorm + RoPE + head transpose (bf16, MPS)");
+  m.def("qkv2_norm_rope", &qkv2_norm_rope,
+        "Fused two-source (txt+img) qkv split + QK RMSNorm + RoPE + seq concat (bf16, MPS)");
   m.def("norm_modulate", &norm_modulate,
         "Fused rmsnorm + (1+scale) modulate (bf16, MPS)");
   m.def("norm_gate_residual", &norm_gate_residual,
