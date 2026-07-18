@@ -60,6 +60,16 @@ def _conv3d_decomposed(input, weight, bias, stride, padding, dilation, groups):
     # layouts (verified: CPU-identical code diverges only through this slice).
     w2 = [weight[:, :, kt].contiguous() for kt in range(kT)]
 
+    # Half-precision inputs run the tap convs in FP32 and round ONCE at the
+    # end — matching conv3d's single internal fp32 accumulation. Rounding each
+    # tap's conv2d output to bf16 before summing looks harmless in a single
+    # decode (~8e-4 mean) but Wan-style recursive causal VAEs feed each
+    # chunk's output into the next chunk's cache, and the per-tap rounding
+    # compounds into visible horizontal banding that grows over the clip.
+    # fp32 taps cost ~2x the conv time (still ~4x faster than MPS conv3d).
+    upcast = kT > 1 and input.dtype in (torch.bfloat16, torch.float16)
+    if upcast:
+        w2 = [w.float() for w in w2]
     outs = []
     for f0 in range(0, T_out, chunk):
         f1 = min(f0 + chunk, T_out)
@@ -69,10 +79,16 @@ def _conv3d_decomposed(input, weight, bias, stride, padding, dilation, groups):
             t0 = f0 * sT + kt * dT
             xt = input[:, :, t0:t0 + (n - 1) * sT + 1:sT]        # [B,Ci,n,H,W]
             x2 = xt.transpose(1, 2).reshape(B * n, Ci, H, W)
+            if upcast:
+                x2 = x2.float()
             y = F.conv2d(x2, w2[kt],
-                         bias if (bias is not None and kt == kT - 1) else None,
+                         None if (upcast or kt != kT - 1) else bias,
                          (sH, sW), (pH, pW), (dH, dW), groups)
             acc = y if acc is None else acc.add_(y)
+        if upcast:
+            if bias is not None:
+                acc = acc.add_(bias.float().view(1, -1, 1, 1))
+            acc = acc.to(input.dtype)
         outs.append(acc.reshape(B, n, Co, Ho, Wo))
     return torch.cat(outs, 1).transpose(1, 2)
 
@@ -82,6 +98,7 @@ def _patched_conv_forward(self, input, weight, bias, autopad=None, *args, **kwar
         input.device.type == "mps"
         and input.dim() == 5
         and not self.transposed
+        and getattr(self, "padding_mode", "zeros") == "zeros"
         and isinstance(self.padding, (tuple, list)) and len(self.padding) == 3
         and len(self.stride) == 3 and len(self.dilation) == 3
     ):
