@@ -32,18 +32,45 @@ def _pool_bytes():
         return 0
 
 
+def _reserve_bytes(total):
+    try:
+        gb = float(os.environ.get("ASFP8_MPS_RESERVE_GB", "0"))
+    except ValueError:
+        gb = 0.0
+    if gb > 0:
+        return int(gb * (1 << 30))
+    return max(16 << 30, int(total * 0.15))
+
+
 def _patched_get_free_memory(dev=None, torch_free_too=False):
+    import psutil
+    import torch
     import comfy.model_management as MM
-    res = _orig(dev, torch_free_too)
     d = dev if dev is not None else MM.get_torch_device()
     if getattr(d, "type", None) != "mps":
-        return res
-    pool = _pool_bytes()
-    if pool <= 0:
-        return res
+        return _orig(dev, torch_free_too)
+    # psutil 'available' can't see torch's resident allocator pool and swings
+    # with file-cache noise, so comfy would evict / partially offload models
+    # a 128GB unified-memory machine can trivially hold. The truthful figure
+    # for "what torch can still allocate" is total RAM minus torch's LIVE
+    # tensors minus an OS reserve (ASFP8_MPS_RESERVE_GB; default
+    # max(16GB, 15%)). The allocator's cached-but-free pool is reusable and
+    # therefore NOT subtracted.
+    total = psutil.virtual_memory().total
+    try:
+        live = torch.mps.current_allocated_memory()
+    except Exception:
+        return _orig(dev, torch_free_too)
+    free = max(0, total - _reserve_bytes(total) - live)
     if torch_free_too:
-        return (res[0] + pool, res[1] + pool)
-    return res + pool
+        # mem_free_torch's ONLY consumer is free_memory's "torch hoards >25%
+        # of free memory -> soft_empty_cache()" branch. Stock MPS code sets
+        # mem_free_torch = mem_free_total, making that condition ALWAYS true:
+        # every load_models_gpu dumped the entire MPS allocator pool and the
+        # next sampler re-grew it from scratch. On unified memory the pool IS
+        # the working set — report 0 so the cache survives.
+        return (free, 0)
+    return free
 
 
 def install():
