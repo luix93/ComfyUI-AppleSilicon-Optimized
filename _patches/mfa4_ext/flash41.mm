@@ -500,7 +500,10 @@ torch::Tensor flash_fwd_bf16(torch::Tensor q, torch::Tensor k, torch::Tensor v,
   std::array<float, 1> prArr = {(float)scale};
 
   int BR = (int)br;
-  if (BR <= 0) BR = 32;                       // bigger BR spills ctO registers
+  // BR=32 is compute-optimal at image seqs; at video seqs (>=12k) the kernel
+  // turns K/V-bandwidth-bound and BR=64 halves K/V re-reads (measured M5 Max
+  // fp16 mergeP: 21.5k tok 442 -> 386 ms; crossover between 8.7k and 12.8k).
+  if (BR <= 0) BR = (Lk >= 12288) ? 64 : 32;
   int BC = (int)bc;
   if (BC <= 0) BC = 128;                      // wide KV tiles feed the matmul units
   TORCH_CHECK(BC % 32 == 0 && BC <= 256, "bc must be a multiple of 32, <= 256");

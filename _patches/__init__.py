@@ -43,6 +43,8 @@ __all__ = [
                             #   opt-in ASFP8_CONV3D=1, implied by ASFP8_NATIVE)
     "ltx_fast",             # patch #27 — LTX one-pass split-RoPE + fused rms_norm+modulate with
                             #   per-frame timestep rows (opt-in ASFP8_DIT_EXT=1)
+    "wan_fast",             # patch #28 — Wan block fusion: LN+modulate/gates with per-frame rows (no
+                            #   repeat_e copies) + wide RMSNorm+RoPE via fp16/bf16 wan_ext kernels
     # Internal helpers (not patches):
     # "_common"             — decode_fp8, fp8_to_float_lut, FP8_DTYPES
     # "na_gemm"             — optional NA matmul2d backend (not wired into hot path)
