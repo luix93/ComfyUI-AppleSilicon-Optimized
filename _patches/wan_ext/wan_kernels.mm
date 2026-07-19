@@ -13,6 +13,11 @@
 //               cross-attn q/k; 2: norm+rope, for self-attn q/k).
 // addcmul_rows: out = x + y * gate with per-frame gate rows (the e[2]/e[5]
 //               residual gates) — no repeat copy, one pass.
+// chan_rms:     Wan-VAE channelwise RMS_norm (+fused SiLU) over NCTHW at
+//               ~400 GB/s via TG-tiled 16KB contiguous runs (patch #29).
+// fold_taps:    gather the causal-conv3d folded conv2d input straight from
+//               [zeros | cache | x] — no pad-cat / tap / channel-cat copies
+//               (patch #29).
 //
 // Rounding mirrors eager op-by-op: fp32 math, one @DT@ rounding at each
 // point eager rounds (LN out, addcmul out, rms out, rope out). float->half
@@ -159,6 +164,124 @@ kernel void rms_rope_wide(
     }
     out[(((ulong)b * H + h) * S + s) * D + c] = RTE(y);
   }
+}
+
+// Channelwise RMS_norm for the Wan VAE: out = x / max(||x||_C, eps) * scale
+// * gamma[c], optional fused SiLU. x is [B, C, S] contiguous (NCTHW with THW
+// flattened); the C-reduction has stride S (tens of MB), which eager
+// F.normalize(dim=1) handles at ~80 GB/s effective on MPS.
+// Tiling: a naive one-thread-per-position C-loop makes 42 MB-strided 512 B
+// bursts (~50 GB/s measured). Instead each 256-thread TG owns SBLK = 8192
+// consecutive s positions and streams a 16 KB contiguous run per channel;
+// each thread keeps its 32 positions' sumsq in registers across the C loop.
+#define CR_ITERS 32u
+#define CR_SBLK  (CR_ITERS * 256u)
+
+kernel void chan_rms(
+    device const @DT@* x     [[buffer(0)]],  // [B, C, S]
+    device const @DT@* gamma [[buffer(1)]],  // [C]
+    device @DT@*       out   [[buffer(2)]],
+    constant uint&  C     [[buffer(3)]],
+    constant uint&  S     [[buffer(4)]],
+    constant uint&  B     [[buffer(5)]],
+    constant float& scale [[buffer(6)]],
+    constant float& eps   [[buffer(7)]],
+    constant uint&  silu  [[buffer(8)]],
+    uint  tgid [[threadgroup_position_in_grid]],
+    ushort lid [[thread_index_in_threadgroup]])
+{
+  const uint nblk = (S + CR_SBLK - 1) / CR_SBLK;
+  const uint b = tgid / nblk;
+  if (b >= B) return;
+  const uint s0 = (tgid % nblk) * CR_SBLK;
+  const uint lim = min(CR_SBLK, S - s0);
+  const ulong xbase = (ulong)b * C * S + s0;
+
+  float acc[CR_ITERS];
+  for (uint i = 0; i < CR_ITERS; i++) acc[i] = 0.0f;
+
+  for (uint c = 0; c < C; c++) {
+    const device @DT@* row = x + xbase + (ulong)c * S;
+    if (lim == CR_SBLK) {
+      for (uint i = 0; i < CR_ITERS; i++) {
+        float v = float(row[i * 256u + lid]);
+        acc[i] += v * v;
+      }
+    } else {
+      for (uint i = 0; i < CR_ITERS; i++) {
+        const uint off = i * 256u + lid;
+        if (off < lim) { float v = float(row[off]); acc[i] += v * v; }
+      }
+    }
+  }
+  for (uint i = 0; i < CR_ITERS; i++) {
+    acc[i] = precise::divide(1.0f, max(precise::sqrt(acc[i]), eps));
+  }
+
+  for (uint c = 0; c < C; c++) {
+    const device @DT@* row = x + xbase + (ulong)c * S;
+    device @DT@* orow = out + xbase + (ulong)c * S;
+    const float g = float(gamma[c]);
+    for (uint i = 0; i < CR_ITERS; i++) {
+      const uint off = i * 256u + lid;
+      if (off < lim) {
+        // mirror eager rounding: normalize -> *scale -> *gamma, each in dtype
+        @DT@ n0 = RTE(float(row[off]) * acc[i]);
+        @DT@ n1 = RTE(float(n0) * scale);
+        float y = float(RTE(float(n1) * g));
+        if (silu != 0u) {
+          y = y / (1.0f + precise::exp(-y));
+        }
+        orow[off] = RTE(y);
+      }
+    }
+  }
+}
+
+// Build the folded conv2d input for a causal conv3d chunk directly from the
+// logical frame stream [zeros(Z) | cache(Tc) | x(T)]: out[f, kt*Ci+c, p] =
+// stream[c, f0+f+kt, p]. Replaces the pad-cat + per-tap transpose copies +
+// channel cat (~14 tensor volumes of traffic) with one gather (read ~V,
+// write kT*V). x may be standard [Ci,T,HW] layout (tlayout=0) or the
+// transpose view of a contiguous [T,Ci,HW] (tlayout=1, the layout our
+// conv3d decomposition and chan_rms emit).
+kernel void fold_taps(
+    device const @DT@* x     [[buffer(0)]],
+    device const @DT@* cache [[buffer(1)]],  // [Ci, Tc, HW] std layout (or dummy)
+    device @DT@*       out   [[buffer(2)]],  // [n, kT*Ci, HW]
+    constant uint& Ci  [[buffer(3)]],
+    constant uint& T   [[buffer(4)]],
+    constant uint& HW  [[buffer(5)]],
+    constant uint& Z   [[buffer(6)]],
+    constant uint& Tc  [[buffer(7)]],
+    constant uint& kT  [[buffer(8)]],
+    constant uint& f0  [[buffer(9)]],
+    constant uint& N   [[buffer(10)]],       // n * kT * Ci * HW
+    constant uint& tlayout [[buffer(11)]],
+    uint gid [[thread_position_in_grid]])
+{
+  if (gid >= N) return;
+  const uint p   = gid % HW;
+  const uint r1  = gid / HW;
+  const uint c   = r1 % Ci;
+  const uint r2  = r1 / Ci;
+  const uint kt  = r2 % kT;
+  const uint f   = r2 / kT;
+
+  const uint j = f0 + f + kt;
+  float v;
+  if (j < Z) {
+    v = 0.0f;
+  } else if (j < Z + Tc) {
+    v = float(cache[((ulong)c * Tc + (j - Z)) * HW + p]);
+  } else {
+    const uint t = j - Z - Tc;
+    const ulong idx = tlayout
+        ? ((ulong)t * Ci + c) * HW + p
+        : ((ulong)c * T + t) * HW + p;
+    v = float(x[idx]);
+  }
+  out[gid] = @DT@(v);
 }
 
 // out = x + y * gate, gate in per-frame rows [B, F, C].
@@ -330,6 +453,41 @@ torch::Tensor rms_rope_wide(torch::Tensor x, torch::Tensor w, torch::Tensor freq
   return out;
 }
 
+// x [B,C,S] contiguous; gamma [C]; channelwise L2-normalize * scale * gamma.
+torch::Tensor chan_rms(torch::Tensor x, torch::Tensor gamma, double scale,
+                       double eps, bool silu) {
+  TORCH_CHECK(x.is_mps() && x.dim() == 3 && x.is_contiguous(), "x must be contiguous [B,C,S]");
+  const bool h = half_io_of(x);
+  const int64_t B = x.size(0), C = x.size(1), S = x.size(2);
+  auto g = gamma.contiguous();
+  TORCH_CHECK(g.numel() == C && g.scalar_type() == x.scalar_type(),
+              "gamma must be [C] in x dtype");
+  auto out = torch::empty_like(x);
+  auto a = enc_of({x, g, out});
+  id<MTLComputePipelineState> p = pso_for("chan_rms", h);
+  MPSStream* stream = getCurrentMPSStream();
+  const int64_t SBLK = 32 * 256;
+  const int64_t N = B * ((S + SBLK - 1) / SBLK);   // threadgroups
+  uint Cu = (uint)C, Su = (uint)S, Bu = (uint)B, Lu = silu ? 1u : 0u;
+  float sf = (float)scale, ef = (float)eps;
+  dispatch_sync(stream->queue(), ^(){
+    @autoreleasepool {
+      id<MTLComputeCommandEncoder> enc = stream->commandEncoder();
+      [enc setComputePipelineState:p];
+      for (int i = 0; i < a.n; i++) [enc setBuffer:a.bufs[i] offset:a.offs[i] atIndex:i];
+      [enc setBytes:&Cu length:sizeof(uint) atIndex:3];
+      [enc setBytes:&Su length:sizeof(uint) atIndex:4];
+      [enc setBytes:&Bu length:sizeof(uint) atIndex:5];
+      [enc setBytes:&sf length:sizeof(float) atIndex:6];
+      [enc setBytes:&ef length:sizeof(float) atIndex:7];
+      [enc setBytes:&Lu length:sizeof(uint) atIndex:8];
+      [enc dispatchThreadgroups:MTLSizeMake((NSUInteger)N, 1, 1)
+          threadsPerThreadgroup:MTLSizeMake(256, 1, 1)];
+    }
+  });
+  return out;
+}
+
 // out = x + y * gate_rows: x/y [B,L,C], gate [B,F,C].
 torch::Tensor addcmul_rows(torch::Tensor x, torch::Tensor y, torch::Tensor gate,
                            int64_t ppf) {
@@ -363,6 +521,51 @@ torch::Tensor addcmul_rows(torch::Tensor x, torch::Tensor y, torch::Tensor gate,
   return out;
 }
 
+// x: contiguous storage of the frame stream tail; cache: [Ci,Tc,HW] std
+// layout (empty tensor for Tc=0). Returns [n, kT*Ci, H, W].
+torch::Tensor fold_taps(torch::Tensor x, torch::Tensor cache,
+                        int64_t Ci, int64_t T, int64_t H, int64_t W,
+                        int64_t Z, int64_t kT, int64_t f0, int64_t n,
+                        bool tlayout) {
+  TORCH_CHECK(x.is_mps() && x.is_contiguous(), "x must be contiguous MPS");
+  const bool h = half_io_of(x);
+  const int64_t HW = H * W;
+  int64_t Tc = 0;
+  torch::Tensor ca = x;                     // dummy binding when no cache
+  if (cache.defined() && cache.numel() > 0) {
+    ca = cache.contiguous();
+    TORCH_CHECK(ca.scalar_type() == x.scalar_type(), "cache dtype mismatch");
+    Tc = ca.numel() / (Ci * HW);
+  }
+  const int64_t N = n * kT * Ci * HW;
+  TORCH_CHECK(N > 0 && N < (int64_t)UINT32_MAX, "fold_taps chunk too large");
+  auto out = torch::empty({n, kT * Ci, H, W}, x.options());
+  auto a = enc_of({x, ca, out});
+  id<MTLComputePipelineState> p = pso_for("fold_taps", h);
+  MPSStream* stream = getCurrentMPSStream();
+  uint Cu = (uint)Ci, Tu = (uint)T, HWu = (uint)HW, Zu = (uint)Z, Tcu = (uint)Tc;
+  uint Ku = (uint)kT, Fu = (uint)f0, Nu = (uint)N, Lu = tlayout ? 1u : 0u;
+  dispatch_sync(stream->queue(), ^(){
+    @autoreleasepool {
+      id<MTLComputeCommandEncoder> enc = stream->commandEncoder();
+      [enc setComputePipelineState:p];
+      for (int i = 0; i < a.n; i++) [enc setBuffer:a.bufs[i] offset:a.offs[i] atIndex:i];
+      [enc setBytes:&Cu length:sizeof(uint) atIndex:3];
+      [enc setBytes:&Tu length:sizeof(uint) atIndex:4];
+      [enc setBytes:&HWu length:sizeof(uint) atIndex:5];
+      [enc setBytes:&Zu length:sizeof(uint) atIndex:6];
+      [enc setBytes:&Tcu length:sizeof(uint) atIndex:7];
+      [enc setBytes:&Ku length:sizeof(uint) atIndex:8];
+      [enc setBytes:&Fu length:sizeof(uint) atIndex:9];
+      [enc setBytes:&Nu length:sizeof(uint) atIndex:10];
+      [enc setBytes:&Lu length:sizeof(uint) atIndex:11];
+      [enc dispatchThreadgroups:MTLSizeMake((NSUInteger)((N + 255) / 256), 1, 1)
+          threadsPerThreadgroup:MTLSizeMake(256, 1, 1)];
+    }
+  });
+  return out;
+}
+
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("ln_mod", &ln_mod,
         "LayerNorm(no-affine) + (1+scale)+shift with per-frame rows (fp16/bf16, MPS)");
@@ -370,4 +573,8 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
         "Wide weighted RMSNorm + optional flux RoPE -> [B,H,S,D] (fp16/bf16, MPS)");
   m.def("addcmul_rows", &addcmul_rows,
         "x + y*gate with per-frame gate rows (fp16/bf16, MPS)");
+  m.def("chan_rms", &chan_rms,
+        "channelwise RMS_norm (+optional SiLU) for [B,C,S] (fp16/bf16, MPS)");
+  m.def("fold_taps", &fold_taps,
+        "gather causal-conv3d folded conv2d input from [zeros|cache|x] (fp16/bf16, MPS)");
 }
