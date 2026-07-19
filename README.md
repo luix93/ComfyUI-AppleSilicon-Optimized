@@ -1,5 +1,4 @@
-<img width="1684" height="934" alt="banner" src="https://github.com/user-attachments/assets/b2c78072-5f28-4f65-8ee5-72dc55b5db0b" />
-
+<img width="1684" height="934" alt="banner" src="https://github.com/luix93/ComfyUI-AppleSilicon-Optimized/blob/main/banner.png?raw=true" />
 
 # ComfyUI-AppleSilicon-Optimized
 
