@@ -45,6 +45,8 @@ __all__ = [
                             #   per-frame timestep rows (opt-in ASFP8_DIT_EXT=1)
     "wan_fast",             # patch #28 — Wan block fusion: LN+modulate/gates with per-frame rows (no
                             #   repeat_e copies) + wide RMSNorm+RoPE via fp16/bf16 wan_ext kernels
+    "free_mem_mps",         # patch #30 — MPS get_free_memory counts torch's reusable allocator
+                            #   pool (stops needless model eviction / 14s Wan re-uploads per run)
     "wan_vae_fast",         # patch #29 — Wan 2.1 VAE chunk batching: decode/encode causal loops and
                             #   run_up sub-chunking stream 8 frames per pass instead of 2 (ASFP8_CONV3D=1)
     # Internal helpers (not patches):

@@ -344,6 +344,259 @@ kernel void flash_attn_fwd_v2r_bf16(
     }
 }
 
+// ── frag: staged-KV per-simdgroup kernel (attention rewrite, phase 1) ──
+// Phase-0 finding: at video seqs the cooperative kernel is COMPUTE/LATENCY-
+// bound, not bandwidth-bound (TF/s flat across 55MB..440MB working sets;
+// halving K/V traffic via BR=128 made it SLOWER). So the fix is structural:
+//   * K and V tiles staged ONCE per threadgroup into threadgroup memory
+//     (vectorized all-thread copy), then every simdgroup computes against
+//     the shared tiles — v2r's fatal 4x redundant K/V streams are gone;
+//   * each simdgroup owns SR=16 query rows; S/P live in its registers
+//     (destination cooperative tensor -> official left-input conversion);
+//   * softmax bookkeeping (m, l, corr) lives in LANE REGISTERS: row r's
+//     state is held by lane r and broadcast with simd_shuffle — the kernel
+//     uses zero threadgroup memory beyond the K/V tiles, so BC=64 fits the
+//     full 32KB budget; 2 barriers per KV tile (vs 3 in the cooperative
+//     kernel, on half the tile width).
+// Numerics: raw QK scores round once to @DT@ (the matmul's own store);
+// scale folds into the fp32 max/exp math (one FEWER rounding than the
+// cooperative kernel's dt score tile); P rounds to @DT@ like production.
+kernel void flash_attn_fwd_frag(
+    device @DT@* Q  [[buffer(0)]],
+    device @DT@* K  [[buffer(1)]],
+    device @DT@* V  [[buffer(2)]],
+    device @DT@* O  [[buffer(3)]],
+    constant int*  SH [[buffer(4)]],   // [B,Hq,Hkv,Lq,Lk,causal]
+    constant float* PR [[buffer(5)]],  // [scale]
+    uint3 tgid [[threadgroup_position_in_grid]],
+    uint  tid  [[thread_index_in_threadgroup]],
+    uint  sgid [[simdgroup_index_in_threadgroup]],
+    uint  lane [[thread_index_in_simdgroup]])
+{
+    const int Hq=SH[1], Hkv=SH[2], Lq=SH[3], Lk=SH[4], causal=SH[5];
+    const float scale = PR[0];
+    const int bh   = int(tgid.y);
+    const int b    = bh / Hq;
+    const int hq   = bh % Hq;
+    const int hkv  = hq / (Hq / Hkv);
+    const int q0tg = int(tgid.x) * (SR * NSG);
+    const int q0   = q0tg + int(sgid) * SR;
+
+    device @DT@* Qp = Q + ulong(bh)*ulong(Lq)*DD;
+    device @DT@* Kp = K + ulong(b*Hkv+hkv)*ulong(Lk)*DD;
+    device @DT@* Vp = V + ulong(b*Hkv+hkv)*ulong(Lk)*DD;
+
+    // @DB@=1: double-buffered tiles (1 barrier/tile, needs 4*BC*DD*2 <= 32KB);
+    // @DB@=0: single buffer, 2 barriers/tile. Both prefetch the NEXT tile's
+    // K/V into registers BEFORE computing the current one, so the device-load
+    // latency hides behind the matmuls (the phase-0 latency-bound finding).
+    constexpr bool DB = @DB@;
+    constexpr int NBUF = DB ? 2 : 1;
+    threadgroup @DT@ tgK[NBUF*BC*DD];
+    threadgroup @DT@ tgV[NBUF*BC*DD];
+    constexpr int NVEC = BC * (DD * 2 / 16);              // uint4 vectors per tile
+    constexpr int PFV  = (NVEC + NSG*32 - 1) / (NSG*32);  // vectors per thread
+
+    constexpr auto qk_desc = matmul2d_descriptor(
+        SR, BC, DD, false, true, false,
+        matmul2d_descriptor::mode::multiply);
+    matmul2d<qk_desc, execution_simdgroup> qk_op;
+    constexpr auto pv_desc = matmul2d_descriptor(
+        SR, DD, BC, false, false, false,
+        matmul2d_descriptor::mode::multiply_accumulate);
+    matmul2d<pv_desc, execution_simdgroup> pv_op;
+
+    const bool active = q0 < Lq;
+    const int qrows = active ? min(SR, Lq - q0) : 1;
+    auto mQ = tensor(Qp + ulong(active ? q0 : 0)*DD,
+                     dextents<int,2>{DD, qrows}, array<int,2>{1, DD});
+    auto tK0 = tensor(&tgK[0], dextents<int,2>{DD, BC}, array<int,2>{1, DD});
+    using TT = __tensor_ops_detail::__remove_addrspace_t<decltype(mQ)>;
+    using KT = __tensor_ops_detail::__remove_addrspace_t<decltype(tK0)>;
+
+    auto ctS = qk_op.get_destination_cooperative_tensor<TT, KT, @DT@>();
+    using CtP = decltype(pv_op.get_left_input_cooperative_tensor<@DT@, @DT@, float>());
+    auto ctO = pv_op.get_destination_cooperative_tensor<CtP, KT, float>();
+    #pragma clang loop unroll(full)
+    for (uint16_t i = 0; i < ctO.get_capacity(); ++i)
+        if (ctO.is_valid_element(i)) ctO[i] = 0.0f;
+
+    // Row state in lane registers: lane r (r < SR) owns row r of this SG.
+    float m_row = -INFINITY, l_row = 0.0f;
+
+    const int shift = Lk - Lq;
+    const int jmax = causal ? min(Lk, q0tg + SR*NSG + shift) : Lk;
+
+    // Preload tile 0 into buffer 0 (K/V beyond Lk load as exact zeros: K
+    // zeros are masked, V zeros multiply an exact-0 P).
+    {
+        const int nv0 = min(BC, Lk) * (DD * 2 / 16);
+        device const uint4* sK = (device const uint4*)Kp;
+        device const uint4* sV = (device const uint4*)Vp;
+        threadgroup uint4* dK = (threadgroup uint4*)&tgK[0];
+        threadgroup uint4* dV = (threadgroup uint4*)&tgV[0];
+        #pragma clang loop unroll(full)
+        for (int t = 0; t < PFV; ++t) {
+            const int i = int(tid) + t*NSG*32;
+            if (i < NVEC) {
+                const bool ok = i < nv0;
+                dK[i] = ok ? sK[i] : uint4(0);
+                dV[i] = ok ? sV[i] : uint4(0);
+            }
+        }
+    }
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+
+    int p = 0;
+    for (int j0 = 0; j0 < jmax; j0 += BC) {
+        // Prefetch the NEXT tile's K/V into registers before computing this
+        // one — the device-load latency hides behind the matmuls below.
+        uint4 kreg[PFV], vreg[PFV];
+        const int j1 = j0 + BC;
+        const bool hasnext = j1 < jmax;
+        if (hasnext) {
+            const int nv1 = min(BC, Lk - j1) * (DD * 2 / 16);
+            device const uint4* sK = (device const uint4*)(Kp + ulong(j1)*DD);
+            device const uint4* sV = (device const uint4*)(Vp + ulong(j1)*DD);
+            #pragma clang loop unroll(full)
+            for (int t = 0; t < PFV; ++t) {
+                const int i = int(tid) + t*NSG*32;
+                const bool ok = i < nv1;
+                kreg[t] = ok ? sK[i] : uint4(0);
+                vreg[t] = ok ? sV[i] : uint4(0);
+            }
+        }
+
+        auto tK = tensor(&tgK[p*BC*DD], dextents<int,2>{DD, BC}, array<int,2>{1, DD});
+        auto tV = tensor(&tgV[p*BC*DD], dextents<int,2>{DD, BC}, array<int,2>{1, DD});
+
+        const bool sg_do = active && (!causal || j0 <= q0 + SR - 1 + shift);
+        if (sg_do) {
+            qk_op.run(mQ, tK, ctS);
+
+            // Mask (bounds + causal) in place; raw scores stay in @DT@.
+            #pragma clang loop unroll(full)
+            for (uint16_t i = 0; i < ctS.get_capacity(); ++i) {
+                if (!ctS.is_valid_element(i)) continue;
+                auto idx = ctS.get_multidimensional_index(i);
+                const int jj = j0 + int(idx[0]);
+                const int ii = q0 + int(idx[1]);
+                if (!((jj < Lk) && (ii < Lq) && (!causal || jj <= ii + shift)))
+                    ctS[i] = @DT@(-INFINITY);
+            }
+
+            // Block row-max (raw): official row reduction, then gather the
+            // per-row values into owner lanes (lane r holds row r).
+            // Block row-max (raw scores): official row reduction, then a
+            // UNIFORM owner-lane gather (simd ops must not sit behind
+            // per-element validity branches).
+            auto ctMb = qk_op.get_row_reduction_destination_cooperative_tensor<TT, KT, @DT@>();
+            reduce_rows(ctS, ctMb, reduction_operation::max, @DT@(-INFINITY));
+            float mb_row = -INFINITY;
+            for (ushort r = 0; r < SR; ++r) {
+                float loc = -INFINITY;
+                #pragma clang loop unroll(full)
+                for (uint16_t i = 0; i < ctMb.get_capacity(); ++i) {
+                    if (ctMb.is_valid_element(i)
+                        && int(ctMb.get_multidimensional_index(i)[0]) == int(r))
+                        loc = max(loc, float(ctMb[i]));
+                }
+                const float cand = simd_max(loc);
+                if (int(lane) == int(r)) mb_row = max(mb_row, cand);
+            }
+
+            // Owner-lane running-max update; corr factor c stays in the lane.
+            const float mn_row = max(m_row, mb_row * scale);
+            const float c_row = (mn_row == -INFINITY) ? 1.0f : exp(m_row - mn_row);
+            m_row = mn_row;
+
+            // P = exp(s*scale - m), rounded to @DT@ in place. Shuffles are
+            // hoisted out of the validity guard for uniform execution.
+            #pragma clang loop unroll(full)
+            for (uint16_t i = 0; i < ctS.get_capacity(); ++i) {
+                const bool val = ctS.is_valid_element(i);
+                ushort src = 0;
+                if (val) src = ushort(ctS.get_multidimensional_index(i)[1]);
+                const float mn = simd_shuffle(m_row, src);
+                if (val) {
+                    const float s = float(ctS[i]);
+                    ctS[i] = (mn == -INFINITY) ? @DT@(0.0f)
+                                               : @DT@(exp(s * scale - mn));
+                }
+            }
+
+            // Block row-sum of P; merge into running l in the owner lane.
+            // NOTE: reduction-dest elements hold each row's COMPLETE result,
+            // replicated across the lanes that held that row's elements (the
+            // v2r TG-overwrite pattern relies on this) — so the gather must
+            // pick a representative (simd_max of identical copies), never sum.
+            auto ctLb = qk_op.get_row_reduction_destination_cooperative_tensor<TT, KT, @DT@>();
+            reduce_rows(ctS, ctLb, reduction_operation::sum, @DT@(0.0f));
+            float lb_row = 0.0f;
+            for (ushort r = 0; r < SR; ++r) {
+                float loc = -INFINITY;
+                #pragma clang loop unroll(full)
+                for (uint16_t i = 0; i < ctLb.get_capacity(); ++i) {
+                    if (ctLb.is_valid_element(i)
+                        && int(ctLb.get_multidimensional_index(i)[0]) == int(r))
+                        loc = max(loc, float(ctLb[i]));
+                }
+                const float cand = simd_max(loc);   // row sums are >= 0
+                if (int(lane) == int(r) && cand > -INFINITY) lb_row = cand;
+            }
+            l_row = l_row * c_row + lb_row;
+
+            // Rescale running O by the row's corr factor, then accumulate PV.
+            #pragma clang loop unroll(full)
+            for (uint16_t i = 0; i < ctO.get_capacity(); ++i) {
+                const bool val = ctO.is_valid_element(i);
+                ushort src = 0;
+                if (val) src = ushort(ctO.get_multidimensional_index(i)[1]);
+                const float c = simd_shuffle(c_row, src);
+                if (val) ctO[i] *= c;
+            }
+            auto ctP = pv_op.get_left_input_cooperative_tensor<@DT@, @DT@, float>(ctS);
+            pv_op.run(ctP, tV, ctO);
+        }
+
+        if (!DB)   // single buffer: wait for all reads before overwriting
+            threadgroup_barrier(mem_flags::mem_threadgroup);
+        if (hasnext) {
+            const int pn = DB ? (p ^ 1) : 0;
+            threadgroup uint4* dK = (threadgroup uint4*)&tgK[pn*BC*DD];
+            threadgroup uint4* dV = (threadgroup uint4*)&tgV[pn*BC*DD];
+            #pragma clang loop unroll(full)
+            for (int t = 0; t < PFV; ++t) {
+                const int i = int(tid) + t*NSG*32;
+                if (i < NVEC) { dK[i] = kreg[t]; dV[i] = vreg[t]; }
+            }
+            p = pn;
+        }
+        threadgroup_barrier(mem_flags::mem_threadgroup);
+    }
+
+    if (!active) return;   // whole simdgroup: uniform (no barriers follow)
+    const float inv_row = (l_row > 0.0f) ? (1.0f / l_row) : 0.0f;
+    device @DT@* Ob = O + ulong(bh)*ulong(Lq)*DD;
+    #pragma clang loop unroll(full)
+    for (uint16_t i = 0; i < ctO.get_capacity(); ++i) {
+        const bool val = ctO.is_valid_element(i);
+        ushort row = 0;
+        int cc = 0;
+        if (val) {
+            auto idx = ctO.get_multidimensional_index(i);
+            row = ushort(idx[1]);
+            cc = int(idx[0]);
+        }
+        const float inv = simd_shuffle(inv_row, row);
+        if (val) {
+            const int r = q0 + int(row);
+            if (r < Lq && cc < DD)
+                Ob[ulong(r)*DD + cc] = @DT@(ctO[i] * inv);
+        }
+    }
+}
+
 // probe: can the (single-simdgroup, bfloat) QK destination feed PV as left input?
 kernel void v2r_compat_bf16(
     device bfloat* DUMMY [[buffer(0)]],
@@ -381,12 +634,14 @@ static id<MTLComputePipelineState> pso_for(int D, int BR, int BC, bool bf16s,
                                            int SR = 16, int BCV = 64,
                                            const char* fn_name = "flash_attn_fwd_bf16",
                                            bool pv_static = false, int nsg = 0,
-                                           bool half_io = false) {
+                                           bool half_io = false, bool db = false) {
   const long key = (((((((((long)D * 1000 + BR) * 1000 + BC) * 2 + (bf16s ? 1 : 0))
                     * 100 + SR) * 1000 + BCV) * 4
                    + (std::string(fn_name) == "flash_attn_fwd_bf16" ? 0
-                      : (std::string(fn_name) == "flash_attn_fwd_v2r_bf16" ? 1 : 2)))
-                   * 2 + (pv_static ? 1 : 0)) * 32 + nsg) * 2 + (half_io ? 1 : 0);
+                      : (std::string(fn_name) == "flash_attn_fwd_v2r_bf16" ? 1
+                         : (std::string(fn_name) == "flash_attn_fwd_frag" ? 2 : 3))))
+                   * 2 + (pv_static ? 1 : 0)) * 32 + nsg) * 4
+                   + (half_io ? 1 : 0) + (db ? 2 : 0);
   auto it = g_pso.find(key);
   if (it != g_pso.end()) return it->second;
 
@@ -402,6 +657,7 @@ static id<MTLComputePipelineState> pso_for(int D, int BR, int BC, bool bf16s,
   sub_all(src, "@MP@", bf16s ? "true" : "false");
   sub_all(src, "@SR@", std::to_string(SR));
   sub_all(src, "@BCV@", std::to_string(BCV));
+  sub_all(src, "@DB@", db ? "true" : "false");
   // Static reduction dims where safe: qk's inner dim is always exactly D;
   // pv's inner dim (BC) is static only when the host proved Lk % BC == 0
   // (a static-k op reads the full tile — a short tail would read OOB).
@@ -562,12 +818,86 @@ torch::Tensor flash_fwd_bf16(torch::Tensor q, torch::Tensor k, torch::Tensor v,
   return out;
 }
 
+// Staged-KV per-simdgroup kernel (attention rewrite phase 1).
+// SR rows per simdgroup, NSG simdgroups (BR = SR*NSG rows/TG), BC-wide
+// K/V tiles staged in threadgroup memory (2*BC*D*2 bytes <= 32KB).
+torch::Tensor flash_fwd_frag(torch::Tensor q, torch::Tensor k, torch::Tensor v,
+                             double scale, bool causal,
+                             int64_t sr, int64_t nsg, int64_t bc, int64_t db) {
+  TORCH_CHECK(q.is_mps() && k.is_mps() && v.is_mps(), "inputs must be on mps");
+  const bool half_io = q.scalar_type() == torch::kHalf;
+  TORCH_CHECK((q.scalar_type() == torch::kBFloat16 || half_io)
+              && k.scalar_type() == q.scalar_type()
+              && v.scalar_type() == q.scalar_type(),
+              "inputs must be bf16 or fp16 (matching)");
+  TORCH_CHECK(q.dim() == 4 && k.dim() == 4 && v.dim() == 4, "inputs must be [B,H,L,D]");
+  const int B = (int)q.size(0), Hq = (int)q.size(1), Lq = (int)q.size(2), D = (int)q.size(3);
+  const int Hkv = (int)k.size(1), Lk = (int)k.size(2);
+  TORCH_CHECK(k.size(3) == D && v.size(3) == D, "head_dim mismatch");
+  TORCH_CHECK(v.size(2) == Lk && k.size(0) == B && v.size(0) == B, "kv shape mismatch");
+  TORCH_CHECK(Hkv > 0 && Hq % Hkv == 0, "Hq must be a multiple of Hkv");
+  TORCH_CHECK(D % 8 == 0 && D <= 128, "head_dim must be a multiple of 8, <= 128");
+
+  int SR = (int)sr > 0 ? (int)sr : 16;
+  int NSG = (int)nsg > 0 ? (int)nsg : 4;
+  int BC = (int)bc > 0 ? (int)bc : 64;
+  TORCH_CHECK(SR <= 32, "SR must be <= 32 (owner-lane bookkeeping)");
+  TORCH_CHECK(BC % 32 == 0, "bc must be a multiple of 32");
+  const bool dbuf = db != 0;
+  TORCH_CHECK((dbuf ? 4 : 2) * BC * D * (int)q.element_size() <= 32768,
+              "K+V tiles exceed 32KB threadgroup memory");
+
+  auto qc = q.contiguous();
+  auto kc = k.contiguous();
+  auto vc = v.contiguous();
+  auto out = torch::empty({B, Hq, Lq, D}, q.options());
+  std::array<int32_t, 6> shArr = {B, Hq, Hkv, Lq, Lk, causal ? 1 : 0};
+  std::array<float, 1> prArr = {(float)scale};
+
+  id<MTLComputePipelineState> pso =
+      pso_for(D, SR * NSG, BC, /*bf16s=*/true, SR, 64, "flash_attn_fwd_frag",
+              /*pv_static=*/false, NSG, half_io, dbuf);
+  MPSStream* stream = getCurrentMPSStream();
+  id<MTLBuffer> qB = __builtin_bit_cast(id<MTLBuffer>, qc.storage().data());
+  id<MTLBuffer> kB = __builtin_bit_cast(id<MTLBuffer>, kc.storage().data());
+  id<MTLBuffer> vB = __builtin_bit_cast(id<MTLBuffer>, vc.storage().data());
+  id<MTLBuffer> oB = __builtin_bit_cast(id<MTLBuffer>, out.storage().data());
+  const NSUInteger qO = qc.storage_offset() * qc.element_size();
+  const NSUInteger kO = kc.storage_offset() * kc.element_size();
+  const NSUInteger vO = vc.storage_offset() * vc.element_size();
+  const NSUInteger oO = out.storage_offset() * out.element_size();
+  const int rows_per_tg = SR * NSG;
+  const NSUInteger gx = (NSUInteger)((Lq + rows_per_tg - 1) / rows_per_tg);
+  const NSUInteger gy = (NSUInteger)(B * Hq);
+
+  dispatch_sync(stream->queue(), ^(){
+    @autoreleasepool {
+      id<MTLComputeCommandEncoder> enc = stream->commandEncoder();
+      [enc setComputePipelineState:pso];
+      [enc setBuffer:qB offset:qO atIndex:0];
+      [enc setBuffer:kB offset:kO atIndex:1];
+      [enc setBuffer:vB offset:vO atIndex:2];
+      [enc setBuffer:oB offset:oO atIndex:3];
+      [enc setBytes:shArr.data() length:sizeof(shArr) atIndex:4];
+      [enc setBytes:prArr.data() length:sizeof(prArr) atIndex:5];
+      [enc dispatchThreadgroups:MTLSizeMake(gx, gy, 1)
+          threadsPerThreadgroup:MTLSizeMake((NSUInteger)(NSG * 32), 1, 1)];
+    }
+  });
+  return out;
+}
+
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("flash_fwd_bf16", &flash_fwd_bf16,
         "bf16 flash attention fwd (Metal 4.1 TensorOps) on MPS",
         py::arg("q"), py::arg("k"), py::arg("v"), py::arg("scale"),
         py::arg("causal") = false, py::arg("br") = 0, py::arg("bc") = 0, py::arg("bf16s") = false,
         py::arg("v2r") = 0, py::arg("sr") = 0, py::arg("bcv") = 0, py::arg("nsg") = 0);
+  m.def("flash_fwd_frag", &flash_fwd_frag,
+        "staged-KV per-simdgroup flash attention fwd (Metal 4.1 TensorOps) on MPS",
+        py::arg("q"), py::arg("k"), py::arg("v"), py::arg("scale"),
+        py::arg("causal") = false, py::arg("sr") = 0, py::arg("nsg") = 0,
+        py::arg("bc") = 0, py::arg("db") = 0);
   m.def("warmup", [](int64_t D, int64_t BR, int64_t BC) { pso_for((int)D, (int)BR, (int)BC, false); return true; },
         "compile + build pipeline for head dim D / BR rows / BC cols",
         py::arg("D") = 128, py::arg("BR") = 32, py::arg("BC") = 128);
