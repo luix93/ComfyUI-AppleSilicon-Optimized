@@ -10,7 +10,7 @@ M5 Max.**
 Private continuation of
 [ComfyUI-AppleSilicon-FP8](https://github.com/pawel-mazurkiewicz/ComfyUI-AppleSilicon-FP8).
 What began as an FP8 compatibility shim has diverged into a general
-optimization layer: 29 runtime patches and five JIT-compiled Metal extensions
+optimization layer: 30 runtime patches and six JIT-compiled Metal extensions
 that take image models to roughly half their stock render time and make long
 video generation on a MacBook competitive with — and in places faster than —
 the fastest native Mac apps.
@@ -34,10 +34,17 @@ models); "after" is with `ASFP8_NATIVE=1`.
 | Krea2 Turbo int8 convrot, 1MP / 8 steps | ~28 s | **15.5 s** | DrawThings ~13.5–14 s |
 | LTX 2.3 video, 512² × 5 s | 63 s | **22 s** | DrawThings ~35 s |
 | LTX 2.3 video, 1024² × 5 s | 295 s | **~100 s** | DrawThings ~120 s |
-| Wan 2.2 i2v 14B×2 int8, 512² × 81 f | 445 s | **~135 s** | DGX-Spark-class ≈ 100 s (in progress) |
+| Wan 2.2 i2v 14B×2 int8, 512² × 81 f | 445 s | **122 s** | DrawThings-class ≈ 100 s |
 
-The LTX numbers beat DrawThings outright; Krea2 is within ~10% of it; the Wan
-attention rewrite to close the last ~35 s is the active work item.
+The LTX numbers beat DrawThings outright; Krea2 is within ~10% of it; Wan 2.2
+went 445 s → 122 s (3.6×), putting an 81-frame 14B×2 video generation on a
+laptop within ~20% of a DGX Spark.
+
+**Read benchmarks from run 2.** The first run of any workflow pays JIT kernel
+compilation and cold-allocator growth (Wan: ~163 s vs 122 s steady). Sustained
+load also drifts these numbers ±10% by thermal state alone — bigger than most
+individual optimizations here — so only same-session A/B comparisons are
+meaningful.
 
 ## The two layers
 
@@ -48,7 +55,7 @@ long-context correctness/OOM, text encoders moved off the CPU, plus fixes for
 macOS-beta psutil, the PiD ≥2048px black image, and WanVideo block swap. No
 env vars needed. See [the compatibility layer](#the-compatibility-layer-patches-116).
 
-**2. Native kernels (opt-in, `ASFP8_NATIVE=1`).** Five ObjC++/Metal
+**2. Native kernels (opt-in, `ASFP8_NATIVE=1`).** Six ObjC++/Metal
 extensions, JIT-built on first use against **Metal 4.1** (developed on the
 macOS 27 dev beta; the int8 and fp8 matmuls additionally need an **M5**-class
 GPU for cooperative TensorOps / the fp8 format type). Anything that can't
@@ -70,19 +77,56 @@ Explicit per-feature values always win (e.g. `ASFP8_NATIVE=1 ASFP8_DIT_EXT=0`).
 ### flash41 — Metal 4.1 flash attention (`mfa4_ext`)
 
 The workhorse. A cooperative-matmul flash-attention forward kernel written
-for Metal 4.1 TensorOps:
+for Metal 4.1 TensorOps. The kernel skeleton comes from
+[mtlflashattn](https://github.com/pawel-mazurkiewicz/mtlflashattn) (MIT); we
+port it to a compile path that works on macOS 27, roughly double its speed,
+and extend it to fp16/video/GQA — see [Credits](#credits) for the split.
 
+- **Compiles at all on macOS 27.** mtlflashattn JITs through
+  `torch.mps.compile_shader`, which no longer exposes `mpp::tensor_ops` there,
+  so its fast tiers silently degrade to a fallback *slower than sub-quadratic
+  attention*. We compile the kernel through `newLibraryWithSource` at an
+  explicit `MTLLanguageVersion4_1` inside an ObjC++ extension, dispatched on
+  torch's own MPS stream (no `COMMIT_AND_WAIT` — forcing a sync per call
+  serializes the pipeline and was worth seconds per render).
 - **Dtype-templated bf16/fp16 I/O** with fp32 math inside — Wan computes in
   fp16, the flux family in bf16; both take the same kernel. Low-precision
   score tiles by default (`ASFP8_FA41_F32S=1` restores fp32 tiles).
 - **mergeP**: the P (softmax) tile overwrites the score tile in threadgroup
-  memory, which is what lets the large-tile geometries fit.
-- **Sequence-adaptive tiling**: BR=32 below ~12.8k tokens (compute-bound
-  regime, image models), BR=64 above (K/V-bandwidth-bound regime, video) —
-  the switch is worth ~15% at Wan's 21.5k tokens.
+  memory, halving threadgroup memory so twice as many threadgroups stay
+  resident — this is what makes the wide-tile geometries pay.
+- **Wide KV tiles + static reduction dims**: BC=128 (vs the original 32) feeds
+  the matmul units properly; declaring the reduction extents compile-time
+  constant where provably safe removes the dynamic-extent overhead. Together
+  with mergeP: 69 ms → 33.7 ms at Flux shapes.
+- **Sequence-adaptive tiling**: BR=32 below ~12.8k tokens, BR=64 above, where
+  K/V re-reads dominate — worth ~15% at Wan's 21.5k tokens.
 - **GQA-native grouped KV**: Krea2's 48Q/12KV heads run without
   `repeat_interleave`, bit-identical to the repeated form.
-- ~37 TF/s at Flux shapes (8.7k tokens, bf16), ~26–28 TF/s at video length.
+- **~28–30 TF/s** at Flux shapes, **~26–28 TF/s** at video length, measured
+  same-session. (Earlier docs claimed 37 → 26 as a "long-sequence droop"; a
+  controlled re-measurement showed most of that gap was cross-session thermal
+  drift. Both regimes sit near the practical ceiling — see below.)
+
+**Why there is no faster version of this yet.** A dedicated sprint tried to
+beat it and failed, which is worth recording:
+
+- A head-count sweep at fixed geometry showed throughput flat from a 55 MB to
+  a 440 MB K/V working set, and configurations that *halve* K/V traffic ran
+  slower — so the kernel is compute/latency-bound, not bandwidth-bound. Tiling
+  harder is not the lever.
+- We ported [Cider](https://github.com/Mininglamp-AI/cider)'s manual
+  register-fragment machinery (the structure behind our 105 TF/s int8 GEMM) to
+  fp16 as a standalone probe. The fragment register layout *is* valid for fp16
+  (parity 2e-5), but at attention's shallow K=128 reductions even **MPS's own
+  tuned GEMM only reaches 34.5 TF/s** (manual fragments: 24; at deep K=512 they
+  reach 55). The int8 win came from a regime that does not exist inside
+  attention.
+- `flash_attn_fwd_frag` — a staged-KV per-simdgroup kernel (K/V staged once per
+  threadgroup, softmax state in lane registers via `simd_shuffle`, optional
+  double-buffered prefetch) — ships in the source, parity-clean across
+  fp16/bf16/causal/GQA/tails, but is **not routed**: 22.8 TF/s vs the
+  production kernel's 28.5. Kept as scaffolding for future attempts.
 
 ### Attention router (patch #19)
 
@@ -154,6 +198,34 @@ mirrors eager rounding op-for-op (exact-or-1-ulp) and falls back per call:
   frames per pass instead of 2. Decode 16.8 s → 6.1 s, encode 6.5 s → ~4 s at
   512²×81f, parity 1–2 ulp.
 
+### Memory accounting (patch #30)
+
+comfy decides whether to keep a model resident by calling `get_free_memory`,
+which on MPS returns `psutil.virtual_memory().available`. That number can't
+see torch's MPS allocator pool and swings with OS file-cache noise — so on a
+128 GB machine comfy would still **evict a 13.9 GB model per sampler switch**,
+re-uploading it every run (the Wan 2.2 high/low-noise pair cost ~14 s/run this
+way; text encoders churn the same way on other workflows).
+
+`free_mem_mps` replaces the estimate with one that's true for unified memory:
+`free = total RAM − torch's live tensors − an OS reserve`
+(`ASFP8_MPS_RESERVE_GB`, default max(16 GB, 15%)). It also reports the "torch
+free" figure as 0 — its sole consumer is a `free_memory` branch that dumps the
+entire allocator cache when "torch hoards >25% of free memory," a condition
+stock MPS code made *always true*, so every model load was silently discarding
+the reuse pool and forcing the next sampler to re-grow multi-GB activation
+buffers. Honest, not an override: genuine pressure still evicts. After this,
+post-warmup model loads drop from 1.4–13.5 s to **0.1 ms**, and Wan 2.2 holds
+a steady 122 s.
+
+One consequence worth knowing: the process footprint now parks at its
+high-water mark (~45 GB steady, ~66 GB during the VAE decode peak) because the
+MPS allocator never returns freed memory to the OS and we deliberately keep
+that pool resident. On a 128 GB machine that is the intended trade — warm
+reruns and 0.1 ms model switches. On a smaller machine the same formula
+adapts (reserve scales, comfy evicts sooner); set `ASFP8_MPS_RESERVE_GB`
+higher to hand memory back to other apps at the cost of more eviction.
+
 ### MLX text generation (patch #14)
 
 Autoregressive prompt-expansion encoders (Krea2's Qwen3-VL, LTX's Gemma3) run
@@ -186,7 +258,8 @@ Condensed — each is automatic, MPS-scoped, and a no-op where not needed:
 (#15 was retired: wrong seam — ComfyUI's fp8 routes through `_scaled_mm`, not
 `F.linear`. #20 and #22 round out the set: fp8 fill/factory ops via CPU, and
 defaulting missing `comfy_quant` format metadata so community int8-convrot
-checkpoints load.)
+checkpoints load. #30 — the MPS memory-accounting fix — is
+[described above](#memory-accounting-patch-30).)
 
 ### How the FP8 trick works
 
@@ -208,8 +281,11 @@ Three tiers, stated per patch:
 - **Regime-gated**: flash41's low-precision score tiles (default; parity
   ~5e-4, `ASFP8_FA41_F32S=1` for fp32 tiles).
 
-Everything ships with parity tests against the eager path (104+ tests, run
-against torch 2.10 and 2.13).
+Patch #30 (memory accounting) changes *scheduling*, not numerics — outputs are
+identical, only fewer reloads.
+
+Everything ships with parity tests against the eager path (104 tests on torch
+2.10, 105 on 2.13, plus kernel parity harnesses for the Metal extensions).
 
 ## Environment variables
 
@@ -223,7 +299,9 @@ against torch 2.10 and 2.13).
 | `ASFP8_DIT_EXT` | off | DiT block-fusion kernels (all families) |
 | `ASFP8_CONV3D` | off | conv3d → sliced conv2d + Wan VAE fast path |
 | `ASFP8_FLUX_FAST` / `KREA2_FAST` / `LTX_FAST` / `WAN_FAST` / `WAN_VAE_FAST` | on (under DIT_EXT/CONV3D) | per-architecture kill switches |
-| `ASFP8_WAN_VAE_CHUNK` | 16 | Wan VAE frames per causal pass (even, 2–32) |
+| `ASFP8_WAN_VAE_CHUNK` | 16 | Wan VAE frames per causal pass (even, 2–32; lower caps decode memory peak) |
+| `ASFP8_FREE_MEM` | on | MPS free-memory accounting fix (patch #30) |
+| `ASFP8_MPS_RESERVE_GB` | max(16, 15%) | OS memory reserve held back from comfy's estimate |
 | `ASFP8_FA41_F32S` | off | fp32 score tiles in flash41 |
 | `ASFP8_FP8_EXT_MIN_DIM` | 8192 | fp8 kernel size gate |
 | `ASFP8_ENABLE_ONLY` / `ASFP8_DISABLE` | — | bisection: install only / all except these patch modules |
@@ -276,13 +354,31 @@ A few load-bearing lessons encoded in this repo, for future work:
   per-tap rounding compounds through recursive causal VAE caches; tensor
   prints during execution go to a swallowed stdout (use stderr); the first
   call after a kernel build pays PSO compilation — benchmark run 2.
+- **Check the framework's accounting before writing a kernel.** The single
+  biggest Wan win of the latest round wasn't a kernel at all — it was noticing
+  comfy re-uploaded 13.9 GB models every run because its MPS free-memory
+  estimate was wrong (patch #30). ~14 s/run, recovered by fixing arithmetic.
+- **Measure the ceiling before optimizing toward it.** The attention rewrite
+  was abandoned after a probe showed even MPS's own GEMM couldn't clear
+  ~35 TF/s at attention's shallow reductions — the target didn't exist. A
+  half-day of kernel work saved by a two-hour measurement.
+- **Trust same-session numbers only.** Thermal drift on a sustained run is
+  ±10%, larger than most effects being chased; a cross-session "regression"
+  turned out to be a warm vs cool machine.
 
 ## Credits
 
 - [ComfyUI-AppleSilicon-FP8](https://github.com/pawel-mazurkiewicz/ComfyUI-AppleSilicon-FP8)
+  and [`mtlflashattn`](https://github.com/pawel-mazurkiewicz/mtlflashattn)
   (Paweł Mazurkiewicz, MIT) — the original compatibility layer this project
-  grew from, and [`mtlflashattn`](https://github.com/pawel-mazurkiewicz/mtlflashattn),
-  which still backs patch #5.
+  grew from, and the flash-attention-on-Metal-4-TensorOps kernel design.
+  mtlflashattn backs the compatibility-tier SDPA reroute (patch #5) directly;
+  our `flash41` extension (patch #19's fast path) is built *around* his kernel
+  skeleton — we make it compile on macOS 27, add the wide-tile/mergeP/static-
+  reduction/seq-adaptive performance work (~2× over the straight port), and
+  extend it to fp16, video sequence lengths, and native GQA. The QK→softmax→PV
+  cooperative-tensor structure is his; the compile path, host dispatch, and
+  tuning are ours. His MIT copyright is preserved in `flash41.mm`.
 - [Cider](https://github.com/Mininglamp-AI/cider) (Mininglamp, MIT) — the
   register-tiled cooperative-TensorOps int8 `matmul2d` that patch #17's GEMM
   is ported from, and the design reference for the staged/swizzled fragment
