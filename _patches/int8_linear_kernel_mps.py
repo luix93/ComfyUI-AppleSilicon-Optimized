@@ -197,6 +197,7 @@ def _try_int8_kernel_forward(self, input):
     weight is a TensorWiseINT8Layout QuantizedTensor; not full-precision-mm; no
     force-cast; no LoRA weight/bias functions; weight not logically transposed.
     """
+    global _kernel
     if _kernel is None:
         return None
     try:
@@ -233,7 +234,6 @@ def _try_int8_kernel_forward(self, input):
         # LATCH on Metal compile failures (e.g. a macOS beta changing the
         # tensor-ops API): without it every Linear call re-attempts the
         # expensive newLibraryWithSource compile — 33 s/it measured.
-        global _kernel
         if "compile failed" in str(e):
             _kernel = None
             print(f"{TAG} kernel DISABLED for this session — Metal compile "
