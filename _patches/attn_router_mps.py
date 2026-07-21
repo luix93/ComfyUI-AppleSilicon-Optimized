@@ -316,10 +316,12 @@ def install():
     rebound = 0
     for mod in list(sys.modules.values()):
         try:
-            if getattr(mod, "optimized_attention", None) is _default:
+            # __dict__ lookup, NOT getattr — see rope_fast: getattr sweeps
+            # fire third-party lazy-module __getattr__ hooks (boot-log spam).
+            if vars(mod).get("optimized_attention") is _default:
                 mod.optimized_attention = _router
                 rebound += 1
-            if getattr(mod, "optimized_attention_masked", None) is _default_masked:
+            if vars(mod).get("optimized_attention_masked") is _default_masked:
                 mod.optimized_attention_masked = _router
                 rebound += 1
         except Exception:

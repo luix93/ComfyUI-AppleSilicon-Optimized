@@ -88,7 +88,12 @@ def install():
     rebound = 0
     for mod in list(sys.modules.values()):
         try:
-            if getattr(mod, "apply_rope", None) is _orig and mod is not FM:
+            # __dict__ lookup, NOT getattr: a by-value import we need to
+            # rebind must be a real module-dict binding, and getattr on
+            # every loaded module fires third-party __getattr__ hooks —
+            # newer transformers' lazy alias resolver logs a deprecation
+            # warning per probe (hundreds of lines at boot).
+            if vars(mod).get("apply_rope") is _orig and mod is not FM:
                 mod.apply_rope = _fast_apply_rope
                 rebound += 1
         except Exception:

@@ -266,7 +266,9 @@ def install():
     rebound = 0
     for mod in list(sys.modules.values()):
         try:
-            if getattr(mod, "apply_rotary_emb", None) is _orig_rope and mod is not LM:
+            # __dict__ lookup, NOT getattr — see rope_fast: getattr sweeps
+            # fire transformers' lazy-alias __getattr__ (boot-log spam).
+            if vars(mod).get("apply_rotary_emb") is _orig_rope and mod is not LM:
                 mod.apply_rotary_emb = _fast_apply_rotary_emb
                 rebound += 1
         except Exception:
