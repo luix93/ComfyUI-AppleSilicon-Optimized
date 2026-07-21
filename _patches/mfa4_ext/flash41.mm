@@ -619,6 +619,8 @@ constant constexpr int NASR  = 16;   // query rows per simdgroup (native tile M)
 constant constexpr int NABC  = @NABCV@;  // KV block width
 constant constexpr int NABLK = @NABLK@;  // column blocks per softmax pass (1|2)
 constant constexpr int NANSG = @NANSG@;
+constant constexpr int NAKB  = @NAKB@;   // head-dim blocks (1: D<=128; 2: D=256)
+constant constexpr int NAHB  = DD / NAKB;
 
 kernel void flash_attn_fwd_na(
     device @DT@* Q  [[buffer(0)]],
@@ -657,7 +659,7 @@ kernel void flash_attn_fwd_na(
         matmul2d_descriptor::mode::multiply_accumulate);
     matmul2d<na_qk_desc, execution_simdgroups<1>> qk_op;
     constexpr auto na_pv_desc = matmul2d_descriptor(
-        NASR, DD, NABC, false, false, @NARP@,
+        NASR, NAHB, NABC, false, false, @NARP@,
         matmul2d_descriptor::mode::multiply_accumulate);
     matmul2d<na_pv_desc, execution_simdgroups<1>> pv_op;
 
@@ -669,7 +671,7 @@ kernel void flash_attn_fwd_na(
     auto Vt = tensor<device @DT@, dextents<int,2>, tensor_inline>(Vp, dextents<int,2>(DD, Lk));
     auto mQ = Qt.slice<DD, NASR>(0, q0);
     auto mK = Kt.slice<DD, NABC>(0, 0);
-    auto mV = Vt.slice<DD, NABC>(0, 0);
+    auto mV = Vt.slice<NAHB, NABC>(0, 0);
     using TQ = __tensor_ops_detail::__remove_addrspace_t<decltype(mQ)>;
     using TK = __tensor_ops_detail::__remove_addrspace_t<decltype(mK)>;
     using TV = __tensor_ops_detail::__remove_addrspace_t<decltype(mV)>;
@@ -693,10 +695,17 @@ kernel void flash_attn_fwd_na(
     // remove_addrspace: decltype on a local is `thread`-qualified, and the
     // macOS 27 beta 26A5388g headers' enable_if rejects qualified operand
     // types (same break as int8_gemm's ct_a/ct_b).
-    auto ctO = pv_op.get_destination_cooperative_tensor<
+    auto ctO0 = pv_op.get_destination_cooperative_tensor<
         __tensor_ops_detail::__remove_addrspace_t<decltype(cP)>, TV, float>();
+#if @NAKB@ == 2
+    auto ctO1 = pv_op.get_destination_cooperative_tensor<
+        __tensor_ops_detail::__remove_addrspace_t<decltype(cP)>, TV, float>();
+#endif
 #else
-    auto ctO = pv_op.get_destination_cooperative_tensor<TP, TV, float>();
+    auto ctO0 = pv_op.get_destination_cooperative_tensor<TP, TV, float>();
+#if @NAKB@ == 2
+    auto ctO1 = pv_op.get_destination_cooperative_tensor<TP, TV, float>();
+#endif
 #endif
 
     #pragma clang loop unroll(full)
@@ -708,14 +717,31 @@ kernel void flash_attn_fwd_na(
     }
 
     for (int c = 0; c < Lk; c += NABLK*NABC) {
-        // Zero-init S (accumulate-mode matmul writes S += Q.K^T).
-        #pragma clang loop unroll(full)
-        for (uint16_t k = 0; k < cS0.get_capacity(); ++k) {
-            if (cS0.is_valid_element(k)) {
-                cS0[k] = 0.0f;
+        // Init S (accumulate-mode matmul adds Q.K^T onto the init value):
+        // 0 for valid columns, -inf for tail columns beyond Lk — the -inf
+        // survives the accumulate and masks the padding keys (DrawThings'
+        // C_remainder recipe).
+        const bool tail = (c + NABLK * NABC > Lk);
+        if (tail) {
+            #pragma clang loop unroll(full)
+            for (uint16_t k = 0; k < cS0.get_capacity(); ++k) {
+                if (cS0.is_valid_element(k)) {
+                    auto idx = cS0.get_multidimensional_index(k);
+                    cS0[k] = (c + int(idx[0]) < Lk) ? 0.0f : -INFINITY;
 #if @NABLK@ == 2
-                cS1[k] = 0.0f;
+                    cS1[k] = (c + NABC + int(idx[0]) < Lk) ? 0.0f : -INFINITY;
 #endif
+                }
+            }
+        } else {
+            #pragma clang loop unroll(full)
+            for (uint16_t k = 0; k < cS0.get_capacity(); ++k) {
+                if (cS0.is_valid_element(k)) {
+                    cS0[k] = 0.0f;
+#if @NABLK@ == 2
+                    cS1[k] = 0.0f;
+#endif
+                }
             }
         }
         auto mK0 = Kt.slice<DD, NABC>(0, c);
@@ -727,12 +753,12 @@ kernel void flash_attn_fwd_na(
 
         // Diagnostic modes (@NADIAG@, wrong results): 1 = no softmax,
         // 2 = QK only, 3 = QK + PV but no P write/barrier (stale P).
-#if @NADIAG@ != 0 && !@NABYP@ && @NABLK@ == 2
+#if @NADIAG@ != 0 && !@NABYP@ && @NABLK@ == 2 && @NAKB@ == 1
         if (@NADIAG@ != 0) {
             if (c == 0) {
                 #pragma clang loop unroll(full)
-                for (uint16_t k = 0; k < ctO.get_capacity(); ++k)
-                    if (ctO.is_valid_element(k)) ctO[k] = 0.0f;
+                for (uint16_t k = 0; k < ctO0.get_capacity(); ++k)
+                    if (ctO0.is_valid_element(k)) ctO0[k] = 0.0f;
             }
             if (@NADIAG@ == 2) continue;
             if (@NADIAG@ == 1) {
@@ -745,8 +771,8 @@ kernel void flash_attn_fwd_na(
                 }
                 simdgroup_barrier(mem_flags::mem_threadgroup);
             }
-            auto mVd0 = Vt.slice<DD, NABC>(0, c);
-            pv_op.run(tP, mVd0, ctO);
+            auto mVd0 = Vt.slice<NAHB, NABC>(0, c);
+            pv_op.run(tP, mVd0, ctO0);
             if (@NADIAG@ == 1) {
                 #pragma clang loop unroll(full)
                 for (uint16_t k = 0; k < cS1.get_capacity(); ++k) {
@@ -757,8 +783,8 @@ kernel void flash_attn_fwd_na(
                 }
                 simdgroup_barrier(mem_flags::mem_threadgroup);
             }
-            auto mVd1 = Vt.slice<DD, NABC>(0, c + NABC);
-            pv_op.run(tP, mVd1, ctO);
+            auto mVd1 = Vt.slice<NAHB, NABC>(0, c + NABC);
+            pv_op.run(tP, mVd1, ctO0);
             continue;
         }
 #endif
@@ -786,15 +812,32 @@ kernel void flash_attn_fwd_na(
             }
         }
         // S -> P = exp2(s*dot_scale - m) in place (fp32 registers).
-        #pragma clang loop unroll(full)
-        for (uint16_t k = 0; k < cS0.get_capacity(); ++k) {
-            if (cS0.is_valid_element(k)) {
-                auto it = cS0.get_iterator(k);
-                auto mit = cM.map_iterator(it);
-                cS0[k] = fast::exp2(cS0[k] * dot_scale - *mit);
+        if (tail) {
+            #pragma clang loop unroll(full)
+            for (uint16_t k = 0; k < cS0.get_capacity(); ++k) {
+                if (cS0.is_valid_element(k)) {
+                    auto it = cS0.get_iterator(k);
+                    auto mit = cM.map_iterator(it);
+                    auto idx = cS0.get_multidimensional_index(k);
+                    cS0[k] = (c + int(idx[0]) < Lk)
+                        ? fast::exp2(cS0[k] * dot_scale - *mit) : 0.0f;
 #if @NABLK@ == 2
-                cS1[k] = fast::exp2(cS1[k] * dot_scale - *mit);
+                    cS1[k] = (c + NABC + int(idx[0]) < Lk)
+                        ? fast::exp2(cS1[k] * dot_scale - *mit) : 0.0f;
 #endif
+                }
+            }
+        } else {
+            #pragma clang loop unroll(full)
+            for (uint16_t k = 0; k < cS0.get_capacity(); ++k) {
+                if (cS0.is_valid_element(k)) {
+                    auto it = cS0.get_iterator(k);
+                    auto mit = cM.map_iterator(it);
+                    cS0[k] = fast::exp2(cS0[k] * dot_scale - *mit);
+#if @NABLK@ == 2
+                    cS1[k] = fast::exp2(cS1[k] * dot_scale - *mit);
+#endif
+                }
             }
         }
         auto cL0 = qk_op.get_row_reduction_destination_cooperative_tensor<TQ, TK, float>();
@@ -821,15 +864,24 @@ kernel void flash_attn_fwd_na(
         // keep the sweep unconditional.
         if (c == 0) {
             #pragma clang loop unroll(full)
-            for (uint16_t k = 0; k < ctO.get_capacity(); ++k)
-                if (ctO.is_valid_element(k)) ctO[k] = 0.0f;
+            for (uint16_t k = 0; k < ctO0.get_capacity(); ++k) {
+                if (ctO0.is_valid_element(k)) {
+                    ctO0[k] = 0.0f;
+#if @NAKB@ == 2
+                    ctO1[k] = 0.0f;
+#endif
+                }
+            }
         } else {
             #pragma clang loop unroll(full)
-            for (uint16_t k = 0; k < ctO.get_capacity(); ++k) {
-                if (ctO.is_valid_element(k)) {
-                    auto it = ctO.get_iterator(k);
+            for (uint16_t k = 0; k < ctO0.get_capacity(); ++k) {
+                if (ctO0.is_valid_element(k)) {
+                    auto it = ctO0.get_iterator(k);
                     auto cit = cCor.map_iterator(it);
-                    ctO[k] *= *cit;
+                    ctO0[k] *= *cit;
+#if @NAKB@ == 2
+                    ctO1[k] *= *cit;
+#endif
                 }
             }
         }
@@ -840,14 +892,22 @@ kernel void flash_attn_fwd_na(
         for (uint16_t k = 0; k < cS0.get_capacity(); ++k)
             if (cS0.is_valid_element(k)) cP[k] = @DT@(cS0[k]);
         simdgroup_barrier(mem_flags::mem_none);
-        auto mV0 = Vt.slice<DD, NABC>(0, c);
-        pv_op.run(cP, mV0, ctO);
+        auto mV0a = Vt.slice<NAHB, NABC>(0, c);
+        pv_op.run(cP, mV0a, ctO0);
+#if @NAKB@ == 2
+        auto mV0b = Vt.slice<NAHB, NABC>(NAHB, c);
+        pv_op.run(cP, mV0b, ctO1);
+#endif
 #if @NABLK@ == 2
         #pragma clang loop unroll(full)
         for (uint16_t k = 0; k < cS1.get_capacity(); ++k)
             if (cS1.is_valid_element(k)) cP[k] = @DT@(cS1[k]);
-        auto mV1 = Vt.slice<DD, NABC>(0, c + NABC);
-        pv_op.run(cP, mV1, ctO);
+        auto mV1a = Vt.slice<NAHB, NABC>(0, c + NABC);
+        pv_op.run(cP, mV1a, ctO0);
+#if @NAKB@ == 2
+        auto mV1b = Vt.slice<NAHB, NABC>(NAHB, c + NABC);
+        pv_op.run(cP, mV1b, ctO1);
+#endif
 #endif
     }
 #else
@@ -860,8 +920,12 @@ kernel void flash_attn_fwd_na(
             }
         }
         simdgroup_barrier(mem_flags::mem_threadgroup);
-        auto mV0 = Vt.slice<DD, NABC>(0, c);
-        pv_op.run(tP, mV0, ctO);
+        auto mV0a = Vt.slice<NAHB, NABC>(0, c);
+        pv_op.run(tP, mV0a, ctO0);
+#if @NAKB@ == 2
+        auto mV0b = Vt.slice<NAHB, NABC>(NAHB, c);
+        pv_op.run(tP, mV0b, ctO1);
+#endif
 
 #if @NABLK@ == 2
         #pragma clang loop unroll(full)
@@ -872,23 +936,31 @@ kernel void flash_attn_fwd_na(
             }
         }
         simdgroup_barrier(mem_flags::mem_threadgroup);
-        auto mV1 = Vt.slice<DD, NABC>(0, c + NABC);
-        pv_op.run(tP, mV1, ctO);
+        auto mV1a = Vt.slice<NAHB, NABC>(0, c + NABC);
+        pv_op.run(tP, mV1a, ctO0);
+#if @NAKB@ == 2
+        auto mV1b = Vt.slice<NAHB, NABC>(NAHB, c + NABC);
+        pv_op.run(tP, mV1b, ctO1);
+#endif
 #endif
     }
 #endif
 
     device @DT@* Ob = O + ulong(bh)*ulong(Lq)*DD;
     #pragma clang loop unroll(full)
-    for (uint16_t k = 0; k < ctO.get_capacity(); ++k) {
-        if (!ctO.is_valid_element(k)) continue;
-        auto idx = ctO.get_multidimensional_index(k);
+    for (uint16_t k = 0; k < ctO0.get_capacity(); ++k) {
+        if (!ctO0.is_valid_element(k)) continue;
+        auto idx = ctO0.get_multidimensional_index(k);
         const int row = int(idx[1]);
         const int col = int(idx[0]);
-        if (q0 + row >= Lq || col >= DD) continue;
-        auto it = ctO.get_iterator(k);
+        if (q0 + row >= Lq || col >= NAHB) continue;
+        auto it = ctO0.get_iterator(k);
         auto lit = cL.map_iterator(it);
-        Ob[ulong(q0 + row)*DD + col] = @DT@(ctO[k] * fast::divide(1.0f, *lit));
+        const float invl = fast::divide(1.0f, *lit);
+        Ob[ulong(q0 + row)*DD + col] = @DT@(ctO0[k] * invl);
+#if @NAKB@ == 2
+        Ob[ulong(q0 + row)*DD + NAHB + col] = @DT@(ctO1[k] * invl);
+#endif
     }
 }
 
@@ -960,6 +1032,7 @@ static id<MTLComputePipelineState> pso_for(int D, int BR, int BC, bool bf16s,
   sub_all(src, "@DB@", db ? "true" : "false");
   // na kernel: simdgroups per TG and the relaxed_precision descriptor flag.
   sub_all(src, "@NANSG@", std::to_string(nsg > 0 ? nsg : 16));
+  sub_all(src, "@NAKB@", std::to_string(D > 128 ? 2 : 1));
   sub_all(src, "@NARP@", na_rp ? "true" : "false");
   sub_all(src, "@NABYP@", na_byp ? "1" : "0");
   sub_all(src, "@NABCV@", std::to_string(na_bc));
@@ -1214,14 +1287,13 @@ torch::Tensor flash_fwd_na(torch::Tensor q, torch::Tensor k, torch::Tensor v,
   TORCH_CHECK(k.size(3) == D && v.size(3) == D, "head_dim mismatch");
   TORCH_CHECK(v.size(2) == Lk && k.size(0) == B && v.size(0) == B, "kv shape mismatch");
   TORCH_CHECK(Hkv > 0 && Hq % Hkv == 0, "Hq must be a multiple of Hkv");
-  TORCH_CHECK(D % 32 == 0 && D <= 128,
-              "na kernel needs head_dim % 32 == 0 (static-K descriptor; "
-              "OS 26.1 requires K a multiple of 32), <= 128");
+  TORCH_CHECK((D % 32 == 0 && D <= 128) || D == 256,
+              "na kernel needs head_dim % 32 == 0 and <= 128, or exactly 256 "
+              "(two 128-wide head blocks)");
   int BC = (int)bc > 0 ? (int)bc : 64;
   int BLK = (int)blk > 0 ? (int)blk : 2;
   TORCH_CHECK(BC % 32 == 0 && BC <= 256, "bc must be a multiple of 32, <= 256");
   TORCH_CHECK(BLK == 1 || BLK == 2, "blk must be 1 or 2");
-  TORCH_CHECK(Lk % (BC * BLK) == 0, "na kernel requires Lk % (bc*blk) == 0");
 
   int NSG = (int)nsg > 0 ? (int)nsg : 16;
   TORCH_CHECK(NSG >= 1 && NSG <= 16, "nsg must be in [1,16]");

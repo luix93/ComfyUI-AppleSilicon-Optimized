@@ -106,7 +106,7 @@ def _fast_attn_forward(self, x, freqs=None, mask=None, transformer_options={}):
         # Prefer the v2 per-simdgroup kernel where its Lk % 128 gate allows
         # (kill switch shared with the router: ASFP8_ATTN_NA=0).
         if (os.environ.get("ASFP8_ATTN_NA", "1") == "1" and not _na_dead
-                and hasattr(_fa41, "flash_fwd_na") and k.shape[2] % 128 == 0):
+                and hasattr(_fa41, "flash_fwd_na")):
             try:
                 out = _fa41.flash_fwd_na(q, k, v, D ** -0.5)
             except Exception:

@@ -144,6 +144,8 @@ def test_fa41_na_kernel_parity():
     for (B, Hq, Hkv, Lq, Lk, D, dt) in [
         (1, 8, 8, 4352, 4352, 128, torch.float16),
         (1, 12, 3, 4300, 4352, 128, torch.bfloat16),   # GQA + ragged Lq
+        (1, 4, 4, 5000, 5000, 128, torch.float16),     # ragged Lk (tail path)
+        (1, 6, 6, 1024, 1013, 256, torch.bfloat16),    # D=256 kBlocks + tail
     ]:
         scale = D ** -0.5
         q = torch.randn(B, Hq, Lq, D, dtype=dt, device="mps")

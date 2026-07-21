@@ -162,8 +162,12 @@ def _fa41_attention(q, k, v, heads, scale=None, skip_reshape=False,
                       for t in (q, k, v))
     sc = float(scale) if scale else d ** -0.5
     global _na_dead
+    # D=256 (Ideogram) was tried on the na kernel (kBlocks head-split) and
+    # LOST to the bmm route: 22.9ms best config vs 12.4ms — the 16x256 fp32
+    # accumulator spills registers. Wide heads stay on bmm; the kernel keeps
+    # D=256 capability for experiments (flash_fwd_na direct call).
     if (_FA41_NA and not _na_dead and hasattr(_fa41, "flash_fwd_na")
-            and k4.shape[2] % 128 == 0 and d % 32 == 0 and d <= 128):
+            and d % 32 == 0 and d <= 128):
         try:
             _kern_log("na", q4, k4)
             out = _fa41.flash_fwd_na(q4, k4, v4, sc)
