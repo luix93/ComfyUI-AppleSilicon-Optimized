@@ -46,7 +46,24 @@ _orig_resblock = None
 _orig_causal = None
 
 
-def _chunk(env, default=16):
+_auto_chunk = None
+
+
+def _chunk(env, default=None):
+    """Frames per causal pass. Explicit env wins; otherwise auto-size from
+    total RAM — decode transients run ~5 GB at 512^2 x chunk 16 (and ~4x
+    that at 1024^2), which is fine at 128 GB but squeezes <64 GB machines
+    into swap. Tiers: >=96 GB -> 16, >=64 -> 8, below -> 4."""
+    global _auto_chunk
+    if default is None:
+        if _auto_chunk is None:
+            try:
+                import psutil
+                total = psutil.virtual_memory().total
+            except Exception:
+                total = 128 << 30
+            _auto_chunk = 16 if total >= (96 << 30) else (8 if total >= (64 << 30) else 4)
+        default = _auto_chunk
     try:
         c = int(os.environ.get(env, str(default)))
     except ValueError:

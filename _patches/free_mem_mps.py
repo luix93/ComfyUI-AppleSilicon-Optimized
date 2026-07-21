@@ -69,6 +69,13 @@ def _patched_get_free_memory(dev=None, torch_free_too=False):
         # every load_models_gpu dumped the entire MPS allocator pool and the
         # next sampler re-grew it from scratch. On unified memory the pool IS
         # the working set — report 0 so the cache survives.
+        #
+        # Size gate: on <64 GB machines the parked high-water pool is wired
+        # memory the OS cannot reclaim, and it squeezes everything else on
+        # the box — there, report the REAL reusable pool so the hoard-trim
+        # branch can still fire when torch genuinely sits on >25% of free.
+        if total < (64 << 30):
+            return (free, _pool_bytes())
         return (free, 0)
     return free
 
