@@ -38,6 +38,7 @@ _kernel = None
 _fa41 = None
 _announced = False
 _reasons = set()
+_na_dead = False   # latched when flash_fwd_na fails once (e.g. OS API break)
 
 # Same rationale as the router default: bf16 score tiles match the stock bmm
 # path's rounding; ASFP8_FA41_F32S=1 reverts to fp32 tiles everywhere.
@@ -99,13 +100,18 @@ def _fast_attn_forward(self, x, freqs=None, mask=None, transformer_options={}):
     del q_lin, k_lin, v_lin
     _announce()
 
+    global _na_dead
     try:
         # Native GQA: k/v stay at Hkv heads; flash41 groups them in-kernel.
         # Prefer the v2 per-simdgroup kernel where its Lk % 128 gate allows
         # (kill switch shared with the router: ASFP8_ATTN_NA=0).
-        if (os.environ.get("ASFP8_ATTN_NA", "1") == "1"
+        if (os.environ.get("ASFP8_ATTN_NA", "1") == "1" and not _na_dead
                 and hasattr(_fa41, "flash_fwd_na") and k.shape[2] % 128 == 0):
-            out = _fa41.flash_fwd_na(q, k, v, D ** -0.5)
+            try:
+                out = _fa41.flash_fwd_na(q, k, v, D ** -0.5)
+            except Exception:
+                _na_dead = True   # latch: don't re-attempt the compile per call
+                out = _fa41.flash_fwd_bf16(q, k, v, D ** -0.5, False, 0, 0, _BF16S)
         else:
             out = _fa41.flash_fwd_bf16(q, k, v, D ** -0.5, False, 0, 0, _BF16S)
     except Exception:

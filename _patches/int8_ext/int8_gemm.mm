@@ -160,9 +160,15 @@ bool w8a8_gemm_compute(
       gemm_op.get_left_input_cooperative_tensor<int8_t, int8_t, int32_t>();
   auto ct_b =
       gemm_op.get_right_input_cooperative_tensor<int8_t, int8_t, int32_t>();
+  // decltype on a local carries the `thread` addrspace qualifier; macOS 27
+  // beta 26A5388g tightened the destination overload's enable_if so the
+  // qualified type no longer satisfies __is_cooperative_tensor_type_v —
+  // strip it (older headers accepted either form).
   auto ct_c =
-      gemm_op.get_destination_cooperative_tensor<decltype(ct_a), decltype(ct_b),
-                                                 int32_t>();
+      gemm_op.get_destination_cooperative_tensor<
+          mpp::tensor_ops::__tensor_ops_detail::__remove_addrspace_t<decltype(ct_a)>,
+          mpp::tensor_ops::__tensor_ops_detail::__remove_addrspace_t<decltype(ct_b)>,
+          int32_t>();
 
   for (int f = 0; f < TM * TN; f++) {
     for (int i = 0; i < kElemsPerFrag; i++) {

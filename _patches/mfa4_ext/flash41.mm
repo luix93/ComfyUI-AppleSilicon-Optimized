@@ -690,7 +690,11 @@ kernel void flash_attn_fwd_na(
     // registers into the PV left-input cooperative tensor (same element
     // enumeration as the QK destination; parity-checked by the probe).
     auto cP  = pv_op.get_left_input_cooperative_tensor<@DT@, @DT@, float>();
-    auto ctO = pv_op.get_destination_cooperative_tensor<decltype(cP), TV, float>();
+    // remove_addrspace: decltype on a local is `thread`-qualified, and the
+    // macOS 27 beta 26A5388g headers' enable_if rejects qualified operand
+    // types (same break as int8_gemm's ct_a/ct_b).
+    auto ctO = pv_op.get_destination_cooperative_tensor<
+        __tensor_ops_detail::__remove_addrspace_t<decltype(cP)>, TV, float>();
 #else
     auto ctO = pv_op.get_destination_cooperative_tensor<TP, TV, float>();
 #endif

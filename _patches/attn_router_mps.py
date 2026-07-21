@@ -133,6 +133,7 @@ _FA41_NA = os.environ.get("ASFP8_ATTN_NA", "1") == "1"
 
 
 _kern_seen = set()
+_na_dead = False   # latched when flash_fwd_na fails (compile/runtime) once
 
 
 def _kern_log(kern, q4, k4):
@@ -160,10 +161,20 @@ def _fa41_attention(q, k, v, heads, scale=None, skip_reshape=False,
         q4, k4, v4 = (t.reshape(b, -1, h, d).transpose(1, 2).contiguous()
                       for t in (q, k, v))
     sc = float(scale) if scale else d ** -0.5
-    if (_FA41_NA and hasattr(_fa41, "flash_fwd_na")
+    global _na_dead
+    if (_FA41_NA and not _na_dead and hasattr(_fa41, "flash_fwd_na")
             and k4.shape[2] % 128 == 0 and d % 32 == 0 and d <= 128):
-        _kern_log("na", q4, k4)
-        out = _fa41.flash_fwd_na(q4, k4, v4, sc)
+        try:
+            _kern_log("na", q4, k4)
+            out = _fa41.flash_fwd_na(q4, k4, v4, sc)
+        except Exception as e:
+            # Latch: a compile failure (e.g. a macOS beta changing the
+            # cooperative-tensor operand API under us) would otherwise
+            # re-attempt the expensive Metal compile on EVERY call.
+            _na_dead = True
+            sys.stderr.write(f"{TAG} attention v2 kernel unavailable, using "
+                             f"cooperative kernel ({str(e)[:200]})\n")
+            out = _fa41.flash_fwd_bf16(q4, k4, v4, sc, False, 0, 0, _FA41_BF16S)
     else:
         _kern_log("coop", q4, k4)
         out = _fa41.flash_fwd_bf16(q4, k4, v4, sc, False, 0, 0, _FA41_BF16S)

@@ -230,7 +230,17 @@ def _try_int8_kernel_forward(self, input):
         return _int8_linear_kernel(input, qdata, scale, bias, input.dtype, convrot, gs)
     except Exception as e:
         # Never take down a render; fall back to comfy's original forward.
-        print(f"{TAG} kernel forward fell back ({e!r})")
+        # LATCH on Metal compile failures (e.g. a macOS beta changing the
+        # tensor-ops API): without it every Linear call re-attempts the
+        # expensive newLibraryWithSource compile — 33 s/it measured.
+        global _kernel
+        if "compile failed" in str(e):
+            _kernel = None
+            print(f"{TAG} kernel DISABLED for this session — Metal compile "
+                  f"failed (likely an OS update changed the tensor-ops API): "
+                  f"{str(e)[:180]}")
+        else:
+            print(f"{TAG} kernel forward fell back ({e!r})")
         return None
 
 
