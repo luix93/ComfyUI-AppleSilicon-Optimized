@@ -101,7 +101,13 @@ def _fast_attn_forward(self, x, freqs=None, mask=None, transformer_options={}):
 
     try:
         # Native GQA: k/v stay at Hkv heads; flash41 groups them in-kernel.
-        out = _fa41.flash_fwd_bf16(q, k, v, D ** -0.5, False, 0, 0, _BF16S)
+        # Prefer the v2 per-simdgroup kernel where its Lk % 128 gate allows
+        # (kill switch shared with the router: ASFP8_ATTN_NA=0).
+        if (os.environ.get("ASFP8_ATTN_NA", "1") == "1"
+                and hasattr(_fa41, "flash_fwd_na") and k.shape[2] % 128 == 0):
+            out = _fa41.flash_fwd_na(q, k, v, D ** -0.5)
+        else:
+            out = _fa41.flash_fwd_bf16(q, k, v, D ** -0.5, False, 0, 0, _BF16S)
     except Exception:
         return _orig_forward(self, x, freqs=freqs, mask=mask,
                              transformer_options=transformer_options)

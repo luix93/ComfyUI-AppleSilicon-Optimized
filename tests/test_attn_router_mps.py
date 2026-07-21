@@ -126,6 +126,33 @@ class TestRouting:
 
 
 @requires_router
+def test_fa41_na_kernel_parity():
+    """Attention v2 (flash_fwd_na, DrawThings NAX recipe): parity vs fp32
+    reference at a gated shape (Lk % 128 == 0, D % 32 == 0), incl. GQA."""
+    from _patches.mfa4_ext import loader
+    mod = loader.module()
+    if mod is None or not hasattr(mod, "flash_fwd_na"):
+        pytest.skip("mfa4_ext unavailable or too old")
+    torch.manual_seed(0)
+    for (B, Hq, Hkv, Lq, Lk, D, dt) in [
+        (1, 8, 8, 4352, 4352, 128, torch.float16),
+        (1, 12, 3, 4300, 4352, 128, torch.bfloat16),   # GQA + ragged Lq
+    ]:
+        scale = D ** -0.5
+        q = torch.randn(B, Hq, Lq, D, dtype=dt, device="mps")
+        k = torch.randn(B, Hkv, Lk, D, dtype=dt, device="mps")
+        v = torch.randn(B, Hkv, Lk, D, dtype=dt, device="mps")
+        kr = k.repeat_interleave(Hq // Hkv, dim=1) if Hq != Hkv else k
+        vr = v.repeat_interleave(Hq // Hkv, dim=1) if Hq != Hkv else v
+        s = torch.einsum("bhid,bhjd->bhij", q.float() * scale, kr.float())
+        ref = torch.einsum("bhij,bhjd->bhid", s.softmax(-1), vr.float())
+        out = mod.flash_fwd_na(q, k, v, scale)
+        torch.mps.synchronize()
+        err = (out.float() - ref).abs().max().item()
+        assert err < 5e-3, f"maxerr={err} at {(B, Hq, Hkv, Lq, Lk, D, dt)}"
+
+
+@requires_router
 def test_flash_route_matches_sub_quad():
     """Parity: flash route vs sub-quad at L=4352 (memory-bounded, <1 GB peak)."""
     import sys

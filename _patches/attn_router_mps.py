@@ -121,6 +121,30 @@ _MASKED_SUB_QUAD_MIN_SCORE_BYTES = 4 << 30
 # (tighter ~4e-4, ~15-20% slower).
 _FA41_BF16S = os.environ.get("ASFP8_FA41_F32S") != "1"
 
+# Attention v2 ("na"): per-simdgroup independent flash following DrawThings'
+# shipped NAX config (16 SGs x 16 rows, 2x64-col blocks per softmax pass,
+# register-chained P — no threadgroup memory in the hot loop, fp32 softmax
+# via reduce_rows/map_iterator, relaxed_precision matmuls). Measured M5 Max:
+# 41 TF/s at Wan (S=21504 H40 D128) vs 28 for the cooperative kernel (+46%),
+# ~34 vs ~29 at flux-edit; parity 2.4e-5 vs fp32 reference (tighter than the
+# production kernel's bf16-tile ~1.7e-3). Requires Lk % 128 == 0, non-causal.
+# Kill switch: ASFP8_ATTN_NA=0.
+_FA41_NA = os.environ.get("ASFP8_ATTN_NA", "1") == "1"
+
+
+_kern_seen = set()
+
+
+def _kern_log(kern, q4, k4):
+    """ASFP8_ATTN_DEBUG=1: log which flash41 kernel serves each shape once."""
+    if os.environ.get("ASFP8_ATTN_DEBUG") != "1":
+        return
+    key = (kern, tuple(q4.shape), tuple(k4.shape))
+    if key not in _kern_seen:
+        _kern_seen.add(key)
+        sys.stderr.write(f"{TAG} flash41 kernel={kern} q={tuple(q4.shape)} "
+                         f"k={tuple(k4.shape)} {q4.dtype}\n")
+
 
 def _fa41_attention(q, k, v, heads, scale=None, skip_reshape=False,
                     skip_output_reshape=False):
@@ -135,9 +159,14 @@ def _fa41_attention(q, k, v, heads, scale=None, skip_reshape=False,
         h, d = heads, wide // heads
         q4, k4, v4 = (t.reshape(b, -1, h, d).transpose(1, 2).contiguous()
                       for t in (q, k, v))
-    out = _fa41.flash_fwd_bf16(q4, k4, v4,
-                               float(scale) if scale else d ** -0.5, False, 0, 0,
-                               _FA41_BF16S)
+    sc = float(scale) if scale else d ** -0.5
+    if (_FA41_NA and hasattr(_fa41, "flash_fwd_na")
+            and k4.shape[2] % 128 == 0 and d % 32 == 0 and d <= 128):
+        _kern_log("na", q4, k4)
+        out = _fa41.flash_fwd_na(q4, k4, v4, sc)
+    else:
+        _kern_log("coop", q4, k4)
+        out = _fa41.flash_fwd_bf16(q4, k4, v4, sc, False, 0, 0, _FA41_BF16S)
     if not skip_output_reshape:
         out = out.transpose(1, 2).reshape(b, -1, h * d)
     return out

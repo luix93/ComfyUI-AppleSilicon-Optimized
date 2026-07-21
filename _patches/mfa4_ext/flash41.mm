@@ -597,6 +597,297 @@ kernel void flash_attn_fwd_frag(
     }
 }
 
+// ── na: per-simdgroup independent flash, DrawThings NAX recipe ──
+// Design source: liuliu/ccv lib/nnc/mfa/kernels/NAAttentionKernel.cpp
+// (BSD-3-Clause, Copyright (c) 2010 Liu Liu) — the shipped M5 config:
+//   * NSG independent simdgroups per TG, each runs its OWN flash over
+//     NASR=16 query rows with execution_simdgroups<1> ops — one SG's
+//     softmax latency hides behind 15 siblings' matmuls; the hot loop
+//     has NO threadgroup barriers (only simdgroup_barrier for the
+//     per-SG-private P slice);
+//   * K/V loaded straight from device memory (no TG staging — the MPP
+//     guide's M5 rule);
+//   * TWO NABC=64 column blocks share ONE online-softmax update;
+//   * running max/sum/correction live in row-reduction cooperative
+//     tensors (row results replicated across lanes — elementwise math,
+//     no shuffles); map_iterator broadcasts row stats to score elements;
+//   * fast::exp2 with log2(e)*scale folded in (exp2-domain throughout);
+//   * relaxed_precision templated (@NARP@; DrawThings ships true).
+// Host gates: non-causal, Lk % 128 == 0 (static-extent K/V tiles; no
+// tail path in v1 — everything else falls back to the cooperative kernel).
+constant constexpr int NASR  = 16;   // query rows per simdgroup (native tile M)
+constant constexpr int NABC  = @NABCV@;  // KV block width
+constant constexpr int NABLK = @NABLK@;  // column blocks per softmax pass (1|2)
+constant constexpr int NANSG = @NANSG@;
+
+kernel void flash_attn_fwd_na(
+    device @DT@* Q  [[buffer(0)]],
+    device @DT@* K  [[buffer(1)]],
+    device @DT@* V  [[buffer(2)]],
+    device @DT@* O  [[buffer(3)]],
+    constant int*  SH [[buffer(4)]],   // [B,Hq,Hkv,Lq,Lk,causal]
+    constant float* PR [[buffer(5)]],  // [scale]
+    uint3 tgid [[threadgroup_position_in_grid]],
+    uint  sgid [[simdgroup_index_in_threadgroup]],
+    uint  lane [[thread_index_in_simdgroup]])
+{
+    const int Hq=SH[1], Hkv=SH[2], Lq=SH[3], Lk=SH[4];
+    const float dot_scale = PR[0] * 1.4426950408889634f;   // exp2 domain
+
+    const int bh  = int(tgid.y);
+    const int b   = bh / Hq;
+    const int hq  = bh % Hq;
+    const int hkv = hq / (Hq / Hkv);
+    const int q0  = (int(tgid.x) * NANSG + int(sgid)) * NASR;
+
+#if !@NABYP@
+    // Per-SG-private P slice; 16 SGs x 16x64 x 2B = 32KB (the full budget).
+    threadgroup @DT@ tgPall[NANSG * NASR * NABC];
+    threadgroup @DT@* P_buf = tgPall + NASR * NABC * int(sgid);
+#endif
+
+    if (q0 >= Lq) return;   // uniform per SG; no threadgroup barriers follow
+
+    device @DT@* Qp = Q + ulong(bh)*ulong(Lq)*DD;
+    device @DT@* Kp = K + ulong(b*Hkv+hkv)*ulong(Lk)*DD;
+    device @DT@* Vp = V + ulong(b*Hkv+hkv)*ulong(Lk)*DD;
+
+    constexpr auto na_qk_desc = matmul2d_descriptor(
+        NASR, NABC, DD, false, true, @NARP@,
+        matmul2d_descriptor::mode::multiply_accumulate);
+    matmul2d<na_qk_desc, execution_simdgroups<1>> qk_op;
+    constexpr auto na_pv_desc = matmul2d_descriptor(
+        NASR, DD, NABC, false, false, @NARP@,
+        matmul2d_descriptor::mode::multiply_accumulate);
+    matmul2d<na_pv_desc, execution_simdgroups<1>> pv_op;
+
+    // Parent tensors carry the true bounds; STATIC-extent slices feed the
+    // matmuls (no per-access bounds math — the Apple MPP guide's M5 rule;
+    // OOB rows of the q-tail slice are clamped by the parent's extents).
+    auto Qt = tensor<device @DT@, dextents<int,2>, tensor_inline>(Qp, dextents<int,2>(DD, Lq));
+    auto Kt = tensor<device @DT@, dextents<int,2>, tensor_inline>(Kp, dextents<int,2>(DD, Lk));
+    auto Vt = tensor<device @DT@, dextents<int,2>, tensor_inline>(Vp, dextents<int,2>(DD, Lk));
+    auto mQ = Qt.slice<DD, NASR>(0, q0);
+    auto mK = Kt.slice<DD, NABC>(0, 0);
+    auto mV = Vt.slice<DD, NABC>(0, 0);
+    using TQ = __tensor_ops_detail::__remove_addrspace_t<decltype(mQ)>;
+    using TK = __tensor_ops_detail::__remove_addrspace_t<decltype(mK)>;
+    using TV = __tensor_ops_detail::__remove_addrspace_t<decltype(mV)>;
+#if !@NABYP@
+    auto tP = tensor(P_buf, dextents<int,2>{NABC, NASR}, array<int,2>{1, NABC});
+    using TP = __tensor_ops_detail::__remove_addrspace_t<decltype(tP)>;
+#endif
+
+    auto cS0 = qk_op.get_destination_cooperative_tensor<TQ, TK, float>();
+#if @NABLK@ == 2
+    auto cS1 = qk_op.get_destination_cooperative_tensor<TQ, TK, float>();
+#endif
+    auto cM   = qk_op.get_row_reduction_destination_cooperative_tensor<TQ, TK, float>();
+    auto cL   = qk_op.get_row_reduction_destination_cooperative_tensor<TQ, TK, float>();
+    auto cCor = qk_op.get_row_reduction_destination_cooperative_tensor<TQ, TK, float>();
+#if @NABYP@
+    // Register chain: P never touches threadgroup memory — converted in
+    // registers into the PV left-input cooperative tensor (same element
+    // enumeration as the QK destination; parity-checked by the probe).
+    auto cP  = pv_op.get_left_input_cooperative_tensor<@DT@, @DT@, float>();
+    auto ctO = pv_op.get_destination_cooperative_tensor<decltype(cP), TV, float>();
+#else
+    auto ctO = pv_op.get_destination_cooperative_tensor<TP, TV, float>();
+#endif
+
+    #pragma clang loop unroll(full)
+    for (uint16_t k = 0; k < cM.get_capacity(); ++k) {
+        if (cM.is_valid_element(k)) {
+            cM[k] = -INFINITY;
+            cL[k] = numeric_limits<float>::denorm_min();
+        }
+    }
+
+    for (int c = 0; c < Lk; c += NABLK*NABC) {
+        // Zero-init S (accumulate-mode matmul writes S += Q.K^T).
+        #pragma clang loop unroll(full)
+        for (uint16_t k = 0; k < cS0.get_capacity(); ++k) {
+            if (cS0.is_valid_element(k)) {
+                cS0[k] = 0.0f;
+#if @NABLK@ == 2
+                cS1[k] = 0.0f;
+#endif
+            }
+        }
+        auto mK0 = Kt.slice<DD, NABC>(0, c);
+        qk_op.run(mQ, mK0, cS0);
+#if @NABLK@ == 2
+        auto mK1 = Kt.slice<DD, NABC>(0, c + NABC);
+        qk_op.run(mQ, mK1, cS1);
+#endif
+
+        // Diagnostic modes (@NADIAG@, wrong results): 1 = no softmax,
+        // 2 = QK only, 3 = QK + PV but no P write/barrier (stale P).
+#if @NADIAG@ != 0 && !@NABYP@ && @NABLK@ == 2
+        if (@NADIAG@ != 0) {
+            if (c == 0) {
+                #pragma clang loop unroll(full)
+                for (uint16_t k = 0; k < ctO.get_capacity(); ++k)
+                    if (ctO.is_valid_element(k)) ctO[k] = 0.0f;
+            }
+            if (@NADIAG@ == 2) continue;
+            if (@NADIAG@ == 1) {
+                #pragma clang loop unroll(full)
+                for (uint16_t k = 0; k < cS0.get_capacity(); ++k) {
+                    if (cS0.is_valid_element(k)) {
+                        auto idx = cS0.get_multidimensional_index(k);
+                        P_buf[idx[0] + idx[1]*NABC] = @DT@(cS0[k]);
+                    }
+                }
+                simdgroup_barrier(mem_flags::mem_threadgroup);
+            }
+            auto mVd0 = Vt.slice<DD, NABC>(0, c);
+            pv_op.run(tP, mVd0, ctO);
+            if (@NADIAG@ == 1) {
+                #pragma clang loop unroll(full)
+                for (uint16_t k = 0; k < cS1.get_capacity(); ++k) {
+                    if (cS1.is_valid_element(k)) {
+                        auto idx = cS1.get_multidimensional_index(k);
+                        P_buf[idx[0] + idx[1]*NABC] = @DT@(cS1[k]);
+                    }
+                }
+                simdgroup_barrier(mem_flags::mem_threadgroup);
+            }
+            auto mVd1 = Vt.slice<DD, NABC>(0, c + NABC);
+            pv_op.run(tP, mVd1, ctO);
+            continue;
+        }
+#endif
+
+        // One online-softmax update shared by both column blocks.
+        auto cM0 = qk_op.get_row_reduction_destination_cooperative_tensor<TQ, TK, float>();
+        reduce_rows(cS0, cM0, reduction_operation::max, -INFINITY);
+#if @NABLK@ == 2
+        auto cM1 = qk_op.get_row_reduction_destination_cooperative_tensor<TQ, TK, float>();
+        reduce_rows(cS1, cM1, reduction_operation::max, -INFINITY);
+#endif
+        #pragma clang loop unroll(full)
+        for (uint16_t k = 0; k < cM.get_capacity(); ++k) {
+            if (cM.is_valid_element(k)) {
+                cCor[k] = 1.0f;
+#if @NABLK@ == 2
+                const float Mn = max(cM0[k], cM1[k]) * dot_scale;
+#else
+                const float Mn = cM0[k] * dot_scale;
+#endif
+                if (Mn > cM[k]) {
+                    cCor[k] = fast::exp2(cM[k] - Mn);
+                    cM[k] = Mn;
+                }
+            }
+        }
+        // S -> P = exp2(s*dot_scale - m) in place (fp32 registers).
+        #pragma clang loop unroll(full)
+        for (uint16_t k = 0; k < cS0.get_capacity(); ++k) {
+            if (cS0.is_valid_element(k)) {
+                auto it = cS0.get_iterator(k);
+                auto mit = cM.map_iterator(it);
+                cS0[k] = fast::exp2(cS0[k] * dot_scale - *mit);
+#if @NABLK@ == 2
+                cS1[k] = fast::exp2(cS1[k] * dot_scale - *mit);
+#endif
+            }
+        }
+        auto cL0 = qk_op.get_row_reduction_destination_cooperative_tensor<TQ, TK, float>();
+        reduce_rows(cS0, cL0, reduction_operation::sum, 0.0f);
+#if @NABLK@ == 2
+        auto cL1 = qk_op.get_row_reduction_destination_cooperative_tensor<TQ, TK, float>();
+        reduce_rows(cS1, cL1, reduction_operation::sum, 0.0f);
+#endif
+        #pragma clang loop unroll(full)
+        for (uint16_t k = 0; k < cL.get_capacity(); ++k) {
+            if (cL.is_valid_element(k)) {
+#if @NABLK@ == 2
+                cL[k] = cL[k] * cCor[k] + cL0[k] + cL1[k];
+#else
+                cL[k] = cL[k] * cCor[k] + cL0[k];
+#endif
+            }
+        }
+
+        // Rescale running O (first pass: init instead — cM was -inf, and
+        // fast::exp2(-inf - Mn) is not trusted under fast math). NOTE: a
+        // "skip when correction==1" simd-vote branch here measured 2x SLOWER
+        // (divergent flow around cooperative tensors spills registers) —
+        // keep the sweep unconditional.
+        if (c == 0) {
+            #pragma clang loop unroll(full)
+            for (uint16_t k = 0; k < ctO.get_capacity(); ++k)
+                if (ctO.is_valid_element(k)) ctO[k] = 0.0f;
+        } else {
+            #pragma clang loop unroll(full)
+            for (uint16_t k = 0; k < ctO.get_capacity(); ++k) {
+                if (ctO.is_valid_element(k)) {
+                    auto it = ctO.get_iterator(k);
+                    auto cit = cCor.map_iterator(it);
+                    ctO[k] *= *cit;
+                }
+            }
+        }
+
+#if @NABYP@
+        // P blocks stay in registers: convert -> PV accumulate, twice.
+        #pragma clang loop unroll(full)
+        for (uint16_t k = 0; k < cS0.get_capacity(); ++k)
+            if (cS0.is_valid_element(k)) cP[k] = @DT@(cS0[k]);
+        simdgroup_barrier(mem_flags::mem_none);
+        auto mV0 = Vt.slice<DD, NABC>(0, c);
+        pv_op.run(cP, mV0, ctO);
+#if @NABLK@ == 2
+        #pragma clang loop unroll(full)
+        for (uint16_t k = 0; k < cS1.get_capacity(); ++k)
+            if (cS1.is_valid_element(k)) cP[k] = @DT@(cS1[k]);
+        auto mV1 = Vt.slice<DD, NABC>(0, c + NABC);
+        pv_op.run(cP, mV1, ctO);
+#endif
+    }
+#else
+        // P block 0 -> private TG slice -> PV accumulate; then block 1.
+        #pragma clang loop unroll(full)
+        for (uint16_t k = 0; k < cS0.get_capacity(); ++k) {
+            if (cS0.is_valid_element(k)) {
+                auto idx = cS0.get_multidimensional_index(k);
+                P_buf[idx[0] + idx[1]*NABC] = @DT@(cS0[k]);
+            }
+        }
+        simdgroup_barrier(mem_flags::mem_threadgroup);
+        auto mV0 = Vt.slice<DD, NABC>(0, c);
+        pv_op.run(tP, mV0, ctO);
+
+#if @NABLK@ == 2
+        #pragma clang loop unroll(full)
+        for (uint16_t k = 0; k < cS1.get_capacity(); ++k) {
+            if (cS1.is_valid_element(k)) {
+                auto idx = cS1.get_multidimensional_index(k);
+                P_buf[idx[0] + idx[1]*NABC] = @DT@(cS1[k]);
+            }
+        }
+        simdgroup_barrier(mem_flags::mem_threadgroup);
+        auto mV1 = Vt.slice<DD, NABC>(0, c + NABC);
+        pv_op.run(tP, mV1, ctO);
+#endif
+    }
+#endif
+
+    device @DT@* Ob = O + ulong(bh)*ulong(Lq)*DD;
+    #pragma clang loop unroll(full)
+    for (uint16_t k = 0; k < ctO.get_capacity(); ++k) {
+        if (!ctO.is_valid_element(k)) continue;
+        auto idx = ctO.get_multidimensional_index(k);
+        const int row = int(idx[1]);
+        const int col = int(idx[0]);
+        if (q0 + row >= Lq || col >= DD) continue;
+        auto it = ctO.get_iterator(k);
+        auto lit = cL.map_iterator(it);
+        Ob[ulong(q0 + row)*DD + col] = @DT@(ctO[k] * fast::divide(1.0f, *lit));
+    }
+}
+
 // probe: can the (single-simdgroup, bfloat) QK destination feed PV as left input?
 kernel void v2r_compat_bf16(
     device bfloat* DUMMY [[buffer(0)]],
@@ -634,15 +925,20 @@ static id<MTLComputePipelineState> pso_for(int D, int BR, int BC, bool bf16s,
                                            int SR = 16, int BCV = 64,
                                            const char* fn_name = "flash_attn_fwd_bf16",
                                            bool pv_static = false, int nsg = 0,
-                                           bool half_io = false, bool db = false) {
-  const long key = (((((((((long)D * 1000 + BR) * 1000 + BC) * 2 + (bf16s ? 1 : 0))
-                    * 100 + SR) * 1000 + BCV) * 4
+                                           bool half_io = false, bool db = false,
+                                           bool na_rp = true, bool na_byp = false,
+                                           int na_bc = 64, int na_blk = 2) {
+  const long key = ((((((((((long)D * 1000 + BR) * 1000 + BC) * 2 + (bf16s ? 1 : 0))
+                    * 100 + SR) * 1000 + BCV) * 8
                    + (std::string(fn_name) == "flash_attn_fwd_bf16" ? 0
                       : (std::string(fn_name) == "flash_attn_fwd_v2r_bf16" ? 1
-                         : (std::string(fn_name) == "flash_attn_fwd_frag" ? 2 : 3))))
+                         : (std::string(fn_name) == "flash_attn_fwd_frag" ? 2
+                            : (std::string(fn_name) == "flash_attn_fwd_na" ? 3 : 4)))))
                    * 2 + (pv_static ? 1 : 0)) * 32 + nsg) * 4
-                   + (half_io ? 1 : 0) + (db ? 2 : 0);
-  auto it = g_pso.find(key);
+                   + (half_io ? 1 : 0) + (db ? 2 : 0)) * 4 + (na_rp ? 1 : 0)
+                   + (na_byp ? 2 : 0);
+  const long key2 = key * 1024 + na_bc * 4 + na_blk;
+  auto it = g_pso.find(key2);
   if (it != g_pso.end()) return it->second;
 
   std::string src(kSrcTemplate);
@@ -658,6 +954,15 @@ static id<MTLComputePipelineState> pso_for(int D, int BR, int BC, bool bf16s,
   sub_all(src, "@SR@", std::to_string(SR));
   sub_all(src, "@BCV@", std::to_string(BCV));
   sub_all(src, "@DB@", db ? "true" : "false");
+  // na kernel: simdgroups per TG and the relaxed_precision descriptor flag.
+  sub_all(src, "@NANSG@", std::to_string(nsg > 0 ? nsg : 16));
+  sub_all(src, "@NARP@", na_rp ? "true" : "false");
+  sub_all(src, "@NABYP@", na_byp ? "1" : "0");
+  sub_all(src, "@NABCV@", std::to_string(na_bc));
+  sub_all(src, "@NABLK@", std::to_string(na_blk));
+  // diagnostic: ASFP8_FA41_NA_DIAG = 1 no-softmax / 2 QK-only / 3 no-P-roundtrip
+  const int nadiag = getenv("ASFP8_FA41_NA_DIAG") ? atoi(getenv("ASFP8_FA41_NA_DIAG")) : 0;
+  sub_all(src, "@NADIAG@", std::to_string(nadiag));
   // Static reduction dims where safe: qk's inner dim is always exactly D;
   // pv's inner dim (BC) is static only when the host proved Lk % BC == 0
   // (a static-k op reads the full tile — a short tail would read OOB).
@@ -681,7 +986,7 @@ static id<MTLComputePipelineState> pso_for(int D, int BR, int BC, bool bf16s,
   id<MTLComputePipelineState> pso = [dev newComputePipelineStateWithFunction:fn error:&err];
   TORCH_CHECK(pso, "flash41 pipeline creation failed: ",
               err ? err.localizedDescription.UTF8String : "unknown");
-  g_pso[key] = pso;
+  g_pso[key2] = pso;
   return pso;
 }
 
@@ -887,6 +1192,79 @@ torch::Tensor flash_fwd_frag(torch::Tensor q, torch::Tensor k, torch::Tensor v,
   return out;
 }
 
+// DrawThings-recipe per-simdgroup kernel: NSG independent SGs x NASR=16 rows,
+// two 64-col blocks per softmax pass, K/V straight from device memory.
+// Gates: non-causal, Lk % 128 == 0 (no tail path in v1).
+torch::Tensor flash_fwd_na(torch::Tensor q, torch::Tensor k, torch::Tensor v,
+                           double scale, int64_t nsg, int64_t rp, int64_t byp,
+                           int64_t bc, int64_t blk) {
+  TORCH_CHECK(q.is_mps() && k.is_mps() && v.is_mps(), "inputs must be on mps");
+  const bool half_io = q.scalar_type() == torch::kHalf;
+  TORCH_CHECK((q.scalar_type() == torch::kBFloat16 || half_io)
+              && k.scalar_type() == q.scalar_type()
+              && v.scalar_type() == q.scalar_type(),
+              "inputs must be bf16 or fp16 (matching)");
+  TORCH_CHECK(q.dim() == 4 && k.dim() == 4 && v.dim() == 4, "inputs must be [B,H,L,D]");
+  const int B = (int)q.size(0), Hq = (int)q.size(1), Lq = (int)q.size(2), D = (int)q.size(3);
+  const int Hkv = (int)k.size(1), Lk = (int)k.size(2);
+  TORCH_CHECK(k.size(3) == D && v.size(3) == D, "head_dim mismatch");
+  TORCH_CHECK(v.size(2) == Lk && k.size(0) == B && v.size(0) == B, "kv shape mismatch");
+  TORCH_CHECK(Hkv > 0 && Hq % Hkv == 0, "Hq must be a multiple of Hkv");
+  TORCH_CHECK(D % 32 == 0 && D <= 128,
+              "na kernel needs head_dim % 32 == 0 (static-K descriptor; "
+              "OS 26.1 requires K a multiple of 32), <= 128");
+  int BC = (int)bc > 0 ? (int)bc : 64;
+  int BLK = (int)blk > 0 ? (int)blk : 2;
+  TORCH_CHECK(BC % 32 == 0 && BC <= 256, "bc must be a multiple of 32, <= 256");
+  TORCH_CHECK(BLK == 1 || BLK == 2, "blk must be 1 or 2");
+  TORCH_CHECK(Lk % (BC * BLK) == 0, "na kernel requires Lk % (bc*blk) == 0");
+
+  int NSG = (int)nsg > 0 ? (int)nsg : 16;
+  TORCH_CHECK(NSG >= 1 && NSG <= 16, "nsg must be in [1,16]");
+  TORCH_CHECK(byp != 0 || NSG * 16 * BC * (int)q.element_size() <= 32768,
+              "P slices exceed 32KB threadgroup memory");
+
+  auto qc = q.contiguous();
+  auto kc = k.contiguous();
+  auto vc = v.contiguous();
+  auto out = torch::empty({B, Hq, Lq, D}, q.options());
+  std::array<int32_t, 6> shArr = {B, Hq, Hkv, Lq, Lk, 0};
+  std::array<float, 1> prArr = {(float)scale};
+
+  id<MTLComputePipelineState> pso =
+      pso_for(D, 16, 64, /*bf16s=*/true, 16, 64, "flash_attn_fwd_na",
+              /*pv_static=*/false, NSG, half_io, /*db=*/false, rp != 0, byp != 0,
+              BC, BLK);
+  MPSStream* stream = getCurrentMPSStream();
+  id<MTLBuffer> qB = __builtin_bit_cast(id<MTLBuffer>, qc.storage().data());
+  id<MTLBuffer> kB = __builtin_bit_cast(id<MTLBuffer>, kc.storage().data());
+  id<MTLBuffer> vB = __builtin_bit_cast(id<MTLBuffer>, vc.storage().data());
+  id<MTLBuffer> oB = __builtin_bit_cast(id<MTLBuffer>, out.storage().data());
+  const NSUInteger qO = qc.storage_offset() * qc.element_size();
+  const NSUInteger kO = kc.storage_offset() * kc.element_size();
+  const NSUInteger vO = vc.storage_offset() * vc.element_size();
+  const NSUInteger oO = out.storage_offset() * out.element_size();
+  const int rows_per_tg = 16 * NSG;
+  const NSUInteger gx = (NSUInteger)((Lq + rows_per_tg - 1) / rows_per_tg);
+  const NSUInteger gy = (NSUInteger)(B * Hq);
+
+  dispatch_sync(stream->queue(), ^(){
+    @autoreleasepool {
+      id<MTLComputeCommandEncoder> enc = stream->commandEncoder();
+      [enc setComputePipelineState:pso];
+      [enc setBuffer:qB offset:qO atIndex:0];
+      [enc setBuffer:kB offset:kO atIndex:1];
+      [enc setBuffer:vB offset:vO atIndex:2];
+      [enc setBuffer:oB offset:oO atIndex:3];
+      [enc setBytes:shArr.data() length:sizeof(shArr) atIndex:4];
+      [enc setBytes:prArr.data() length:sizeof(prArr) atIndex:5];
+      [enc dispatchThreadgroups:MTLSizeMake(gx, gy, 1)
+          threadsPerThreadgroup:MTLSizeMake((NSUInteger)(NSG * 32), 1, 1)];
+    }
+  });
+  return out;
+}
+
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("flash_fwd_bf16", &flash_fwd_bf16,
         "bf16 flash attention fwd (Metal 4.1 TensorOps) on MPS",
@@ -898,6 +1276,11 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
         py::arg("q"), py::arg("k"), py::arg("v"), py::arg("scale"),
         py::arg("causal") = false, py::arg("sr") = 0, py::arg("nsg") = 0,
         py::arg("bc") = 0, py::arg("db") = 0);
+  m.def("flash_fwd_na", &flash_fwd_na,
+        "per-simdgroup independent flash fwd (DrawThings NAX recipe) on MPS",
+        py::arg("q"), py::arg("k"), py::arg("v"), py::arg("scale"),
+        py::arg("nsg") = 16, py::arg("rp") = 1, py::arg("byp") = 1,
+        py::arg("bc") = 64, py::arg("blk") = 2);
   m.def("warmup", [](int64_t D, int64_t BR, int64_t BC) { pso_for((int)D, (int)BR, (int)BC, false); return true; },
         "compile + build pipeline for head dim D / BR rows / BC cols",
         py::arg("D") = 128, py::arg("BR") = 32, py::arg("BC") = 128);
