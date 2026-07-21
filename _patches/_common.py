@@ -49,6 +49,78 @@ def apply_native_master_switch(environ=None):
             implied.append(var)
     return implied
 
+def ensure_native_prereqs(environ=None):
+    """Self-heal the JIT-kernel build prerequisites (opt-out ASFP8_AUTOFIX=0).
+
+    Fresh Desktop-provisioned venvs ship without ninja and with torch's C++
+    headers stripped, which silently disables every Metal extension. Two
+    fixes, both idempotent and version-safe:
+
+      * ninja missing  -> pip-install it into the running venv (tiny wheel).
+      * torch headers  -> per-torch-version cache under
+        ~/.cache/asfp8/torch_headers/<version>/: a HEALTHY venv seeds the
+        cache once (snapshot of site-packages/torch/include), a stripped venv
+        with a matching cache entry restores from it. A stripped venv with no
+        cache stays broken (the loud banner in __init__ reports it).
+
+    Returns a list of human-readable action strings for the startup log.
+    """
+    if environ is None:
+        environ = os.environ
+    if not any(environ.get(v) == "1"
+               for v in ("ASFP8_INT8_EXT", "ASFP8_DIT_EXT",
+                         "ASFP8_FP8_EXT", "ASFP8_FP8_SGEMM")):
+        return []
+    if environ.get("ASFP8_AUTOFIX", "1") != "1":
+        return []
+    import shutil
+    import subprocess
+    import sys as _sys
+    actions = []
+
+    try:
+        import ninja  # noqa: F401
+    except Exception:
+        try:
+            subprocess.run(
+                [_sys.executable, "-m", "pip", "install", "--quiet", "ninja"],
+                check=True, timeout=180, capture_output=True)
+            import importlib
+            importlib.invalidate_caches()
+            import ninja  # noqa: F401
+            actions.append("installed ninja into this venv (was missing)")
+        except Exception as e:
+            actions.append(f"could NOT auto-install ninja ({e!r}); "
+                           f"run: {_sys.executable} -m pip install ninja")
+
+    try:
+        inc = os.path.join(os.path.dirname(torch.__file__), "include")
+        sentinel = os.path.join(inc, "torch", "extension.h")
+        cache = os.path.join(os.path.expanduser("~"), ".cache", "asfp8",
+                             "torch_headers", torch.__version__)
+        cache_ok = os.path.exists(os.path.join(cache, "torch", "extension.h"))
+        if os.path.exists(sentinel) and not cache_ok:
+            # Healthy venv: seed the cache (copy to tmp, rename = atomic-ish).
+            tmp = cache + ".tmp"
+            shutil.rmtree(tmp, ignore_errors=True)
+            os.makedirs(os.path.dirname(cache), exist_ok=True)
+            shutil.copytree(inc, tmp)
+            shutil.rmtree(cache, ignore_errors=True)
+            os.rename(tmp, cache)
+            actions.append(f"cached torch {torch.__version__} C++ headers "
+                           f"for future venvs ({cache})")
+        elif not os.path.exists(sentinel) and cache_ok:
+            # Stripped venv + matching cache: restore.
+            shutil.rmtree(inc, ignore_errors=True)
+            shutil.copytree(cache, inc)
+            actions.append(f"restored stripped torch {torch.__version__} C++ "
+                           f"headers from cache (Desktop venvs ship without "
+                           f"them; Metal kernels need torch/extension.h)")
+    except Exception as e:
+        actions.append(f"header cache/restore failed ({e!r})")
+    return actions
+
+
 _lut_cache = {}
 
 

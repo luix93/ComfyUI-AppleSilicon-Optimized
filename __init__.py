@@ -75,9 +75,15 @@ if __spec__ is not None and __spec__.parent:
     # once (fp8/int8 Metal kernels, staged W8A16 backend, attention router, DiT
     # fusions). Explicit per-feature values always win — see _common.NATIVE_IMPLIES.
     from ._patches._common import apply_native_master_switch as _anms
+    from ._patches._common import ensure_native_prereqs as _enp
     _implied = _anms()
     if _implied:
         print(f"[AppleSilicon-Optimized] ASFP8_NATIVE=1 -> {', '.join(v + '=1' for v in _implied)}")
+    # Self-heal JIT prerequisites BEFORE any extension tries to build
+    # (fresh Desktop venvs: no ninja, stripped torch headers). ASFP8_AUTOFIX=0
+    # disables; the loud banner below still reports anything left broken.
+    for _act in _enp():
+        print(f"[AppleSilicon-Optimized] autofix: {_act}")
 
     # Bisection switches (for debugging a regression to a single patch):
     #   ASFP8_ENABLE_ONLY=psutil_vmstat,comfykitchen_fp8   install ONLY these (by module name)
