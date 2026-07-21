@@ -627,13 +627,17 @@ kernel void flash_attn_fwd_na(
     device @DT@* K  [[buffer(1)]],
     device @DT@* V  [[buffer(2)]],
     device @DT@* O  [[buffer(3)]],
-    constant int*  SH [[buffer(4)]],   // [B,Hq,Hkv,Lq,Lk,causal]
+    constant int*  SH [[buffer(4)]],   // [B,Hq,Hkv,Lq,Lk,causal,LqStride,LkStride]
     constant float* PR [[buffer(5)]],  // [scale]
     uint3 tgid [[threadgroup_position_in_grid]],
     uint  sgid [[simdgroup_index_in_threadgroup]],
     uint  lane [[thread_index_in_simdgroup]])
 {
     const int Hq=SH[1], Hkv=SH[2], Lq=SH[3], Lk=SH[4];
+    // Padded per-head row strides: the host zero-pads ragged L dims to tile
+    // boundaries, so buffer strides differ from the TRUE lengths used for
+    // masking/loops. Mixing them up shifts every head after the first.
+    const int LqS=SH[6], LkS=SH[7];
     const float dot_scale = PR[0] * 1.4426950408889634f;   // exp2 domain
 
     const int bh  = int(tgid.y);
@@ -650,9 +654,12 @@ kernel void flash_attn_fwd_na(
 
     if (q0 >= Lq) return;   // uniform per SG; no threadgroup barriers follow
 
-    device @DT@* Qp = Q + ulong(bh)*ulong(Lq)*DD;
-    device @DT@* Kp = K + ulong(b*Hkv+hkv)*ulong(Lk)*DD;
-    device @DT@* Vp = V + ulong(b*Hkv+hkv)*ulong(Lk)*DD;
+    // Head strides use the PADDED lengths (LqS/LkS): the host zero-pads
+    // ragged L dims, so buffer geometry differs from the true Lq/Lk used
+    // for masking — mixing them shifts every head after the first.
+    device @DT@* Qp = Q + ulong(bh)*ulong(LqS)*DD;
+    device @DT@* Kp = K + ulong(b*Hkv+hkv)*ulong(LkS)*DD;
+    device @DT@* Vp = V + ulong(b*Hkv+hkv)*ulong(LkS)*DD;
 
     constexpr auto na_qk_desc = matmul2d_descriptor(
         NASR, NABC, DD, false, true, @NARP@,
@@ -666,9 +673,9 @@ kernel void flash_attn_fwd_na(
     // Parent tensors carry the true bounds; STATIC-extent slices feed the
     // matmuls (no per-access bounds math — the Apple MPP guide's M5 rule;
     // OOB rows of the q-tail slice are clamped by the parent's extents).
-    auto Qt = tensor<device @DT@, dextents<int,2>, tensor_inline>(Qp, dextents<int,2>(DD, Lq));
-    auto Kt = tensor<device @DT@, dextents<int,2>, tensor_inline>(Kp, dextents<int,2>(DD, Lk));
-    auto Vt = tensor<device @DT@, dextents<int,2>, tensor_inline>(Vp, dextents<int,2>(DD, Lk));
+    auto Qt = tensor<device @DT@, dextents<int,2>, tensor_inline>(Qp, dextents<int,2>(DD, LqS));
+    auto Kt = tensor<device @DT@, dextents<int,2>, tensor_inline>(Kp, dextents<int,2>(DD, LkS));
+    auto Vt = tensor<device @DT@, dextents<int,2>, tensor_inline>(Vp, dextents<int,2>(DD, LkS));
     auto mQ = Qt.slice<DD, NASR>(0, q0);
     auto mK = Kt.slice<DD, NABC>(0, 0);
     auto mV = Vt.slice<NAHB, NABC>(0, 0);
@@ -1303,8 +1310,25 @@ torch::Tensor flash_fwd_na(torch::Tensor q, torch::Tensor k, torch::Tensor v,
   auto qc = q.contiguous();
   auto kc = k.contiguous();
   auto vc = v.contiguous();
+  // ZERO-PAD ragged L dims to tile boundaries. The kernel's static-extent
+  // slices do NOT bounds-check (that is their perf point), so a ragged Lk
+  // tail read past the buffer end — heap garbage decoding as Inf/NaN made
+  // 0 * garbage = NaN in the PV accumulate and intermittently corrupted
+  // whole images (krea, Lk=4300). Zero pad rows are exact: pad keys are
+  // -inf-masked in the score init, zero V rows meet P=0, and zero Q pad
+  // rows are never stored (row-guarded epilogue). SH keeps the TRUE Lq/Lk.
+  const int rows_tg = 16 * NSG;
+  const int64_t LqP = ((Lq + rows_tg - 1) / rows_tg) * (int64_t)rows_tg;
+  const int64_t LkP = ((Lk + BC * BLK - 1) / (BC * BLK)) * (int64_t)(BC * BLK);
+  if (LqP != Lq)
+    qc = at::constant_pad_nd(qc, {0, 0, 0, LqP - Lq}, 0);
+  if (LkP != Lk) {
+    kc = at::constant_pad_nd(kc, {0, 0, 0, LkP - Lk}, 0);
+    vc = at::constant_pad_nd(vc, {0, 0, 0, LkP - Lk}, 0);
+  }
   auto out = torch::empty({B, Hq, Lq, D}, q.options());
-  std::array<int32_t, 6> shArr = {B, Hq, Hkv, Lq, Lk, 0};
+  std::array<int32_t, 8> shArr = {B, Hq, Hkv, Lq, Lk, 0,
+                                  (int32_t)LqP, (int32_t)LkP};
   std::array<float, 1> prArr = {(float)scale};
 
   id<MTLComputePipelineState> pso =

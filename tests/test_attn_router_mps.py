@@ -162,6 +162,37 @@ def test_fa41_na_kernel_parity():
 
 
 @requires_router
+def test_fa41_na_ragged_dirty_pool():
+    """Regression: ragged-Lk tail reads once went past the buffer end; on a
+    dirty allocator pool the garbage intermittently corrupted whole images
+    (krea, 2026-07-21). Parity on FRESH allocations cannot catch it — this
+    poisons the pool with NaN pages first, then checks the exact krea shape."""
+    from _patches.mfa4_ext import loader
+    mod = loader.module()
+    if mod is None or not hasattr(mod, "flash_fwd_na"):
+        pytest.skip("mfa4_ext unavailable or too old")
+    torch.manual_seed(0)
+    junk = [torch.full((64, 1 << 20), float("nan"), dtype=torch.bfloat16,
+                       device="mps") for _ in range(4)]
+    torch.mps.synchronize()
+    del junk
+    B, Hq, Hkv, Lq, Lk, D = 1, 48, 12, 4300, 4300, 128
+    scale = D ** -0.5
+    q = torch.randn(B, Hq, Lq, D, dtype=torch.bfloat16, device="mps")
+    k = torch.randn(B, Hkv, Lk, D, dtype=torch.bfloat16, device="mps")
+    v = torch.randn(B, Hkv, Lk, D, dtype=torch.bfloat16, device="mps")
+    kr = k.repeat_interleave(Hq // Hkv, dim=1)
+    vr = v.repeat_interleave(Hq // Hkv, dim=1)
+    s = torch.einsum("bhid,bhjd->bhij", q.float() * scale, kr.float())
+    ref = torch.einsum("bhij,bhjd->bhid", s.softmax(-1), vr.float())
+    out = mod.flash_fwd_na(q, k, v, scale)
+    torch.mps.synchronize()
+    assert int(torch.isnan(out).sum()) == 0, "NaNs from OOB tail reads"
+    err = (out.float() - ref).abs().max().item()
+    assert err < 5e-3, f"maxerr={err} (dirty-pool ragged tail)"
+
+
+@requires_router
 def test_flash_route_matches_sub_quad():
     """Parity: flash route vs sub-quad at L=4352 (memory-bounded, <1 GB peak)."""
     import sys
