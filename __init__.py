@@ -49,6 +49,9 @@ See README.md for details. MIT licensed.
 # ComfyUI looks for these on every custom node. Empty = side effects only, no nodes.
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}
+# Frontend extension: "Free RAM" topbar button (web/asfp8_topbar.js) — one
+# click unloads all models and releases caches + the MPS allocator pool.
+WEB_DIRECTORY = "./web"
 
 if __spec__ is not None and __spec__.parent:
     # Loaded as part of a package (normal ComfyUI startup) — install patches.
