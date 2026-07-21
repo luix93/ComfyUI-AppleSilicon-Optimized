@@ -47,7 +47,9 @@ __all__ = [
                             #   repeat_e copies) + wide RMSNorm+RoPE via fp16/bf16 wan_ext kernels
     "free_mem_mps",         # patch #30 — MPS get_free_memory counts torch's reusable allocator
                             #   pool (stops needless model eviction / 14s Wan re-uploads per run)
-    "wan_vae_fast",         # patch #29 — Wan 2.1 VAE chunk batching: decode/encode causal loops and
+    "wan_vae_fast",
+    "ideogram_fast",        # patch #32 — Ideogram 4 fused block glue (norm+modulate,
+                            # gate+residual via dit_ext; FFN silu-gating via Lumina class)         # patch #29 — Wan 2.1 VAE chunk batching: decode/encode causal loops and
                             #   run_up sub-chunking stream 8 frames per pass instead of 2 (ASFP8_CONV3D=1)
     # Internal helpers (not patches):
     # "_common"             — decode_fp8, fp8_to_float_lut, FP8_DTYPES

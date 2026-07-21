@@ -197,6 +197,9 @@ def _bmm_attention(q, k, v, heads, skip_reshape=False, skip_output_reshape=False
         q2, k2, v2 = (t.reshape(b, -1, h, d).transpose(1, 2).reshape(b * h, -1, d)
                       for t in (q, k, v))
     scale = d ** -0.5
+    # NOTE: fp32-upcast softmax was tried for Ideogram (typography concern):
+    # output CONTENT was pixel-identical to bf16 softmax at the same seed and
+    # it cost +13s/run (1.85GB fp32 score tensor) — bf16 stays.
     attn = torch.bmm(q2 * scale, k2.transpose(1, 2)).softmax(dim=-1)
     out = torch.bmm(attn, v2)
     out = out.reshape(b, h, -1, d)
@@ -220,7 +223,11 @@ def _router(q, k, v, heads, mask=None, attn_precision=None, skip_reshape=False,
         # head dims (Flux2/Krea2/Z-Image are all D=128) → sub-quad: its bmm
         # rides the matmul units and beats every fused-SDPA tier on MPS
         # (measured: 63ms vs 101ms flash / 173ms stock at Flux2-edit shapes).
-        if (L >= _flash_min_seq() and D <= 128 and D % 8 == 0
+        # D cap 256 (was 128): Ideogram 4 runs unmasked D=256 — the flash
+        # kernels can't take it (their own gates below keep them at D<=128),
+        # but the one-shot bmm beats chunked sub-quad there just like at
+        # D=128 (measured: sub-quad baddbmm+bmm was 10% of an Ideogram run).
+        if (L >= _flash_min_seq() and D <= 256 and D % 8 == 0
                 and q.dtype in _SDPA_DTYPES and q.dtype == k.dtype == v.dtype):
             if _flash_ok and D <= _flash_max_head_dim():
                 _route_log("flash", q, k, heads, mask, attn_precision, skip_reshape)
@@ -229,7 +236,7 @@ def _router(q, k, v, heads, mask=None, attn_precision=None, skip_reshape=False,
                                 skip_output_reshape=skip_output_reshape, **kwargs)
             # Default upcast only: honor an explicit fp32 attn_precision request.
             # flash41 takes bf16 AND fp16 (Wan runs fp16); math is fp32 inside.
-            if (_fa41 is not None and attn_precision is None
+            if (_fa41 is not None and attn_precision is None and D <= 128
                     and q.dtype in (torch.bfloat16, torch.float16)):
                 try:
                     out = _fa41_attention(q, k, v, heads, scale=kwargs.get("scale"),

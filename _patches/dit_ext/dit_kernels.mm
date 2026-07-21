@@ -203,6 +203,72 @@ kernel void qkv2_norm_rope_bf16(
 // bf16-weight-multiply), RoPE on q/k, v transposed copy. Outputs stay at
 // their native head counts so flash41's GQA path runs without the eager
 // repeat_interleave (which materializes 4x KV and quadruples KV reads).
+// ── qkv_norm_rope_sh: fused qkv-split + per-head affine RMSNorm + SPLIT-HALF
+// RoPE (llama/Qwen apply_rope: out[:h] = x*cos + x[h:]*nsin; out[h:] = x*cos +
+// x[:h]*sin), for Ideogram 4 (D=256, MRoPE folded into cos/sin by the host).
+// One threadgroup per (token, slot) with D/2 threads; each thread owns the
+// element pair (d, d+D/2) so the rotation needs no cross-lane traffic.
+// Rounding matches eager: bf16 after the norm, fp32 rope, final bf16 round.
+kernel void qkv_norm_rope_sh_bf16(
+    device const bfloat* qkv  [[buffer(0)]],  // [B*S, 3*H*D] ([3,H,D] inner)
+    device const float*  cosb [[buffer(1)]],  // [S, D]
+    device const float*  sinb [[buffer(2)]],  // [S, D/2] (first half)
+    device const float*  nsinb[[buffer(3)]],  // [S, D/2] (-sin second half)
+    device const float*  qw   [[buffer(4)]],  // [D] fp32
+    device const float*  kw   [[buffer(5)]],  // [D] fp32
+    device bfloat* qo [[buffer(6)]],          // [B, H, S, D]
+    device bfloat* ko [[buffer(7)]],
+    device bfloat* vo [[buffer(8)]],
+    constant uint&  S   [[buffer(9)]],
+    constant uint&  H   [[buffer(10)]],
+    constant uint&  D   [[buffer(11)]],
+    constant float& eps [[buffer(12)]],
+    uint2  tgid      [[threadgroup_position_in_grid]],
+    ushort lid       [[thread_index_in_threadgroup]],
+    ushort simd_lane [[thread_index_in_simdgroup]],
+    ushort simd_id   [[simdgroup_index_in_threadgroup]])
+{
+  const uint token = tgid.x;           // b*S + s
+  const uint b = token / S, s = token % S;
+  const uint slot = tgid.y;            // [0, 3H): q rows, then k rows, then v
+  const uint kind = slot / H;          // 0=q 1=k 2=v
+  const uint h = slot % H;
+  const uint Dh = D >> 1;
+  const uint d0 = lid, d1 = lid + Dh;
+
+  const device bfloat* row = qkv + (ulong)token * (3u * H * D)
+                                 + ((ulong)kind * H + h) * D;
+  device bfloat* outp = (kind == 0u) ? qo : (kind == 1u ? ko : vo);
+  device bfloat* orow = outp + (((ulong)b * H + h) * S + s) * D;
+
+  if (kind == 2u) {                    // v: pure relayout
+    orow[d0] = row[d0];
+    orow[d1] = row[d1];
+    return;
+  }
+
+  float x0 = float(row[d0]);
+  float x1 = float(row[d1]);
+  float ss = simd_sum(x0 * x0 + x1 * x1);
+  threadgroup float tg[8];
+  if (simd_lane == 0) tg[simd_id] = ss;
+  threadgroup_barrier(mem_flags::mem_threadgroup);
+  float tot = 0.0f;
+  const ushort nsg = ushort(Dh >> 5);
+  for (ushort i = 0; i < nsg; i++) tot += tg[i];
+
+  const float inv = precise::rsqrt(precise::divide(tot, float(D)) + eps);
+  const device float* w = (kind == 0u) ? qw : kw;
+  const float y0 = float(bf16_rte(x0 * inv * w[d0]));
+  const float y1 = float(bf16_rte(x1 * inv * w[d1]));
+
+  const device float* c  = cosb  + (ulong)s * D;
+  const device float* sn = sinb  + (ulong)s * Dh;
+  const device float* ns = nsinb + (ulong)s * Dh;
+  orow[d0] = bf16_rte(y0 * c[d0] + y1 * ns[d0]);
+  orow[d1] = bf16_rte(y1 * c[d1] + y0 * sn[d0]);
+}
+
 kernel void qkv3_norm_rope_bf16(
     device const bfloat* qin   [[buffer(0)]],  // [B*S, Hq*D]
     device const bfloat* kin   [[buffer(1)]],  // [B*S, Hkv*D]
@@ -915,6 +981,61 @@ std::vector<torch::Tensor> rope_qk(torch::Tensor q, torch::Tensor k, torch::Tens
   return {qo, ko};
 }
 
+// Ideogram 4: fused qkv [B,S,3HD] bf16 + cos [S,D] / sin,nsin [S,D/2] fp32
+// (llama precompute_freqs_cis triple, leading batch dim squeezed) + fp32
+// affine norm weights -> (q, k, v) [B,H,S,D] bf16, split-half RoPE applied.
+std::vector<torch::Tensor> qkv_norm_rope_sh(torch::Tensor qkv, torch::Tensor cosb,
+                                            torch::Tensor sinb, torch::Tensor nsinb,
+                                            torch::Tensor qw, torch::Tensor kw,
+                                            int64_t H, int64_t D, double eps) {
+  TORCH_CHECK(qkv.is_mps() && qkv.scalar_type() == torch::kBFloat16
+              && qkv.dim() == 3 && qkv.is_contiguous(),
+              "qkv must be contiguous bf16 [B,S,3HD] on mps");
+  TORCH_CHECK(cosb.scalar_type() == torch::kFloat && cosb.is_contiguous()
+              && sinb.is_contiguous() && nsinb.is_contiguous(),
+              "cos/sin/nsin must be contiguous fp32");
+  TORCH_CHECK(D % 64 == 0 && D <= 512, "D must be a multiple of 64, <= 512");
+  const int64_t B = qkv.size(0), S = qkv.size(1);
+  TORCH_CHECK(qkv.size(2) == 3 * H * D, "qkv width mismatch");
+  TORCH_CHECK(cosb.numel() == S * D && sinb.numel() == S * (D / 2)
+              && nsinb.numel() == S * (D / 2), "cos/sin shape mismatch");
+  TORCH_CHECK(qw.numel() == D && kw.numel() == D
+              && qw.scalar_type() == torch::kFloat
+              && kw.scalar_type() == torch::kFloat, "qw/kw must be fp32 [D]");
+
+  auto opts = qkv.options();
+  auto q = torch::empty({B, H, S, D}, opts);
+  auto k = torch::empty({B, H, S, D}, opts);
+  auto v = torch::empty({B, H, S, D}, opts);
+
+  id<MTLComputePipelineState> p = pso_named(@"qkv_norm_rope_sh_bf16");
+  MPSStream* stream = getCurrentMPSStream();
+  std::array<id<MTLBuffer>, 9> bufs;
+  std::array<NSUInteger, 9> offs;
+  torch::Tensor ts[9] = {qkv, cosb, sinb, nsinb, qw, kw, q, k, v};
+  for (int i = 0; i < 9; i++) {
+    bufs[i] = __builtin_bit_cast(id<MTLBuffer>, ts[i].storage().data());
+    offs[i] = ts[i].storage_offset() * ts[i].element_size();
+  }
+  uint Su = (uint)S, Hu = (uint)H, Du = (uint)D;
+  float ef = (float)eps;
+
+  dispatch_sync(stream->queue(), ^(){
+    @autoreleasepool {
+      id<MTLComputeCommandEncoder> enc = stream->commandEncoder();
+      [enc setComputePipelineState:p];
+      for (int i = 0; i < 9; i++) [enc setBuffer:bufs[i] offset:offs[i] atIndex:i];
+      [enc setBytes:&Su length:sizeof(uint)  atIndex:9];
+      [enc setBytes:&Hu length:sizeof(uint)  atIndex:10];
+      [enc setBytes:&Du length:sizeof(uint)  atIndex:11];
+      [enc setBytes:&ef length:sizeof(float) atIndex:12];
+      [enc dispatchThreadgroups:MTLSizeMake((NSUInteger)(B * S), (NSUInteger)(3 * H), 1)
+          threadsPerThreadgroup:MTLSizeMake((NSUInteger)(D / 2), 1, 1)];
+    }
+  });
+  return {q, k, v};
+}
+
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("rope_qk", &rope_qk,
         "RoPE on attention-layout q/k [B,H,S,D] (bf16, MPS; flux apply_rope semantics)");
@@ -922,6 +1043,8 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
         "Fused qkv split + QK RMSNorm + RoPE + head transpose (bf16, MPS)");
   m.def("qkv2_norm_rope", &qkv2_norm_rope,
         "Fused two-source (txt+img) qkv split + QK RMSNorm + RoPE + seq concat (bf16, MPS)");
+  m.def("qkv_norm_rope_sh", &qkv_norm_rope_sh,
+        "Fused qkv split + affine RMSNorm + split-half RoPE (Ideogram 4, bf16, MPS)");
   m.def("qkv3_norm_rope", &qkv3_norm_rope,
         "Fused three-source GQA q/k/v + Krea2 QK RMSNorm + RoPE, native head counts (bf16, MPS)");
   m.def("rope_split", &rope_split,

@@ -119,10 +119,17 @@ class TestRouting:
         monkeypatch.setattr(patch, "_BMM_MAX_SCORE_BYTES", 1, raising=False)
         assert patch._router(q, k, v, 8) == "sub_quad"
 
-    def test_wide_head_dim_stays_default(self, monkeypatch):
+    def test_wide_head_dim_unmasked_goes_bmm(self, monkeypatch):
+        # D=256 (Ideogram 4): flash kernels can't take it, but unmasked with a
+        # bmm-viable score matrix routes to the one-shot bmm, not sub-quad.
         calls = _sentinels(monkeypatch)
-        q, k, v = self._qkv(4096, heads=4, d_head=256)  # D=256 > 128
-        assert patch._router(q, k, v, 4) == "default"
+        q, k, v = self._qkv(4096, heads=4, d_head=256)
+        assert patch._router(q, k, v, 4) == "bmm"
+
+    def test_very_wide_head_dim_stays_default(self, monkeypatch):
+        calls = _sentinels(monkeypatch)
+        q, k, v = self._qkv(4096, heads=2, d_head=512)  # D=512 > 256
+        assert patch._router(q, k, v, 2) == "default"
 
 
 @requires_router
