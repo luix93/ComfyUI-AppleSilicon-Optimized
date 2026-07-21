@@ -100,3 +100,31 @@ if __spec__ is not None and __spec__.parent:
             import traceback
             print(f"[AppleSilicon-Optimized] patch {_patch.__name__} failed: {_e}")
             traceback.print_exc()
+
+    # Loud prerequisite check: a fresh Desktop-provisioned venv ships without
+    # ninja and with torch's C++ headers stripped — every JIT Metal kernel
+    # then silently disables and renders run 2x+ slower on eager fallbacks
+    # (each loader logs one quiet line that is easy to miss). Say it once,
+    # unmissably, with the exact fix.
+    if _os.environ.get("ASFP8_INT8_EXT") == "1" or _os.environ.get("ASFP8_DIT_EXT") == "1":
+        _missing = []
+        try:
+            import ninja as _ninja  # noqa: F401
+        except Exception:
+            _missing.append("ninja (fix: <venv>/bin/python3 -m pip install ninja)")
+        try:
+            import torch as _torch
+            import os.path as _osp
+            if not _osp.exists(_osp.join(_osp.dirname(_torch.__file__),
+                                         "include", "torch", "extension.h")):
+                _missing.append("torch C++ headers (Desktop strips them; copy "
+                                "site-packages/torch/include/ from a venv with "
+                                "the same torch version, or pip reinstall torch)")
+        except Exception:
+            pass
+        if _missing:
+            print("[AppleSilicon-Optimized] " + "!" * 62)
+            print("[AppleSilicon-Optimized] NATIVE METAL KERNELS DISABLED — renders will be MUCH slower.")
+            for _m in _missing:
+                print(f"[AppleSilicon-Optimized]   missing: {_m}")
+            print("[AppleSilicon-Optimized] " + "!" * 62)
