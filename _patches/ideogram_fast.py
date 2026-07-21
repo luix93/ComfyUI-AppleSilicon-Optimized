@@ -45,6 +45,40 @@ def _norm_w(norm, dtype, device):
     return norm.weight.to(dtype=dtype, device=device)
 
 
+# ── freqs cache: the MRoPE cos/sin build is identical for all 24 forwards ──
+# (it depends only on head_dim/theta/sections and the position grid, which is
+# fixed for a given text length + latent size). Keyed by shape + a 2-element
+# content probe (last image token's h/w coords) so different aspect ratios
+# with equal L can't collide. Bit-exact: we return the same tensors the
+# original call produced.
+_freqs_cache = {}
+_orig_precompute = None
+
+
+def _cached_precompute_freqs_cis(head_dim, positions, theta, rope_scale=None,
+                                 rope_dims=None, device=None,
+                                 interleaved_mrope=False):
+    try:
+        probe = (int(positions[-1, 0]), int(positions[-1, -1]))
+        key = (int(head_dim), str(theta), tuple(positions.shape),
+               tuple(rope_dims) if rope_dims is not None else None,
+               bool(interleaved_mrope), str(positions.device), probe)
+    except Exception:
+        return _orig_precompute(head_dim, positions, theta, rope_scale=rope_scale,
+                                rope_dims=rope_dims, device=device,
+                                interleaved_mrope=interleaved_mrope)
+    hit = _freqs_cache.get(key)
+    if hit is not None:
+        return hit
+    out = _orig_precompute(head_dim, positions, theta, rope_scale=rope_scale,
+                           rope_dims=rope_dims, device=device,
+                           interleaved_mrope=interleaved_mrope)
+    if len(_freqs_cache) > 4:
+        _freqs_cache.clear()
+    _freqs_cache[key] = out
+    return out
+
+
 def _fast_attn_forward(self, x, attn_mask, freqs_cis, transformer_options={}):
     """Fused qkv-split + per-head RMSNorm + split-half MRoPE via dit_ext:
     replaces ~7s/run of eager rope + reshape copies (measured) and hands
@@ -193,9 +227,34 @@ def install():
         print(f"{TAG} dit_ext kernels unavailable; ideogram fast path stays off.")
         return
 
-    global _orig_attn
+    global _orig_attn, _orig_precompute
     _orig_forward = IM.Ideogram4TransformerBlock.forward
     _orig_attn = IM.Ideogram4Attention.forward
+    # Freqs cache: rebind the name the ideogram module resolves at call time
+    # (comfy.text_encoders.llama itself stays untouched — the TE is unaffected).
+    _orig_precompute = IM.precompute_freqs_cis
+    IM.precompute_freqs_cis = _cached_precompute_freqs_cis
+
+    # Cold-run helper: compile the hot PSOs on the MPS stream while the two
+    # ~9GB checkpoints stream from disk (pure overlap; no output effect).
+    def _prewarm():
+        try:
+            t = torch.zeros(256, 4608, dtype=torch.bfloat16, device="mps")
+            w = torch.zeros(256, dtype=torch.float32, device="mps")
+            c = torch.zeros(256, 256, dtype=torch.float32, device="mps")
+            sn = torch.zeros(256, 128, dtype=torch.float32, device="mps")
+            _kernel.qkv_norm_rope_sh(
+                torch.zeros(1, 256, 3 * 18 * 256, dtype=torch.bfloat16, device="mps"),
+                c, sn, sn, w, w, 18, 256, 1e-5)
+            _kernel.norm_modulate(t.view(1, 256, 4608),
+                                  torch.zeros(4608, dtype=torch.bfloat16, device="mps"),
+                                  torch.zeros(1, 4608, dtype=torch.bfloat16, device="mps"),
+                                  1e-5)
+            torch.mps.synchronize()
+        except Exception:
+            pass
+    import threading
+    threading.Thread(target=_prewarm, daemon=True).start()
     IM.Ideogram4TransformerBlock.forward = _fast_block_forward
     if os.environ.get("ASFP8_IDEO_TRACE") == "1":
         IM.Ideogram4Attention.forward = _traced_attn_forward
