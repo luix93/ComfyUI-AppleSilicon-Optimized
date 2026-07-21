@@ -35,7 +35,7 @@ import torch
 
 from ._common import FP8_DTYPES, decode_fp8
 
-TAG = "[AppleSilicon-FP8/comfy_kitchen]"
+TAG = "[AppleSilicon-Optimized/comfy_kitchen]"
 
 
 def _cpu_dequant_on_mps(orig):

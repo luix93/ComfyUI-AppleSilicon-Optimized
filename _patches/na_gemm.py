@@ -9,7 +9,7 @@ and returns float32. Every entry point is safe to call off-MPS / on unsupported 
 
 import torch
 
-TAG = "[AppleSilicon-FP8/na_gemm]"
+TAG = "[AppleSilicon-Optimized/na_gemm]"
 
 # Tile config: (BM, BN, BK, NSG). 64x64x64 / 4 simdgroups passed correctness across
 # the dev sweep and is a robust default for diffusion-shaped GEMMs.

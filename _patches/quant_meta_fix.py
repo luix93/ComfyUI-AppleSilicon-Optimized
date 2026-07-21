@@ -25,7 +25,7 @@ import sys
 
 import torch
 
-TAG = "[AppleSilicon-FP8/quant_meta]"
+TAG = "[AppleSilicon-Optimized/quant_meta]"
 
 _installed = False
 _fixed_layers = 0

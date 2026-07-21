@@ -33,7 +33,7 @@ import torch
 
 from ._common import FP8_DTYPES, decode_fp8
 
-TAG = "[AppleSilicon-FP8/tensor_to]"
+TAG = "[AppleSilicon-Optimized/tensor_to]"
 
 _FP8_SET = frozenset(FP8_DTYPES)
 _installed = False

@@ -26,7 +26,7 @@ import sys
 import torch
 import torch.nn.functional as F
 
-TAG = "[AppleSilicon-FP8/conv3d]"
+TAG = "[AppleSilicon-Optimized/conv3d]"
 
 _installed = False
 _orig_conv_forward = None

@@ -1,4 +1,4 @@
-// AppleSilicon-FP8: "Free RAM" topbar button.
+// ComfyUI-AppleSilicon-Optimized: "Free RAM" topbar button.
 //
 // One click = ComfyUI's own POST /free with both flags: unload all models,
 // reset the execution cache, gc.collect(), and torch.mps.empty_cache() —
@@ -50,7 +50,7 @@ async function freeMemory() {
 function makeButton() {
     const btn = document.createElement("button");
     btn.id = BTN_ID;
-    btn.title = "Unload all models and release cached RAM (AppleSilicon-FP8)";
+    btn.title = "Unload all models and release cached RAM (AppleSilicon-Optimized)";
     btn.textContent = "Free RAM";
     btn.style.cssText = [
         "display:inline-flex", "align-items:center", "gap:4px",

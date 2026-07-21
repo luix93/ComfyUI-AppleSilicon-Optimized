@@ -16,7 +16,7 @@ import os
 import sys
 import time
 
-TAG = "[AppleSilicon-FP8/exec_trace]"
+TAG = "[AppleSilicon-Optimized/exec_trace]"
 
 _installed = False
 

@@ -43,7 +43,7 @@ import weakref
 
 import torch
 
-TAG = "[AppleSilicon-FP8/int8_kernel]"
+TAG = "[AppleSilicon-Optimized/int8_kernel]"
 
 _installed = False
 _orig_int8_linear = None

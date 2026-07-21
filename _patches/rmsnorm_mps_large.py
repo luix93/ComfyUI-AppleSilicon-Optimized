@@ -19,7 +19,7 @@ for normal sizes and for every non-MPS device, so there's no perf cost elsewhere
 import torch
 import torch.nn.functional as F
 
-TAG = "[AppleSilicon-FP8/rmsnorm]"
+TAG = "[AppleSilicon-Optimized/rmsnorm]"
 
 # Fused confirmed correct at 1.05M rows, garbage at 4.19M. Intervene above 2.1M:
 # catches the broken regime, leaves all normal usage on the fast fused path.

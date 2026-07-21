@@ -32,7 +32,7 @@ import sys
 
 import torch
 
-TAG = "[AppleSilicon-FP8/int_mm]"
+TAG = "[AppleSilicon-Optimized/int_mm]"
 
 _orig = None
 _installed = False

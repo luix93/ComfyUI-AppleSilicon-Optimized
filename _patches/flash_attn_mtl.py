@@ -27,7 +27,7 @@ from __future__ import annotations
 
 import os
 
-TAG = "[AppleSilicon-FP8/flash]"
+TAG = "[AppleSilicon-Optimized/flash]"
 
 # Map the old node's env knobs onto mtlflashattn's so existing setups keep working.
 _LEGACY_ENV = {

@@ -34,7 +34,7 @@ import sys
 
 import torch
 
-TAG = "[AppleSilicon-FP8/wan_vae_fast]"
+TAG = "[AppleSilicon-Optimized/wan_vae_fast]"
 
 _installed = False
 _kernel = None

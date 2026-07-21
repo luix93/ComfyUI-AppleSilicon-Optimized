@@ -39,7 +39,7 @@ import sys
 
 import torch
 
-TAG = "[AppleSilicon-FP8/te_device]"
+TAG = "[AppleSilicon-Optimized/te_device]"
 
 _mm = None
 _orig = None

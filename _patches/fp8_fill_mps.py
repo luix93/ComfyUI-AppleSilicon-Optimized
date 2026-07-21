@@ -25,7 +25,7 @@ import sys
 
 import torch
 
-TAG = "[AppleSilicon-FP8/fp8_fill]"
+TAG = "[AppleSilicon-Optimized/fp8_fill]"
 
 _installed = False
 _FP8 = tuple(

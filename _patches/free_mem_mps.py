@@ -17,7 +17,7 @@ Kill switch: ASFP8_FREE_MEM=0.
 import os
 import sys
 
-TAG = "[AppleSilicon-FP8/free_mem]"
+TAG = "[AppleSilicon-Optimized/free_mem]"
 
 _installed = False
 _orig = None

@@ -12,7 +12,7 @@ failure disables the backend.
 
 import torch
 
-TAG = "[AppleSilicon-FP8/sg_gemm]"
+TAG = "[AppleSilicon-Optimized/sg_gemm]"
 
 # BM = 8 * NSG (each simdgroup owns 8 output rows). BN, BK multiples of 8.
 # NSG=8 → BM=64; BN=64, BK=32 → threadgroup memory = 64*32 + 32*64 = 4096 halfs = 8 KB

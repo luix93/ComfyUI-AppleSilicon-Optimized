@@ -29,7 +29,7 @@ import sys
 
 import torch
 
-TAG = "[AppleSilicon-FP8/fp8_strided]"
+TAG = "[AppleSilicon-Optimized/fp8_strided]"
 
 _installed = False
 _FP8 = (torch.float8_e4m3fn, torch.float8_e5m2)

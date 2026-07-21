@@ -29,7 +29,7 @@ import time
 
 import torch
 
-TAG = "[AppleSilicon-FP8/mps_profile]"
+TAG = "[AppleSilicon-Optimized/mps_profile]"
 
 _installed = False
 _stats = {}            # name -> [calls, total_seconds]

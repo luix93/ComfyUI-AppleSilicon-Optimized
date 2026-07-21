@@ -1,9 +1,12 @@
 """
-ComfyUI-AppleSilicon-FP8
+ComfyUI-AppleSilicon-Optimized
+(github.com/luix93/ComfyUI-AppleSilicon-Optimized — grew out of, and still
+installs from, the ComfyUI-AppleSilicon-FP8 directory/package name)
 
-Makes FP8-quantized models (FLUX, SD3.5, Ideogram 4, ...) run on Apple Silicon
-(Metal / MPS) instead of crashing, and works around a psutil bug on recent macOS
-betas that otherwise kills renders mid-way.
+Apple Silicon acceleration layer for ComfyUI: makes FP8/INT8-quantized models
+(FLUX, SD3.5, Wan, LTX, Krea, Z-Image, ...) run fast on Metal/MPS via runtime
+patches and JIT-compiled Metal 4.1 kernels, and works around a psutil bug on
+recent macOS betas that otherwise kills renders mid-way.
 
 ComfyUI imports this at startup, before any model loads, so the patches are active
 for the whole session. Each patch is a no-op on machines that don't need it
@@ -62,13 +65,19 @@ if __spec__ is not None and __spec__.parent:
     # message strings that are implementation details liable to change.
     from ._patches import comfykitchen_fp8, linear_fp8, linear_fp8_w8a16, ops_bias_fp8, psutil_vmstat, rmsnorm_mps_large, scaled_mm_fp8, flash_attn_mtl, attn_router_mps, stochastic_round_fp8, tensor_to_fp8, wan_blockswap_mps, te_device_mps, int_mm_mps, int8_linear_mps, int8_linear_kernel_mps, mlx_textgen, fp8_mps_strided, fp8_fill_mps, lumina_attn_fast, quant_meta_fix, rope_fast, flux_attn_fast, krea2_attn_fast, conv3d_mps, ltx_fast, wan_fast, wan_vae_fast, free_mem_mps, exec_trace, optrace, mps_profile
 
+    # Identity banner: every subsequent "[AppleSilicon-Optimized/...]" console
+    # line comes from this project.
+    print("[AppleSilicon-Optimized] ComfyUI-AppleSilicon-Optimized — Apple "
+          "Silicon acceleration layer (30 patches + Metal 4.1 kernels); "
+          "lines tagged [AppleSilicon-Optimized/...] are ours.")
+
     # Master switch: ASFP8_NATIVE=1 enables every opt-in native fast path at
     # once (fp8/int8 Metal kernels, staged W8A16 backend, attention router, DiT
     # fusions). Explicit per-feature values always win — see _common.NATIVE_IMPLIES.
     from ._patches._common import apply_native_master_switch as _anms
     _implied = _anms()
     if _implied:
-        print(f"[AppleSilicon-FP8] ASFP8_NATIVE=1 -> {', '.join(v + '=1' for v in _implied)}")
+        print(f"[AppleSilicon-Optimized] ASFP8_NATIVE=1 -> {', '.join(v + '=1' for v in _implied)}")
 
     # Bisection switches (for debugging a regression to a single patch):
     #   ASFP8_ENABLE_ONLY=psutil_vmstat,comfykitchen_fp8   install ONLY these (by module name)
@@ -83,11 +92,11 @@ if __spec__ is not None and __spec__.parent:
     for _patch in (psutil_vmstat, fp8_mps_strided, fp8_fill_mps, comfykitchen_fp8, scaled_mm_fp8, ops_bias_fp8, stochastic_round_fp8, tensor_to_fp8, wan_blockswap_mps, rmsnorm_mps_large, flash_attn_mtl, attn_router_mps, linear_fp8, linear_fp8_w8a16, te_device_mps, int_mm_mps, int8_linear_mps, int8_linear_kernel_mps, mlx_textgen, lumina_attn_fast, quant_meta_fix, rope_fast, flux_attn_fast, krea2_attn_fast, conv3d_mps, ltx_fast, wan_fast, wan_vae_fast, free_mem_mps, exec_trace, optrace, mps_profile):
         _short = _patch.__name__.rsplit(".", 1)[-1]
         if (_only and _short not in _only) or _short in _disabled:
-            print(f"[AppleSilicon-FP8] skipping {_short} (ASFP8_ENABLE_ONLY/ASFP8_DISABLE)")
+            print(f"[AppleSilicon-Optimized] skipping {_short} (ASFP8_ENABLE_ONLY/ASFP8_DISABLE)")
             continue
         try:
             _patch.install()
         except Exception as _e:  # never take ComfyUI down because of us
             import traceback
-            print(f"[AppleSilicon-FP8] patch {_patch.__name__} failed: {_e}")
+            print(f"[AppleSilicon-Optimized] patch {_patch.__name__} failed: {_e}")
             traceback.print_exc()

@@ -34,7 +34,7 @@ import sys
 
 import torch
 
-TAG = "[AppleSilicon-FP8/flux_fast]"
+TAG = "[AppleSilicon-Optimized/flux_fast]"
 
 _installed = False
 _orig_double = None

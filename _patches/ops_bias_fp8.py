@@ -40,7 +40,7 @@ import torch
 
 from ._common import FP8_DTYPES, decode_fp8
 
-TAG = "[AppleSilicon-FP8/ops_bias]"
+TAG = "[AppleSilicon-Optimized/ops_bias]"
 
 _installed = False
 

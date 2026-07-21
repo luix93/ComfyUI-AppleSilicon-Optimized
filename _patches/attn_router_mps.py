@@ -35,7 +35,7 @@ import sys
 
 import torch
 
-TAG = "[AppleSilicon-FP8/attn_router]"
+TAG = "[AppleSilicon-Optimized/attn_router]"
 
 _installed = False
 _default = None        # optimized_attention as chosen by ComfyUI at startup
@@ -328,9 +328,16 @@ def install():
     _installed = True
     flash = (f"flash(unmasked)>= {_flash_min_seq()} tok, D<={_flash_max_head_dim()} via mtlflashattn"
              if _flash_ok else "flash route OFF (mtlflashattn inactive)")
-    wide = ("flash41 (Metal 4.1 TensorOps)" if _fa41 is not None
-            else "bmm (flash41 unavailable)")
+    if _fa41 is not None:
+        na = (_FA41_NA and hasattr(_fa41, "flash_fwd_na"))
+        wide = ("flash41 attention v2 'na' per-simdgroup kernel where "
+                "Lk%128==0 & D%32==0, cooperative kernel otherwise (Metal "
+                "4.1 TensorOps)" if na
+                else "flash41 cooperative kernel (Metal 4.1 TensorOps; "
+                     "attention v2 off)")
+    else:
+        wide = "bmm (flash41 unavailable)"
     print(f"{TAG} per-call attention routing on MPS: {flash}; "
-          f"unmasked long-seq D>{_flash_max_head_dim()} bf16 -> {wide}; "
+          f"unmasked long-seq D>{_flash_max_head_dim()} fp16/bf16 -> {wide}; "
           f"masked >= {_safe_masked_min_seq()} tok -> sub-quad (memory-safe); "
           f"else startup default. ({rebound} module bindings rerouted)")

@@ -24,7 +24,7 @@ import sys
 
 import torch
 
-TAG = "[AppleSilicon-FP8/rope_fast]"
+TAG = "[AppleSilicon-Optimized/rope_fast]"
 
 _installed = False
 _orig = None

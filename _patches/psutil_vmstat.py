@@ -21,7 +21,7 @@ import re
 import subprocess
 import sys
 
-TAG = "[AppleSilicon-FP8/psutil]"
+TAG = "[AppleSilicon-Optimized/psutil]"
 
 _svmem = collections.namedtuple(
     "svmem",

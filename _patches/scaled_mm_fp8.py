@@ -28,7 +28,7 @@ import torch
 
 from ._common import FP8_DTYPES, decode_fp8
 
-TAG = "[AppleSilicon-FP8/scaled_mm]"
+TAG = "[AppleSilicon-Optimized/scaled_mm]"
 
 _original = None
 _installed = False

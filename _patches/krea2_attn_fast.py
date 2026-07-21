@@ -30,7 +30,7 @@ import sys
 
 import torch
 
-TAG = "[AppleSilicon-FP8/krea2_fast]"
+TAG = "[AppleSilicon-Optimized/krea2_fast]"
 
 _installed = False
 _orig_forward = None

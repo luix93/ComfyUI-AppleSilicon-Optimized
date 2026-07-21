@@ -36,7 +36,7 @@ import torch
 
 from . import _mlx_gemma3, _mlx_qwen3vl
 
-TAG = "[AppleSilicon-FP8/mlx_textgen]"
+TAG = "[AppleSilicon-Optimized/mlx_textgen]"
 
 _orig = None
 _installed = False

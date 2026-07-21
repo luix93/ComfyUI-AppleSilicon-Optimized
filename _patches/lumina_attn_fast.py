@@ -24,7 +24,7 @@ import sys
 
 import torch
 
-TAG = "[AppleSilicon-FP8/lumina_fast]"
+TAG = "[AppleSilicon-Optimized/lumina_fast]"
 
 _installed = False
 _orig_forward = None

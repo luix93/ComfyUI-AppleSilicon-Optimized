@@ -30,7 +30,7 @@ import importlib.abc
 
 import torch
 
-TAG = "[AppleSilicon-FP8/wan_blockswap]"
+TAG = "[AppleSilicon-Optimized/wan_blockswap]"
 
 _TARGET_SUFFIX = "wanvideo.modules.model"
 _installed = False

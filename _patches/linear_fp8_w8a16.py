@@ -38,7 +38,7 @@ import torch
 
 from ._common import FP8_DTYPES, decode_fp8
 
-TAG = "[AppleSilicon-FP8/w8a16]"
+TAG = "[AppleSilicon-Optimized/w8a16]"
 
 _installed = False
 _orig_forward = None    # disable_weight_init.Linear.forward_comfy_cast_weights

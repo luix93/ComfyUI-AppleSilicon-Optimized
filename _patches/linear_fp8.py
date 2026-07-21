@@ -33,7 +33,7 @@ import torch.nn.functional as F
 
 from ._common import FP8_DTYPES, decode_fp8
 
-TAG = "[AppleSilicon-FP8/linear_fp8]"
+TAG = "[AppleSilicon-Optimized/linear_fp8]"
 
 # Capture the original at import time so _patched_linear can be called directly
 # in tests (without install()) and still have a valid reference to call through.

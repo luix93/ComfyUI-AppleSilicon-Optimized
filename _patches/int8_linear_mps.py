@@ -35,7 +35,7 @@ import sys
 
 import torch
 
-TAG = "[AppleSilicon-FP8/int8_linear]"
+TAG = "[AppleSilicon-Optimized/int8_linear]"
 
 _installed = False   # our install() ran
 _patched = False     # int8-fast's module actually patched

@@ -29,7 +29,7 @@ import sys
 
 import torch
 
-TAG = "[AppleSilicon-FP8/ltx_fast]"
+TAG = "[AppleSilicon-Optimized/ltx_fast]"
 
 _installed = False
 _kernel = None

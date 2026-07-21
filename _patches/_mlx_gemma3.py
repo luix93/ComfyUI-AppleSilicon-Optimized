@@ -14,7 +14,7 @@ checkpoint — fine for prompt enhancement (same contract as the Qwen3-VL route)
 import importlib.util
 import os
 
-TAG = "[AppleSilicon-FP8/mlx_gemma3]"
+TAG = "[AppleSilicon-Optimized/mlx_gemma3]"
 
 # Pre-converted abliterated MLX build (from mlabonne/gemma-3-12b-it-qat-abliterated).
 DEFAULT_REPO = "mlx-community/gemma-3-12b-it-qat-abliterated-lm-4bit"

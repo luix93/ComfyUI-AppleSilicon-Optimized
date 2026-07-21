@@ -29,7 +29,7 @@ import torch
 
 from ._common import FP8_DTYPES
 
-TAG = "[AppleSilicon-FP8/stochastic_round]"
+TAG = "[AppleSilicon-Optimized/stochastic_round]"
 
 _installed = False
 

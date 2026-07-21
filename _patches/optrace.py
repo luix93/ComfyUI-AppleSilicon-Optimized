@@ -20,7 +20,7 @@ import os
 
 import torch
 
-TAG = "[AppleSilicon-FP8/optrace]"
+TAG = "[AppleSilicon-Optimized/optrace]"
 
 _installed = False
 _counts = {}
