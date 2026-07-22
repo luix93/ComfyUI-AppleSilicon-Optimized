@@ -103,6 +103,49 @@ def install():
 
     _orig = MM.get_free_memory
     MM.get_free_memory = _patched_get_free_memory
+
+    # Interleaved-drain unload (default on, ASFP8_FREE_INTERLEAVE=0 disables):
+    # comfy's unload_all_models detaches every model — which on unified memory
+    # materializes a CPU copy of each weight set — and only drains the MPS
+    # pool once at the very end, so an explicit "free everything" transiently
+    # holds pool + copies of ALL models (observed: memory-pressure spike to
+    # orange after LTX). Draining the pool after EACH model caps the transient
+    # at roughly one model. unload_all_models is only called on explicit
+    # full-unload requests (the /free endpoint / our Free RAM button), never
+    # during normal render-time eviction, so render perf is unaffected.
+    if os.environ.get("ASFP8_FREE_INTERLEAVE", "1") == "1":
+        try:
+            _install_interleaved_unload(MM, torch)
+        except Exception as e:
+            print(f"{TAG} interleaved unload not installed ({e!r}).")
+
     _installed = True
     print(f"{TAG} MPS free-memory accounting includes torch's reusable "
           f"allocator pool (stops needless model eviction on unified memory).")
+
+
+def _install_interleaved_unload(MM, torch):
+    import threading
+
+    orig_unload_all = MM.unload_all_models
+    orig_model_unload = MM.LoadedModel.model_unload
+    tls = threading.local()
+
+    def unload_all_wrapped(*a, **kw):
+        tls.draining = True
+        try:
+            return orig_unload_all(*a, **kw)
+        finally:
+            tls.draining = False
+
+    def model_unload_wrapped(self, *a, **kw):
+        r = orig_model_unload(self, *a, **kw)
+        if getattr(tls, "draining", False):
+            try:
+                torch.mps.empty_cache()
+            except Exception:
+                pass
+        return r
+
+    MM.unload_all_models = unload_all_wrapped
+    MM.LoadedModel.model_unload = model_unload_wrapped
