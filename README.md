@@ -2,6 +2,36 @@
 
 # ComfyUI-AppleSilicon-Optimized
 
+## TL;DR
+
+**What this is:** one ComfyUI custom node that makes modern quantized models
+(FP8 / INT8) actually work on a Mac — and then makes them fast. Drop it into
+`custom_nodes`, restart, done. No model conversion, no forked ComfyUI, no
+settings to learn.
+
+**What it fixes:** out of the box, most FP8/INT8 checkpoints either crash on
+MPS or fall back to paths so slow they're unusable. The compatibility layer
+(automatic, any M1→M5) makes them load and render correctly.
+
+**What it speeds up:** with one environment variable (`ASFP8_NATIVE=1`),
+custom Metal kernels take over the heavy math — attention, the quantized
+matrix multiplies, and each model family's glue code. Image models render in
+roughly **half** their stock time; long video generation becomes genuinely
+viable on a laptop. On an M5 Max, Z-Image runs ~7.6 s, Krea2 ~14 s,
+Ideogram 4 ~41 s, and an 81-frame Wan 2.2 video ~111 s — matching or beating
+the fastest native Mac apps (full table below). Several of these numbers are
+measured *hardware floors*: the kernels run at the silicon's own limits, and
+the receipts for that claim are in this README.
+
+**What to expect:** identical or visually identical output (most fast paths
+are bit-exact or within one rounding step of stock math — see
+[Numerics policy](#numerics-policy)), silent per-call fallback to stock
+behavior for anything unrecognized, a **Free RAM** button in the top bar to
+hand memory back to the system, and honest engineering notes: things that
+didn't work are documented alongside the things that did.
+
+---
+
 **A full Apple Silicon inference stack for ComfyUI: quantized-model
 compatibility plus custom Metal 4.1 kernels — flash attention, int8/fp8
 matmuls, per-architecture DiT block fusions, and video-VAE kernels — tuned on
@@ -158,6 +188,21 @@ structure instead. The failed probe is still worth recording:
   fp16/bf16/causal/GQA/tails, but is **not routed**: 22.8 TF/s vs the
   cooperative kernel's 28.5, both since superseded by na.
 
+**Why attention stays fp16 (the int8 attention verdict).** A full int8
+attention forward ships in the source (`flash_attn_fwd_na_i8`, the
+DrawThings `NAInt8AttentionKernel` recipe: on-the-fly symmetric int8 quant
+of Q/K and mean-centered V with per-tile scales, int8 QK → int32, exact
+V-mean addback). It is functional and accurate (~1.2% relative, all shapes,
+poisoned-pool clean) — and **deliberately unrouted**, because it loses:
+best configuration 0.89×/0.78× the fp16 na kernel at Wan/LTX shapes. The
+root cause is a measured law of this silicon: the int8 tensor units' ~2×
+advantage only exists at deep reductions. Our own 105 TF/s int8 GEMM drops
+to **25 TF/s at K=128** (104 at K=6144, 93 at K=512, 33 at K=256) — and
+attention reduces over `head_dim = 128`, where the fp16 na kernel already
+runs 36–40. int8 for the deep-K linears, fp16 for shallow-K attention is
+not a preference, it's the crossover the hardware dictates — DrawThings,
+Cider, and this repo converged on the same split independently.
+
 ### Attention router (patch #19)
 
 Per-call routing on MPS: unmasked long-sequence attention → flash41; masked
@@ -178,6 +223,13 @@ distinct route taken.
   the backbone of the Z-Image / Flux2 / Krea2 / Ideogram / Wan int8 numbers
   above. A 1-slot activation cache also skips repeat rotate+quant passes when
   several projections share one input (qkv triples, SwiGLU pairs).
+  **This rate is the silicon ceiling, not a tuning artifact**: a dedicated
+  variant tournament (`dev/tournament_int8.py`) showed the kernel flat at
+  97–107 TF/s from fully cache-resident to streaming working sets
+  (issue-bound, not memory-bound), every schedule variant a wash under
+  interleaved A/B, and the Metal API's larger tensor-op descriptors
+  2.5–4× *slower* — 16×32×16 maps 1:1 onto the native op. GEMM-bound int8
+  models are at their hardware floor.
 - **Fused o-projection pre-pass** (`ASFP8_INT8_OPROJ_FUSE`, on): when
   `head_dim == convrot groupsize` (Ideogram 4: both 256, so each head is
   exactly one rotation group), the attention output goes straight from its
@@ -285,6 +337,13 @@ switching to another heavy app, without an idle timer evicting models behind
 your back mid-session. (Measured: +7.5 GB returned immediately; the rest
 follows as the allocator drains.)
 
+On explicit free-everything requests the unload also drains the MPS pool
+*between* models instead of once at the end (`ASFP8_FREE_INTERLEAVE=0`
+disables), bounding the transient footprint to roughly one model. After a
+long session you may still see a brief memory-pressure blip while macOS
+decompresses long-parked pool pages — it self-resolves within seconds and
+touches nothing on disk.
+
 ### MLX text generation (patch #14)
 
 Autoregressive prompt-expansion encoders (Krea2's Qwen3-VL, LTX's Gemma3) run
@@ -367,11 +426,13 @@ fresh, zeroed allocations structurally cannot catch out-of-bounds reads).
 | `ASFP8_AUTOFIX` | on | self-heal JIT prerequisites at boot (install ninja, restore stripped torch headers) |
 | `ASFP8_WAN_VAE_CHUNK` | 16 | Wan VAE frames per causal pass (even, 2–32; lower caps decode memory peak) |
 | `ASFP8_FREE_MEM` | on | MPS free-memory accounting fix (patch #30) |
+| `ASFP8_FREE_INTERLEAVE` | on | drain the MPS pool between models on explicit free-all requests |
 | `ASFP8_MPS_RESERVE_GB` | max(16, 15%) | OS memory reserve held back from comfy's estimate |
 | `ASFP8_FA41_F32S` | off | fp32 score tiles in flash41 |
 | `ASFP8_FP8_EXT_MIN_DIM` | 8192 | fp8 kernel size gate |
 | `ASFP8_ENABLE_ONLY` / `ASFP8_DISABLE` | — | bisection: install only / all except these patch modules |
 | `ASFP8_ATTN_DEBUG` / `ASFP8_EXEC_TRACE` / `ASFP8_PROFILE` | off | route logging / per-node timing / profiling (stderr) |
+| `ASFP8_EXEC_TRACE_SYNC` | off | with EXEC_TRACE: time the GPU tail drain after the sampler loop (splits real overhead from queued GPU work) |
 | `APPLESILICON_FP8_PSUTIL` | auto | psutil fix: `auto` / `off` / `force` |
 | `MTLFLASHATTN_SDPA*` | — | patch #5 gates (see mtlflashattn docs) |
 
@@ -456,6 +517,24 @@ A few load-bearing lessons encoded in this repo, for future work:
   per-call compile *re-attempts* cost 33 s/it. Fixes that ship: address-space
   scrubbing on operand types, plus a compile-failure latch so a broken kernel
   disables itself for the session instead of retrying per call.
+- **The s/it readout lies when submission outruns the GPU.** tqdm's per-step
+  time measures CPU submission pace; on Krea2 the GPU actually ran 1.81 s/step
+  against a displayed 1.56, with ~1.8 s of queued DiT work draining silently
+  after the loop. What looked like 3 s of "overhead" to hunt was just more
+  model. `ASFP8_EXEC_TRACE_SYNC=1` splits the two — tail-probe before hunting
+  phantom overhead.
+- **Block-ordered kernel benches produce phantom wins.** GPU clock ramp gave
+  candidate variants +9–29% "improvements" that evaporated under interleaved
+  A/B (alternate baseline/candidate per round, median of ratios). Shapes that
+  read 51 TF/s in a cold block read 97 under sustained interleaved load. Every
+  kernel claim in this repo now requires the interleaved methodology
+  (`dev/tournament_int8.py --ab`, `dev/bench_i8_attn.py`).
+- **int8's 2× only exists at deep reductions.** Measured on our own GEMM
+  kernel: 104 TF/s at K=6144, 93 at K=512, 33 at K=256, 25 at K=128. That one
+  curve explains the whole architecture — int8 for the model's linears
+  (K = 4608–24576), fp16 for attention (K = head_dim = 128) — and killed two
+  otherwise-plausible sprints (int8 attention, wider GEMM descriptors) with
+  data instead of intuition.
 
 ## Credits
 
