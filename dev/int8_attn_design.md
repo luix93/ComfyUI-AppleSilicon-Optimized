@@ -87,3 +87,24 @@ substituted globally.
 - E2e: Wan 512²×81f and LTX 1024² with 2-min cooldowns; same-seed grids
   vs na for quality (typography-drift class expected, no systematic
   bias); cross-seed batch for blind-compare sanity.
+
+## VERDICT (2026-07-23): KILLED — int8 cannot beat fp16 attention on M5 Max
+
+Rested interleaved A/B (dev/bench_i8_attn.py): best config nsg=4 blk=1 =
+0.89x na at Wan shape, 0.78x at LTX shape; accuracy stable at rel 1.1-1.3%.
+
+Root cause, measured on our own 105 TF/s int8 GEMM kernel (register-fragment
+operands — the fastest int8 path this hardware has):
+
+    K=6144: 103.9   K=1024: 101.2   K=512: 93.2
+    K=256:   32.7   K=128:   25.2   K=64:  12.6   TF/s
+    attention aggregate (M=N=21504, K=128): 15.8 TF/s
+
+The int8 2x advantage exists only at deep reductions. Attention's QK reduces
+over K = head_dim = 128, where the int8 fragment path runs 25 TF/s — BELOW
+the fp16 na kernel's 36-40. Identical structure to the fp16 manual-fragment
+finding: the win comes from a regime that does not exist inside attention.
+
+The kernel stays in-tree, dark and unrouted: functional, accurate
+(rel ~1.2%), fully documented — re-evaluate only on new silicon or if a
+future MPP release adds a shallow-K int8 path. Do NOT re-attempt on M5.
