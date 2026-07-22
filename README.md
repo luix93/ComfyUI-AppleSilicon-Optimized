@@ -10,7 +10,7 @@ M5 Max.**
 Private continuation of
 [ComfyUI-AppleSilicon-FP8](https://github.com/pawel-mazurkiewicz/ComfyUI-AppleSilicon-FP8).
 What began as an FP8 compatibility shim has diverged into a general
-optimization layer: 30 runtime patches and six JIT-compiled Metal extensions
+optimization layer: 32 runtime patches and six JIT-compiled Metal extensions
 that take image models to roughly half their stock render time and make long
 video generation on a MacBook competitive with — and in places faster than —
 the fastest native Mac apps.
@@ -31,20 +31,26 @@ models); "after" is with `ASFP8_NATIVE=1`.
 |---|---|---|---|
 | Z-Image (Lumina) int8, 1MP | 18.0 s | **7.6 s** | — |
 | Flux2 Klein 9B int8, 1MP | ~24 s | **~13 s** | — |
-| Krea2 Turbo int8 convrot, 1MP / 8 steps | ~28 s | **15.5 s** | DrawThings ~13.5–14 s |
+| Krea2 Turbo int8 convrot, 1MP / 8 steps | ~28 s | **~14.3 s** | DrawThings ~13.5–14 s |
+| Ideogram 4 int8 convrot (8.7B), 1MP / 12 steps | ~50 s† | **~41 s** | DrawThings ~42 s |
 | LTX 2.3 video, 512² × 5 s | 63 s | **22 s** | DrawThings ~35 s |
-| LTX 2.3 video, 1024² × 5 s | 295 s | **~100 s** | DrawThings ~120 s |
-| Wan 2.2 i2v 14B×2 int8, 512² × 81 f | 445 s | **122 s** | DrawThings-class ≈ 100 s |
+| LTX 2.3 video, 1024² × 5 s | 295 s | **86 s** | DrawThings ~120 s |
+| Wan 2.2 i2v 14B×2 int8, 512² × 81 f | 445 s | **111 s** | DrawThings-class ≈ 100 s |
 
-The LTX numbers beat DrawThings outright; Krea2 is within ~10% of it; Wan 2.2
-went 445 s → 122 s (3.6×), putting an 81-frame 14B×2 video generation on a
-laptop within ~20% of a DGX Spark.
+† generic patches already on — Ideogram 4 shipped after the generic layer, so
+its "before" is the pre-#32 state, not compatibility-alone.
+
+The LTX numbers beat DrawThings outright at both resolutions; Ideogram 4 edges
+past it; Krea2 is within ~5%; Wan 2.2 went 445 s → 111 s (4×), putting an
+81-frame 14B×2 video generation on a laptop within ~10% of a DGX Spark-class
+result.
 
 **Read benchmarks from run 2.** The first run of any workflow pays JIT kernel
-compilation and cold-allocator growth (Wan: ~163 s vs 122 s steady). Sustained
+compilation and cold-allocator growth (Wan: ~142 s vs 111 s steady). Sustained
 load also drifts these numbers ±10% by thermal state alone — bigger than most
 individual optimizations here — so only same-session A/B comparisons are
-meaningful.
+meaningful (a heat-soaked chassis can drift far past ±10%; let the machine
+cool before trusting absolute numbers).
 
 ## The two layers
 
@@ -104,12 +110,35 @@ and extend it to fp16/video/GQA — see [Credits](#credits) for the split.
 - **GQA-native grouped KV**: Krea2's 48Q/12KV heads run without
   `repeat_interleave`, bit-identical to the repeated form.
 - **~28–30 TF/s** at Flux shapes, **~26–28 TF/s** at video length, measured
-  same-session. (Earlier docs claimed 37 → 26 as a "long-sequence droop"; a
-  controlled re-measurement showed most of that gap was cross-session thermal
-  drift. Both regimes sit near the practical ceiling — see below.)
+  same-session — the cooperative kernel's practical ceiling (see below), which
+  is why the current production forward is the `na` kernel:
 
-**Why there is no faster version of this yet.** A dedicated sprint tried to
-beat it and failed, which is worth recording:
+**Attention v2 — the `na` kernel.** A structural rewrite of the forward
+following DrawThings' NAX recipe (liuliu/ccv `NAAttentionKernel`, BSD-3 — see
+[Credits](#credits)): 16 *independent* simdgroups × 16 rows each instead of
+one cooperating threadgroup, `execution_simdgroups<1>` tensor ops, K/V read
+directly from device memory through static-extent slices, two 64-column
+blocks per softmax pass with row-reduction cooperative tensors +
+`fast::exp2`, relaxed-precision enabled, and the P tile register-chained into
+the PV matmul. **40+ TF/s at Wan shapes (+46% over the cooperative kernel)** —
+this is what took Wan 122 → 111 s and LTX 1024² ~100 → 86 s. Two hard-won
+details:
+
+- Static-extent tensor-ops slices **never bounds-check** (that's their speed).
+  Ragged sequence tails are handled by host-side zero-padding to tile bounds,
+  with padded strides passed separately from the true lengths that drive
+  masking. An earlier tail path that read past the buffer end passed every
+  parity test (fresh MPS pages are zeroed) and still corrupted ~3 of 4 real
+  renders on a dirty allocator pool; the permanent regression test now poisons
+  the pool with NaN pages first.
+- D=256 heads (Ideogram 4) were tried via a two-block head split and **lost to
+  plain bmm** (22.9 ms vs 12.4 ms): the 16-row × 256 × fp32 accumulator costs
+  128 registers/lane and spills. Budget rule: 16 × D × fp32 / 32 lanes must
+  stay ≲64/lane. Wide heads stay on the bmm route.
+
+**How the ceiling moved.** An earlier sprint tried to beat the cooperative
+kernel with bigger tiles and failed; the na rewrite then beat it by changing
+structure instead. The failed probe is still worth recording:
 
 - A head-count sweep at fixed geometry showed throughput flat from a 55 MB to
   a 440 MB K/V working set, and configurations that *halve* K/V traffic ran
@@ -121,12 +150,13 @@ beat it and failed, which is worth recording:
   (parity 2e-5), but at attention's shallow K=128 reductions even **MPS's own
   tuned GEMM only reaches 34.5 TF/s** (manual fragments: 24; at deep K=512 they
   reach 55). The int8 win came from a regime that does not exist inside
-  attention.
+  attention. (The na kernel later cleared that "ceiling" anyway — it was a
+  bound on that *design family*, not the hardware.)
 - `flash_attn_fwd_frag` — a staged-KV per-simdgroup kernel (K/V staged once per
   threadgroup, softmax state in lane registers via `simd_shuffle`, optional
   double-buffered prefetch) — ships in the source, parity-clean across
   fp16/bf16/causal/GQA/tails, but is **not routed**: 22.8 TF/s vs the
-  production kernel's 28.5. Kept as scaffolding for future attempts.
+  cooperative kernel's 28.5, both since superseded by na.
 
 ### Attention router (patch #19)
 
@@ -145,7 +175,21 @@ distinct route taken.
   then a bit-exact INT8×INT8→INT32 kernel (~105 TF/s at diffusion shapes,
   ~1.85× over bf16) with the rescale + bias fused into the store epilogue.
   Ported from [Cider](https://github.com/Mininglamp-AI/cider) (MIT). This is
-  the backbone of the Z-Image / Flux2 / Krea2 / Wan int8 numbers above.
+  the backbone of the Z-Image / Flux2 / Krea2 / Ideogram / Wan int8 numbers
+  above. A 1-slot activation cache also skips repeat rotate+quant passes when
+  several projections share one input (qkv triples, SwiGLU pairs).
+- **Fused o-projection pre-pass** (`ASFP8_INT8_OPROJ_FUSE`, on): when
+  `head_dim == convrot groupsize` (Ideogram 4: both 256, so each head is
+  exactly one rotation group), the attention output goes straight from its
+  native `[B,H,S,D]` layout to quantized GEMM input in one kernel — head-merge
+  gather + rowwise quant fused, the 46 MB merge copy and the separate quant
+  pass gone (0.48 ms vs 1.29 ms per call; 816 calls per Ideogram run). The
+  convrot rotation stays the eager bf16 matmul, applied directly in attention
+  layout — measured bit-identical to the merged-layout matmul — so the default
+  mode is **bit-exact: same-seed renders are pixel-identical**. `=2` swaps in
+  a fully in-kernel FWHT rotation (single pass, rounding-equivalent but not
+  pixel-identical — and slightly slower than the matmul anyway; kept as an
+  experiment). `=0` disables.
 - **fp8-native `_scaled_mm`** (`ASFP8_FP8_EXT`): fp8×fp8 matmuls read fp8
   operands directly on the matrix units — no bf16 materialization —
   bit-exact, ~1.2–2.1× on FLUX/SD3.5-class shapes.
@@ -153,7 +197,7 @@ distinct route taken.
   tiled/swizzled geometry and fused bias for standard-fp8 Linears, skipping
   the per-forward weight decode.
 
-### DiT block fusions (`ASFP8_DIT_EXT` — patches #21, #23–#25, #27, #28)
+### DiT block fusions (`ASFP8_DIT_EXT` — patches #21, #23–#25, #27, #28, #32)
 
 Per-architecture Metal kernels for the elementwise/copy-heavy glue between
 matmuls, which on MPS costs as much as the matmuls themselves. Each patch
@@ -177,6 +221,12 @@ mirrors eager rounding op-for-op (exact-or-1-ulp) and falls back per call:
   materializes [B,F,C]→[B,L,C] repeats (220 MB a use, six uses per block);
   here they never exist — plus wide RMSNorm+RoPE written straight into
   attention layout.
+- **Ideogram 4 (#32)**: fused qkv-split + per-head affine RMSNorm +
+  interleaved-MRoPE split-half rotation (D≤512 via element-pair-per-thread),
+  the tanh-gated norm/modulate/residual block glue, MRoPE freqs memoization
+  (24 identical per-forward rebuilds → 1), PSO prewarm overlapped with the
+  ~9 GB checkpoint loads, and the fused o-projection pre-pass above.
+  56.6 → ~41 s at 12 steps 1MP — past DrawThings' 42 s.
 
 ### Video VAE (patches #26, #29)
 
@@ -226,6 +276,15 @@ reruns and 0.1 ms model switches. On a smaller machine the same formula
 adapts (reserve scales, comfy evicts sooner); set `ASFP8_MPS_RESERVE_GB`
 higher to hand memory back to other apps at the cost of more eviction.
 
+### Free RAM button
+
+The pool-parking trade above comes with a manual release valve: a **Free RAM**
+button in ComfyUI's top bar (`web/asfp8_topbar.js`) that unloads all models
+and empties the cache on click — reclaim the ~45 GB parked footprint before
+switching to another heavy app, without an idle timer evicting models behind
+your back mid-session. (Measured: +7.5 GB returned immediately; the rest
+follows as the allocator drains.)
+
 ### MLX text generation (patch #14)
 
 Autoregressive prompt-expansion encoders (Krea2's Qwen3-VL, LTX's Gemma3) run
@@ -274,7 +333,9 @@ cast, entirely on GPU, feeding MPS's fast float matmuls.
 Three tiers, stated per patch:
 
 - **Bit-exact**: all FP8 decodes, the int8 W8A8 kernel, `fold_taps`, the
-  conv3d channel fold (single fp32 accumulation = conv3d's own numerics).
+  conv3d channel fold (single fp32 accumulation = conv3d's own numerics), the
+  fused o-projection pre-pass in its default mode (verified by same-seed
+  pixel-identical renders).
 - **Exact-or-1-ulp**: the DiT fusions and VAE norm kernels mirror eager
   rounding at every point eager rounds (fp32 math between roundings); images
   shift imperceptibly but deterministically.
@@ -284,8 +345,11 @@ Three tiers, stated per patch:
 Patch #30 (memory accounting) changes *scheduling*, not numerics — outputs are
 identical, only fewer reloads.
 
-Everything ships with parity tests against the eager path (104 tests on torch
-2.10, 105 on 2.13, plus kernel parity harnesses for the Metal extensions).
+Everything ships with parity tests against the eager path (116 pass on torch
+2.13 with the native kernels enabled, plus kernel parity harnesses for the
+Metal extensions — including a dirty-pool test that poisons the MPS allocator
+with NaN pages before checking ragged attention shapes, because parity on
+fresh, zeroed allocations structurally cannot catch out-of-bounds reads).
 
 ## Environment variables
 
@@ -298,7 +362,9 @@ Everything ships with parity tests against the eager path (104 tests on torch
 | `ASFP8_ATTN_ROUTER` | off | per-call attention routing (flash41 / bmm / sub-quad) |
 | `ASFP8_DIT_EXT` | off | DiT block-fusion kernels (all families) |
 | `ASFP8_CONV3D` | off | conv3d → sliced conv2d + Wan VAE fast path |
-| `ASFP8_FLUX_FAST` / `KREA2_FAST` / `LTX_FAST` / `WAN_FAST` / `WAN_VAE_FAST` | on (under DIT_EXT/CONV3D) | per-architecture kill switches |
+| `ASFP8_FLUX_FAST` / `KREA2_FAST` / `LTX_FAST` / `WAN_FAST` / `WAN_VAE_FAST` / `IDEOGRAM_FAST` | on (under DIT_EXT/CONV3D) | per-architecture kill switches |
+| `ASFP8_INT8_OPROJ_FUSE` | 1 | fused o-proj pre-pass: `1` bit-exact merge+quant, `2` full FWHT (rounding-equivalent), `0` off |
+| `ASFP8_AUTOFIX` | on | self-heal JIT prerequisites at boot (install ninja, restore stripped torch headers) |
 | `ASFP8_WAN_VAE_CHUNK` | 16 | Wan VAE frames per causal pass (even, 2–32; lower caps decode memory peak) |
 | `ASFP8_FREE_MEM` | on | MPS free-memory accounting fix (patch #30) |
 | `ASFP8_MPS_RESERVE_GB` | max(16, 15%) | OS memory reserve held back from comfy's estimate |
@@ -318,15 +384,21 @@ pip install -r ComfyUI-AppleSilicon-Optimized/requirements.txt
 ```
 
 Restart ComfyUI. The only required dependency (`mtlflashattn`) installs
-automatically; the native kernels additionally want `ninja` + Xcode
-command-line tools. For ComfyUI Desktop, install into the app's own venv
+automatically; the native kernels additionally need `ninja` + Xcode
+command-line tools + torch's C++ headers — and the node **self-heals the
+first two Python-side gaps at boot**: it installs `ninja` into the venv and
+restores torch's C++ headers from a local cache when the bundled torch ships
+without them (ComfyUI Desktop strips them; a healthy venv seeds the cache).
+`ASFP8_AUTOFIX=0` opts out. If prerequisites still can't be met, a loud
+banner says exactly what's missing instead of silently rendering at half
+speed. For ComfyUI Desktop, install into the app's own venv
 (`.venv/bin/python3 -m pip ...`) — the bundled torch is the one that matters.
 
 Startup prints one line per active patch
-(`[AppleSilicon-FP8/<patch>] ...`); with `ASFP8_NATIVE=1` you'll also see the
-master-switch line listing what it implied. Kernels JIT-build on first use
-(a one-time delay per dtype) and print nothing when they fall back — set the
-debug vars above to see routing decisions.
+(`[AppleSilicon-Optimized/<patch>] ...`); with `ASFP8_NATIVE=1` you'll also
+see the master-switch line listing what it implied. Kernels JIT-build on
+first use (a one-time delay per dtype) and print nothing when they fall back
+— set the debug vars above to see routing decisions.
 
 > Developed and tested on: M5 Max / 128 GB, macOS 27 dev beta, PyTorch
 > 2.10 & 2.13, Python 3.12, ComfyUI Desktop. M1–M4 get the compatibility
@@ -364,7 +436,26 @@ A few load-bearing lessons encoded in this repo, for future work:
   half-day of kernel work saved by a two-hour measurement.
 - **Trust same-session numbers only.** Thermal drift on a sustained run is
   ±10%, larger than most effects being chased; a cross-session "regression"
-  turned out to be a warm vs cool machine.
+  turned out to be a warm vs cool machine. A heat-soaked chassis after hours
+  of benching degrades far past that (observed 50 → 78 s on identical runs)
+  and recovers after a ~2-minute cooldown.
+- **Random-data parity does not prove real-data parity.** A rotation kernel
+  bit-matched the eager path across 23M random values, then diverged on real
+  renders: real activations carry exact zeros and duplicated rows (the
+  zeroed-text unconditional pass) that land on fp32-summation ties. The
+  pipeline itself is deterministic — same seed + same code = pixel-identical
+  PNGs across process restarts — so a same-seed pixel-diff is the cheap,
+  decisive bit-exactness test. Use it before shipping any numerics change.
+- **Bounds-checking is your job in tensor-ops kernels.** Static-extent slices
+  don't bounds-check, fresh test allocations are zeroed so parity tests can't
+  see OOB reads, and the failure mode is *intermittent* whole-image
+  corruption on dirty pool memory. Zero-pad ragged inputs host-side and test
+  under a NaN-poisoned allocator.
+- **OS betas can break Metal mid-flight.** A macOS beta changed tensor-ops
+  operand address-space rules; every JIT kernel failed to compile, and the
+  per-call compile *re-attempts* cost 33 s/it. Fixes that ship: address-space
+  scrubbing on operand types, plus a compile-failure latch so a broken kernel
+  disables itself for the session instead of retrying per call.
 
 ## Credits
 
@@ -383,6 +474,12 @@ A few load-bearing lessons encoded in this repo, for future work:
   register-tiled cooperative-TensorOps int8 `matmul2d` that patch #17's GEMM
   is ported from, and the design reference for the staged/swizzled fragment
   work.
+- [ccv / NNC](https://github.com/liuliu/ccv) (Liu Liu, BSD-3-Clause) — the
+  `NAAttentionKernel` structure DrawThings runs is the recipe our `na`
+  attention kernel follows (independent simdgroups, direct-device K/V through
+  static-extent slices, row-reduction softmax, relaxed precision). The Metal
+  4.1 port, the register-chained P variant, the ragged-tail handling, and the
+  torch host integration are ours.
 
 ## License
 
