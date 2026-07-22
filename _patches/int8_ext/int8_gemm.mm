@@ -547,6 +547,101 @@ kernel void i8_quant_rowwise_f16(
   i8_quant_rowwise_body<half>(x, q, scales, M, K, row, lid, simd_lane,
                               simd_id, tg);
 }
+
+// Fused o-projection pre-pass for attention outputs whose head_dim equals the
+// convrot groupsize (Ideogram 4: H=18, D=256): reads the attention result in
+// its native [B,H,S,256] layout and emits the merged token row [B*S, H*256]
+// already convrot-rotated and int8-quantized. Replaces three full passes over
+// the activation (head-merge transpose copy, bf16 Hadamard matmul, rowwise
+// quant read) with one.
+//
+// The rotation is the regular Hadamard H = H4^{kron 4} (comfy_kitchen
+// _build_hadamard, entries ±2^-4 — exactly representable), applied as 4
+// radix-4 butterfly stages in fp32 with a single RTE round to bf16 at the
+// end. The eager path (bf16 torch.matmul) also multiplies by exact ±2^-4 and
+// accumulates in fp32, so the two differ only in fp32 summation order —
+// occasional last-ulp bf16 flips, NOT bit-identical by construction.
+// Quant math below is byte-for-byte i8_quant_rowwise_body with K = H*256.
+//
+// rotate=0 skips the FWHT: the caller already rotated (e.g. via the eager
+// bf16 matmul, which is bit-identical in [B,H,S,256] and merged layouts) and
+// this kernel is a pure gather + quant — bit-exact by the same argument as
+// i8_quant_rowwise (absmax is comparison-only; divide math is replicated).
+kernel void i8_merge_rot_quant_bf16(
+    const device bfloat *x [[buffer(0)]],   // [B,H,S,256] contiguous
+    device char *q [[buffer(1)]],           // [B*S, H*256]
+    device float *scales [[buffer(2)]],     // [B*S]
+    constant uint &B [[buffer(3)]],
+    constant uint &H [[buffer(4)]],
+    constant uint &S [[buffer(5)]],
+    constant uint &rotate [[buffer(6)]],
+    threadgroup bfloat *rot [[threadgroup(0)]],  // H*256 rotated values
+    uint row [[threadgroup_position_in_grid]],
+    ushort lid [[thread_position_in_threadgroup]],
+    ushort simd_lane [[thread_index_in_simdgroup]],
+    ushort simd_id [[simdgroup_index_in_threadgroup]]) {
+  threadgroup float work[256];
+  threadgroup float tg[8];
+  if (row >= B * S) return;
+  const uint b = row / S, s = row % S;
+  const uint K = H * 256u;
+  float lmax = 0.0f;
+  for (uint h = 0; h < H; ++h) {
+    const device bfloat *src = x + ((ulong(b) * H + h) * S + s) * 256ul;
+    if (rotate == 0u) {
+      const bfloat r = src[lid];
+      rot[h * 256u + lid] = r;
+      lmax = fmax(lmax, fabs(float(r)));
+      continue;
+    }
+    work[lid] = float(src[lid]);
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+    for (uint stride = 1; stride <= 64; stride *= 4) {
+      const uint digit = (lid / stride) & 3u;
+      const uint base = lid - digit * stride;
+      const float a0 = work[base];
+      const float a1 = work[base + stride];
+      const float a2 = work[base + 2u * stride];
+      const float a3 = work[base + 3u * stride];
+      threadgroup_barrier(mem_flags::mem_threadgroup);
+      // Row `digit` of H4 = [[1,1,1,-1],[1,1,-1,1],[1,-1,1,1],[-1,1,1,1]]
+      // (symmetric, so row form applies on the output side too).
+      float y;
+      if (digit == 0u)      y =  a0 + a1 + a2 - a3;
+      else if (digit == 1u) y =  a0 + a1 - a2 + a3;
+      else if (digit == 2u) y =  a0 - a1 + a2 + a3;
+      else                  y = -a0 + a1 + a2 + a3;
+      work[lid] = y;
+      threadgroup_barrier(mem_flags::mem_threadgroup);
+    }
+    const bfloat r = bf16_rte(work[lid] * 0.0625f);  // 1/sqrt(256), exact 2^-4
+    rot[h * 256u + lid] = r;
+    lmax = fmax(lmax, fabs(float(r)));
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+  }
+  float smax = simd_max(lmax);
+  if (simd_lane == 0) tg[simd_id] = smax;
+  threadgroup_barrier(mem_flags::mem_threadgroup);
+  if (lid == 0) {
+    float m = tg[0];
+    for (ushort t = 1; t < 8; t++) m = fmax(m, tg[t]);
+    float sc = fmax(precise::divide(m, 127.0f), 1e-30f);
+    scales[row] = sc;
+    tg[0] = sc;
+  }
+  threadgroup_barrier(mem_flags::mem_threadgroup);
+  bfloat s_cast = bfloat(tg[0]);
+  if (float(s_cast) == 0.0f) {
+    s_cast = numeric_limits<bfloat>::min();  // finfo tiny (smallest normal)
+  }
+  float s_math = float(s_cast);
+  device char *qr = q + ulong(row) * K;
+  for (uint i = lid; i < K; i += 256) {
+    float d = float(bfloat(precise::divide(float(rot[i]), s_math)));
+    d = clamp(rint(d), -128.0f, 127.0f);
+    qr[i] = char(d);
+  }
+}
 )MTL";
 
 // ── Host: pipeline cache ─────────────────────────────────────────
@@ -894,7 +989,62 @@ std::vector<torch::Tensor> i8_quant_rowwise(torch::Tensor x) {
   return {q, scales};
 }
 
+// Fused head-merge + convrot rotation + rowwise quant: x[B,H,S,256] bf16
+// (attention output, head_dim == convrot groupsize) ->
+// (q[B*S, H*256] int8, scales[B*S,1] fp32). One threadgroup per token row.
+static id<MTLComputePipelineState> g_pso_mrq = nil;
+
+std::vector<torch::Tensor> i8_merge_rot_quant(torch::Tensor x, bool rotate) {
+  TORCH_CHECK(x.is_mps(), "x must be on mps");
+  TORCH_CHECK(x.dim() == 4, "x must be [B,H,S,D]");
+  TORCH_CHECK(x.scalar_type() == torch::kBFloat16, "x must be bf16");
+  TORCH_CHECK(x.is_contiguous(), "x must be contiguous");
+  const int Bv = (int)x.size(0), Hv = (int)x.size(1);
+  const int Sv = (int)x.size(2), Dv = (int)x.size(3);
+  TORCH_CHECK(Dv == 256, "head_dim must equal the convrot groupsize (256)");
+  TORCH_CHECK(Hv >= 1 && Hv * 256 * 2 <= 30 * 1024,
+              "H*D too large for threadgroup memory");
+  const long M = (long)Bv * Sv;
+  auto q = torch::empty({M, (long)Hv * 256}, x.options().dtype(torch::kChar));
+  auto scales = torch::empty({M, 1L}, x.options().dtype(torch::kFloat));
+
+  if (!g_pso_mrq) g_pso_mrq = pso_for_name(@"i8_merge_rot_quant_bf16");
+  id<MTLComputePipelineState> pso = g_pso_mrq;
+  MPSStream* stream = getCurrentMPSStream();
+  id<MTLBuffer> xBuf = __builtin_bit_cast(id<MTLBuffer>, x.storage().data());
+  id<MTLBuffer> qBuf = __builtin_bit_cast(id<MTLBuffer>, q.storage().data());
+  id<MTLBuffer> sBuf = __builtin_bit_cast(id<MTLBuffer>, scales.storage().data());
+  const NSUInteger xOff = x.storage_offset() * x.element_size();
+  const NSUInteger qOff = q.storage_offset() * q.element_size();
+  const NSUInteger sOff = scales.storage_offset() * scales.element_size();
+  uint Bu = (uint)Bv, Hu = (uint)Hv, Su = (uint)Sv;
+  uint rotu = rotate ? 1u : 0u;
+
+  dispatch_sync(stream->queue(), ^(){
+    @autoreleasepool {
+      id<MTLComputeCommandEncoder> enc = stream->commandEncoder();
+      [enc setComputePipelineState:pso];
+      [enc setBuffer:xBuf offset:xOff atIndex:0];
+      [enc setBuffer:qBuf offset:qOff atIndex:1];
+      [enc setBuffer:sBuf offset:sOff atIndex:2];
+      [enc setBytes:&Bu length:sizeof(uint) atIndex:3];
+      [enc setBytes:&Hu length:sizeof(uint) atIndex:4];
+      [enc setBytes:&Su length:sizeof(uint) atIndex:5];
+      [enc setBytes:&rotu length:sizeof(uint) atIndex:6];
+      [enc setThreadgroupMemoryLength:(NSUInteger)(Hu * 256 * 2) atIndex:0];
+      [enc dispatchThreadgroups:MTLSizeMake((NSUInteger)M, 1, 1)
+          threadsPerThreadgroup:MTLSizeMake(256, 1, 1)];
+    }
+  });
+  return {q, scales};
+}
+
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
+  m.def("i8_merge_rot_quant", &i8_merge_rot_quant,
+        "Fused head-merge (+ optional convrot FWHT) + rowwise int8 quant: "
+        "x[B,H,S,256] bf16 -> (q[B*S,H*256] int8, scales[B*S,1] fp32); "
+        "rotate=False = pure gather+quant (bit-exact) on pre-rotated input",
+        pybind11::arg("x"), pybind11::arg("rotate") = true);
   m.def("i8_matmul2d_nt_fused_cs", &i8_matmul2d_nt_fused_cs,
         "Channelwise-fused NT int8 matmul: D = (A@B^T)*(col_scale[N]*row_scale[M]) + bias",
         pybind11::arg("a_i8"), pybind11::arg("b_i8"), pybind11::arg("row_scale"),

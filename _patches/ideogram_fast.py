@@ -111,7 +111,17 @@ def _fast_attn_forward(self, x, attn_mask, freqs_cis, transformer_options={}):
             qw, kw, H, D, float(self.norm_q.eps))
         out = optimized_attention_masked(q, k, v, H, attn_mask,
                                          skip_reshape=True,
+                                         skip_output_reshape=True,
                                          transformer_options=transformer_options)
+        if out.dim() == 4:
+            # Fused o-projection: head-merge + convrot + rowwise quant in one
+            # kernel, GEMM on the pre-quantized activation. None -> fall
+            # through to the ordinary merge + Linear path.
+            from . import int8_linear_kernel_mps as _i8
+            res = _i8.int8_o_proj_prequant(self.o, out)
+            if res is not None:
+                return res
+            out = out.transpose(1, 2).reshape(B, S, H * D)
         return self.o(out)
     except Exception:
         return _orig_attn(self, x, attn_mask, freqs_cis,

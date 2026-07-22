@@ -76,6 +76,10 @@ def main():
     ap.add_argument("workflows", nargs="+")
     ap.add_argument("--base", default="http://127.0.0.1:8299")
     ap.add_argument("--runs", type=int, default=4)
+    ap.add_argument("--seed-offset", type=int, default=0,
+                    help="added to the per-run seed bump; use distinct offsets "
+                         "across single-run invocations so ComfyUI's execution "
+                         "cache can't return a prior result in 0s")
     ap.add_argument("--label", default="")
     ap.add_argument("--out", default=None)
     args = ap.parse_args()
@@ -93,7 +97,7 @@ def main():
         name = wf_path.rsplit("/", 1)[-1]
         times = []
         for i in range(args.runs):
-            prompt = bump_seeds(base_prompt, i)
+            prompt = bump_seeds(base_prompt, args.seed_offset + i)
             t_wall = time.time()
             pid = submit(args.base, prompt, client_id)
             entry = wait(args.base, pid)

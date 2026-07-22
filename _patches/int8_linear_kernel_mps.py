@@ -48,6 +48,7 @@ TAG = "[AppleSilicon-Optimized/int8_kernel]"
 _installed = False
 _orig_int8_linear = None
 _kernel = None
+_oproj_announced = False
 
 # 1-slot cache of the rotated+quantized activation. Krea2-style blocks call the
 # kernel with the SAME input tensor for wq/wk/wv/gate (and SwiGLU gate/up), so
@@ -188,6 +189,95 @@ def _int8_linear_kernel(
         result = result + bias.to(device=result.device, dtype=result.dtype)
 
     return result.reshape(*orig_shape[:-1], weight.shape[0])
+
+
+def int8_o_proj_prequant(layer, out_bhsd):
+    """o-projection straight from the attention layout [B,H,S,D].
+
+    When head_dim == the convrot groupsize (Ideogram 4: D=256), each head is
+    exactly one rotation group, so the head-merge transpose copy and the
+    rowwise-quant pass collapse into one Metal kernel (i8_merge_rot_quant);
+    the GEMM then runs on the pre-quantized (x_8, x_scale).
+
+    ASFP8_INT8_OPROJ_FUSE selects the mode:
+      "1" (default) BIT-EXACT: the convrot rotation stays the eager bf16
+          torch.matmul, applied directly in [B,H,S,D] layout (measured
+          bit-identical to the merged-layout matmul, so no merge copy);
+          the kernel does gather + quant only — pixel-identical output,
+          verified by same-seed e2e A/B.
+      "2" FULL FUSION: the rotation runs as in-kernel FWHT butterflies —
+          fastest (one pass total), same quality, but fp32 summation order
+          differs from the eager matmul, so outputs drift within the usual
+          bf16 rounding class (NOT pixel-identical).
+      "0" off: ordinary merge + Linear path.
+
+    Returns bf16 [B, S, N], or None when any eligibility check fails (caller
+    falls back to the ordinary merge + layer(input) path).
+    """
+    if _kernel is None or not hasattr(_kernel, "i8_merge_rot_quant"):
+        return None
+    mode = os.environ.get("ASFP8_INT8_OPROJ_FUSE", "1")
+    if mode == "0":
+        return None  # kill switch: fall back to merge + ordinary Linear path
+    try:
+        from comfy_kitchen.tensor import QuantizedTensor
+
+        if (not isinstance(out_bhsd, torch.Tensor) or out_bhsd.dim() != 4
+                or out_bhsd.device.type != "mps"
+                or out_bhsd.dtype != torch.bfloat16):
+            return None
+        w = layer.weight
+        if not isinstance(w, QuantizedTensor) or getattr(w, "_layout_cls", None) != "TensorWiseINT8Layout":
+            return None
+        if getattr(layer, "_full_precision_mm", False):
+            return None
+        if getattr(layer, "comfy_force_cast_weights", False):
+            return None
+        if len(getattr(layer, "weight_function", [])) or len(getattr(layer, "bias_function", [])):
+            return None
+        params = w._params
+        if getattr(params, "transposed", False):
+            return None
+        if not getattr(params, "convrot", False):
+            return None
+        B, H, S, D = out_bhsd.shape
+        if D != 256 or getattr(params, "convrot_groupsize", 256) != D:
+            return None
+        qdata = w._qdata
+        if H * D != qdata.shape[1]:
+            return None
+        weight_scale = params.scale.view(-1)
+        bias = layer.bias
+        bias_arg = bias.to(torch.bfloat16) if bias is not None else None
+
+        if mode == "2":
+            x_8, x_scale = _kernel.i8_merge_rot_quant(out_bhsd.contiguous())
+        else:
+            from comfy_kitchen.tensor.int8_utils import _build_hadamard
+            had = _build_hadamard(D, device=out_bhsd.device, dtype=out_bhsd.dtype)
+            rot4 = torch.matmul(out_bhsd.contiguous(), had)
+            x_8, x_scale = _kernel.i8_merge_rot_quant(rot4, False)
+        if weight_scale.numel() == 1 and hasattr(_kernel, "i8_matmul2d_nt_fused"):
+            row_scale = (weight_scale.float() * x_scale.reshape(-1).float()).contiguous()
+            r = _kernel.i8_matmul2d_nt_fused(x_8, qdata.contiguous(), row_scale, bias_arg)
+        elif (weight_scale.numel() == qdata.shape[0]
+              and hasattr(_kernel, "i8_matmul2d_nt_fused_cs")):
+            r = _kernel.i8_matmul2d_nt_fused_cs(
+                x_8, qdata.contiguous(),
+                x_scale.reshape(-1).float().contiguous(),
+                weight_scale.float().contiguous(), bias_arg)
+        else:
+            return None
+        global _oproj_announced
+        if not _oproj_announced:
+            _oproj_announced = True
+            what = ("full FWHT fusion (rounding-equivalent)" if mode == "2"
+                    else "bit-exact merge+quant fusion")
+            sys.stderr.write(f"{TAG} fused o-projection engaged: {what}.\n")
+        return r.reshape(B, S, qdata.shape[0])
+    except Exception as e:
+        print(f"{TAG} o-proj prequant fell back ({e!r})")
+        return None
 
 
 def _try_int8_kernel_forward(self, input):
