@@ -72,6 +72,25 @@ def install():
     _wrap_sync(comfy.samplers.CFGGuider, "inner_sample", "inner_sample", 3)
     _wrap_sync(comfy.samplers, "process_conds", "process_conds", 4)
     _wrap_sync(comfy.samplers.KSAMPLER, "sample", "KSAMPLER.sample (step loop)", 4)
+
+    # GPU-tail probe (ASFP8_EXEC_TRACE_SYNC=1): time an explicit MPS drain right
+    # after the step loop returns. Distinguishes "the CPU finished submitting but
+    # the GPU is still ~Ns behind" (tail shows up here; the s/it readout is
+    # optimistic) from real CPU-side work after the loop. The sync itself only
+    # reorders *where* the wait lands — total wall time is unchanged.
+    if os.environ.get("ASFP8_EXEC_TRACE_SYNC") == "1":
+        import torch
+        orig_ks = comfy.samplers.KSAMPLER.sample
+
+        @functools.wraps(orig_ks)
+        def ks_with_drain(*a, **kw):
+            out = orig_ks(*a, **kw)
+            t0 = time.perf_counter()
+            torch.mps.synchronize()
+            _log(4, "gpu tail drain after step loop", (time.perf_counter() - t0) * 1000)
+            return out
+
+        comfy.samplers.KSAMPLER.sample = ks_with_drain
     _wrap_sync(comfy.sampler_helpers, "prepare_sampling", "prepare_sampling", 2)
     _wrap_sync(comfy.sampler_helpers, "cleanup_models", "cleanup_models", 2)
     _wrap_sync(comfy.model_management, "load_models_gpu", "load_models_gpu", 3)
