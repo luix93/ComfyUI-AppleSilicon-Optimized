@@ -971,6 +971,361 @@ kernel void flash_attn_fwd_na(
     }
 }
 
+// ── na_i8: int8-quantized attention (opt-in, rounding-class, NOT bit-exact) ──
+// Recipe: liuliu/ccv NAInt8AttentionKernel.cpp (BSD-3) — on-the-fly symmetric
+// int8 quant of Q/K (per-row-tile scales aligned to processing tiles) and of
+// mean-centered V; QK runs int8xint8->int32 (the 2x half); P stays @DT@ with
+// the block's V scale folded in; PV is mixed @DT@ x int8 -> fp32 accumulate;
+// V's mean adds back EXACTLY as +mean after normalization (sum P = L).
+// M (row max) is reduced over @DT@-rounded scores — any M error cancels
+// identically in P and L (flash invariant); exp2 args recompute from the
+// exact int32 score. Tail masking via @DT@ -inf scores / P=0; int8 pad-row
+// garbage is annihilated by exact integer x zero (no NaN class in int8).
+
+// Pre-pass: per-(head, dim) mean of V over the TRUE sequence length.
+// grid (DD/4, BHkv); 256 threads; float4 partial sums, simd + tg reduce.
+kernel void na_i8_v_mean(
+    device @DT@* V [[buffer(0)]],          // [BHkv, LkS, DD]
+    device float* MEAN [[buffer(1)]],       // [BHkv, DD]
+    constant int* QP [[buffer(2)]],         // [LkS, Lk, 0, 0]
+    uint3 tgid [[threadgroup_position_in_grid]],
+    uint  tid  [[thread_index_in_threadgroup]],
+    uint  sgid [[simdgroup_index_in_threadgroup]],
+    uint  lane [[thread_index_in_simdgroup]])
+{
+    threadgroup float4 scr[8];
+    const int LkS = QP[0], Lk = QP[1];
+    const int vec4 = int(tgid.x);
+    const ulong base = ulong(tgid.y) * ulong(LkS) * DD;
+    float4 acc = 0.0f;
+    for (int r = int(tid); r < Lk; r += 256) {
+        device @DT@* p = V + base + ulong(r) * DD + vec4 * 4;
+        acc += float4(p[0], p[1], p[2], p[3]);
+    }
+    acc += simd_shuffle_xor(acc, 16);
+    acc += simd_shuffle_xor(acc, 8);
+    acc += simd_shuffle_xor(acc, 4);
+    acc += simd_shuffle_xor(acc, 2);
+    acc += simd_shuffle_xor(acc, 1);
+    if (lane == 0) scr[sgid] = acc;
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+    if (tid == 0) {
+        float4 t = scr[0];
+        for (int s = 1; s < 8; ++s) t += scr[s];
+        t *= (1.0f / float(max(Lk, 1)));
+        device float* m = MEAN + ulong(tgid.y) * DD + vec4 * 4;
+        m[0] = t.x; m[1] = t.y; m[2] = t.z; m[3] = t.w;
+    }
+}
+
+// Pre-pass: symmetric int8 quant per row tile: scale = absmax/127 (1/127 for
+// all-zero tiles), clamp +-127. use_mean subtracts MEAN (the V path). Rows
+// beyond the true length are left untouched (pad garbage is P=0-masked).
+kernel void na_i8_quant(
+    device @DT@* X [[buffer(0)]],           // [BH, LS, DD]
+    device int8_t* X8 [[buffer(1)]],
+    device float* SCL [[buffer(2)]],        // [BH, ntiles]
+    device float* MEAN [[buffer(3)]],       // [BH, DD] (V only)
+    constant int* QP [[buffer(4)]],         // [LS, Ltrue, tile, use_mean, ntiles]
+    uint3 tgid [[threadgroup_position_in_grid]],
+    uint  tid  [[thread_index_in_threadgroup]],
+    uint  sgid [[simdgroup_index_in_threadgroup]],
+    uint  lane [[thread_index_in_simdgroup]])
+{
+    threadgroup float scr[8];
+    const int LS = QP[0], Ltrue = QP[1], TS = QP[2], use_mean = QP[3], ntiles = QP[4];
+    const int tile = int(tgid.x);
+    const int bh = int(tgid.y);
+    const int r0 = tile * TS;
+    const int extent = max(0, min(TS, Ltrue - r0));
+    const ulong base = ulong(bh) * ulong(LS) * DD + ulong(r0) * DD;
+    const int total = extent * DD;
+    float lmax = 0.0f;
+    for (int i = int(tid); i < total; i += 256) {
+        float v = float(X[base + i]);
+        if (use_mean) v -= MEAN[ulong(bh) * DD + (i % DD)];
+        lmax = fmax(lmax, fabs(v));
+    }
+    lmax = fmax(lmax, simd_shuffle_xor(lmax, 16));
+    lmax = fmax(lmax, simd_shuffle_xor(lmax, 8));
+    lmax = fmax(lmax, simd_shuffle_xor(lmax, 4));
+    lmax = fmax(lmax, simd_shuffle_xor(lmax, 2));
+    lmax = fmax(lmax, simd_shuffle_xor(lmax, 1));
+    if (lane == 0) scr[sgid] = lmax;
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+    float m = scr[0];
+    for (int s = 1; s < 8; ++s) m = fmax(m, scr[s]);
+    const float scale = m > 0.0f ? m / 127.0f : (1.0f / 127.0f);
+    const float inv_scale = m > 0.0f ? 127.0f / m : 127.0f;
+    if (tid == 0) SCL[ulong(bh) * ntiles + tile] = scale;
+    for (int i = int(tid); i < total; i += 256) {
+        float v = float(X[base + i]);
+        if (use_mean) v -= MEAN[ulong(bh) * DD + (i % DD)];
+        X8[base + i] = int8_t(clamp(rint(v * inv_scale), -127.0f, 127.0f));
+    }
+}
+
+// Main kernel: clone of flash_attn_fwd_na (NAKB=1 / D<=128 only), int8 I/O.
+// Structure notes (this macOS beta's MPP headers):
+//   * int8 operands require an int32 matmul destination (float dest tensors
+//     are CREATABLE but not runnable) — so cS0i/cS1i take the qk_op.run and
+//     float destination-layout twins cS0/cS1 from the SAME op carry the
+//     dequantized scores for the softmax machinery (reduce_rows/map_iterator
+//     accept destination layouts only, and demand matching element types);
+//   * per-block dequant factor f = q_scale * k_scale * dot_scale folds in at
+//     the int->float copy; row max/L/corrections then run EXACTLY like the
+//     fp16 na kernel;
+//   * P converts into the @DT@ PV-left tensors with the block's V scale
+//     folded in (after the L reduce), PV runs @DT@ x int8 -> fp32;
+//   * epilogue adds V's mean back: O = ctO/L + vmean (exact: sum P = L).
+kernel void flash_attn_fwd_na_i8(
+    device int8_t* Q8 [[buffer(0)]],
+    device int8_t* K8 [[buffer(1)]],
+    device int8_t* V8 [[buffer(2)]],
+    device @DT@* O  [[buffer(3)]],
+    constant int*  SH [[buffer(4)]],   // [B,Hq,Hkv,Lq,Lk,causal,LqStride,LkStride]
+    constant float* PR [[buffer(5)]],  // [scale]
+    device float* QSCL [[buffer(6)]],  // [BHq, LqS/16]
+    device float* KSCL [[buffer(7)]],  // [BHkv, LkS/NABC]
+    device float* VSCL [[buffer(8)]],  // [BHkv, LkS/NABC]
+    device float* VMEAN [[buffer(9)]], // [BHkv, DD]
+    uint3 tgid [[threadgroup_position_in_grid]],
+    uint  sgid [[simdgroup_index_in_threadgroup]],
+    uint  lane [[thread_index_in_simdgroup]])
+{
+    const int Hq=SH[1], Hkv=SH[2], Lq=SH[3], Lk=SH[4];
+    const int LqS=SH[6], LkS=SH[7];
+    const float dot_scale = PR[0] * 1.4426950408889634f;   // exp2 domain
+
+    const int bh  = int(tgid.y);
+    const int b   = bh / Hq;
+    const int hq  = bh % Hq;
+    const int hkv = hq / (Hq / Hkv);
+    const int bhkv = b * Hkv + hkv;
+    const int q0  = (int(tgid.x) * NANSG + int(sgid)) * NASR;
+
+    if (q0 >= Lq) return;   // uniform per SG; no threadgroup barriers follow
+
+    device int8_t* Qp = Q8 + ulong(bh)*ulong(LqS)*DD;
+    device int8_t* Kp = K8 + ulong(bhkv)*ulong(LkS)*DD;
+    device int8_t* Vp = V8 + ulong(bhkv)*ulong(LkS)*DD;
+    const int kv_tiles = LkS / NABC;
+    const float q_scale = QSCL[ulong(bh) * (LqS / NASR) + (q0 / NASR)];
+
+    constexpr auto nai_qk_desc = matmul2d_descriptor(
+        NASR, NABC, @NAIK@, false, true, @NARP@,
+        matmul2d_descriptor::mode::multiply_accumulate);
+    matmul2d<nai_qk_desc, execution_simdgroups<1>> qk_op;
+    constexpr auto nai_pv_desc = matmul2d_descriptor(
+        NASR, DD, NABC, false, false, @NARP@,
+        matmul2d_descriptor::mode::multiply_accumulate);
+    matmul2d<nai_pv_desc, execution_simdgroups<1>> pv_op;
+
+    auto Qt = tensor<device int8_t, dextents<int,2>, tensor_inline>(Qp, dextents<int,2>(DD, LqS));
+    auto Kt = tensor<device int8_t, dextents<int,2>, tensor_inline>(Kp, dextents<int,2>(DD, LkS));
+    auto Vt = tensor<device int8_t, dextents<int,2>, tensor_inline>(Vp, dextents<int,2>(DD, LkS));
+    auto mQ = Qt.slice<@NAIK@, NASR>(0, q0);
+    auto mK = Kt.slice<@NAIK@, NABC>(0, 0);
+    auto mV = Vt.slice<DD, NABC>(0, 0);
+    using TQ8 = __tensor_ops_detail::__remove_addrspace_t<decltype(mQ)>;
+    using TK8 = __tensor_ops_detail::__remove_addrspace_t<decltype(mK)>;
+    using TV8 = __tensor_ops_detail::__remove_addrspace_t<decltype(mV)>;
+
+    auto cS0i = qk_op.get_destination_cooperative_tensor<TQ8, TK8, int>();
+    auto cS0  = qk_op.get_destination_cooperative_tensor<TQ8, TK8, float>();
+#if @NABLK@ == 2
+    auto cS1i = qk_op.get_destination_cooperative_tensor<TQ8, TK8, int>();
+    auto cS1  = qk_op.get_destination_cooperative_tensor<TQ8, TK8, float>();
+#endif
+    auto cM   = qk_op.get_row_reduction_destination_cooperative_tensor<TQ8, TK8, float>();
+    auto cL   = qk_op.get_row_reduction_destination_cooperative_tensor<TQ8, TK8, float>();
+    auto cCor = qk_op.get_row_reduction_destination_cooperative_tensor<TQ8, TK8, float>();
+    // Register chain: P converts in registers into the PV left tensors (the
+    // float QK-destination twin and the @DT@ PV-left share element
+    // enumeration — same identity the fp16 byp path relies on).
+    auto cP  = pv_op.get_left_input_cooperative_tensor<@DT@, int8_t, float>();
+    auto ctO0 = pv_op.get_destination_cooperative_tensor<
+        __tensor_ops_detail::__remove_addrspace_t<decltype(cP)>, TV8, float>();
+
+    #pragma clang loop unroll(full)
+    for (uint16_t k = 0; k < cM.get_capacity(); ++k) {
+        if (cM.is_valid_element(k)) {
+            cM[k] = -INFINITY;
+            cL[k] = numeric_limits<float>::denorm_min();
+        }
+    }
+
+    for (int c = 0; c < Lk; c += NABLK*NABC) {
+        const bool tail = (c + NABLK * NABC > Lk);
+        const float f0 = q_scale * KSCL[ulong(bhkv) * kv_tiles + (c / NABC)] * dot_scale;
+        const float vs0 = VSCL[ulong(bhkv) * kv_tiles + (c / NABC)];
+#if @NABLK@ == 2
+        const int t1 = min(c / NABC + 1, kv_tiles - 1);
+        const float f1 = q_scale * KSCL[ulong(bhkv) * kv_tiles + t1] * dot_scale;
+        const float vs1 = VSCL[ulong(bhkv) * kv_tiles + t1];
+#endif
+        #pragma clang loop unroll(full)
+        for (uint16_t k = 0; k < cS0i.get_capacity(); ++k) {
+            if (cS0i.is_valid_element(k)) {
+                cS0i[k] = 0;
+#if @NABLK@ == 2
+                cS1i[k] = 0;
+#endif
+            }
+        }
+        for (int kk = 0; kk < DD; kk += @NAIK@) {
+            auto mQs = Qt.slice<@NAIK@, NASR>(kk, q0);
+            auto mK0 = Kt.slice<@NAIK@, NABC>(kk, c);
+            qk_op.run(mQs, mK0, cS0i);
+#if @NABLK@ == 2
+            auto mK1 = Kt.slice<@NAIK@, NABC>(kk, c + NABC);
+            qk_op.run(mQs, mK1, cS1i);
+#endif
+        }
+
+        // Dequantize into the float twins (same-op destination layouts share
+        // enumeration); tail columns -> -inf so max/exp2 mask them.
+        if (tail) {
+            #pragma clang loop unroll(full)
+            for (uint16_t k = 0; k < cS0.get_capacity(); ++k) {
+                if (cS0.is_valid_element(k)) {
+                    auto idx = cS0.get_multidimensional_index(k);
+                    cS0[k] = (c + int(idx[0]) < Lk)
+                        ? float(cS0i[k]) * f0 : -INFINITY;
+#if @NABLK@ == 2
+                    cS1[k] = (c + NABC + int(idx[0]) < Lk)
+                        ? float(cS1i[k]) * f1 : -INFINITY;
+#endif
+                }
+            }
+        } else {
+            #pragma clang loop unroll(full)
+            for (uint16_t k = 0; k < cS0.get_capacity(); ++k) {
+                if (cS0.is_valid_element(k)) {
+                    cS0[k] = float(cS0i[k]) * f0;
+#if @NABLK@ == 2
+                    cS1[k] = float(cS1i[k]) * f1;
+#endif
+                }
+            }
+        }
+
+        // One online-softmax update shared by both column blocks — identical
+        // to the fp16 na kernel from here on (dot_scale already folded).
+        auto cM0 = qk_op.get_row_reduction_destination_cooperative_tensor<TQ8, TK8, float>();
+        reduce_rows(cS0, cM0, reduction_operation::max, -INFINITY);
+#if @NABLK@ == 2
+        auto cM1 = qk_op.get_row_reduction_destination_cooperative_tensor<TQ8, TK8, float>();
+        reduce_rows(cS1, cM1, reduction_operation::max, -INFINITY);
+#endif
+        #pragma clang loop unroll(full)
+        for (uint16_t k = 0; k < cM.get_capacity(); ++k) {
+            if (cM.is_valid_element(k)) {
+                cCor[k] = 1.0f;
+#if @NABLK@ == 2
+                const float Mn = max(cM0[k], cM1[k]);
+#else
+                const float Mn = cM0[k];
+#endif
+                if (Mn > cM[k]) {
+                    cCor[k] = fast::exp2(cM[k] - Mn);
+                    cM[k] = Mn;
+                }
+            }
+        }
+        // S -> P = exp2(s - m) in place (fp32 registers; s already scaled).
+        if (tail) {
+            #pragma clang loop unroll(full)
+            for (uint16_t k = 0; k < cS0.get_capacity(); ++k) {
+                if (cS0.is_valid_element(k)) {
+                    auto it = cS0.get_iterator(k);
+                    auto mit = cM.map_iterator(it);
+                    auto idx = cS0.get_multidimensional_index(k);
+                    cS0[k] = (c + int(idx[0]) < Lk)
+                        ? fast::exp2(cS0[k] - *mit) : 0.0f;
+#if @NABLK@ == 2
+                    cS1[k] = (c + NABC + int(idx[0]) < Lk)
+                        ? fast::exp2(cS1[k] - *mit) : 0.0f;
+#endif
+                }
+            }
+        } else {
+            #pragma clang loop unroll(full)
+            for (uint16_t k = 0; k < cS0.get_capacity(); ++k) {
+                if (cS0.is_valid_element(k)) {
+                    auto it = cS0.get_iterator(k);
+                    auto mit = cM.map_iterator(it);
+                    cS0[k] = fast::exp2(cS0[k] - *mit);
+#if @NABLK@ == 2
+                    cS1[k] = fast::exp2(cS1[k] - *mit);
+#endif
+                }
+            }
+        }
+        auto cL0 = qk_op.get_row_reduction_destination_cooperative_tensor<TQ8, TK8, float>();
+        reduce_rows(cS0, cL0, reduction_operation::sum, 0.0f);
+#if @NABLK@ == 2
+        auto cL1 = qk_op.get_row_reduction_destination_cooperative_tensor<TQ8, TK8, float>();
+        reduce_rows(cS1, cL1, reduction_operation::sum, 0.0f);
+#endif
+        #pragma clang loop unroll(full)
+        for (uint16_t k = 0; k < cL.get_capacity(); ++k) {
+            if (cL.is_valid_element(k)) {
+#if @NABLK@ == 2
+                cL[k] = cL[k] * cCor[k] + cL0[k] + cL1[k];
+#else
+                cL[k] = cL[k] * cCor[k] + cL0[k];
+#endif
+            }
+        }
+
+        if (c == 0) {
+            #pragma clang loop unroll(full)
+            for (uint16_t k = 0; k < ctO0.get_capacity(); ++k)
+                if (ctO0.is_valid_element(k)) ctO0[k] = 0.0f;
+        } else {
+            #pragma clang loop unroll(full)
+            for (uint16_t k = 0; k < ctO0.get_capacity(); ++k) {
+                if (ctO0.is_valid_element(k)) {
+                    auto it = ctO0.get_iterator(k);
+                    auto cit = cCor.map_iterator(it);
+                    ctO0[k] *= *cit;
+                }
+            }
+        }
+
+        // P (x the block's V scale) into the PV-left tensor, PV accumulate.
+        #pragma clang loop unroll(full)
+        for (uint16_t k = 0; k < cS0.get_capacity(); ++k)
+            if (cS0.is_valid_element(k)) cP[k] = @DT@(cS0[k] * vs0);
+        simdgroup_barrier(mem_flags::mem_none);
+        auto mV0 = Vt.slice<DD, NABC>(0, c);
+        pv_op.run(cP, mV0, ctO0);
+#if @NABLK@ == 2
+        #pragma clang loop unroll(full)
+        for (uint16_t k = 0; k < cS1.get_capacity(); ++k)
+            if (cS1.is_valid_element(k)) cP[k] = @DT@(cS1[k] * vs1);
+        auto mV1 = Vt.slice<DD, NABC>(0, c + NABC);
+        pv_op.run(cP, mV1, ctO0);
+#endif
+    }
+
+    device @DT@* Ob = O + ulong(bh)*ulong(Lq)*DD;
+    device float* Mnp = VMEAN + ulong(bhkv) * DD;
+    #pragma clang loop unroll(full)
+    for (uint16_t k = 0; k < ctO0.get_capacity(); ++k) {
+        if (!ctO0.is_valid_element(k)) continue;
+        auto idx = ctO0.get_multidimensional_index(k);
+        const int row = int(idx[1]);
+        const int col = int(idx[0]);
+        if (q0 + row >= Lq || col >= DD) continue;
+        auto it = ctO0.get_iterator(k);
+        auto lit = cL.map_iterator(it);
+        const float invl = fast::divide(1.0f, *lit);
+        Ob[ulong(q0 + row)*DD + col] = @DT@(ctO0[k] * invl + Mnp[col]);
+    }
+}
+
 // probe: can the (single-simdgroup, bfloat) QK destination feed PV as left input?
 kernel void v2r_compat_bf16(
     device bfloat* DUMMY [[buffer(0)]],
@@ -1016,7 +1371,10 @@ static id<MTLComputePipelineState> pso_for(int D, int BR, int BC, bool bf16s,
                    + (std::string(fn_name) == "flash_attn_fwd_bf16" ? 0
                       : (std::string(fn_name) == "flash_attn_fwd_v2r_bf16" ? 1
                          : (std::string(fn_name) == "flash_attn_fwd_frag" ? 2
-                            : (std::string(fn_name) == "flash_attn_fwd_na" ? 3 : 4)))))
+                            : (std::string(fn_name) == "flash_attn_fwd_na" ? 3
+                               : (std::string(fn_name) == "flash_attn_fwd_na_i8" ? 5
+                                  : (std::string(fn_name) == "na_i8_quant" ? 6
+                                     : (std::string(fn_name) == "na_i8_v_mean" ? 7 : 4))))))))
                    * 2 + (pv_static ? 1 : 0)) * 32 + nsg) * 4
                    + (half_io ? 1 : 0) + (db ? 2 : 0)) * 4 + (na_rp ? 1 : 0)
                    + (na_byp ? 2 : 0);
@@ -1044,6 +1402,8 @@ static id<MTLComputePipelineState> pso_for(int D, int BR, int BC, bool bf16s,
   sub_all(src, "@NABYP@", na_byp ? "1" : "0");
   sub_all(src, "@NABCV@", std::to_string(na_bc));
   sub_all(src, "@NABLK@", std::to_string(na_blk));
+  const int naik = getenv("ASFP8_FA41_NAIK") ? atoi(getenv("ASFP8_FA41_NAIK")) : 0;
+  sub_all(src, "@NAIK@", naik > 0 ? std::to_string(naik) : std::to_string(D));
   // diagnostic: ASFP8_FA41_NA_DIAG = 1 no-softmax / 2 QK-only / 3 no-P-roundtrip
   const int nadiag = getenv("ASFP8_FA41_NA_DIAG") ? atoi(getenv("ASFP8_FA41_NA_DIAG")) : 0;
   sub_all(src, "@NADIAG@", std::to_string(nadiag));
@@ -1365,7 +1725,158 @@ torch::Tensor flash_fwd_na(torch::Tensor q, torch::Tensor k, torch::Tensor v,
   return out;
 }
 
+// int8-quantized na attention (rounding-class, NOT bit-exact): on-the-fly
+// symmetric int8 quant of Q/K and mean-centered V (per-row-tile scales),
+// int8 QK -> int32, @DT@ P x int8 V -> fp32, +vmean epilogue. Opt-in route.
+torch::Tensor flash_fwd_na_i8(torch::Tensor q, torch::Tensor k, torch::Tensor v,
+                              double scale, int64_t nsg, int64_t rp,
+                              int64_t bc, int64_t blk) {
+  TORCH_CHECK(q.is_mps() && k.is_mps() && v.is_mps(), "inputs must be on mps");
+  const bool half_io = q.scalar_type() == torch::kHalf;
+  TORCH_CHECK((q.scalar_type() == torch::kBFloat16 || half_io)
+              && k.scalar_type() == q.scalar_type()
+              && v.scalar_type() == q.scalar_type(),
+              "inputs must be bf16 or fp16 (matching)");
+  TORCH_CHECK(q.dim() == 4 && k.dim() == 4 && v.dim() == 4, "inputs must be [B,H,L,D]");
+  const int B = (int)q.size(0), Hq = (int)q.size(1), Lq = (int)q.size(2), D = (int)q.size(3);
+  const int Hkv = (int)k.size(1), Lk = (int)k.size(2);
+  TORCH_CHECK(k.size(3) == D && v.size(3) == D, "head_dim mismatch");
+  TORCH_CHECK(v.size(2) == Lk && k.size(0) == B && v.size(0) == B, "kv shape mismatch");
+  TORCH_CHECK(Hkv > 0 && Hq % Hkv == 0, "Hq must be a multiple of Hkv");
+  TORCH_CHECK(D % 32 == 0 && D <= 128, "na_i8 needs head_dim % 32 == 0 and <= 128");
+  int BC = (int)bc > 0 ? (int)bc : 64;
+  int BLK = (int)blk > 0 ? (int)blk : 2;
+  TORCH_CHECK(BC % 32 == 0 && BC <= 256, "bc must be a multiple of 32, <= 256");
+  TORCH_CHECK(BLK == 1 || BLK == 2, "blk must be 1 or 2");
+  int NSG = (int)nsg > 0 ? (int)nsg : 16;
+  TORCH_CHECK(NSG >= 1 && NSG <= 16, "nsg must be in [1,16]");
+
+  auto qc = q.contiguous();
+  auto kc = k.contiguous();
+  auto vc = v.contiguous();
+  // Same zero-padding rules as flash_fwd_na (SH keeps the TRUE Lq/Lk). Pad
+  // rows of the int8 buffers stay unquantized garbage — exact-integer P=0
+  // annihilates them (no NaN class in int8); every SCALE slot is written
+  // (grids cover the padded tile count) so no fp garbage enters the math.
+  const int rows_tg = 16 * NSG;
+  const int64_t LqP = ((Lq + rows_tg - 1) / rows_tg) * (int64_t)rows_tg;
+  const int64_t LkP = ((Lk + BC * BLK - 1) / (BC * BLK)) * (int64_t)(BC * BLK);
+  if (LqP != Lq)
+    qc = at::constant_pad_nd(qc, {0, 0, 0, LqP - Lq}, 0);
+  if (LkP != Lk) {
+    kc = at::constant_pad_nd(kc, {0, 0, 0, LkP - Lk}, 0);
+    vc = at::constant_pad_nd(vc, {0, 0, 0, LkP - Lk}, 0);
+  }
+  auto opts_i8 = q.options().dtype(torch::kChar);
+  auto opts_f = q.options().dtype(torch::kFloat);
+  auto q8 = torch::empty({B, Hq, LqP, D}, opts_i8);
+  auto k8 = torch::empty({B, Hkv, LkP, D}, opts_i8);
+  auto v8 = torch::empty({B, Hkv, LkP, D}, opts_i8);
+  const int q_tiles = (int)(LqP / 16);
+  const int kv_tiles = (int)(LkP / BC);
+  auto qscl = torch::empty({(long)B * Hq, q_tiles}, opts_f);
+  auto kscl = torch::empty({(long)B * Hkv, kv_tiles}, opts_f);
+  auto vscl = torch::empty({(long)B * Hkv, kv_tiles}, opts_f);
+  auto vmean = torch::empty({(long)B * Hkv, D}, opts_f);
+  auto out = torch::empty({B, Hq, Lq, D}, q.options());
+
+  std::array<int32_t, 8> shArr = {B, Hq, Hkv, Lq, Lk, 0,
+                                  (int32_t)LqP, (int32_t)LkP};
+  std::array<float, 1> prArr = {(float)scale};
+  std::array<int32_t, 4> vmP = {(int32_t)LkP, Lk, 0, 0};
+  std::array<int32_t, 5> qqP = {(int32_t)LqP, Lq, 16, 0, q_tiles};
+  std::array<int32_t, 5> kqP = {(int32_t)LkP, Lk, BC, 0, kv_tiles};
+  std::array<int32_t, 5> vqP = {(int32_t)LkP, Lk, BC, 1, kv_tiles};
+
+  id<MTLComputePipelineState> psoMean =
+      pso_for(D, 16, 64, true, 16, 64, "na_i8_v_mean", false, NSG, half_io,
+              false, rp != 0, true, BC, BLK);
+  id<MTLComputePipelineState> psoQuant =
+      pso_for(D, 16, 64, true, 16, 64, "na_i8_quant", false, NSG, half_io,
+              false, rp != 0, true, BC, BLK);
+  id<MTLComputePipelineState> psoMain =
+      pso_for(D, 16, 64, true, 16, 64, "flash_attn_fwd_na_i8", false, NSG,
+              half_io, false, rp != 0, true, BC, BLK);
+  MPSStream* stream = getCurrentMPSStream();
+  id<MTLBuffer> qB = __builtin_bit_cast(id<MTLBuffer>, qc.storage().data());
+  id<MTLBuffer> kB = __builtin_bit_cast(id<MTLBuffer>, kc.storage().data());
+  id<MTLBuffer> vB = __builtin_bit_cast(id<MTLBuffer>, vc.storage().data());
+  id<MTLBuffer> q8B = __builtin_bit_cast(id<MTLBuffer>, q8.storage().data());
+  id<MTLBuffer> k8B = __builtin_bit_cast(id<MTLBuffer>, k8.storage().data());
+  id<MTLBuffer> v8B = __builtin_bit_cast(id<MTLBuffer>, v8.storage().data());
+  id<MTLBuffer> qsB = __builtin_bit_cast(id<MTLBuffer>, qscl.storage().data());
+  id<MTLBuffer> ksB = __builtin_bit_cast(id<MTLBuffer>, kscl.storage().data());
+  id<MTLBuffer> vsB = __builtin_bit_cast(id<MTLBuffer>, vscl.storage().data());
+  id<MTLBuffer> vmB = __builtin_bit_cast(id<MTLBuffer>, vmean.storage().data());
+  id<MTLBuffer> oB = __builtin_bit_cast(id<MTLBuffer>, out.storage().data());
+  const NSUInteger qO = qc.storage_offset() * qc.element_size();
+  const NSUInteger kO = kc.storage_offset() * kc.element_size();
+  const NSUInteger vO = vc.storage_offset() * vc.element_size();
+  const NSUInteger oO = out.storage_offset() * out.element_size();
+  const NSUInteger gx = (NSUInteger)((Lq + rows_tg - 1) / rows_tg);
+  const NSUInteger gyq = (NSUInteger)(B * Hq);
+  const NSUInteger gykv = (NSUInteger)(B * Hkv);
+
+  dispatch_sync(stream->queue(), ^(){
+    @autoreleasepool {
+      id<MTLComputeCommandEncoder> enc = stream->commandEncoder();
+      // v mean (true Lk rows only)
+      [enc setComputePipelineState:psoMean];
+      [enc setBuffer:vB offset:vO atIndex:0];
+      [enc setBuffer:vmB offset:0 atIndex:1];
+      [enc setBytes:vmP.data() length:sizeof(vmP) atIndex:2];
+      [enc dispatchThreadgroups:MTLSizeMake((NSUInteger)(D / 4), gykv, 1)
+          threadsPerThreadgroup:MTLSizeMake(256, 1, 1)];
+      [enc memoryBarrierWithScope:MTLBarrierScopeBuffers];
+      // quantize Q (16-row tiles)
+      [enc setComputePipelineState:psoQuant];
+      [enc setBuffer:qB offset:qO atIndex:0];
+      [enc setBuffer:q8B offset:0 atIndex:1];
+      [enc setBuffer:qsB offset:0 atIndex:2];
+      [enc setBuffer:vmB offset:0 atIndex:3];   // unused (use_mean=0)
+      [enc setBytes:qqP.data() length:sizeof(qqP) atIndex:4];
+      [enc dispatchThreadgroups:MTLSizeMake((NSUInteger)q_tiles, gyq, 1)
+          threadsPerThreadgroup:MTLSizeMake(256, 1, 1)];
+      // quantize K (BC-row tiles)
+      [enc setBuffer:kB offset:kO atIndex:0];
+      [enc setBuffer:k8B offset:0 atIndex:1];
+      [enc setBuffer:ksB offset:0 atIndex:2];
+      [enc setBytes:kqP.data() length:sizeof(kqP) atIndex:4];
+      [enc dispatchThreadgroups:MTLSizeMake((NSUInteger)kv_tiles, gykv, 1)
+          threadsPerThreadgroup:MTLSizeMake(256, 1, 1)];
+      // quantize V (mean-centered, BC-row tiles)
+      [enc setBuffer:vB offset:vO atIndex:0];
+      [enc setBuffer:v8B offset:0 atIndex:1];
+      [enc setBuffer:vsB offset:0 atIndex:2];
+      [enc setBytes:vqP.data() length:sizeof(vqP) atIndex:4];
+      [enc dispatchThreadgroups:MTLSizeMake((NSUInteger)kv_tiles, gykv, 1)
+          threadsPerThreadgroup:MTLSizeMake(256, 1, 1)];
+      [enc memoryBarrierWithScope:MTLBarrierScopeBuffers];
+      // main attention
+      [enc setComputePipelineState:psoMain];
+      [enc setBuffer:q8B offset:0 atIndex:0];
+      [enc setBuffer:k8B offset:0 atIndex:1];
+      [enc setBuffer:v8B offset:0 atIndex:2];
+      [enc setBuffer:oB offset:oO atIndex:3];
+      [enc setBytes:shArr.data() length:sizeof(shArr) atIndex:4];
+      [enc setBytes:prArr.data() length:sizeof(prArr) atIndex:5];
+      [enc setBuffer:qsB offset:0 atIndex:6];
+      [enc setBuffer:ksB offset:0 atIndex:7];
+      [enc setBuffer:vsB offset:0 atIndex:8];
+      [enc setBuffer:vmB offset:0 atIndex:9];
+      [enc dispatchThreadgroups:MTLSizeMake(gx, gyq, 1)
+          threadsPerThreadgroup:MTLSizeMake((NSUInteger)(NSG * 32), 1, 1)];
+    }
+  });
+  return out;
+}
+
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
+  m.def("flash_fwd_na_i8", &flash_fwd_na_i8,
+        "int8-quantized na flash fwd (DrawThings NAInt8 recipe; rounding-class)",
+        py::arg("q"), py::arg("k"), py::arg("v"), py::arg("scale"),
+        py::arg("nsg") = 16, py::arg("rp") = 1,
+        py::arg("bc") = 64, py::arg("blk") = 2);
   m.def("flash_fwd_bf16", &flash_fwd_bf16,
         "bf16 flash attention fwd (Metal 4.1 TensorOps) on MPS",
         py::arg("q"), py::arg("k"), py::arg("v"), py::arg("scale"),
