@@ -280,7 +280,7 @@ mirrors eager rounding op-for-op (exact-or-1-ulp) and falls back per call:
   ~9 GB checkpoint loads, and the fused o-projection pre-pass above.
   56.6 → ~41 s at 12 steps 1MP — past DrawThings' 42 s.
 
-### Video VAE (patches #26, #29)
+### Video VAE (patches #26, #29, #31)
 
 - **Conv3d → sliced conv2d (#26, `ASFP8_CONV3D`)**: MPS's conv3d lowering is
   ~10× slower than the equivalent per-slice conv2d. Temporal taps fold into
@@ -299,6 +299,17 @@ mirrors eager rounding op-for-op (exact-or-1-ulp) and falls back per call:
   (~14 tensor volumes per conv → ~4); and the causal chunk loops stream 16
   frames per pass instead of 2. Decode 16.8 s → 6.1 s, encode 6.5 s → ~4 s at
   512²×81f, parity 1–2 ulp.
+- **VAE slice_attention INT_MAX cap (#31, `ASFP8_VAE_SLICE_FIX`)**: comfy's
+  VAE spatial attention sizes its query slices from free memory ALONE, but
+  MPSGraph refuses any tensor over INT_MAX elements. At Wan-VAE 1024² video
+  decode the score tensor is ~5.6e9 elements — memory says "one slice fits"
+  (on 128 GB it does), MPSGraph raises, and comfy's retry loop re-raises
+  because the error isn't an OOM. Ironically, the more RAM you have the more
+  likely the crash: pessimistic free-memory figures on small machines force
+  extra slices by accident, and honest accounting (#30) removes that veil.
+  The patch floors the slice count to a per-slice element budget and treats
+  the INT_MAX error as retryable. Numerically free — softmax is per-query-row
+  over the full key length, so the result is identical at any slice count.
 
 ### Memory accounting (patch #30)
 
@@ -311,10 +322,15 @@ way; text encoders churn the same way on other workflows).
 
 `free_mem_mps` replaces the estimate with one that's true for unified memory:
 `free = total RAM − torch's live tensors − an OS reserve`
-(`ASFP8_MPS_RESERVE_GB`, default max(16 GB, 15%)), capped by what the OS
-reports as obtainable right now (`available + torch's reclaimable pool`) so
-tens of GB held by *other* apps are never counted as headroom — on an idle
-box the cap is inert and the anti-eviction behavior is unchanged. It also reports the "torch
+(`ASFP8_MPS_RESERVE_GB`, default max(16 GB, 15%)). Under genuine OS-level
+pressure (available memory below the reserve itself) the estimate is
+additionally capped by `available + torch's reclaimable pool`, so a machine
+other apps have truly filled is never overcommitted. The cap is deliberately
+pressure-gated: macOS *understates* what a busy-but-healthy box can free up
+(compressed pages, quittable apps), and steering by that number in normal
+operation puts 14 GB models into partial-unload/lowvram churn — the exact
+disease this patch cures (measured: an ungated cap pushed a Wan 1024² rerun
+20 GB into swap). It also reports the "torch
 free" figure as 0 — its sole consumer is a `free_memory` branch that dumps the
 entire allocator cache when "torch hoards >25% of free memory," a condition
 stock MPS code made *always true*, so every model load was silently discarding
@@ -429,6 +445,7 @@ fresh, zeroed allocations structurally cannot catch out-of-bounds reads).
 | `ASFP8_AUTOFIX` | on | self-heal JIT prerequisites at boot (install ninja, restore stripped torch headers) |
 | `ASFP8_WAN_VAE_CHUNK` | 16 | Wan VAE frames per causal pass (even, 2–32; lower caps decode memory peak) |
 | `ASFP8_FREE_MEM` | on | MPS free-memory accounting fix (patch #30) |
+| `ASFP8_VAE_SLICE_FIX` | on | VAE slice_attention INT_MAX cap (patch #31) |
 | `ASFP8_FREE_INTERLEAVE` | on | drain the MPS pool between models on explicit free-all requests |
 | `ASFP8_MPS_RESERVE_GB` | max(16, 15%) | OS memory reserve held back from comfy's estimate |
 | `ASFP8_FA41_F32S` | off | fp32 score tiles in flash41 |

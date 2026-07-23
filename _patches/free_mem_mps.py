@@ -62,17 +62,18 @@ def _patched_get_free_memory(dev=None, torch_free_too=False):
         live = torch.mps.current_allocated_memory()
     except Exception:
         return _orig(dev, torch_free_too)
-    free = max(0, total - _reserve_bytes(total) - live)
-    # Cap by what the OS says is obtainable RIGHT NOW: available memory plus
-    # torch's reclaimable pool (resident but reusable by new allocations —
-    # exactly the term stock accounting is blind to). `total - live` alone
-    # cannot see tens of GB held by OTHER processes; without this cap comfy
-    # would try to keep models a genuinely busy machine cannot hold. On an
-    # idle box available+pool exceeds the logical figure and this cap is
-    # inert, so the anti-eviction behavior of this patch is preserved.
-    os_backed = vm.available + _pool_bytes()
-    if os_backed < free:
-        free = os_backed
+    reserve = _reserve_bytes(total)
+    free = max(0, total - reserve - live)
+    # PRESSURE-GATED cap by what the OS says is obtainable (available memory
+    # plus torch's reclaimable pool). macOS `available` UNDERSTATES what a
+    # busy-but-healthy box can free up (compressed pages, quittable apps), so
+    # steering by it in normal operation re-creates the eviction churn this
+    # patch exists to prevent — observed 2026-07-23: an ungated cap put the
+    # Wan pair into partial-unload/lowvram mode at 1024², and the rerun's
+    # offload/reload churn pushed 20 GB into swap. Only clamp when the OS is
+    # genuinely near exhaustion: available below the reserve itself.
+    if vm.available < reserve:
+        free = min(free, max(0, vm.available + _pool_bytes()))
     if torch_free_too:
         # mem_free_torch's ONLY consumer is free_memory's "torch hoards >25%
         # of free memory -> soft_empty_cache()" branch. Stock MPS code sets

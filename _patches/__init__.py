@@ -51,6 +51,8 @@ __all__ = [
     "ideogram_fast",        # patch #32 — Ideogram 4 fused block glue (norm+modulate,
                             # gate+residual via dit_ext; FFN silu-gating via Lumina class)         # patch #29 — Wan 2.1 VAE chunk batching: decode/encode causal loops and
                             #   run_up sub-chunking stream 8 frames per pass instead of 2 (ASFP8_CONV3D=1)
+    "vae_slice_attn_mps",   # patch #31 — VAE slice_attention respects MPSGraph's INT_MAX tensor
+                            #   limit (Wan-VAE 1024p video decode crashed on large-RAM machines)
     # Internal helpers (not patches):
     # "_common"             — decode_fp8, fp8_to_float_lut, FP8_DTYPES
     # "na_gemm"             — optional NA matmul2d backend (not wired into hot path)

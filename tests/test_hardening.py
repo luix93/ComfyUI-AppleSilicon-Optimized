@@ -92,3 +92,51 @@ def test_bmm_attention_scale_semantics():
     o4 = o_zero[0].reshape(64, 4, 32).transpose(0, 1)  # [B,S,H*D] -> [H,S,D]
     ref0 = v[0].float().mean(dim=1, keepdim=True).expand(4, 64, 32)
     assert (o4.float() - ref0).abs().max().item() < 1e-2
+
+
+def test_vae_slice_attention_floor_and_parity(monkeypatch):
+    """Patch #31: INT_MAX floor forces extra slices; result parity holds."""
+    import sys as _sys
+    import types
+
+    names = ["comfy", "comfy.ldm", "comfy.ldm.modules",
+             "comfy.ldm.modules.diffusionmodules",
+             "comfy.ldm.modules.diffusionmodules.model",
+             "comfy.model_management"]
+    for n in names:
+        monkeypatch.setitem(_sys.modules, n, types.ModuleType(n))
+    mm = _sys.modules["comfy.model_management"]
+    mm.get_free_memory = lambda dev=None: 1 << 44  # "infinite" free memory
+
+    def _raise(e):
+        raise e
+    mm.raise_non_oom = _raise
+    mm.soft_empty_cache = lambda *a, **k: None
+    M = _sys.modules["comfy.ldm.modules.diffusionmodules.model"]
+
+    from _patches import vae_slice_attn_mps as P
+    monkeypatch.setattr(P, "_installed", False)
+    monkeypatch.setenv("ASFP8_VAE_SLICE_FIX", "1")
+    P.install()
+    assert hasattr(M, "slice_attention"), "patch did not install"
+
+    g = torch.Generator().manual_seed(0)
+    # VAE layout: q [B, hw, C], k/v [B, C, hw]
+    q = torch.randn(3, 256, 32, generator=g).to("mps").to(torch.float16)
+    k = torch.randn(3, 32, 256, generator=g).to("mps").to(torch.float16)
+    v = torch.randn(3, 32, 256, generator=g).to("mps").to(torch.float16)
+
+    ref = M.slice_attention(q, k, v)  # floor inert: 3*256*256 << budget
+
+    # Shrink the budget so the floor binds (3*256*256 = 196608 > 65536 ->
+    # min_steps 3 -> steps 4) and verify the sliced result matches.
+    # (the installed closure reads the module global at call time)
+    monkeypatch.setattr(P, "_MAX_SCORE_ELEMS", 65536)
+    forced = M.slice_attention(q, k, v)
+    assert (forced.float() - ref.float()).abs().max().item() < 2e-3
+
+    # eager reference: softmax over full key length per query row
+    attn = torch.softmax(
+        torch.bmm(q.float(), k.float()) * (32 ** -0.5), dim=2)
+    eager = torch.bmm(v.float(), attn.permute(0, 2, 1))
+    assert (forced.float() - eager).abs().max().item() < 2e-2
