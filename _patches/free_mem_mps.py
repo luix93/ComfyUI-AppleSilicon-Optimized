@@ -21,6 +21,7 @@ TAG = "[AppleSilicon-Optimized/free_mem]"
 
 _installed = False
 _orig = None
+_cap_engaged = [False]   # state-change logging for the OS pressure cap
 
 
 def _pool_bytes():
@@ -73,7 +74,18 @@ def _patched_get_free_memory(dev=None, torch_free_too=False):
     # offload/reload churn pushed 20 GB into swap. Only clamp when the OS is
     # genuinely near exhaustion: available below the reserve itself.
     if vm.available < reserve:
-        free = min(free, max(0, vm.available + _pool_bytes()))
+        capped = min(free, max(0, vm.available + _pool_bytes()))
+        if not _cap_engaged[0]:
+            _cap_engaged[0] = True
+            sys.stderr.write(
+                f"{TAG} OS pressure cap ENGAGED: available "
+                f"{vm.available >> 20} MB < reserve {reserve >> 20} MB; "
+                f"reporting free {capped >> 20} MB (uncapped {free >> 20} MB)\n")
+        free = capped
+    elif _cap_engaged[0]:
+        _cap_engaged[0] = False
+        sys.stderr.write(f"{TAG} OS pressure cap released "
+                         f"(available {vm.available >> 20} MB)\n")
     if torch_free_too:
         # mem_free_torch's ONLY consumer is free_memory's "torch hoards >25%
         # of free memory -> soft_empty_cache()" branch. Stock MPS code sets
