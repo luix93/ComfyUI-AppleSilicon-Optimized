@@ -73,6 +73,11 @@ def _fast_attn_forward(self, x, freqs=None, mask=None, transformer_options={}):
         or (x.device.type != "mps" and _fallback("non-MPS"))
         or (x.dtype != torch.bfloat16 and _fallback(f"dtype {x.dtype}"))
         or (mask is not None and _fallback("mask"))
+        # comfy's wrap_attn contract: an active third-party attention hook
+        # must not be silently bypassed — this path calls flash41 directly,
+        # so hand the call back to the original (hook-aware) forward.
+        or (("optimized_attention_override" in (transformer_options or {}))
+            and _fallback("optimized_attention_override"))
         or ((D > 128 or D % 32 != 0) and _fallback(f"D={D}"))
         or ((Hkv <= 0 or Hq % Hkv != 0) and _fallback(f"heads {Hq}/{Hkv}"))
         or ((freqs is None or freqs.dtype != torch.float32

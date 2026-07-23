@@ -160,7 +160,9 @@ def _fa41_attention(q, k, v, heads, scale=None, skip_reshape=False,
         h, d = heads, wide // heads
         q4, k4, v4 = (t.reshape(b, -1, h, d).transpose(1, 2).contiguous()
                       for t in (q, k, v))
-    sc = float(scale) if scale else d ** -0.5
+    # None = SDPA default d**-0.5; an explicit 0.0 is a real (degenerate)
+    # scale and must be honored, so no truthiness test here.
+    sc = float(scale) if scale is not None else d ** -0.5
     global _na_dead
     # D=256 (Ideogram) was tried on the na kernel (kBlocks head-split) and
     # LOST to the bmm route: 22.9ms best config vs 12.4ms — the 16x256 fp32
@@ -187,7 +189,8 @@ def _fa41_attention(q, k, v, heads, scale=None, skip_reshape=False,
     return out
 
 
-def _bmm_attention(q, k, v, heads, skip_reshape=False, skip_output_reshape=False):
+def _bmm_attention(q, k, v, heads, scale=None, skip_reshape=False,
+                   skip_output_reshape=False):
     """Lean unmasked attention: one QK^T bmm, in-dtype softmax, one AV bmm.
     Beats sub-quad's chunked path by ~25% at Flux2-edit shapes (47 vs 63 ms)
     — same numerics class (no fp32 upcast, matching comfy's default)."""
@@ -200,7 +203,7 @@ def _bmm_attention(q, k, v, heads, skip_reshape=False, skip_output_reshape=False
         h = heads
         q2, k2, v2 = (t.reshape(b, -1, h, d).transpose(1, 2).reshape(b * h, -1, d)
                       for t in (q, k, v))
-    scale = d ** -0.5
+    scale = float(scale) if scale is not None else d ** -0.5
     # NOTE: fp32-upcast softmax was tried for Ideogram (typography concern):
     # output CONTENT was pixel-identical to bf16 softmax at the same seed and
     # it cost +13s/run (1.85GB fp32 score tensor) — bf16 stays.
@@ -218,10 +221,41 @@ def _router(q, k, v, heads, mask=None, attn_precision=None, skip_reshape=False,
         return _default(q, k, v, heads, mask=mask, attn_precision=attn_precision,
                         skip_reshape=skip_reshape,
                         skip_output_reshape=skip_output_reshape, **kwargs)
+    # Third-party attention hooks (comfy's wrap_attn contract): the stock
+    # implementations are wrap_attn-wrapped, so delegating with
+    # transformer_options intact fires the override exactly once. Our fast
+    # paths below would silently bypass it.
+    _topts = kwargs.get("transformer_options")
+    if _topts is not None and "optimized_attention_override" in _topts:
+        _route_log("override", q, k, heads, mask, attn_precision, skip_reshape)
+        fn = _default if mask is None else _default_masked
+        return fn(q, k, v, heads, mask=mask, attn_precision=attn_precision,
+                  skip_reshape=skip_reshape,
+                  skip_output_reshape=skip_output_reshape, **kwargs)
     L, D = _seq_and_head_dim(q, k, heads, skip_reshape)
     B = int(q.shape[0])
     H = int(heads)
+    # None = SDPA-default d**-0.5; explicit 0.0 is honored (comfy's stock
+    # backends read "scale" from kwargs the same way).
+    scale = kwargs.get("scale")
+    # Score-matrix element size for the memory gates below: fp32 inputs (or a
+    # forced fp32 attn_precision upcast) double the materialized score bytes
+    # vs the old hardcoded 2-byte assumption.
+    esize = q.element_size()
+    if attn_precision is torch.float32:
+        esize = max(esize, 4)
     if mask is None:
+        # GQA guard: K/V with fewer heads than Q (the enable_gqa contract, or
+        # raw mismatched shapes) would be silently mis-folded by the reshapes
+        # in the bmm/fa41 fast paths. Stock backends handle GQA; keep it off
+        # ours. (Krea2's dedicated GQA path never enters the router.)
+        if skip_reshape:
+            _gqa = (int(q.shape[1]) != int(k.shape[1])
+                    or int(q.shape[1]) != int(v.shape[1]))
+        else:
+            _gqa = (int(q.shape[-1]) != int(k.shape[-1])
+                    or int(q.shape[-1]) != int(v.shape[-1]))
+        _gqa = _gqa or bool(kwargs.get("enable_gqa", False))
         # Route 1: long unmasked attention. Small head dims → SDPA → mtlflashattn
         # flash kernel (its fast tier wins there and is memory-bounded). Large
         # head dims (Flux2/Krea2/Z-Image are all D=128) → sub-quad: its bmm
@@ -240,10 +274,11 @@ def _router(q, k, v, heads, mask=None, attn_precision=None, skip_reshape=False,
                                 skip_output_reshape=skip_output_reshape, **kwargs)
             # Default upcast only: honor an explicit fp32 attn_precision request.
             # flash41 takes bf16 AND fp16 (Wan runs fp16); math is fp32 inside.
-            if (_fa41 is not None and attn_precision is None and D <= 128
+            if (_fa41 is not None and not _gqa and attn_precision is None
+                    and D <= 128
                     and q.dtype in (torch.bfloat16, torch.float16)):
                 try:
-                    out = _fa41_attention(q, k, v, heads, scale=kwargs.get("scale"),
+                    out = _fa41_attention(q, k, v, heads, scale=scale,
                                           skip_reshape=skip_reshape,
                                           skip_output_reshape=skip_output_reshape)
                     _route_log("flash41", q, k, heads, mask, attn_precision, skip_reshape)
@@ -253,10 +288,12 @@ def _router(q, k, v, heads, mask=None, attn_precision=None, skip_reshape=False,
             # Score size from ACTUAL Lq*Lk — long-query/short-KV cross attention
             # (Wan 21.5k x 512) has a small score matrix despite the long max seq.
             Lq_, Lk_ = _seqs(q, k, skip_reshape)
-            score_bytes = 2 * B * H * Lq_ * Lk_
-            if attn_precision is None and score_bytes <= _BMM_MAX_SCORE_BYTES:
+            score_bytes = esize * B * H * Lq_ * Lk_
+            if (not _gqa and attn_precision is None
+                    and score_bytes <= _BMM_MAX_SCORE_BYTES):
                 _route_log("bmm", q, k, heads, mask, attn_precision, skip_reshape)
-                return _bmm_attention(q, k, v, heads, skip_reshape=skip_reshape,
+                return _bmm_attention(q, k, v, heads, scale=scale,
+                                      skip_reshape=skip_reshape,
                                       skip_output_reshape=skip_output_reshape)
             _route_log("sub_quad", q, k, heads, mask, attn_precision, skip_reshape)
             return _sub_quad(q, k, v, heads, mask=None, attn_precision=attn_precision,
@@ -269,7 +306,7 @@ def _router(q, k, v, heads, mask=None, attn_precision=None, skip_reshape=False,
         # materializes only a small score matrix and is far faster on the
         # default path than on chunked-python sub-quad.
         Lq, Lk = _seqs(q, k, skip_reshape)
-        score_bytes = 2 * B * H * Lq * Lk
+        score_bytes = esize * B * H * Lq * Lk
         if score_bytes >= _MASKED_SUB_QUAD_MIN_SCORE_BYTES:
             _route_log("sub_quad(masked)", q, k, heads, mask, attn_precision, skip_reshape)
             return _sub_quad(q, k, v, heads, mask=mask, attn_precision=attn_precision,

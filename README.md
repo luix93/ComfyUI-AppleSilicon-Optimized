@@ -311,7 +311,10 @@ way; text encoders churn the same way on other workflows).
 
 `free_mem_mps` replaces the estimate with one that's true for unified memory:
 `free = total RAM − torch's live tensors − an OS reserve`
-(`ASFP8_MPS_RESERVE_GB`, default max(16 GB, 15%)). It also reports the "torch
+(`ASFP8_MPS_RESERVE_GB`, default max(16 GB, 15%)), capped by what the OS
+reports as obtainable right now (`available + torch's reclaimable pool`) so
+tens of GB held by *other* apps are never counted as headroom — on an idle
+box the cap is inert and the anti-eviction behavior is unchanged. It also reports the "torch
 free" figure as 0 — its sole consumer is a `free_memory` branch that dumps the
 entire allocator cache when "torch hoards >25% of free memory," a condition
 stock MPS code made *always true*, so every model load was silently discarding
@@ -368,7 +371,7 @@ Condensed — each is automatic, MPS-scoped, and a no-op where not needed:
 | 9 | WanVideo block-swap neutralizer (unified memory makes it pure breakage on MPS) |
 | 10 | `F.linear` FP8 operand decode (T5 and friends) |
 | 11 | Text/LLM encoders redirected CPU→MPS (autoregressive encoders were ~1.7 s/token on CPU) |
-| 12 | `torch._int_mm` on GPU instead of the silent CPU-fallback freeze |
+| 12 | `torch._int_mm` on GPU instead of the silent CPU-fallback freeze (routes to the exact patch-#17 int8 kernel where available — parity-gated; fp32 emulation otherwise) |
 | 13 | int8-fast wide-batch Linear via native bf16 GEMM (~3.5–4.7×) |
 | 14 | MLX-backed TextGenerate (above) |
 | 16 | Strided-FP8 materialization (`reshape`/`contiguous`/`clone`) via CPU — fixes NVFP4/MXFP8 block-scale swizzles everywhere at once |

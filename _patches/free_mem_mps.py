@@ -56,12 +56,23 @@ def _patched_get_free_memory(dev=None, torch_free_too=False):
     # tensors minus an OS reserve (ASFP8_MPS_RESERVE_GB; default
     # max(16GB, 15%)). The allocator's cached-but-free pool is reusable and
     # therefore NOT subtracted.
-    total = psutil.virtual_memory().total
+    vm = psutil.virtual_memory()
+    total = vm.total
     try:
         live = torch.mps.current_allocated_memory()
     except Exception:
         return _orig(dev, torch_free_too)
     free = max(0, total - _reserve_bytes(total) - live)
+    # Cap by what the OS says is obtainable RIGHT NOW: available memory plus
+    # torch's reclaimable pool (resident but reusable by new allocations —
+    # exactly the term stock accounting is blind to). `total - live` alone
+    # cannot see tens of GB held by OTHER processes; without this cap comfy
+    # would try to keep models a genuinely busy machine cannot hold. On an
+    # idle box available+pool exceeds the logical figure and this cap is
+    # inert, so the anti-eviction behavior of this patch is preserved.
+    os_backed = vm.available + _pool_bytes()
+    if os_backed < free:
+        free = os_backed
     if torch_free_too:
         # mem_free_torch's ONLY consumer is free_memory's "torch hoards >25%
         # of free memory -> soft_empty_cache()" branch. Stock MPS code sets

@@ -53,7 +53,10 @@ def _conv3d_decomposed(input, weight, bias, stride, padding, dilation, groups):
     Ho = (H + 2 * pH - (kH - 1) * dH - 1) // sH + 1
     Wo = (W + 2 * pW - (kW - 1) * dW - 1) // sW + 1
 
-    per_frame = max(kT * Ci * H * W, Co * Ho * Wo)   # folded input is kT*Ci wide
+    # Folded input is kT*Ci wide; frames fold into conv2d's batch dim TIMES
+    # the real batch B, so B belongs in the per-frame footprint (B>1 would
+    # otherwise overshoot the element budget by exactly B).
+    per_frame = B * max(kT * Ci * H * W, Co * Ho * Wo)
     chunk = max(1, min(T_out, _MAX_ELEMS // max(per_frame, 1)))
 
     # Fold the temporal taps into conv2d's CHANNEL dim: conv3d(kT) over frame

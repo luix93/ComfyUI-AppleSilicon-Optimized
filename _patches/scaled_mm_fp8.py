@@ -95,13 +95,17 @@ def _get_backend():
     if not _self_checked:
         _self_checked = True
         try:
-            torch.manual_seed(0)
-            a = (torch.randn(64, 8192) * 0.3).to(torch.float8_e4m3fn)
-            w = (torch.randn(8192, 8192) * 0.3).to(torch.float8_e4m3fn)   # [N,K]
+            # Private generator: a first-use canary must not disturb the
+            # global RNG stream. 2048² (vs the original 8192²) keeps every
+            # kernel tile shape exercised while cutting the transient
+            # allocations from ~0.5 GB to ~20 MB.
+            g = torch.Generator().manual_seed(0)
+            a = (torch.randn(64, 2048, generator=g) * 0.3).to(torch.float8_e4m3fn)
+            w = (torch.randn(2048, 2048, generator=g) * 0.3).to(torch.float8_e4m3fn)   # [N,K]
             a_u8 = a.view(torch.uint8).to("mps").contiguous()
             w_u8 = w.view(torch.uint8).to("mps").contiguous()
             ref = decode_fp8(a.to("mps"), torch.float32) @ decode_fp8(w.to("mps"), torch.float32).t()
-            raw = mod.fp8fp8_matmul2d_nt(a_u8, w_u8, 8192, 8192)
+            raw = mod.fp8fp8_matmul2d_nt(a_u8, w_u8, 2048, 2048)
             rel = ((raw - ref).abs().max() / (ref.abs().max() + 1e-9)).item()
             if rel >= 5e-2:
                 print(f"{TAG} fp8-native self-check failed (rel={rel:.4f}); using decode path.")

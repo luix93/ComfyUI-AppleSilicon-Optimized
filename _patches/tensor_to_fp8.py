@@ -40,22 +40,39 @@ _installed = False
 
 
 def _scan_target(args, kwargs, self_dtype):
-    """Resolve (target_dtype, target_device) from .to() args without touching tensors unsafely."""
+    """Resolve (dtype, device, non_blocking, memory_format) across the three
+    .to() overloads — to(dtype, ...), to(device, dtype, ...), to(other, ...).
+
+    bool is a subclass of int, so positional non_blocking/copy flags
+    (`t.to(device, dtype, False)`) must be claimed BEFORE the device branch
+    or they clobber the device (int is a valid device index). Positional
+    bools are non_blocking then copy, in order."""
     target_dtype = kwargs.get("dtype")
     target_device = kwargs.get("device")
+    non_blocking = kwargs.get("non_blocking", False)
+    memory_format = kwargs.get("memory_format")
+    bools = []
     for a in args:
-        if isinstance(a, torch.dtype):
+        if isinstance(a, bool):
+            bools.append(a)
+        elif isinstance(a, torch.dtype):
             target_dtype = a
         elif isinstance(a, torch.Tensor):
             if target_dtype is None:
                 target_dtype = a.dtype
             if target_device is None:
                 target_device = a.device
+        elif isinstance(a, torch.memory_format):
+            memory_format = a
         elif isinstance(a, (torch.device, str, int)):
             target_device = a
+    if bools:
+        non_blocking = bools[0]
+        # bools[1] would be `copy`; both special paths below always produce a
+        # fresh tensor, which satisfies copy=True (and copy=False permits it).
     if target_dtype is None:
         target_dtype = self_dtype
-    return target_dtype, target_device
+    return target_dtype, target_device, non_blocking, memory_format
 
 
 def _target_has_fp8(args, kwargs):
@@ -92,7 +109,8 @@ def install():
         if not self_fp8 and not _target_has_fp8(args, kwargs):
             return _orig_to(self, *args, **kwargs)
 
-        target_dtype, target_device = _scan_target(args, kwargs, self.dtype)
+        target_dtype, target_device, non_blocking, memory_format = \
+            _scan_target(args, kwargs, self.dtype)
 
         try:
             dev = torch.device(target_device) if target_device is not None else self.device
@@ -104,21 +122,30 @@ def install():
 
         target_fp8 = target_dtype in _FP8_SET
 
+        def _finish(out):
+            if memory_format is not None and memory_format is not torch.preserve_format:
+                out = out.contiguous(memory_format=memory_format)
+            return out
+
         if self_fp8 and not target_fp8:
             # FP8 -> float: LUT decode on the source device, then move.
             out = decode_fp8(self).to(target_dtype)
             if out.device != dev:
-                out = _orig_to(out, device=dev)
-            return out
+                out = _orig_to(out, device=dev, non_blocking=non_blocking)
+            return _finish(out)
 
         if target_fp8 and not self_fp8:
             # float -> FP8: cast on CPU (unsupported on MPS), then move storage.
+            # memory_format is applied to the FLOAT source pre-cast: MPS cannot
+            # re-stride an FP8 tensor, and .to(dtype) preserves the layout.
             src = self.detach()
             if src.device.type != "cpu":
                 src = _orig_to(src, device="cpu")
+            if memory_format is not None and memory_format is not torch.preserve_format:
+                src = src.contiguous(memory_format=memory_format)
             q = _orig_to(src, dtype=target_dtype)
             if dev.type != "cpu":
-                q = _orig_to(q, device=dev)
+                q = _orig_to(q, device=dev, non_blocking=non_blocking)
             return q
 
         # Both FP8 (storage move) or neither FP8 (plain) -> original handles it.

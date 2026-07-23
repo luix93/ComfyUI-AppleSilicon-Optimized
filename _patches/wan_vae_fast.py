@@ -279,12 +279,25 @@ def _fast_causal_forward(self, x, cache_x=None, cache_list=None, cache_idx=None)
         return _orig_causal(self, x, cache_x=cache_x)
 
     import torch.nn.functional as F
+    # Cache key = weight identity: storage pointer + in-place version counter
+    # + dtype/device. A reload, LoRA-style in-place mutation, or offload/
+    # restore cycle changes the key and forces a refold — a dtype-only check
+    # would silently reuse stale folded weights (plain attributes are not
+    # moved by Module._apply, so they survive .to()/offload unchanged).
+    w = self.weight
+    try:
+        ver = w._version
+    except RuntimeError:
+        # Inference tensors don't track a version counter — and can't be
+        # mutated by tracked in-place ops either; storage identity suffices.
+        ver = None
+    key = (w.data_ptr(), ver, w.dtype, w.device)
     wf = getattr(self, "_asfp8_wf", None)
-    if wf is None or wf.dtype != x.dtype:
-        w = self.weight
+    if wf is None or getattr(self, "_asfp8_wf_key", None) != key:
         wf = w.transpose(1, 2).reshape(w.shape[0], kT * Ci,
                                        w.shape[3], w.shape[4]).contiguous()
         self._asfp8_wf = wf
+        self._asfp8_wf_key = key
 
     Co = wf.shape[0]
     sH, sW = self.stride[1], self.stride[2]
