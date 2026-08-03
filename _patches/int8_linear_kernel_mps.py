@@ -49,6 +49,7 @@ _installed = False
 _orig_int8_linear = None
 _kernel = None
 _oproj_announced = False
+_verify_dumped = False
 
 # 1-slot cache of the rotated+quantized activation. Krea2-style blocks call the
 # kernel with the SAME input tensor for wq/wk/wv/gate (and SwiGLU gate/up), so
@@ -455,14 +456,52 @@ def install():
         # Linear.forward in the quantized case — the factory wrap above can't
         # see those calls. Wrap the helper too: fused silu*mul (dit_ext,
         # bit-matched to the eager swiglu) + the same kernel W8A8 path.
-        # Measured M5 Max, H3 fc2 [5378,28672]->[5378,5376]: 23.5 -> 14.3 ms.
+        # NUMERICS: in the live pipeline comfy's cast_bias_weight hands this
+        # layer back a DEQUANTIZED weight (W8A16); this route is the same
+        # W8A8-for-W8A16 trade patch #17 already applies to every other int8
+        # Linear (~1.3% err class) — NOT bit-identical to stock, by design.
+        # ASFP8_INT8_SWIGLU=0 restores stock; _VERIFY=1 runs both + dumps.
+        # Measured M5 Max, H3 fc2 [5378,28672]->[5378,5376]: 23.5 -> 14.3 ms
+        # (H3 864x480 1s 20st: 139.2 -> 122.5 s).
         if hasattr(ops, "linear_input_act") and not getattr(
                 ops.linear_input_act, "_asfp8_wrapped", False):
             _orig_lia = ops.linear_input_act
 
             def linear_input_act_wrapped(linear, x, input_act):
                 if (input_act == "swiglu"
-                        and os.environ.get("ASFP8_INT8_SWIGLU", "0") == "1"):
+                        and os.environ.get("ASFP8_INT8_SWIGLU_VERIFY") == "1"):
+                    # diagnostic: run BOTH paths, dump the first divergence
+                    res = _try_int8_swiglu_forward(linear, x)
+                    ref = _orig_lia(linear, x, input_act)
+                    if res is not None and not torch.equal(res, ref):
+                        global _verify_dumped
+                        if not _verify_dumped:
+                            _verify_dumped = True
+                            md = (res.float() - ref.float()).abs().max().item()
+                            sys.stderr.write(f"{TAG} SWIGLU VERIFY MISMATCH "
+                                             f"maxdiff={md:.3e} x{tuple(x.shape)} "
+                                             f"w{tuple(linear.weight.shape)}\n")
+                            try:
+                                import comfy.ops as _ops2
+                                cw, cb, _os_ = _ops2.cast_bias_weight(
+                                    linear, x, offloadable=True,
+                                    compute_dtype=x.dtype, want_requant=True)
+                                from comfy.quant_ops import TensorWiseINT8Layout as _TL
+                                cqd, csc = _TL.get_plain_tensors(cw)
+                                sys.stderr.write(
+                                    f"{TAG} VERIFY weights: qdata_eq="
+                                    f"{torch.equal(cqd, linear.weight._qdata)} "
+                                    f"scale_eq={torch.equal(csc.view(-1), linear.weight._params.scale.view(-1))} "
+                                    f"bias={cb is not None}\n")
+                            except Exception as _e:
+                                sys.stderr.write(f"{TAG} VERIFY weight-compare failed: {_e!r}\n")
+                            torch.save({"x": x.cpu(), "qdata": linear.weight._qdata.cpu(),
+                                        "scale": linear.weight._params.scale.cpu(),
+                                        "convrot": getattr(linear.weight._params, "convrot", False)},
+                                       "/tmp/asfp8_swiglu_mismatch.pt")
+                    return ref
+                if (input_act == "swiglu"
+                        and os.environ.get("ASFP8_INT8_SWIGLU", "1") == "1"):
                     res = _try_int8_swiglu_forward(linear, x)
                     if res is not None:
                         return res
