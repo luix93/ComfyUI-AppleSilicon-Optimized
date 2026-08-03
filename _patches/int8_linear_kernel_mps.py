@@ -333,7 +333,13 @@ def _try_int8_swiglu_forward(linear, x):
         dk = _dit_silu_mul()
         if (dk is not None and x.dtype == torch.bfloat16
                 and os.environ.get("ASFP8_INT8_SWIGLU_EAGERACT") != "1"):
-            act = dk.silu_mul(x[..., :half].contiguous(), x[..., half:].contiguous())
+            x2 = x.reshape(-1, wide)
+            if hasattr(dk, "silu_mul_split") and x2.is_contiguous():
+                # read both halves straight from the projection output — skips
+                # two full-size .contiguous() copies (2 x 154 MB at H3's fc2)
+                act = dk.silu_mul_split(x2).reshape(*x.shape[:-1], half)
+            else:
+                act = dk.silu_mul(x[..., :half].contiguous(), x[..., half:].contiguous())
         else:
             act = torch.nn.functional.silu(x[..., :half]) * x[..., half:]
         return _int8_linear_kernel(

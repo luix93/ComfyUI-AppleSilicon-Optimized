@@ -551,6 +551,140 @@ kernel void silu_mul_bf16(
   float s = av / (1.0f + precise::exp(-av));
   out[gid] = bfloat(s) * b[gid];
 }
+
+// ── rms_mod_seg: affine RMSNorm + per-SEGMENT modulate in one pass.
+// MiniMax H3 packs [text | video | audio] into one sequence and modulates each
+// segment with its own adaln row, so eager runs RMSNorm (2 passes) then, per
+// segment, mul_(1+scale) and add_(shift) (4 more) over a 57 MB tensor — twice
+// per block, 50 blocks. Here: one pass, with the token's mod row looked up
+// from a precomputed [S] int32 map. Rounding mirrors eager step for step:
+// bf16(x*inv) -> *w -> *(1+scale) -> +shift, each rounded.
+kernel void rms_mod_seg_bf16(
+    device const bfloat* x     [[buffer(0)]],  // [S, Dm]
+    device const bfloat* w     [[buffer(1)]],  // [Dm]
+    device const bfloat* scale [[buffer(2)]],  // [M, Dm]
+    device const bfloat* shift [[buffer(3)]],  // [M, Dm]
+    device const int*    rows  [[buffer(4)]],  // [S] token -> mod row
+    device bfloat*       out   [[buffer(5)]],  // [S, Dm]
+    constant uint&  Dm   [[buffer(6)]],
+    constant float& eps  [[buffer(7)]],
+    uint  tgid       [[threadgroup_position_in_grid]],
+    ushort lid       [[thread_index_in_threadgroup]],
+    ushort simd_lane [[thread_index_in_simdgroup]],
+    ushort simd_id   [[simdgroup_index_in_threadgroup]])
+{
+  threadgroup float tg[8];
+  const device bfloat* row = x + (ulong)tgid * Dm;
+  float ss = 0.0f;
+  for (uint d = lid; d < Dm; d += 256) {
+    const float v = float(row[d]);
+    ss += v * v;
+  }
+  ss = simd_sum(ss);
+  if (simd_lane == 0) tg[simd_id] = ss;
+  threadgroup_barrier(mem_flags::mem_threadgroup);
+  float tot = 0.0f;
+  for (ushort i = 0; i < 8; i++) tot += tg[i];
+  const float inv = precise::rsqrt(precise::divide(tot, float(Dm)) + eps);
+
+  const ulong mrow = (ulong)rows[tgid] * Dm;
+  const device bfloat* sc = scale + mrow;
+  const device bfloat* sh = shift + mrow;
+  device bfloat* o = out + (ulong)tgid * Dm;
+  for (uint d = lid; d < Dm; d += 256) {
+    const bfloat yn = bf16_rte(float(row[d]) * inv);
+    const bfloat y  = bf16_rte(float(yn) * float(w[d]));
+    const bfloat m  = bf16_rte(1.0f + float(sc[d]));
+    o[d] = bf16_rte(bf16_rte(float(y) * float(m)) + float(sh[d]));
+  }
+}
+
+// ── silu_mul_split: SwiGLU gating straight off the fused [M, 2F] projection
+// output, so the two halves never need a .contiguous() copy (2 x 154 MB per
+// call at H3's fc2). silu in fp32 + RTE, matching the eager path.
+kernel void silu_mul_split_bf16(
+    device const bfloat* x   [[buffer(0)]],   // [M, 2F]
+    device bfloat*       out [[buffer(1)]],   // [M, F]
+    constant uint& F         [[buffer(2)]],
+    constant uint& N         [[buffer(3)]],   // M*F
+    uint gid [[thread_position_in_grid]])
+{
+  if (gid >= N) return;
+  const uint m = gid / F, f = gid % F;
+  const ulong base = (ulong)m * (2u * F);
+  const float av = float(x[base + f]);
+  const float s = av / (1.0f + precise::exp(-av));
+  out[gid] = bfloat(s) * x[base + F + f];
+}
+
+// ── rms_rope_sh_partial: per-head affine RMSNorm over the FULL head dim +
+// PARTIAL split-half RoPE over the leading rot dims, applied IN PLACE on
+// strided q/k views of a fused qkv buffer (MiniMax H3: D=128, rot=96, rows
+// strided by 3*H*D). Replaces comfy_kitchen's eager rms_rope_split_half_,
+// which walks ~10 elementwise passes over two 77 MB tensors per block.
+//
+// Rounding mirrors the eager path element for element: fp32 norm accumulation
+// with ONE bf16 round, then the 2x2 rotation evaluated in bf16 STEPS — each
+// product rounded, then their sum rounded — because the rotation table is
+// stored at model dtype (bf16), so torch rounds after every op.
+// Pairs are (i, i+R), NOT adjacent lanes: eager reshapes [.., 2, R] and moves
+// the pair axis last, so lane i partners with lane i+R.
+kernel void rms_rope_sh_partial_bf16(
+    device bfloat* q        [[buffer(0)]],   // [S,H,D] view, row stride rstride
+    device bfloat* k        [[buffer(1)]],
+    device const bfloat* fr [[buffer(2)]],   // [S,R,2,2] rotation matrices
+    device const float* qw  [[buffer(3)]],   // [D] fp32
+    device const float* kw  [[buffer(4)]],
+    constant uint&  H       [[buffer(5)]],
+    constant uint&  D       [[buffer(6)]],
+    constant uint&  R       [[buffer(7)]],   // rot_dim / 2
+    constant uint&  rstride [[buffer(8)]],   // elements between token rows
+    constant float& eps     [[buffer(9)]],
+    uint2  tgid      [[threadgroup_position_in_grid]],
+    ushort lid       [[thread_index_in_threadgroup]],
+    ushort simd_lane [[thread_index_in_simdgroup]],
+    ushort simd_id   [[simdgroup_index_in_threadgroup]])
+{
+  threadgroup float tg[8];
+  threadgroup float ybuf[256];
+
+  const uint s = tgid.x;
+  const uint slot = tgid.y;              // [0, 2H): q rows, then k rows
+  const uint kind = slot / H;            // 0 = q, 1 = k
+  const uint h = slot % H;
+  const uint d = lid;
+
+  device bfloat* base = (kind == 0u ? q : k) + (ulong)s * rstride + (ulong)h * D;
+  const device float* w = (kind == 0u) ? qw : kw;
+
+  const float x = float(base[d]);
+  const float ss = simd_sum(x * x);
+  if (simd_lane == 0) tg[simd_id] = ss;
+  threadgroup_barrier(mem_flags::mem_threadgroup);
+  float tot = 0.0f;
+  const ushort nsg = ushort(D >> 5);
+  for (ushort i = 0; i < nsg; i++) tot += tg[i];
+
+  const float inv = precise::rsqrt(precise::divide(tot, float(D)) + eps);
+  // F.rms_norm(x, weight=w) is NOT one fused fp32 expression: it rounds the
+  // normalized value to bf16 and THEN multiplies by the bf16 weight (verified
+  // — eager equals rms_norm(x) * w exactly), so round twice, in that order.
+  const bfloat yn = bf16_rte(x * inv);
+  const bfloat y  = bf16_rte(float(yn) * w[d]);
+  ybuf[d] = float(y);
+  threadgroup_barrier(mem_flags::mem_threadgroup);
+
+  if (d >= (R * 2u)) {                   // tail: normed, unrotated pass-through
+    base[d] = y;
+    return;
+  }
+  const uint i = (d < R) ? d : (d - R);
+  const uint r = (d < R) ? 0u : 1u;      // row of the 2x2 rotation matrix
+  const device bfloat* m = fr + (((ulong)s * R + i) * 2u + r) * 2u;
+  const bfloat p0 = bf16_rte(float(m[0]) * ybuf[i]);
+  const bfloat p1 = bf16_rte(float(m[1]) * ybuf[i + R]);
+  base[d] = bf16_rte(float(p0) + float(p1));
+}
 )MTL";
 
 static id<MTLLibrary> g_lib = nil;
@@ -1036,7 +1170,130 @@ std::vector<torch::Tensor> qkv_norm_rope_sh(torch::Tensor qkv, torch::Tensor cos
   return {q, k, v};
 }
 
+// MiniMax H3: affine RMSNorm + per-segment modulate, one pass. x [S,Dm] bf16
+// contiguous; scale/shift [M,Dm] bf16; rows [S] int32 mapping token -> mod row.
+torch::Tensor rms_mod_seg(torch::Tensor x, torch::Tensor w, torch::Tensor scale,
+                          torch::Tensor shift, torch::Tensor rows, double eps) {
+  TORCH_CHECK(x.is_mps() && x.scalar_type() == torch::kBFloat16 && x.dim() == 2
+              && x.is_contiguous(), "x must be contiguous bf16 [S,Dm] on mps");
+  const int64_t S = x.size(0), Dm = x.size(1);
+  TORCH_CHECK(w.numel() == Dm && w.scalar_type() == torch::kBFloat16 && w.is_contiguous(),
+              "w must be contiguous bf16 [Dm]");
+  TORCH_CHECK(scale.dim() == 2 && scale.size(1) == Dm && shift.sizes() == scale.sizes()
+              && scale.scalar_type() == torch::kBFloat16
+              && shift.scalar_type() == torch::kBFloat16
+              && scale.is_contiguous() && shift.is_contiguous(),
+              "scale/shift must be contiguous bf16 [M,Dm]");
+  TORCH_CHECK(rows.numel() == S && rows.scalar_type() == torch::kInt
+              && rows.is_contiguous(), "rows must be contiguous int32 [S]");
+  TORCH_CHECK(Dm % 32 == 0, "Dm must be a multiple of 32");
+
+  auto out = torch::empty_like(x);
+  id<MTLComputePipelineState> p = pso_named(@"rms_mod_seg_bf16");
+  MPSStream* stream = getCurrentMPSStream();
+  std::array<id<MTLBuffer>, 6> bufs;
+  std::array<NSUInteger, 6> offs;
+  torch::Tensor ts[6] = {x, w, scale, shift, rows, out};
+  for (int i = 0; i < 6; i++) {
+    bufs[i] = __builtin_bit_cast(id<MTLBuffer>, ts[i].storage().data());
+    offs[i] = ts[i].storage_offset() * ts[i].element_size();
+  }
+  uint Dmu = (uint)Dm;
+  float ef = (float)eps;
+  dispatch_sync(stream->queue(), ^(){
+    @autoreleasepool {
+      id<MTLComputeCommandEncoder> enc = stream->commandEncoder();
+      [enc setComputePipelineState:p];
+      for (int i = 0; i < 6; i++) [enc setBuffer:bufs[i] offset:offs[i] atIndex:i];
+      [enc setBytes:&Dmu length:sizeof(uint)  atIndex:6];
+      [enc setBytes:&ef  length:sizeof(float) atIndex:7];
+      [enc dispatchThreadgroups:MTLSizeMake((NSUInteger)S, 1, 1)
+          threadsPerThreadgroup:MTLSizeMake(256, 1, 1)];
+    }
+  });
+  return out;
+}
+
+// SwiGLU gating read straight from a fused [M, 2F] projection (no half copies).
+torch::Tensor silu_mul_split(torch::Tensor x) {
+  TORCH_CHECK(x.is_mps() && x.scalar_type() == torch::kBFloat16 && x.dim() == 2
+              && x.is_contiguous(), "x must be contiguous bf16 [M,2F] on mps");
+  const int64_t M = x.size(0), W = x.size(1);
+  TORCH_CHECK(W % 2 == 0, "last dim must be even");
+  const int64_t F = W / 2;
+  auto out = torch::empty({M, F}, x.options());
+  id<MTLComputePipelineState> p = pso_named(@"silu_mul_split_bf16");
+  MPSStream* stream = getCurrentMPSStream();
+  auto a = enc_args({x, out});
+  uint Fu = (uint)F, N = (uint)(M * F);
+  dispatch_sync(stream->queue(), ^(){
+    @autoreleasepool {
+      id<MTLComputeCommandEncoder> enc = stream->commandEncoder();
+      [enc setComputePipelineState:p];
+      for (int i = 0; i < a.nbuf; i++) [enc setBuffer:a.bufs[i] offset:a.offs[i] atIndex:i];
+      [enc setBytes:&Fu length:sizeof(uint) atIndex:2];
+      [enc setBytes:&N  length:sizeof(uint) atIndex:3];
+      [enc dispatchThreads:MTLSizeMake((NSUInteger)N, 1, 1)
+          threadsPerThreadgroup:MTLSizeMake(256, 1, 1)];
+    }
+  });
+  return out;
+}
+
+// MiniMax H3: in-place per-head RMSNorm + partial split-half RoPE on strided
+// q/k views of the fused qkv buffer. q/k: [1,S,H,D] bf16 whose inner [H,D] is
+// contiguous but whose token rows are strided (the qkv split); fr: the
+// [1,S,1,R,2,2] bf16 rotation table; qw/kw: fp32 [D] norm weights.
+void rms_rope_sh_partial(torch::Tensor q, torch::Tensor k, torch::Tensor fr,
+                         torch::Tensor qw, torch::Tensor kw, double eps) {
+  TORCH_CHECK(q.is_mps() && k.is_mps() && fr.is_mps(), "inputs must be on mps");
+  TORCH_CHECK(q.scalar_type() == torch::kBFloat16 && k.scalar_type() == torch::kBFloat16
+              && fr.scalar_type() == torch::kBFloat16, "q/k/freqs must be bf16");
+  TORCH_CHECK(q.dim() == 4 && q.sizes() == k.sizes() && q.size(0) == 1,
+              "q/k must be matching [1,S,H,D]");
+  const int64_t S = q.size(1), H = q.size(2), D = q.size(3);
+  TORCH_CHECK(D <= 256 && (D % 32) == 0, "D must be <= 256 and a multiple of 32");
+  // Inner [H,D] contiguous; token rows may be strided (views into qkv).
+  TORCH_CHECK(q.stride(3) == 1 && q.stride(2) == D && k.stride(3) == 1
+              && k.stride(2) == D && q.stride(1) == k.stride(1),
+              "q/k must have contiguous [H,D] rows and a common row stride");
+  TORCH_CHECK(fr.is_contiguous(), "freqs table must be contiguous");
+  const int64_t R = fr.size(-3);
+  TORCH_CHECK(fr.numel() == S * R * 4, "freqs numel mismatch");
+  TORCH_CHECK(2 * R <= D, "rot_dim must be <= D");
+  TORCH_CHECK(qw.numel() == D && kw.numel() == D && qw.is_contiguous()
+              && kw.is_contiguous() && qw.scalar_type() == torch::kFloat
+              && kw.scalar_type() == torch::kFloat, "qw/kw must be contiguous fp32 [D]");
+
+  id<MTLComputePipelineState> p = pso_named(@"rms_rope_sh_partial_bf16");
+  MPSStream* stream = getCurrentMPSStream();
+  auto a = enc_args({q, k, fr, qw, kw});
+  uint Hu = (uint)H, Du = (uint)D, Ru = (uint)R, rst = (uint)q.stride(1);
+  float ef = (float)eps;
+
+  dispatch_sync(stream->queue(), ^(){
+    @autoreleasepool {
+      id<MTLComputeCommandEncoder> enc = stream->commandEncoder();
+      [enc setComputePipelineState:p];
+      for (int i = 0; i < a.nbuf; i++) [enc setBuffer:a.bufs[i] offset:a.offs[i] atIndex:i];
+      [enc setBytes:&Hu  length:sizeof(uint)  atIndex:5];
+      [enc setBytes:&Du  length:sizeof(uint)  atIndex:6];
+      [enc setBytes:&Ru  length:sizeof(uint)  atIndex:7];
+      [enc setBytes:&rst length:sizeof(uint)  atIndex:8];
+      [enc setBytes:&ef  length:sizeof(float) atIndex:9];
+      [enc dispatchThreadgroups:MTLSizeMake((NSUInteger)S, (NSUInteger)(2 * H), 1)
+          threadsPerThreadgroup:MTLSizeMake((NSUInteger)D, 1, 1)];
+    }
+  });
+}
+
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
+  m.def("rms_mod_seg", &rms_mod_seg,
+        "Affine RMSNorm + per-segment modulate in one pass (bf16, MPS)");
+  m.def("silu_mul_split", &silu_mul_split,
+        "SwiGLU gating from a fused [M,2F] buffer, no half copies (bf16, MPS)");
+  m.def("rms_rope_sh_partial", &rms_rope_sh_partial,
+        "In-place per-head RMSNorm + partial split-half RoPE on strided q/k (bf16, MPS)");
   m.def("rope_qk", &rope_qk,
         "RoPE on attention-layout q/k [B,H,S,D] (bf16, MPS; flux apply_rope semantics)");
   m.def("qkv_norm_rope", &qkv_norm_rope,

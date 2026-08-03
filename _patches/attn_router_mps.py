@@ -66,6 +66,15 @@ def _flash_max_head_dim():
         return 64
 
 
+def _short_bmm_min_seq():
+    """Below this, sub-quad's chunking overhead is irrelevant and the startup
+    default stays untouched (0 disables the short-sequence bmm route)."""
+    try:
+        return int(os.environ.get("ASFP8_ATTN_SHORT_BMM_MIN_SEQ", "512"))
+    except ValueError:
+        return 512
+
+
 def _safe_masked_min_seq():
     try:
         return int(os.environ.get("ASFP8_ATTN_SAFE_MASKED_MIN_SEQ", "2048"))
@@ -299,6 +308,23 @@ def _router(q, k, v, heads, mask=None, attn_precision=None, skip_reshape=False,
             return _sub_quad(q, k, v, heads, mask=None, attn_precision=attn_precision,
                              skip_reshape=skip_reshape,
                              skip_output_reshape=skip_output_reshape, **kwargs)
+        # Route 1b: SHORT unmasked attention that would otherwise fall to a
+        # chunked-Python sub-quad default. Video VAE decoders live here — the
+        # MiniMax H3 decoder alone issues 1080 attention calls at L=1797,
+        # H=32, D=64, where sub-quad runs 4.8 TF/s against bmm's 11.9
+        # (measured: 5.54 -> 2.23 ms, 3.6 s of a 15 s decode). Only fires when
+        # the startup default IS sub-quad; with pytorch attention selected,
+        # SDPA is already at bmm speed and we leave the call alone.
+        elif (_default is _sub_quad and not _gqa and attn_precision is None
+                and _short_bmm_min_seq() > 0 and L >= _short_bmm_min_seq()
+                and D <= 256 and D % 8 == 0
+                and q.dtype in (torch.bfloat16, torch.float16)
+                and q.dtype == k.dtype == v.dtype
+                and esize * B * H * L * L <= _BMM_MAX_SCORE_BYTES):
+            _route_log("bmm(short)", q, k, heads, mask, attn_precision, skip_reshape)
+            return _bmm_attention(q, k, v, heads, scale=scale,
+                                  skip_reshape=skip_reshape,
+                                  skip_output_reshape=skip_output_reshape)
     elif L >= _safe_masked_min_seq():
         # Route 2: masked attention whose SCORE MATRIX is dangerously large →
         # sub-quad, never stock SDPA. Gate on Lq*Lk, not max seq: cross-attention
