@@ -280,6 +280,69 @@ def int8_o_proj_prequant(layer, out_bhsd):
         return None
 
 
+_dit = None   # dit_ext module for the fused silu*mul; False = latched off
+
+
+def _dit_silu_mul():
+    global _dit
+    if _dit is None:
+        _dit = False
+        try:
+            from .dit_ext import loader as _dl
+            m = _dl.module()
+            if m is not None and hasattr(m, "silu_mul"):
+                _dit = m
+        except Exception:
+            pass
+    return _dit or None
+
+
+def _try_int8_swiglu_forward(linear, x):
+    """linear(swiglu(x)) via fused silu*mul + the kernel W8A8 path, or None.
+
+    Same eligibility contract as _try_int8_kernel_forward. The silu*mul
+    kernel computes silu in fp32 with RTE exactly like the eager MPS op, so
+    the activation bytes match comfy's _swiglu_eager."""
+    global _kernel
+    if _kernel is None:
+        return None
+    try:
+        from comfy_kitchen.tensor import QuantizedTensor
+
+        if not isinstance(x, torch.Tensor) or x.device.type != "mps":
+            return None
+        if isinstance(x, QuantizedTensor):
+            return None
+        w = linear.weight
+        if not isinstance(w, QuantizedTensor) or getattr(w, "_layout_cls", None) != "TensorWiseINT8Layout":
+            return None
+        if getattr(linear, "_full_precision_mm", False):
+            return None
+        if getattr(linear, "comfy_force_cast_weights", False):
+            return None
+        if len(getattr(linear, "weight_function", [])) or len(getattr(linear, "bias_function", [])):
+            return None
+        params = w._params
+        if getattr(params, "transposed", False):
+            return None
+        wide = x.shape[-1]
+        if wide % 2:
+            return None
+        half = wide // 2
+        dk = _dit_silu_mul()
+        if (dk is not None and x.dtype == torch.bfloat16
+                and os.environ.get("ASFP8_INT8_SWIGLU_EAGERACT") != "1"):
+            act = dk.silu_mul(x[..., :half].contiguous(), x[..., half:].contiguous())
+        else:
+            act = torch.nn.functional.silu(x[..., :half]) * x[..., half:]
+        return _int8_linear_kernel(
+            act, w._qdata, params.scale, linear.bias, x.dtype,
+            getattr(params, "convrot", False),
+            getattr(params, "convrot_groupsize", 256))
+    except Exception:
+        return None
+
+
 def _try_int8_kernel_forward(self, input):
     """Return the layer output via the kernel W8A8 path, or None to fall back.
 
@@ -386,6 +449,27 @@ def install():
 
         wrapped_factory._asfp8_wrapped = True
         ops.mixed_precision_ops = wrapped_factory
+
+        # comfy >= 0.30 routes SwiGLU'd down-projections (e.g. MiniMax H3's
+        # MLP fc2) through ops.linear_input_act, which never calls
+        # Linear.forward in the quantized case — the factory wrap above can't
+        # see those calls. Wrap the helper too: fused silu*mul (dit_ext,
+        # bit-matched to the eager swiglu) + the same kernel W8A8 path.
+        # Measured M5 Max, H3 fc2 [5378,28672]->[5378,5376]: 23.5 -> 14.3 ms.
+        if hasattr(ops, "linear_input_act") and not getattr(
+                ops.linear_input_act, "_asfp8_wrapped", False):
+            _orig_lia = ops.linear_input_act
+
+            def linear_input_act_wrapped(linear, x, input_act):
+                if (input_act == "swiglu"
+                        and os.environ.get("ASFP8_INT8_SWIGLU", "0") == "1"):
+                    res = _try_int8_swiglu_forward(linear, x)
+                    if res is not None:
+                        return res
+                return _orig_lia(linear, x, input_act)
+
+            linear_input_act_wrapped._asfp8_wrapped = True
+            ops.linear_input_act = linear_input_act_wrapped
     except Exception as e:
         print(f"{TAG} could not wrap mixed_precision_ops: {e!r}")
         return
