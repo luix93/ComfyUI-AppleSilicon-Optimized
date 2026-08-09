@@ -40,7 +40,7 @@ M5 Max.**
 Private continuation of
 [ComfyUI-AppleSilicon-FP8](https://github.com/pawel-mazurkiewicz/ComfyUI-AppleSilicon-FP8).
 What began as an FP8 compatibility shim has diverged into a general
-optimization layer: 32 runtime patches and six JIT-compiled Metal extensions
+optimization layer: 34 runtime patches and six JIT-compiled Metal extensions
 that take image models to roughly half their stock render time and make long
 video generation on a MacBook competitive with — and in places faster than —
 the fastest native Mac apps.
@@ -249,7 +249,7 @@ distinct route taken.
   tiled/swizzled geometry and fused bias for standard-fp8 Linears, skipping
   the per-forward weight decode.
 
-### DiT block fusions (`ASFP8_DIT_EXT` — patches #21, #23–#25, #27, #28, #32)
+### DiT block fusions (`ASFP8_DIT_EXT` — patches #21, #23–#25, #27, #28, #32, #33)
 
 Per-architecture Metal kernels for the elementwise/copy-heavy glue between
 matmuls, which on MPS costs as much as the matmuls themselves. Each patch
@@ -279,6 +279,24 @@ mirrors eager rounding op-for-op (exact-or-1-ulp) and falls back per call:
   (24 identical per-forward rebuilds → 1), PSO prewarm overlapped with the
   ~9 GB checkpoint loads, and the fused o-projection pre-pass above.
   56.6 → ~41 s at 12 steps 1MP — past DrawThings' 42 s.
+- **MiniMax H3 (#33)**: Q/K/V are written directly from the fused projection
+  into `[B,H,S,D]` attention layout while Q/K RMSNorm and partial split-half
+  RoPE run in the same pass; the native attention result then goes straight
+  through cross-head convrot + row quantization into the INT8 output
+  projection. Segmented gated residuals, RMSNorm and modulation are fused as
+  block glue. For long clips, the channelwise INT8 GEMMs use an exact
+  long-M compiler schedule and narrowly gated 32-row suffix dispatches; all
+  preserve the INT32 reduction and bf16 epilogue byte-for-byte. At 864×480,
+  39 frames and 20 steps, the warm saved workflow
+  measured 110.4 → 103.5–104.3 s despite sustained thermal throttling
+  (sampler 98.6 → 92.1–92.9 s); early cool steps improved from ~4.9 to
+  ~3.8–4.1 s. The exported 864×480, 124-frame / 20-step workflow completes
+  in 491.20 s: 427.94 s for sampling (21.397 s/step average, 19.19 s first,
+  ~21.9 s heat-soaked) and 38.59 s for video decode. A prior already-
+  optimized but more heat-soaked run was 536.69 s / 469.86 s sampler; do not
+  attribute that full cross-session delta to the new schedule. Controlled
+  interleaved GEMM A/B predicts ~1.84 s of exact sampler savings from the
+  long-M schedule plus QKV suffix dispatch; the remainder is thermal state.
 
 ### Video VAE (patches #26, #29, #31)
 
@@ -308,8 +326,8 @@ mirrors eager rounding op-for-op (exact-or-1-ulp) and falls back per call:
   likely the crash: pessimistic free-memory figures on small machines force
   extra slices by accident, and honest accounting (#30) removes that veil.
   The patch floors the slice count to a per-slice element budget and treats
-  the INT_MAX error as retryable. Numerically free — softmax is per-query-row
-  over the full key length, so the result is identical at any slice count.
+  the INT_MAX error as retryable. Numerically free — the query rows are merely
+  divided into more calls and each still sees the full key length.
 
 ### Memory accounting (patch #30)
 
@@ -410,24 +428,297 @@ cast, entirely on GPU, feeding MPS's fast float matmuls.
 
 Three tiers, stated per patch:
 
-- **Bit-exact**: all FP8 decodes, the int8 W8A8 kernel, `fold_taps`, the
-  conv3d channel fold (single fp32 accumulation = conv3d's own numerics), the
-  fused o-projection pre-pass in its default mode (verified by same-seed
-  pixel-identical renders).
+- **Bit-exact**: all FP8 decodes, the int8 W8A8 kernel (including long-M
+  scheduling and suffix dispatches), `fold_taps`, the conv3d channel fold
+  (single fp32 accumulation = conv3d's own numerics), and the D=256 fused
+  o-projection pre-pass in default mode.
 - **Exact-or-1-ulp**: the DiT fusions and VAE norm kernels mirror eager
-  rounding at every point eager rounds (fp32 math between roundings); images
-  shift imperceptibly but deterministically.
+  rounding at every point eager rounds (fp32 math between roundings); H3's
+  D=128 cross-head convrot and optional fused SwiGLU use a reassociated FWHT
+  and can move rare quantized values by one integer step. Images shift
+  imperceptibly but deterministically.
 - **Regime-gated**: flash41's low-precision score tiles (default; parity
   ~5e-4, `ASFP8_FA41_F32S=1` for fp32 tiles).
 
 Patch #30 (memory accounting) changes *scheduling*, not numerics — outputs are
 identical, only fewer reloads.
 
-Everything ships with parity tests against the eager path (116 pass on torch
+Everything ships with parity tests against the eager path (140 pass on torch
 2.13 with the native kernels enabled, plus kernel parity harnesses for the
 Metal extensions — including a dirty-pool test that poisons the MPS allocator
 with NaN pages before checking ragged attention shapes, because parity on
 fresh, zeroed allocations structurally cannot catch out-of-bounds reads).
+
+## Opt-in approximate MiniMax H3 modes
+
+These are separate from the native fast paths above. They are **off by
+default**, change the result, and should be A/B tested with the same seed.
+
+- **H3Cache (experimental node).** `H3Cache (Apple Silicon, Experimental)`
+  learns separate video and audio input-to-output change rates from exact
+  evaluations. On a full-model hit it reuses H3's previous video velocity and
+  analytically corrects the audio velocity for H3's distinct shifted sigma
+  schedule; either modality can veto a visually stable hit. A learned scalar
+  secant predictor and the earlier residual/output-hold predictors remain
+  selectable for controlled comparison. Sampler-facing denoised holding and
+  first-order denoised extrapolation are also available as research controls.
+  `cached_suffix_blocks` can instead recompute the model prefix exactly and
+  reuse only a short transformer tail.
+  The first/last sampling regions are protected, consecutive hits are bounded,
+  state is isolated to one sampling run, and EasyCache cannot be stacked with
+  it. The default threshold is deliberately `0`: this collects verbose
+  1-second calibration traces but never skips. Both full-model and five-block
+  suffix calibration reproduced all 39 decoded frames and all 78,336 stereo
+  samples bit-for-bit.
+
+  No nonzero balanced preset is currently recommended. In the matched
+  1-second/20-step case, one full-model residual-carry hit reached 0.938 video
+  SSIM / 17.3 dB audio SNR. Correctly holding the velocity improved this to
+  0.942 / 17.2 dB; correcting the audio schedule reached 0.943 / 17.7 dB; the
+  learned secant reached 0.942 / 17.9 dB. A five-block suffix hit was still
+  only 0.947 / 15.4 dB and saved no measurable sampler time after its probe and
+  cache-maintenance overhead. Two full-model hits fell to 0.908 / 15.9 dB, and
+  a sigma-scaled first-order forecast reached 0.931 / 17.5 dB. Moving the cache
+  to ComfyUI's sampler-facing denoised boundary was exact at threshold zero,
+  but one isolated denoised-hold hit reached only 0.946 / 17.0 dB and linear
+  denoised extrapolation reached 0.931 / 17.2 dB. Because even the smallest
+  useful 1-second candidates failed the quality gate, none was promoted to a
+  5-second run.
+- **FirstBlockCache (H3Cache `prediction_mode=first_block_cache`).** Block 0
+  runs exactly on every evaluation; its own residual is the change detector,
+  and when it is stable the cached aggregate residual of blocks 1–49 stands in
+  for running them. Unlike whole-model forecasting this never predicts the
+  model's output from its own history — every step still executes a real
+  transformer block over the real state — so the failure mode is a stale tail
+  rather than a diverging trajectory. Both modalities can veto a hit,
+  consecutive hits are bounded, and threshold `0` calibrates without ever
+  skipping. Not yet promoted to a preset: awaiting the calibration matrix.
+- **H3 Sparse Attention (experimental node).** `H3 Sparse Attention (Apple
+  Silicon, Experimental)` — corrected Sol-style block-sparse self-attention,
+  routed by **NVIDIA's released H3 policy (`diag64`)** adapted to Metal.
+  A block-centroid proxy picks the exact KV blocks per head and 64-row query
+  block; the `sol_ext` Metal 4.1 kernel computes only those; and every
+  *rejected* block is folded back through its centroid with `log(block_length)`
+  multiplicity, as extra columns in the same online softmax. Anything
+  unsupported delegates to this package's own dense router, so declined calls
+  still reach flash41.
+
+  The policy, verbatim:
+
+  - 64-token KV blocks and 64-row query blocks;
+  - one **analytic** threshold per query block,
+    `mu + tau*sqrt(sigma2 + 1e-6)` in log2 units, where `mu` and `sigma2` come
+    from the diagonal covariance of that head's key centroids — *not* from the
+    proxy row's own spread;
+  - strict `proxy > threshold`;
+  - the whole `[0, video_start)` prefix (text + conditioning + audio) is one
+    contiguous exact KV sink, rounded outward to a 64-token boundary, and every
+    query block overlapping it is fully dense;
+  - a local ±1 block band;
+  - the first two transformer blocks dense;
+  - no Morton reordering, no temporal band.
+
+  **The earlier empirical router was rejected.** It thresholded each 32-row
+  compute tile on the mean and variance *of its own proxy row*, which adapts the
+  threshold to whatever spread the row happens to have — tightening exactly
+  where the row is flat and the approximation is least safe. It reached 13%
+  density, but by discarding structure the model needed; the visible symptom was
+  static-background morphing (see the rejected-router findings below). It is
+  retained for one diagnostic cycle behind `ASFP8_SOL_ROUTER=legacy_empirical`
+  and is reachable from no preset and no widget. `tau` is **not comparable**
+  between the two routers.
+
+  **Routing and attention execute on the GPU, with the sparse kernels in
+  Metal.** The first version kept the route construction and correction in
+  PyTorch and merged the correction from an exported log-sum-exp:
+  algebraically clean, and measured at 25.5 ms routing + 93.6 ms correction
+  against an 85.8 ms kernel and 220 ms dense attention — the scaffolding cost
+  more than the kernel saved at *every* density. `sol_diag_route` now emits a
+  compact block bitmask once per attention call, and `sol_masked_corrected_fwd`
+  consumes it. Both 32-row compute tiles of a query block read the *same* mask
+  word, so the TensorOps tiling is free to stay at 32 without the routing policy
+  following it. Block means, key-centroid statistics and diagnostic density
+  accumulation still use PyTorch/MPS operations around those kernels, and the
+  diffusion wrapper reads the runtime sigma once per denoising evaluation.
+  Selected-block counts remain on-device and are read once at the end of the
+  sampling run rather than once per attention block.
+
+  **Route parity is bit-exact.** The Metal route and the Python reference
+  (`route_blocks_diag_reference`) agree on 100.0000000% of entries at every
+  tested shape — aligned, ragged query *and* KV tails, sinks on and off a block
+  boundary, `tau` from 0.0 to 1.5 — with a 0.0000pp density difference. The
+  route runs entirely in fp32, pooled query centroids included, which is why it
+  lands exact rather than merely inside the ≥99.99% / 2e-4 tolerance the plan
+  allows. Corrected attention under that route matches the *same sparse route's*
+  fp32 specification to 2.7e-3 relative error, against 2.3e-3 for the same
+  kernel at full density. This establishes kernel arithmetic fidelity; it does
+  **not** measure the approximation error against full dense attention or imply
+  visual equivalence.
+
+  Measured M5 Max, H=56 D=128 bf16, against the flash41 dense kernel this
+  package already ships, on synthetic Gaussian activations. Whole path,
+  including block means, the route and padding:
+
+  | seq | dense | **diag64** | density | **vs dense** |
+  |---|---|---|---|---|
+  | 5378 (1s) | 23.2 ms | **12.0 ms** | 31% | **1.94x** |
+  | 8192 | 47.4 ms | **23.3 ms** | 28% | **2.04x** |
+  | 17000 (~5s) | 217.7 ms | **86.6 ms** | 22% | **2.51x** |
+
+  (`tau=1.0`, 512-row sink. Densities on real H3 activations will differ —
+  attention mass concentrates far more than Gaussian noise does.)
+
+  **`tau=0` is not a promotion candidate.** At `tau=0` the same shapes measure
+  53–57% density and **1.00–1.02x** against dense — the centroid pass costs
+  exactly what the skipped blocks save. So the calibration ladder
+  (`tau` 1.0 → 0.75 → 0.50 → 0.0) has a hard floor: if quality only passes at
+  `tau=0`, sparse attention fails the ≥5% speed gate by construction and should
+  be left disabled rather than shipped.
+
+  **Status: implemented and route-verified; the 20-step quality calibration has
+  not been run.** The defaults below are the plan's starting point, not a
+  calibrated result: `tau=1.0`, `start_percent=0.50` (protects the first ten of
+  twenty evaluations), `end_percent=0.85` (protects the final three),
+  `dense_leading_blocks=2`, `block_size=64`, `temporal_taps=0`,
+  `min_sequence_tokens=8192`. The intended split is evaluations 0–9 dense,
+  10–16 sparse and 17–19 dense. The current percentage-boundary implementation
+  compares Python-double thresholds with float32 runtime sigmas, however, and
+  selects 11–17 on ComfyUI's shift=12.0 simple 20-step schedule. Treat that as
+  a known scheduling bug until the implementation and its scheduler-level test
+  are corrected. Quality is the gate, and it has not yet been measured on real
+  renders; do not treat the speedups above as a shipped result.
+
+  `block_size` and `temporal_taps` remain as widgets **only** because ComfyUI
+  maps saved-workflow values positionally, so removing them would shift every
+  earlier value into the wrong slot. `diag64` *refuses* any value but the
+  default for both, rather than silently ignoring them.
+
+  **Findings that rejected the empirical router** (kept because they constrain
+  what any router here can do). On a synthetic static shot the frame-to-frame
+  RMS of co-located tokens was 1.22x the exact-attention value at 13.8% density;
+  the visible symptom is background flicker/morphing on content that should be
+  still. A rejected block contributes only its MEAN value vector, so at 20%
+  density ~80% of the attention mass arrives as block averages carrying no
+  spatial detail — and cross-frame agreement, which is what makes a static
+  background hold its shape, is computed through exactly that channel. Five
+  interventions were built and measured; none helped:
+
+  | intervention | result |
+  |---|---|
+  | frame-aligned grid (512x512 divides exactly) | no change |
+  | `dense_leading_blocks=10` | no change |
+  | temporal band, synthetic | **worse** (1.22x -> 1.64x) |
+  | `temporal_taps=2`, real clip | no change |
+  | rank-1 structure correction | **1.05x** even at intrinsic rank 8 |
+
+  The rank-1 term (`M_j = sum_t (k_t-kbar)v_t^T ~ u_j w_j^T`, the first-order
+  Taylor term Sol appears to use) was prototyped and measured on both random and
+  deliberately low-rank activations. It recovers ~5% of the error at best: what
+  the centroid discards is genuinely high-rank. The temporal band is why
+  `temporal_taps` defaults to `0` and is now refused outright: the spatial band
+  is translation-invariant — every tile forces the same relative offsets — while
+  a temporal band is position-dependent with edge effects at the first and last
+  frames, which is itself a source of frame-to-frame variation.
+
+  What changes under `diag64` is the *threshold*, not the centroid recovery, so
+  these findings bound the outcome without predicting it: the analytic threshold
+  is expected to buy quality by spending density, and NVIDIA's own H3 numbers
+  show only a **1.10x** incremental Sol-Attn gain. Expect a quality-preserving
+  Mac result more modest than the discarded 13%-density implementation — which
+  is consistent with NVIDIA shipping sparse attention only in their "super
+  efficient" preset and disabling it in "quality preserving".
+
+  The correction is what makes the route usable at all: on matched routing,
+  folding the rejected centroids back cut the error against full dense
+  attention by **7–11x** versus dropping them. That is why this is not a port
+  of [KingGore's Blackwell node](https://github.com/KingGore/ComfyUI_sol-attn_Blackwell),
+  whose CUDA-gated implementation hard-drops rejected blocks (and indexes
+  block 0 ambiguously); only the general routing idea is shared. Adapted from
+  [Sol-Attn](https://arxiv.org/abs/2607.24027), not the original fused NVIDIA
+  kernel. `hard_drop` and `dense_reference` are diagnostics, not production
+  modes.
+
+  **FlexAttention was evaluated and rejected.** torch 2.13 does compile
+  `score_mod`/`mask_mod` into a Metal shader on MPS, and captured-buffer
+  routing works — but at H3 shapes and 26% block density the generated kernel
+  measured **5–9x slower than dense SDPA** (1214 ms vs 140 ms at S=8192), i.e.
+  roughly 25x too slow to break even against flash41. `create_block_mask` also
+  materializes a dense token mask first and tries to allocate 112 GiB at
+  S=16384/H=56. Do not extrapolate PyTorch's headline 12.3x sparse-SDPA figure
+  to this workload; it came from a 0.8%-density sliding-window case.
+- **H3 Acceleration (preset node).** `H3 Acceleration (Apple Silicon)` wraps
+  the above behind `exact` / `balanced` / `aggressive`. `exact` is the default
+  and adds no approximation. `balanced` and `aggressive` currently **refuse to
+  run**: their constants are placeholders until the calibration matrix fills
+  them in, and shipping unvalidated numbers behind a friendly name is worse
+  than an error message. Use the low-level nodes until then.
+- **Spectrum hidden-feature forecasting (external reference).** The native H3
+  [Spectrum adaptation](https://github.com/xmarre/ComfyUI-Spectrum-MiniMax-H3)
+  was tested independently rather than vendored. Its forced-actual wrapper
+  reproduced decoded video and audio bit-for-bit and retained 409.3 MiB of MPS
+  history for this 1-second shape. One forecast at its default step 5 reduced
+  the transformer count from 20 to 19 but reached only 0.657 video SSIM /
+  14.6 dB audio SNR. A favorable isolated forecast at step 15, after eight
+  retained actual features and before four exact tail steps, reached 0.937 /
+  17.7 dB. The external six-forecast preset was therefore not run, and neither
+  case was promoted to 5 seconds. The result suggests that H3's post-block
+  feature trajectory is not accurately forecast by this uncalibrated
+  Chebyshev/local-linear configuration, even though its wrapper and current
+  output-head reconstruction are exact when forecasting is disabled.
+- **ComfyUI EasyCache node.** Current ComfyUI already includes the upstream
+  [EasyCache](https://github.com/H-EmbodVis/EasyCache) algorithm, including
+  support for H3's paired video/audio latent.
+  Insert it between `UNETLoader` and both model consumers. On the 5-second,
+  864×480, 20-step H3 reference workflow, `0.30 / 0.20 / 0.90` skipped 6/20
+  model evaluations: sampling 428s -> 292s and end-to-end 491s -> 337s
+  (about **1.46x**). This is an aggressive preview preset: a matched short
+  render measured video SSIM 0.912 and visibly changed motion/pose. Lower
+  thresholds trade most of that gain back for fidelity.
+- **Reduced H3 video-VAE tile overlap.** Set
+  `ASFP8_MINIMAX_VAE_OVERLAP=32` before startup to reduce the reference
+  64-pixel overlap while keeping 256-pixel tiles. At 864×480 this reduces the
+  decoder grid from 15 tiles to 8. In a matched 1-second test, the
+  post-sampling portion fell from 16.1s to 6.0s, video SSIM was 0.980, and
+  audio remained bit-identical. VAE
+  decode is a small share of a normal 20-step render, so expect only roughly
+  **3-6% end-to-end** on a 5-second clip. Watch tile boundaries, fog, gradients,
+  and fast motion before adopting it.
+- **Batched H3 video-VAE tile decode.** `ASFP8_MINIMAX_VAE_DECODE_BATCH=5`.
+  Not an approximation — `tiled_decode` walks the spatial grid calling the
+  decoder once per tile (15 sequential launches at 864x480 with the reference
+  64-pixel overlap, 8 with overlap=32), and every tile is exactly the same size,
+  so they stack on the batch dimension. Fifteen small launches leave the GPU
+  idle; a few large ones fill it. On a decoder-shaped conv3d workload (15 tiles,
+  256px, 4 frames, fp16) this measured **131 ms -> 68 ms, 1.92x**, with a
+  maximum difference of **exactly 0.0** against the sequential result. Batch 4
+  gave 1.47x and 8 gave 1.70x, so the useful range is 4-8; the peak is
+  workload-dependent because decoder activation memory scales with the batch.
+  Tile order and the blending pass are untouched. Off by default because the
+  memory cost depends on the machine and the resolution.
+- **Different H3 VAE tile size.** `ASFP8_MINIMAX_VAE_TILE_SIZE` is exposed for
+  controlled experiments, not as a recommended speed preset. Larger tiles can
+  reduce the grid but make the VAE transformer's attention much more expensive
+  and can sharply increase peak memory; smaller tiles do the reverse.
+
+`dev/bench_workflows.py` can inject EasyCache or H3Cache and pin duration, step
+count, and megapixels without modifying the source workflow. For H3Cache,
+`--h3cache 0 0.20 0.85 1` is the exact-compute calibration configuration;
+`--h3cache-audio-weight 1.0` controls the audio reuse veto.
+`--h3cache-predictor velocity_hold` selects the H3-aware full-model predictor,
+`--h3cache-predictor denoised_hold` or `denoised_linear` selects the
+sampler-facing research controls, `--h3cache-predictor first_block_cache`
+selects the block-0-detector cache, and `--h3cache-suffix-blocks 5` changes the
+experiment to a five-block tail.
+`--h3-sparse corrected 1.0 0.20 2 8192` injects the sparse attention node and
+composes with either cache flag (it is applied after the cache node, matching
+the preset order); `--h3-preset exact|balanced|aggressive` injects the combined
+node instead. Sparse runs are refused unless the server reports torch 2.13+.
+Its JSONL record includes prompt IDs and generated artifact paths so matched
+runs can be passed to `dev/compare_av.py`. The comparison reports decoded
+bit-exactness, per-frame Gaussian-window SSIM, spatial and temporal-delta PSNR,
+and audio exactness/SNR/channel correlation. This avoids comparing two
+different latent shapes—or judging an audio-video cache from spatial SSIM
+alone—by accident.
 
 ## Environment variables
 
@@ -440,8 +731,16 @@ fresh, zeroed allocations structurally cannot catch out-of-bounds reads).
 | `ASFP8_ATTN_ROUTER` | off | per-call attention routing (flash41 / bmm / sub-quad) |
 | `ASFP8_DIT_EXT` | off | DiT block-fusion kernels (all families) |
 | `ASFP8_CONV3D` | off | conv3d → sliced conv2d + Wan VAE fast path |
-| `ASFP8_FLUX_FAST` / `KREA2_FAST` / `LTX_FAST` / `WAN_FAST` / `WAN_VAE_FAST` / `IDEOGRAM_FAST` | on (under DIT_EXT/CONV3D) | per-architecture kill switches |
-| `ASFP8_INT8_OPROJ_FUSE` | 1 | fused o-proj pre-pass: `1` bit-exact merge+quant, `2` full FWHT (rounding-equivalent), `0` off |
+| `ASFP8_FLUX_FAST` / `KREA2_FAST` / `LTX_FAST` / `WAN_FAST` / `WAN_VAE_FAST` / `IDEOGRAM_FAST` / `MINIMAX_FAST` | on (under DIT_EXT/CONV3D) | per-architecture kill switches |
+| `ASFP8_MINIMAX_ATTN` / `ASFP8_MINIMAX_BLOCK` | 1 | MiniMax direct QKV/attention-output layout and segmented block-glue fusions |
+| `ASFP8_INT8_LONG_SCHEDULE` / `ASFP8_INT8_LONG_QKV_TAIL` | 1 | exact long-M INT8 schedule / exact QKV suffix dispatch (active only at M≥8192) |
+| `ASFP8_INT8_OPROJ_FUSE` | 1 | fused o-proj pre-pass: `1` exact D=256 rotation or full cross-head FWHT for D<256, `2` always full FWHT, `0` off |
+| `ASFP8_INT8_SWIGLU_ROT` | 1 | fuse SwiGLU + convrot before H3's INT8 fc2 (rare ±1 quantized-byte drift from FWHT reassociation) |
+| `ASFP8_MINIMAX_VAE_OVERLAP` | unset (reference 64) | approximate H3 video-VAE tile overlap; 32 is the tested faster setting |
+| `ASFP8_MINIMAX_VAE_DECODE_BATCH` | 1 (off) | decode N H3 video-VAE tiles per launch — **exact**, scheduling only; 4-8 is the useful range, peak decoder memory scales with it |
+| `ASFP8_SOL_EXT` | 1 | set `0` to force-disable the Sol sparse-attention Metal kernel (the H3 sparse node then refuses to apply) |
+| `ASFP8_SOL_ROUTER` | `diag64` | set `legacy_empirical` to route H3 sparse attention with the **rejected** 32-row-tile router (proxy-row mean/variance threshold), for diagnostics only. `tau` is not comparable between the two |
+| `ASFP8_MINIMAX_VAE_TILE_SIZE` | unset (reference 256) | experimental H3 video-VAE tile size (multiple of 16) |
 | `ASFP8_AUTOFIX` | on | self-heal JIT prerequisites at boot (install ninja, restore stripped torch headers) |
 | `ASFP8_WAN_VAE_CHUNK` | 16 | Wan VAE frames per causal pass (even, 2–32; lower caps decode memory peak) |
 | `ASFP8_FREE_MEM` | on | MPS free-memory accounting fix (patch #30) |
@@ -503,6 +802,13 @@ A few load-bearing lessons encoded in this repo, for future work:
   launch-bound (dozens of tiny decoder passes); batching them changed
   nothing. Attribution showed strided reductions and cat chains — memory
   patterns, not launches — and the convs already at the platform ceiling.
+- **The same trap applies to MiniMax's tiled ViT VAE.** A 124-frame decode
+  invokes 105 independent spatial tiles, but batching them is slower on M5:
+  sequential 36.21 s versus batch-2 38.43 s, batch-4 38.50 s, batch-5
+  39.03 s, and batch-8 40.25 s in the one-step control workflow. All 105
+  batch-4 tile outputs were bit-exact, but launch reduction cannot repay the
+  decoder's larger working set, so the experiment was rejected rather than
+  shipped.
 - **MPS traps**: conv2d silently miscomputes with non-contiguous weights;
   per-tap rounding compounds through recursive causal VAE caches; tensor
   prints during execution go to a swallowed stdout (use stderr); the first
