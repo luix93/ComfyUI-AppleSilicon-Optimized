@@ -36,6 +36,7 @@
 #include <map>
 #include <array>
 #include <string>
+#include "../metal_template.h"
 
 using namespace at::mps;
 
@@ -971,6 +972,276 @@ kernel void flash_attn_fwd_na(
     }
 }
 
+// ── na_fp8qk: block-scaled FP8 QK, bf16/fp16 PV (experimental) ──
+// Q and K are quantized once per native attention tile: [16,D] for Q and
+// [NABC,D] for K.  The QK TensorOp consumes e4m3 directly and accumulates f32;
+// scale products are folded into the exp2-domain scores.  P and V remain the
+// input dtype, so this experiment isolates FP8 QK from the much more sensitive
+// value path.  It is intentionally not routed by attn_router_mps.py.
+
+inline uchar na_fp8_e4m3fn(float value) {
+    const bool negative = signbit(value);
+    float x = min(fabs(value), 448.0f);
+    if (x == 0.0f) return negative ? uchar(0x80) : uchar(0);
+
+    int exponent = 0;
+    const float fraction = frexp(x, exponent);  // x=fraction*2^exponent
+    int biased = exponent + 6;                  // (exponent-1)+bias(7)
+    int mantissa = 0;
+    if (biased <= 0) {
+        // e4m3fn subnormal quantum is 2^-9. rint is ties-to-even.
+        mantissa = int(rint(x * 512.0f));
+        biased = 0;
+        if (mantissa >= 8) { biased = 1; mantissa = 0; }
+    } else {
+        const float normal = ldexp(fraction, 1); // [1,2)
+        mantissa = int(rint((normal - 1.0f) * 8.0f));
+        if (mantissa >= 8) { ++biased; mantissa = 0; }
+        // exp=15,mantissa=7 is NaN; 0x7e is the finite max (448).
+        if (biased >= 15) { biased = 15; mantissa = min(mantissa, 6); }
+    }
+    const uchar bits = uchar((biased << 3) | mantissa);
+    return negative ? uchar(bits | 0x80) : bits;
+}
+
+kernel void na_fp8_quant(
+    device @DT@* X [[buffer(0)]],
+    device uchar* X8 [[buffer(1)]],
+    device float* SCL [[buffer(2)]],       // [BH, ntiles]
+    constant int* QP [[buffer(3)]],        // [LS,Ltrue,tile,ntiles]
+    uint3 tgid [[threadgroup_position_in_grid]],
+    uint tid [[thread_index_in_threadgroup]],
+    uint sgid [[simdgroup_index_in_threadgroup]],
+    uint lane [[thread_index_in_simdgroup]])
+{
+    threadgroup float scratch[8];
+    const int LS=QP[0], Ltrue=QP[1], TS=QP[2], ntiles=QP[3];
+    const int tile=int(tgid.x), bh=int(tgid.y), r0=tile*TS;
+    const int extent=max(0, min(TS, Ltrue-r0));
+    const ulong base=ulong(bh)*ulong(LS)*DD + ulong(r0)*DD;
+    const int valid=extent*DD, capacity=TS*DD;
+
+    float local_max=0.0f;
+    for (int i=int(tid); i<valid; i+=256)
+        local_max=max(local_max, fabs(float(X[base+i])));
+    local_max=max(local_max, simd_shuffle_xor(local_max, 16));
+    local_max=max(local_max, simd_shuffle_xor(local_max, 8));
+    local_max=max(local_max, simd_shuffle_xor(local_max, 4));
+    local_max=max(local_max, simd_shuffle_xor(local_max, 2));
+    local_max=max(local_max, simd_shuffle_xor(local_max, 1));
+    if (lane == 0) scratch[sgid]=local_max;
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+    float absmax=scratch[0];
+    for (int s=1; s<8; ++s) absmax=max(absmax, scratch[s]);
+    const float scale=absmax > 0.0f ? absmax/448.0f : 1.0f/448.0f;
+    const float inv=absmax > 0.0f ? 448.0f/absmax : 448.0f;
+    if (tid == 0) SCL[ulong(bh)*ntiles+tile]=scale;
+    for (int i=int(tid); i<capacity; i+=256)
+        X8[base+i]=(i < valid) ? na_fp8_e4m3fn(float(X[base+i])*inv) : uchar(0);
+}
+
+kernel void flash_attn_fwd_na_fp8qk(
+    device uchar* Q8 [[buffer(0)]],
+    device uchar* K8 [[buffer(1)]],
+    device @DT@* V [[buffer(2)]],
+    device @DT@* O [[buffer(3)]],
+    constant int* SH [[buffer(4)]],
+    constant float* PR [[buffer(5)]],
+    device float* QSCL [[buffer(6)]],
+    device float* KSCL [[buffer(7)]],
+    uint3 tgid [[threadgroup_position_in_grid]],
+    uint sgid [[simdgroup_index_in_threadgroup]],
+    uint lane [[thread_index_in_simdgroup]])
+{
+    const int Hq=SH[1], Hkv=SH[2], Lq=SH[3], Lk=SH[4];
+    const int LqS=SH[6], LkS=SH[7];
+    const float dot_scale=PR[0]*1.4426950408889634f;
+    const int bh=int(tgid.y), b=bh/Hq, hq=bh%Hq;
+    const int hkv=hq/(Hq/Hkv), bhkv=b*Hkv+hkv;
+    const int q0=(int(tgid.x)*NANSG+int(sgid))*NASR;
+#if !@NABYP@
+    threadgroup @DT@ tgPall[NANSG*NASR*NABC];
+    threadgroup @DT@* P_buf=tgPall+NASR*NABC*int(sgid);
+#endif
+    if (q0 >= Lq) return;
+
+    device uchar* Qp=Q8+ulong(bh)*ulong(LqS)*DD;
+    device uchar* Kp=K8+ulong(bhkv)*ulong(LkS)*DD;
+    device @DT@* Vp=V+ulong(bhkv)*ulong(LkS)*DD;
+    using fp8_t=metal::metal_fp8_e4m3_format;
+    constexpr auto qk_desc=matmul2d_descriptor(
+        NASR, NABC, DD, false, true, @NARP@,
+        matmul2d_descriptor::mode::multiply_accumulate);
+    matmul2d<qk_desc, execution_simdgroups<1>> qk_op;
+    constexpr auto pv_desc=matmul2d_descriptor(
+        NASR, DD, NABC, false, false, @NARP@,
+        matmul2d_descriptor::mode::multiply_accumulate);
+    matmul2d<pv_desc, execution_simdgroups<1>> pv_op;
+
+    auto Qt=tensor<device fp8_t,dextents<int,2>,tensor_inline>(
+        Qp, dextents<int,2>(DD,LqS));
+    auto Kt=tensor<device fp8_t,dextents<int,2>,tensor_inline>(
+        Kp, dextents<int,2>(DD,LkS));
+    auto Vt=tensor<device @DT@,dextents<int,2>,tensor_inline>(
+        Vp, dextents<int,2>(DD,LkS));
+    auto mQ=Qt.slice<DD,NASR>(0,q0);
+    auto mK=Kt.slice<DD,NABC>(0,0);
+    auto mV=Vt.slice<DD,NABC>(0,0);
+    using TQ=__tensor_ops_detail::__remove_addrspace_t<decltype(mQ)>;
+    using TK=__tensor_ops_detail::__remove_addrspace_t<decltype(mK)>;
+    using TV=__tensor_ops_detail::__remove_addrspace_t<decltype(mV)>;
+#if !@NABYP@
+    auto tP=tensor(P_buf,dextents<int,2>{NABC,NASR},array<int,2>{1,NABC});
+    using TP=__tensor_ops_detail::__remove_addrspace_t<decltype(tP)>;
+#endif
+    auto cS0=qk_op.get_destination_cooperative_tensor<TQ,TK,float>();
+#if @NABLK@ == 2
+    auto cS1=qk_op.get_destination_cooperative_tensor<TQ,TK,float>();
+#endif
+    auto cM=qk_op.get_row_reduction_destination_cooperative_tensor<TQ,TK,float>();
+    auto cL=qk_op.get_row_reduction_destination_cooperative_tensor<TQ,TK,float>();
+    auto cCor=qk_op.get_row_reduction_destination_cooperative_tensor<TQ,TK,float>();
+#if @NABYP@
+    auto cP=pv_op.get_left_input_cooperative_tensor<@DT@,@DT@,float>();
+    auto ctO=pv_op.get_destination_cooperative_tensor<
+        __tensor_ops_detail::__remove_addrspace_t<decltype(cP)>,TV,float>();
+#else
+    auto ctO=pv_op.get_destination_cooperative_tensor<TP,TV,float>();
+#endif
+    #pragma clang loop unroll(full)
+    for (uint16_t i=0; i<cM.get_capacity(); ++i) if (cM.is_valid_element(i)) {
+        cM[i]=-INFINITY; cL[i]=numeric_limits<float>::denorm_min();
+    }
+
+    const int qtiles=LqS/NASR, kvtiles=LkS/NABC;
+    const float qscale=QSCL[ulong(bh)*qtiles+q0/NASR];
+    for (int c=0; c<Lk; c+=NABLK*NABC) {
+        #pragma clang loop unroll(full)
+        for (uint16_t i=0; i<cS0.get_capacity(); ++i) if (cS0.is_valid_element(i)) {
+            cS0[i]=0.0f;
+#if @NABLK@ == 2
+            cS1[i]=0.0f;
+#endif
+        }
+        auto mK0=Kt.slice<DD,NABC>(0,c);
+        qk_op.run(mQ,mK0,cS0);
+#if @NABLK@ == 2
+        auto mK1=Kt.slice<DD,NABC>(0,c+NABC);
+        qk_op.run(mQ,mK1,cS1);
+#endif
+        const bool tail=c+NABLK*NABC>Lk;
+        const float f0=qscale*KSCL[ulong(bhkv)*kvtiles+c/NABC]*dot_scale;
+#if @NABLK@ == 2
+        const int t1=min(c/NABC+1,kvtiles-1);
+        const float f1=qscale*KSCL[ulong(bhkv)*kvtiles+t1]*dot_scale;
+#endif
+        #pragma clang loop unroll(full)
+        for (uint16_t i=0; i<cS0.get_capacity(); ++i) if (cS0.is_valid_element(i)) {
+            auto idx=cS0.get_multidimensional_index(i);
+            cS0[i]=(!tail || c+int(idx[0])<Lk) ? cS0[i]*f0 : -INFINITY;
+#if @NABLK@ == 2
+            cS1[i]=(!tail || c+NABC+int(idx[0])<Lk) ? cS1[i]*f1 : -INFINITY;
+#endif
+        }
+
+        auto cM0=qk_op.get_row_reduction_destination_cooperative_tensor<TQ,TK,float>();
+        reduce_rows(cS0,cM0,reduction_operation::max,-INFINITY);
+#if @NABLK@ == 2
+        auto cM1=qk_op.get_row_reduction_destination_cooperative_tensor<TQ,TK,float>();
+        reduce_rows(cS1,cM1,reduction_operation::max,-INFINITY);
+#endif
+        #pragma clang loop unroll(full)
+        for (uint16_t i=0; i<cM.get_capacity(); ++i) if (cM.is_valid_element(i)) {
+            cCor[i]=1.0f;
+#if @NABLK@ == 2
+            const float mn=max(cM0[i],cM1[i]);
+#else
+            const float mn=cM0[i];
+#endif
+            if (mn>cM[i]) { cCor[i]=fast::exp2(cM[i]-mn); cM[i]=mn; }
+        }
+        #pragma clang loop unroll(full)
+        for (uint16_t i=0; i<cS0.get_capacity(); ++i) if (cS0.is_valid_element(i)) {
+            auto it=cS0.get_iterator(i); auto mit=cM.map_iterator(it);
+            auto idx=cS0.get_multidimensional_index(i);
+            cS0[i]=(!tail || c+int(idx[0])<Lk)
+                ? fast::exp2(cS0[i]-*mit) : 0.0f;
+#if @NABLK@ == 2
+            cS1[i]=(!tail || c+NABC+int(idx[0])<Lk)
+                ? fast::exp2(cS1[i]-*mit) : 0.0f;
+#endif
+        }
+        auto cL0=qk_op.get_row_reduction_destination_cooperative_tensor<TQ,TK,float>();
+        reduce_rows(cS0,cL0,reduction_operation::sum,0.0f);
+#if @NABLK@ == 2
+        auto cL1=qk_op.get_row_reduction_destination_cooperative_tensor<TQ,TK,float>();
+        reduce_rows(cS1,cL1,reduction_operation::sum,0.0f);
+#endif
+        #pragma clang loop unroll(full)
+        for (uint16_t i=0; i<cL.get_capacity(); ++i) if (cL.is_valid_element(i)) {
+#if @NABLK@ == 2
+            cL[i]=cL[i]*cCor[i]+cL0[i]+cL1[i];
+#else
+            cL[i]=cL[i]*cCor[i]+cL0[i];
+#endif
+        }
+        if (c==0) {
+            #pragma clang loop unroll(full)
+            for (uint16_t i=0; i<ctO.get_capacity(); ++i)
+                if (ctO.is_valid_element(i)) ctO[i]=0.0f;
+        } else {
+            #pragma clang loop unroll(full)
+            for (uint16_t i=0; i<ctO.get_capacity(); ++i) if (ctO.is_valid_element(i)) {
+                auto it=ctO.get_iterator(i); auto cit=cCor.map_iterator(it);
+                ctO[i]*=*cit;
+            }
+        }
+#if @NABYP@
+        #pragma clang loop unroll(full)
+        for (uint16_t i=0; i<cS0.get_capacity(); ++i)
+            if (cS0.is_valid_element(i)) cP[i]=@DT@(cS0[i]);
+        simdgroup_barrier(mem_flags::mem_none);
+        auto mV0=Vt.slice<DD,NABC>(0,c);
+        pv_op.run(cP,mV0,ctO);
+#if @NABLK@ == 2
+        #pragma clang loop unroll(full)
+        for (uint16_t i=0; i<cS1.get_capacity(); ++i)
+            if (cS1.is_valid_element(i)) cP[i]=@DT@(cS1[i]);
+        auto mV1=Vt.slice<DD,NABC>(0,c+NABC);
+        pv_op.run(cP,mV1,ctO);
+#endif
+#else
+        #pragma clang loop unroll(full)
+        for (uint16_t i=0; i<cS0.get_capacity(); ++i) if (cS0.is_valid_element(i)) {
+            auto idx=cS0.get_multidimensional_index(i);
+            P_buf[idx[0]+idx[1]*NABC]=@DT@(cS0[i]);
+        }
+        simdgroup_barrier(mem_flags::mem_threadgroup);
+        auto mV0=Vt.slice<DD,NABC>(0,c);
+        pv_op.run(tP,mV0,ctO);
+#if @NABLK@ == 2
+        #pragma clang loop unroll(full)
+        for (uint16_t i=0; i<cS1.get_capacity(); ++i) if (cS1.is_valid_element(i)) {
+            auto idx=cS1.get_multidimensional_index(i);
+            P_buf[idx[0]+idx[1]*NABC]=@DT@(cS1[i]);
+        }
+        simdgroup_barrier(mem_flags::mem_threadgroup);
+        auto mV1=Vt.slice<DD,NABC>(0,c+NABC);
+        pv_op.run(tP,mV1,ctO);
+#endif
+#endif
+    }
+    device @DT@* Ob=O+ulong(bh)*ulong(Lq)*DD;
+    #pragma clang loop unroll(full)
+    for (uint16_t i=0; i<ctO.get_capacity(); ++i) if (ctO.is_valid_element(i)) {
+        auto idx=ctO.get_multidimensional_index(i);
+        const int row=int(idx[1]), col=int(idx[0]);
+        if (q0+row>=Lq || col>=DD) continue;
+        auto it=ctO.get_iterator(i); auto lit=cL.map_iterator(it);
+        Ob[ulong(q0+row)*DD+col]=@DT@(ctO[i]*fast::divide(1.0f,*lit));
+    }
+}
+
 // ── na_i8: int8-quantized attention (opt-in, rounding-class, NOT bit-exact) ──
 // Recipe: liuliu/ccv NAInt8AttentionKernel.cpp (BSD-3) — on-the-fly symmetric
 // int8 quant of Q/K (per-row-tile scales aligned to processing tiles) and of
@@ -1348,13 +1619,8 @@ kernel void v2r_compat_bf16(
 )MTL";
 
 // ── Host: per-D library/pipeline cache ───────────────────────────
-static std::map<long, id<MTLComputePipelineState>> g_pso;
+static std::map<std::string, id<MTLComputePipelineState>> g_pso;
 static std::string g_compile_error;
-
-static void sub_all(std::string& src, const std::string& tok, const std::string& val) {
-  size_t pos;
-  while ((pos = src.find(tok)) != std::string::npos) src.replace(pos, tok.size(), val);
-}
 
 // BR query rows per threadgroup; NSG = BR/8 simdgroups (8 rows per SG) capped [4,16].
 static int nsg_for(int BR) { return BR <= 32 ? 4 : (BR <= 64 ? 8 : 16); }
@@ -1366,54 +1632,51 @@ static id<MTLComputePipelineState> pso_for(int D, int BR, int BC, bool bf16s,
                                            bool half_io = false, bool db = false,
                                            bool na_rp = true, bool na_byp = false,
                                            int na_bc = 64, int na_blk = 2) {
-  const long key = ((((((((((long)D * 1000 + BR) * 1000 + BC) * 2 + (bf16s ? 1 : 0))
-                    * 100 + SR) * 1000 + BCV) * 8
-                   + (std::string(fn_name) == "flash_attn_fwd_bf16" ? 0
-                      : (std::string(fn_name) == "flash_attn_fwd_v2r_bf16" ? 1
-                         : (std::string(fn_name) == "flash_attn_fwd_frag" ? 2
-                            : (std::string(fn_name) == "flash_attn_fwd_na" ? 3
-                               : (std::string(fn_name) == "flash_attn_fwd_na_i8" ? 5
-                                  : (std::string(fn_name) == "na_i8_quant" ? 6
-                                     : (std::string(fn_name) == "na_i8_v_mean" ? 7 : 4))))))))
-                   * 2 + (pv_static ? 1 : 0)) * 32 + nsg) * 4
-                   + (half_io ? 1 : 0) + (db ? 2 : 0)) * 4 + (na_rp ? 1 : 0)
-                   + (na_byp ? 2 : 0);
-  const long key2 = key * 1024 + na_bc * 4 + na_blk;
-  auto it = g_pso.find(key2);
+  const std::string function(fn_name);
+  const std::string key =
+      std::to_string(D) + ":" + std::to_string(BR) + ":" +
+      std::to_string(BC) + ":" + std::to_string(bf16s) + ":" +
+      std::to_string(SR) + ":" + std::to_string(BCV) + ":" + function + ":" +
+      std::to_string(pv_static) + ":" + std::to_string(nsg) + ":" +
+      std::to_string(half_io) + ":" + std::to_string(db) + ":" +
+      std::to_string(na_rp) + ":" + std::to_string(na_byp) + ":" +
+      std::to_string(na_bc) + ":" + std::to_string(na_blk);
+  auto it = g_pso.find(key);
   if (it != g_pso.end()) return it->second;
 
-  std::string src(kSrcTemplate);
-  sub_all(src, "@D@", std::to_string(D));
-  sub_all(src, "@BR@", std::to_string(BR));
-  sub_all(src, "@BC@", std::to_string(BC));
+  asfp8::MetalTemplate source(kSrcTemplate);
+  source.set("D", std::to_string(D));
+  source.set("BR", std::to_string(BR));
+  source.set("BC", std::to_string(BC));
   const char* dt = half_io ? "half" : "bfloat";
-  sub_all(src, "@DT@", dt);
-  sub_all(src, "@ST@", bf16s ? dt : "float");
-  sub_all(src, "@NSG@", std::to_string(nsg > 0 ? nsg : nsg_for(BR)));
+  source.set("DT", dt);
+  source.set("ST", bf16s ? dt : "float");
+  source.set("NSG", std::to_string(nsg > 0 ? nsg : nsg_for(BR)));
   // P merges into the score tile only when the tile is bfloat (same type).
-  sub_all(src, "@MP@", bf16s ? "true" : "false");
-  sub_all(src, "@SR@", std::to_string(SR));
-  sub_all(src, "@BCV@", std::to_string(BCV));
-  sub_all(src, "@DB@", db ? "true" : "false");
+  source.set("MP", bf16s ? "true" : "false");
+  source.set("SR", std::to_string(SR));
+  source.set("BCV", std::to_string(BCV));
+  source.set("DB", db ? "true" : "false");
   // na kernel: simdgroups per TG and the relaxed_precision descriptor flag.
-  sub_all(src, "@NANSG@", std::to_string(nsg > 0 ? nsg : 16));
-  sub_all(src, "@NAKB@", std::to_string(D > 128 ? 2 : 1));
-  sub_all(src, "@NARP@", na_rp ? "true" : "false");
-  sub_all(src, "@NABYP@", na_byp ? "1" : "0");
-  sub_all(src, "@NABCV@", std::to_string(na_bc));
-  sub_all(src, "@NABLK@", std::to_string(na_blk));
+  source.set("NANSG", std::to_string(nsg > 0 ? nsg : 16));
+  source.set("NAKB", std::to_string(D > 128 ? 2 : 1));
+  source.set("NARP", na_rp ? "true" : "false");
+  source.set("NABYP", na_byp ? "1" : "0");
+  source.set("NABCV", std::to_string(na_bc));
+  source.set("NABLK", std::to_string(na_blk));
   const int naik = getenv("ASFP8_FA41_NAIK") ? atoi(getenv("ASFP8_FA41_NAIK")) : 0;
-  sub_all(src, "@NAIK@", naik > 0 ? std::to_string(naik) : std::to_string(D));
+  source.set("NAIK", naik > 0 ? std::to_string(naik) : std::to_string(D));
   // diagnostic: ASFP8_FA41_NA_DIAG = 1 no-softmax / 2 QK-only / 3 no-P-roundtrip
   const int nadiag = getenv("ASFP8_FA41_NA_DIAG") ? atoi(getenv("ASFP8_FA41_NA_DIAG")) : 0;
-  sub_all(src, "@NADIAG@", std::to_string(nadiag));
+  source.set("NADIAG", std::to_string(nadiag));
   // Static reduction dims where safe: qk's inner dim is always exactly D;
   // pv's inner dim (BC) is static only when the host proved Lk % BC == 0
   // (a static-k op reads the full tile — a short tail would read OOB).
   // ASFP8_FA41_DYNK=1 reverts both to dynamic for A/B.
   const bool dynk = getenv("ASFP8_FA41_DYNK") && atoi(getenv("ASFP8_FA41_DYNK"));
-  sub_all(src, "@QKS@", dynk ? "static_cast<int>(dynamic_extent)" : "DD");
-  sub_all(src, "@PVS@", (pv_static && !dynk) ? "BC" : "static_cast<int>(dynamic_extent)");
+  source.set("QKS", dynk ? "static_cast<int>(dynamic_extent)" : "DD");
+  source.set("PVS", (pv_static && !dynk) ? "BC" : "static_cast<int>(dynamic_extent)");
+  std::string src = std::move(source).finish();
 
   id<MTLDevice> dev = MPSDevice::getInstance()->device();
   MTLCompileOptions* opts = [MTLCompileOptions new];
@@ -1430,7 +1693,7 @@ static id<MTLComputePipelineState> pso_for(int D, int BR, int BC, bool bf16s,
   id<MTLComputePipelineState> pso = [dev newComputePipelineStateWithFunction:fn error:&err];
   TORCH_CHECK(pso, "flash41 pipeline creation failed: ",
               err ? err.localizedDescription.UTF8String : "unknown");
-  g_pso[key2] = pso;
+  g_pso[key] = pso;
   return pso;
 }
 
@@ -1725,6 +1988,115 @@ torch::Tensor flash_fwd_na(torch::Tensor q, torch::Tensor k, torch::Tensor v,
   return out;
 }
 
+// Experimental block-scaled FP8 QK with the normal bf16/fp16 P x V path.
+// Kept as an explicit extension entry point: no production router calls it.
+torch::Tensor flash_fwd_na_fp8qk(torch::Tensor q, torch::Tensor k,
+                                  torch::Tensor v, double scale,
+                                  int64_t nsg, int64_t rp,
+                                  int64_t byp, int64_t bc, int64_t blk) {
+  TORCH_CHECK(q.is_mps() && k.is_mps() && v.is_mps(), "inputs must be on mps");
+  const bool half_io = q.scalar_type() == torch::kHalf;
+  TORCH_CHECK((q.scalar_type() == torch::kBFloat16 || half_io)
+              && k.scalar_type() == q.scalar_type()
+              && v.scalar_type() == q.scalar_type(),
+              "inputs must be bf16 or fp16 (matching)");
+  TORCH_CHECK(q.dim() == 4 && k.dim() == 4 && v.dim() == 4,
+              "inputs must be [B,H,L,D]");
+  const int B=(int)q.size(0), Hq=(int)q.size(1), Lq=(int)q.size(2);
+  const int D=(int)q.size(3), Hkv=(int)k.size(1), Lk=(int)k.size(2);
+  TORCH_CHECK(k.size(3) == D && v.size(3) == D, "head_dim mismatch");
+  TORCH_CHECK(v.size(2) == Lk && k.size(0) == B && v.size(0) == B,
+              "kv shape mismatch");
+  TORCH_CHECK(Hkv > 0 && Hq % Hkv == 0,
+              "Hq must be a multiple of Hkv");
+  TORCH_CHECK(D % 32 == 0 && D <= 128,
+              "na_fp8qk needs head_dim % 32 == 0 and <= 128");
+  int BC=(int)bc > 0 ? (int)bc : 64;
+  int BLK=(int)blk > 0 ? (int)blk : 2;
+  int NSG=(int)nsg > 0 ? (int)nsg : 16;
+  TORCH_CHECK(BC % 32 == 0 && BC <= 256,
+              "bc must be a multiple of 32, <= 256");
+  TORCH_CHECK(BLK == 1 || BLK == 2, "blk must be 1 or 2");
+  TORCH_CHECK(NSG >= 1 && NSG <= 16, "nsg must be in [1,16]");
+  TORCH_CHECK(byp != 0 || NSG * 16 * BC * (int)q.element_size() <= 32768,
+              "P slices exceed 32KB threadgroup memory");
+
+  auto qc=q.contiguous(), kc=k.contiguous(), vc=v.contiguous();
+  const int rows_tg=16*NSG;
+  const int64_t LqP=((Lq+rows_tg-1)/rows_tg)*(int64_t)rows_tg;
+  const int64_t LkP=((Lk+BC*BLK-1)/(BC*BLK))*(int64_t)(BC*BLK);
+  if (LqP != Lq) qc=at::constant_pad_nd(qc,{0,0,0,LqP-Lq},0);
+  if (LkP != Lk) {
+    kc=at::constant_pad_nd(kc,{0,0,0,LkP-Lk},0);
+    vc=at::constant_pad_nd(vc,{0,0,0,LkP-Lk},0);
+  }
+  auto byte_opts=q.options().dtype(torch::kByte);
+  auto float_opts=q.options().dtype(torch::kFloat);
+  auto q8=torch::empty({B,Hq,LqP,D},byte_opts);
+  auto k8=torch::empty({B,Hkv,LkP,D},byte_opts);
+  const int qtiles=(int)(LqP/16), kvtiles=(int)(LkP/BC);
+  auto qscl=torch::empty({(long)B*Hq,qtiles},float_opts);
+  auto kscl=torch::empty({(long)B*Hkv,kvtiles},float_opts);
+  auto out=torch::empty({B,Hq,Lq,D},q.options());
+  std::array<int32_t,8> shArr={B,Hq,Hkv,Lq,Lk,0,(int32_t)LqP,(int32_t)LkP};
+  std::array<float,1> prArr={(float)scale};
+  std::array<int32_t,4> qqP={(int32_t)LqP,Lq,16,qtiles};
+  std::array<int32_t,4> kqP={(int32_t)LkP,Lk,BC,kvtiles};
+
+  id<MTLComputePipelineState> psoQuant=pso_for(
+      D,16,64,true,16,64,"na_fp8_quant",false,NSG,half_io,false,
+      rp != 0,byp != 0,BC,BLK);
+  id<MTLComputePipelineState> psoMain=pso_for(
+      D,16,64,true,16,64,"flash_attn_fwd_na_fp8qk",false,NSG,half_io,
+      false,rp != 0,byp != 0,BC,BLK);
+  MPSStream* stream=getCurrentMPSStream();
+  id<MTLBuffer> qB=__builtin_bit_cast(id<MTLBuffer>,qc.storage().data());
+  id<MTLBuffer> kB=__builtin_bit_cast(id<MTLBuffer>,kc.storage().data());
+  id<MTLBuffer> vB=__builtin_bit_cast(id<MTLBuffer>,vc.storage().data());
+  id<MTLBuffer> q8B=__builtin_bit_cast(id<MTLBuffer>,q8.storage().data());
+  id<MTLBuffer> k8B=__builtin_bit_cast(id<MTLBuffer>,k8.storage().data());
+  id<MTLBuffer> qsB=__builtin_bit_cast(id<MTLBuffer>,qscl.storage().data());
+  id<MTLBuffer> ksB=__builtin_bit_cast(id<MTLBuffer>,kscl.storage().data());
+  id<MTLBuffer> oB=__builtin_bit_cast(id<MTLBuffer>,out.storage().data());
+  const NSUInteger qO=qc.storage_offset()*qc.element_size();
+  const NSUInteger kO=kc.storage_offset()*kc.element_size();
+  const NSUInteger vO=vc.storage_offset()*vc.element_size();
+  const NSUInteger oO=out.storage_offset()*out.element_size();
+  const NSUInteger gx=(NSUInteger)((Lq+rows_tg-1)/rows_tg);
+  const NSUInteger gyq=(NSUInteger)(B*Hq), gykv=(NSUInteger)(B*Hkv);
+  dispatch_sync(stream->queue(), ^(){
+    @autoreleasepool {
+      id<MTLComputeCommandEncoder> enc=stream->commandEncoder();
+      [enc setComputePipelineState:psoQuant];
+      [enc setBuffer:qB offset:qO atIndex:0];
+      [enc setBuffer:q8B offset:0 atIndex:1];
+      [enc setBuffer:qsB offset:0 atIndex:2];
+      [enc setBytes:qqP.data() length:sizeof(qqP) atIndex:3];
+      [enc dispatchThreadgroups:MTLSizeMake((NSUInteger)qtiles,gyq,1)
+          threadsPerThreadgroup:MTLSizeMake(256,1,1)];
+      [enc setBuffer:kB offset:kO atIndex:0];
+      [enc setBuffer:k8B offset:0 atIndex:1];
+      [enc setBuffer:ksB offset:0 atIndex:2];
+      [enc setBytes:kqP.data() length:sizeof(kqP) atIndex:3];
+      [enc dispatchThreadgroups:MTLSizeMake((NSUInteger)kvtiles,gykv,1)
+          threadsPerThreadgroup:MTLSizeMake(256,1,1)];
+      [enc memoryBarrierWithScope:MTLBarrierScopeBuffers];
+      [enc setComputePipelineState:psoMain];
+      [enc setBuffer:q8B offset:0 atIndex:0];
+      [enc setBuffer:k8B offset:0 atIndex:1];
+      [enc setBuffer:vB offset:vO atIndex:2];
+      [enc setBuffer:oB offset:oO atIndex:3];
+      [enc setBytes:shArr.data() length:sizeof(shArr) atIndex:4];
+      [enc setBytes:prArr.data() length:sizeof(prArr) atIndex:5];
+      [enc setBuffer:qsB offset:0 atIndex:6];
+      [enc setBuffer:ksB offset:0 atIndex:7];
+      [enc dispatchThreadgroups:MTLSizeMake(gx,gyq,1)
+          threadsPerThreadgroup:MTLSizeMake((NSUInteger)(NSG*32),1,1)];
+    }
+  });
+  return out;
+}
+
 // int8-quantized na attention (rounding-class, NOT bit-exact): on-the-fly
 // symmetric int8 quant of Q/K and mean-centered V (per-row-tile scales),
 // int8 QK -> int32, @DT@ P x int8 V -> fp32, +vmean epilogue. Opt-in route.
@@ -1872,6 +2244,11 @@ torch::Tensor flash_fwd_na_i8(torch::Tensor q, torch::Tensor k, torch::Tensor v,
 }
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
+  m.def("flash_fwd_na_fp8qk", &flash_fwd_na_fp8qk,
+        "block-scaled fp8 QK + bf16/fp16 PV na flash fwd (experimental)",
+        py::arg("q"), py::arg("k"), py::arg("v"), py::arg("scale"),
+        py::arg("nsg") = 16, py::arg("rp") = 1,
+        py::arg("byp") = 1, py::arg("bc") = 64, py::arg("blk") = 2);
   m.def("flash_fwd_na_i8", &flash_fwd_na_i8,
         "int8-quantized na flash fwd (DrawThings NAInt8 recipe; rounding-class)",
         py::arg("q"), py::arg("k"), py::arg("v"), py::arg("scale"),

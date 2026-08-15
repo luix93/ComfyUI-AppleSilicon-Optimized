@@ -40,15 +40,17 @@ M5 Max.**
 Private continuation of
 [ComfyUI-AppleSilicon-FP8](https://github.com/pawel-mazurkiewicz/ComfyUI-AppleSilicon-FP8).
 What began as an FP8 compatibility shim has diverged into a general
-optimization layer: 34 runtime patches and six JIT-compiled Metal extensions
+optimization layer: 34 runtime patches and seven JIT-compiled Metal extensions
 that take image models to roughly half their stock render time and make long
 video generation on a MacBook competitive with — and in places faster than —
 the fastest native Mac apps.
 
 No model conversion, no forked ComfyUI: one custom node applies everything at
 startup. Every fast path checks its inputs per call and **falls back to the
-eager implementation** on anything it doesn't recognize, and every kernel is
-held to **exact-or-1-ulp parity** against the eager math it replaces.
+eager implementation** on anything it doesn't recognize. Most native routes
+are bit-exact or exact-or-1-ulp; the deliberate H3 W8A8 seam and every
+workflow-level approximation are called out separately in the
+[Numerics policy](#numerics-policy).
 
 ## Results
 
@@ -66,9 +68,13 @@ models); "after" is with `ASFP8_NATIVE=1`.
 | LTX 2.3 video, 512² × 5 s | 63 s | **22 s** | DrawThings ~35 s |
 | LTX 2.3 video, 1024² × 5 s | 295 s | **86 s** | DrawThings ~120 s |
 | Wan 2.2 i2v 14B×2 int8, 512² × 81 f | 445 s | **111 s** | DrawThings-class ≈ 100 s |
+| MiniMax H3 int8, 864×480 × 124 f / 20 steps | 490.4 s‡ | **461.3 s** | exact paths only; workflow approximations off |
 
 † generic patches already on — Ideogram 4 shipped after the generic layer, so
 its "before" is the pre-#32 state, not compatibility-alone.
+‡ H3 isolates the latest exact final-layer graph rewrite against the preceding
+already-native build; it is not a compatibility-only comparison. The matched
+sampler portion fell from about 445.2 s to 418.2 s.
 
 The LTX numbers beat DrawThings outright at both resolutions; Ideogram 4 edges
 past it; Krea2 is within ~5%; Wan 2.2 went 445 s → 111 s (4×), putting an
@@ -91,12 +97,15 @@ long-context correctness/OOM, text encoders moved off the CPU, plus fixes for
 macOS-beta psutil, the PiD ≥2048px black image, and WanVideo block swap. No
 env vars needed. See [the compatibility layer](#the-compatibility-layer-patches-116).
 
-**2. Native kernels (opt-in, `ASFP8_NATIVE=1`).** Six ObjC++/Metal
-extensions, JIT-built on first use against **Metal 4.1** (developed on the
-macOS 27 dev beta; the int8 and fp8 matmuls additionally need an **M5**-class
-GPU for cooperative TensorOps / the fp8 format type). Anything that can't
-build or doesn't apply falls back silently, so the switch is safe to leave on
-everywhere.
+**2. Native kernels (opt-in, `ASFP8_NATIVE=1`).** Seven ObjC++/Metal
+extensions, JIT-built on first use against **Metal 4.1**. Six production
+feature groups sit behind the master switch; the seventh (`sol_ext`) builds
+only when the experimental H3 sparse-attention node is applied. Developed on
+the macOS 27 dev beta; the int8 and fp8 matmuls additionally need an
+**M5**-class GPU for cooperative TensorOps / the fp8 format type. Production
+routes that cannot build or do not apply fall back silently, so the master
+switch is safe to leave on; the explicit sparse node instead refuses to apply
+when its required kernel is unavailable.
 
 ```bash
 xcode-select --install        # Metal toolchain
@@ -107,6 +116,17 @@ export ASFP8_NATIVE=1         # before launching ComfyUI
 `ASFP8_NATIVE=1` implies `ASFP8_FP8_EXT`, `ASFP8_FP8_SGEMM`,
 `ASFP8_INT8_EXT`, `ASFP8_ATTN_ROUTER`, `ASFP8_DIT_EXT`, `ASFP8_CONV3D`.
 Explicit per-feature values always win (e.g. `ASFP8_NATIVE=1 ASFP8_DIT_EXT=0`).
+
+For MiniMax H3, that one switch also activates the eligible native subpaths
+behind the INT8 and DiT extensions: direct QKV emission, Q/K RMSNorm + RoPE,
+the FC1/SwiGLU/FC2 bridge, cross-block glue, allocation-lifetime releases, and
+the guarded final-layer graph rewrite. There is no second H3 master switch.
+An adapter is never selected automatically: apply it with `H3 LoRA (Apple
+Silicon, Exact Runtime)` or `H3 Turbo LoRA (Apple Silicon)` in `fast_runtime`
+mode, after which the exact LoRA-aware QKV/MLP routes engage per eligible
+layer. Cache, token reduction, sparse attention, reduced VAE overlap, and VAE
+tile batching remain explicit workflow/experiment choices because they either
+change output or have workload-dependent tradeoffs.
 
 ## The native fast paths
 
@@ -188,20 +208,33 @@ structure instead. The failed probe is still worth recording:
   fp16/bf16/causal/GQA/tails, but is **not routed**: 22.8 TF/s vs the
   cooperative kernel's 28.5, both since superseded by na.
 
-**Why attention stays fp16 (the int8 attention verdict).** A full int8
+**Why attention stays BF16/FP16 (the int8 attention verdict).** A full int8
 attention forward ships in the source (`flash_attn_fwd_na_i8`, the
 DrawThings `NAInt8AttentionKernel` recipe: on-the-fly symmetric int8 quant
 of Q/K and mean-centered V with per-tile scales, int8 QK → int32, exact
 V-mean addback). It is functional and accurate (~1.2% relative, all shapes,
 poisoned-pool clean) — and **deliberately unrouted**, because it loses:
-best configuration 0.89×/0.78× the fp16 na kernel at Wan/LTX shapes. The
+best configuration 0.89×/0.78× the native low-precision `na` kernel at
+Wan/LTX shapes. The
 root cause is a measured law of this silicon: the int8 tensor units' ~2×
 advantage only exists at deep reductions. Our own 105 TF/s int8 GEMM drops
 to **25 TF/s at K=128** (104 at K=6144, 93 at K=512, 33 at K=256) — and
-attention reduces over `head_dim = 128`, where the fp16 na kernel already
-runs 36–40. int8 for the deep-K linears, fp16 for shallow-K attention is
+attention reduces over `head_dim = 128`, where the BF16/FP16 `na` kernel
+already runs 36–40. int8 for the deep-K linears, BF16/FP16 for shallow-K
+attention is
 not a preference, it's the crossover the hardware dictates — DrawThings,
 Cider, and this repo converged on the same split independently.
+
+The same verdict holds for **block-scaled FP8 QK with BF16 PV**. An
+experimental native path (`flash_fwd_na_fp8qk`) quantizes each Q/K tile on the
+GPU, uses FP8 TensorOps for QK, and leaves softmax and PV in BF16. At the exact
+H3 lengths 5,378 / 8,192 / 17,000, its best paired ratios were 0.976× / 1.005×
+(thermal-noise territory) / 0.981× versus the shipped BF16 kernel, with maximum
+BF16 output deltas of 4.88e-4 / 3.81e-4 / 2.44e-4. Quantization cost plus the
+unchanged BF16 PV half erase the faster QK primitive, so this path remains an
+unrouted research backend. A 16-candidate BF16 schedule tournament at the same
+shapes likewise found no bit-identical improvement worth promoting; the
+apparent faster 96-column schedule changes reduction order by one BF16 ULP.
 
 ### Attention router (patch #19)
 
@@ -212,6 +245,31 @@ max-sequence square — that distinction is what keeps tiny cross-attention off
 the slow path). Stock fused SDPA — silently inaccurate past ~4k tokens and
 O(L²) memory — is never taken at length. `ASFP8_ATTN_DEBUG=1` logs each
 distinct route taken.
+
+`Attention Backend (Apple Silicon)` exposes the same dense router per MODEL,
+without requiring the global `ASFP8_ATTN_ROUTER` switch. Its choices are:
+
+- `automatic/current` — clone the incoming model without changing its backend;
+- `apple_silicon_mps_auto` — flash41 / bmm / sub-quadratic per-call routing;
+- `pytorch` — ComfyUI's registered PyTorch attention backend;
+- `comfy_default` — the attention backend selected when ComfyUI started,
+  explicitly bypassing this package's global router.
+
+On ComfyUI builds containing [PR #15479](https://github.com/Comfy-Org/ComfyUI/pull/15479),
+the Apple backend is also registered as `apple_silicon_mps` and MiniMax H3 uses
+ComfyUI's single-owner Q/K/V containers. Older builds keep the tensor API. In
+both cases H3 drops the fused QKV projection, the three attention inputs, and
+the attention output at their earliest safe lifetime boundary so those large
+allocations do not remain live into the next stage merely because Python still
+references them. This is an exact allocation-lifetime change; it does not alter
+the selected attention backend's arithmetic.
+
+The backend node composes with H3 sparse attention in either graph order:
+sparse attention stays outermost, and every declined call reaches the selected
+dense backend. Unknown third-party attention overrides are rejected rather
+than silently replaced. Comfy Kitchen INT8 attention is deliberately absent:
+its released implementation is CUDA-only, while this repository's native
+Metal INT8 attention measured 0.89x/0.78x the fp16 kernel at Wan/LTX shapes.
 
 ### Quantized matmuls (patches #3, #17, #18)
 
@@ -281,10 +339,42 @@ mirrors eager rounding op-for-op (exact-or-1-ulp) and falls back per call:
   56.6 → ~41 s at 12 steps 1MP — past DrawThings' 42 s.
 - **MiniMax H3 (#33)**: Q/K/V are written directly from the fused projection
   into `[B,H,S,D]` attention layout while Q/K RMSNorm and partial split-half
-  RoPE run in the same pass; the native attention result then goes straight
-  through cross-head convrot + row quantization into the INT8 output
-  projection. Segmented gated residuals, RMSNorm and modulation are fused as
-  block glue. For long clips, the channelwise INT8 GEMMs use an exact
+  RoPE run in the same pass. On an INT8 QKV layer with D=128, each complete
+  Q/K head is consumed on chip by the channelwise GEMM epilogue: projection
+  dequant/bias, affine RMSNorm, and partial RoPE retain the established BF16
+  rounding order, while V is stored directly. This removes both the full
+  `[S,3HD]` bf16 QKV allocation and the separate raw-Q/K post-pass without
+  changing an output byte. Eligible standard runtime LoRAs use a partitioned
+  exact epilogue: PyTorch computes each low-rank Q/K/V delta in BF16, then the
+  Metal kernel reproduces PyTorch's scalar and product rounding while adding
+  it before the nonlinear Q/K norm and RoPE. Only one `[S,HD]` delta partition
+  is live at a time; the full `[S,3HD]` adapter output is never allocated. The
+  native attention result then goes straight
+  through cross-head convrot + row quantization into the INT8 output projection.
+  Segmented gated residuals, RMSNorm and modulation are fused as block glue;
+  when no workflow node owns a block boundary, the MLP residual gate also
+  produces the next block's attention AdaLN input. Large intermediates are
+  released before the following wide allocation. INT8 H3 MLPs additionally
+  use a 1,024-row FC1 scratch tile, overwrite its dead left half with the
+  SwiGLU + convrot result, and feed per-group maxima into exact row
+  quantization for FC2. This removes the full-sequence wide FC1 and separate
+  rotated BF16 allocations. The FC2 input bytes and output are bit-exact with
+  the existing native SwiGLU/convrot route, so the bridge introduces no new
+  quality change. Standard FC1/FC2 runtime LoRAs retain the same ordering in a
+  separate exact 2,048-row bridge: `FC1 base + delta → SwiGLU → FC2 base +
+  delta`. Partial target sets (FC1-only or FC2-only) are also exact. Synchronized
+  rank-64 paired A/B measurements on M5 Max show why both LoRA routes ship:
+
+  | H3 tokens | QKV LoRA speedup | Q/K traffic avoided | MLP LoRA bridge speedup | peak BF16 storage removed |
+  |---:|---:|---:|---:|---:|
+  | 5,378 | **1.400×** (21.43 → 15.07 ms) | 294.1 MiB | **1.001×** | 329.2 MiB |
+  | 8,192 | **1.392×** (32.22 → 23.08 ms) | 448.0 MiB | **1.012×** | 560.0 MiB |
+  | 17,000 | **1.374×** (70.41 → 51.21 ms) | 929.7 MiB | **1.069×** | 1,282.5 MiB |
+
+  The MLP column uses the 2,048-row LoRA tile and reports paired ratios rather
+  than a ratio reconstructed from unrelated medians. These are isolated hot-path
+  measurements, not whole-sampler speedups. For long clips, the
+  channelwise INT8 GEMMs use an exact
   long-M compiler schedule and narrowly gated 32-row suffix dispatches; all
   preserve the INT32 reduction and bf16 epilogue byte-for-byte. At 864×480,
   39 frames and 20 steps, the warm saved workflow
@@ -297,6 +387,14 @@ mirrors eager rounding op-for-op (exact-or-1-ulp) and falls back per call:
   attribute that full cross-session delta to the new schedule. Controlled
   interleaved GEMM A/B predicts ~1.84 s of exact sampler savings from the
   long-M schedule plus QKV suffix dispatch; the remainder is thermal state.
+  A guarded H3 graph rewrite also recognizes the final target-tail
+  RMSNorm → scale/shift → fp32-cast chains and executes both video and audio
+  segments in one exact Metal pass. With only that rewrite toggled, matched
+  1-second steady runs fell from 103.5–104.5 s to 96.6–97.3 s. The promoted
+  5-second check fell from 490.39 s to **461.34 s** end to end (1.063×), with
+  sampler time approximately 445.2 → 418.2 s. The rewrite is enabled by
+  default, validates the module graph and runtime geometry, and falls back to
+  the original forward on anything it does not recognize.
 
 ### Video VAE (patches #26, #29, #31)
 
@@ -431,47 +529,136 @@ Three tiers, stated per patch:
 - **Bit-exact**: all FP8 decodes, the int8 W8A8 kernel (including long-M
   scheduling and suffix dispatches), `fold_taps`, the conv3d channel fold
   (single fp32 accumulation = conv3d's own numerics), and the D=256 fused
-  o-projection pre-pass in default mode.
+  o-projection pre-pass in default mode. H3's LoRA-aware QKV partition
+  epilogue and tiled FC1/FC2 bridge are byte-exact against their corresponding
+  unfused native runtime-LoRA chains.
 - **Exact-or-1-ulp**: the DiT fusions and VAE norm kernels mirror eager
   rounding at every point eager rounds (fp32 math between roundings); H3's
   D=128 cross-head convrot and optional fused SwiGLU use a reassociated FWHT
   and can move rare quantized values by one integer step. Images shift
   imperceptibly but deterministically.
+- **Quantization-mode change**: H3's SwiGLU down-projection stays in the
+  checkpoint's W8A8 path, while ComfyUI's generic `linear_input_act` helper
+  dequantizes that seam to W8A16. The measured local error class is about 1.3%;
+  `ASFP8_INT8_SWIGLU=0` restores the stock W8A16 route. The tiled MLP and LoRA
+  bridges do not add further error: they are byte-exact against the selected
+  native W8A8 SwiGLU/convrot chain.
 - **Regime-gated**: flash41's low-precision score tiles (default; parity
   ~5e-4, `ASFP8_FA41_F32S=1` for fp32 tiles).
 
 Patch #30 (memory accounting) changes *scheduling*, not numerics — outputs are
 identical, only fewer reloads.
 
-Everything ships with parity tests against the eager path (140 pass on torch
-2.13 with the native kernels enabled, plus kernel parity harnesses for the
-Metal extensions — including a dirty-pool test that poisons the MPS allocator
-with NaN pages before checking ragged attention shapes, because parity on
-fresh, zeroed allocations structurally cannot catch out-of-bounds reads).
+Everything ships with parity tests against the eager path. The latest full
+suite in the dedicated `ComfyUI-torch213-latest` environment reports **397
+passed, 19 skipped** on PyTorch 2.13.0. The Metal harnesses include a dirty-pool
+test that poisons the MPS allocator with NaN pages before checking ragged
+attention shapes, because parity on fresh, zeroed allocations structurally
+cannot catch out-of-bounds reads.
 
-## Opt-in approximate MiniMax H3 modes
+## MiniMax H3 workflow nodes and approximate modes
 
-These are separate from the native fast paths above. They are **off by
-default**, change the result, and should be A/B tested with the same seed.
+These are separate from the native fast paths above. They are **off until a
+workflow node is connected**, change the result, and should be A/B tested with
+the same seed. New workflows should use the single `H3 Apple Silicon
+Acceleration` `MODEL → MODEL` node. The former H3Cache, Structural
+Acceleration, and Sparse Attention nodes remain registered as deprecated
+loaders so saved workflows do not lose nodes.
 
-- **H3Cache (experimental node).** `H3Cache (Apple Silicon, Experimental)`
-  learns separate video and audio input-to-output change rates from exact
-  evaluations. On a full-model hit it reuses H3's previous video velocity and
-  analytically corrects the audio velocity for H3's distinct shifted sigma
-  schedule; either modality can veto a visually stable hit. A learned scalar
-  secant predictor and the earlier residual/output-hold predictors remain
-  selectable for controlled comparison. Sampler-facing denoised holding and
-  first-order denoised extrapolation are also available as research controls.
-  `cached_suffix_blocks` can instead recompute the model prefix exactly and
-  reuse only a short transformer tail.
-  The first/last sampling regions are protected, consecutive hits are bounded,
-  state is isolated to one sampling run, and EasyCache cannot be stacked with
-  it. The default threshold is deliberately `0`: this collects verbose
-  1-second calibration traces but never skips. Both full-model and five-block
-  suffix calibration reproduced all 39 decoded frames and all 78,336 stereo
-  samples bit-for-bit.
+The implementation boundary matters when combining them:
 
-  No nonzero balanced preset is currently recommended. In the matched
+| Mechanism | Implemented as | FirstBlockCache | Spectrum | H3 sparse attention |
+|---|---|---|---|---|
+| Exact H3 QKV/block/lifetime fusions | startup backend + Metal kernels | yes; cross-block-only fusion disables itself | yes; same boundary rule | yes |
+| H3 Turbo LoRA | workflow `MODEL → MODEL` node | mechanically yes; few hits remain at 4–8 steps | mechanically yes, not calibrated for Turbo dynamics | mechanically yes; errors compound |
+| H3 token reduction | unified workflow `MODEL → MODEL` node | yes; the unified node fixes the internal order | yes **only when the unified node is applied after Spectrum** | yes; reduced-sequence metadata is synchronized |
+| FirstBlockCache | unified workflow `MODEL → MODEL` node | — | choose one block predictor, do not stack | yes |
+
+“Mechanically yes” means the hooks do not erase each other; it is not a quality
+claim. The unified defaults reproduce the supplied three-node chain. For a
+quality diagnosis, disable groups and add them back one at a time. The exact
+backend remains useful under every node, although a block-replacement node
+necessarily removes the opportunity for the exact cross-block AdaLN carry at
+that boundary.
+
+- **H3 Apple Silicon Acceleration (canonical node).** The controls are grouped
+  in execution order—cache, token reduction, sparse attention—and settings for
+  a disabled group collapse in the ComfyUI frontend. Adding the node enables
+  all three approximate groups by default. The values reproduce the supplied
+  experimental workflow; they are starting points for matched A/B testing,
+  **not a quality-calibrated recommendation**:
+
+  | Group | Default | Initial values |
+  |---|---|---|
+  | Cache | `first_block_cache` | threshold `0.20`, window `0.15–0.95`, maximum `2` consecutive skips, audio veto weight `1.0` |
+  | Token reduction | enabled | update scale `1.0`, first `10` evaluations restore at block `40`, later evaluations restore at block `30` |
+  | Sparse attention | enabled | `corrected`, tau `1.0`, window `0.20–0.85`, first `2` blocks dense, minimum sequence `0` |
+
+  Cache can instead select `first_block_cache_per_step`, or the non-skipping
+  `oracle` and `block_oracle` diagnostics. Failed full-model forecasting, suffix caching,
+  block Taylor, and sparse hard-drop are intentionally absent from the canonical
+  menu. Sparse block size `64` and temporal taps `0` are fixed properties of the
+  route-verified `diag64` implementation, not decorative controls. Layer thinning is also
+  absent: real H3 renders showed broken audio whenever layers were omitted.
+
+- **H3 Turbo LoRA.** `H3 Turbo LoRA (Apple Silicon)` is this package's strict
+  loader for the released 208-target ComfyUI MiniMax H3 Turbo adapters (50 × 4
+  DiT targets plus 2 × 4 token-refiner targets). It accepts the standard
+  `diffusion_model.` key prefix, validates every A/B pair and target shape, and
+  works with both the native and pruned/curve H3 bases because these adapters do
+  not target the 51 collapsed AdaLN projections. A hypothetical full-width
+  AdaLN adapter remains native-base-only. Use the current ComfyUI H3 workflow,
+  stock Euler sampler, `simple`
+  scheduler, strength `1.0`, and 4–8 steps. Four steps is the maximum-speed
+  setting; 6–8 is the safer quality range for fast motion. Against a 20-step
+  base workflow those counts remove 80%, 70%, or 60% of denoiser evaluations,
+  respectively, before LoRA overhead; an MPS end-to-end number has not yet been
+  measured here.
+
+  The three modes make the quantized-base trade explicit:
+
+  - `fast_runtime` keeps all updates in activation space. The INT8 FC2 and
+    attention-output paths explicitly add their low-rank deltas even though
+    those optimized calls bypass `Linear.forward`; eligible QKV and FC1/FC2
+    layers additionally use the exact LoRA-aware fused/tiled hot paths described
+    above. This is the intended quality mode and requires this package's INT8
+    backend for an INT8 base.
+  - `reference_runtime` uses ComfyUI's normal runtime bypass and leaves
+    quantized FC2 updates as ModelPatcher weight patches. It is slower but useful
+    for isolating a fast-runtime issue.
+  - `merged` uses ordinary ModelPatcher weight patches. It has the lowest
+    runtime adapter memory, but small updates can be softened when the base is
+    quantized.
+
+  The node changes neither sampler nor step count. At 4–8 steps, benchmark
+  Turbo alone before adding a cache:
+  cache setup and forced refreshes consume a much larger fraction of the run.
+
+  `H3 LoRA (Apple Silicon, Exact Runtime)` is the checkpoint-agnostic companion
+  node. It accepts any nonempty subset of H3 QKV, attention-output, FC1, FC2,
+  and shape-compatible AdaLN targets encoded as standard `lora_A`/`lora_B`
+  linear pairs, with arbitrary rank, alpha, and strength. It is not specialized
+  to a particular LoRA file. One runtime LoRA may own a target at a time;
+  stacked runtime adapters and DoRA/LoHa/LoKr/mid/reshape formats should use
+  ComfyUI's ordinary loader, which makes these specialized routes decline and
+  preserves the normal correct path, or use merged mode where appropriate.
+
+- **Rejected cache experiments (deprecated research node).** The earlier
+  full-model cache learned separate video and audio input-to-output change rates
+  from exact evaluations. On a full-model hit it reused H3's previous video
+  velocity and analytically corrected the audio velocity for H3's distinct
+  shifted sigma schedule; either modality could veto a visually stable hit. A
+  learned scalar secant predictor and the earlier residual/output-hold
+  predictors remain selectable for controlled comparison. Sampler-facing
+  denoised holding and first-order denoised extrapolation are also available as
+  research controls. `cached_suffix_blocks` can instead recompute the model
+  prefix exactly and reuse only a short transformer tail.
+  The first/last sampling regions were protected, consecutive hits were bounded,
+  and state was isolated to one sampling run. The deprecated standalone node
+  retains these failed forecasting and suffix modes only for old workflow
+  loading; they are not offered by the canonical node.
+
+  No nonzero full-model forecasting preset is recommended. In the matched
   1-second/20-step case, one full-model residual-carry hit reached 0.938 video
   SSIM / 17.3 dB audio SNR. Correctly holding the velocity improved this to
   0.942 / 17.2 dB; correcting the audio schedule reached 0.943 / 17.7 dB; the
@@ -484,17 +671,60 @@ default**, change the result, and should be A/B tested with the same seed.
   denoised extrapolation reached 0.931 / 17.2 dB. Because even the smallest
   useful 1-second candidates failed the quality gate, none was promoted to a
   5-second run.
-- **FirstBlockCache (H3Cache `prediction_mode=first_block_cache`).** Block 0
-  runs exactly on every evaluation; its own residual is the change detector,
-  and when it is stable the cached aggregate residual of blocks 1–49 stands in
-  for running them. Unlike whole-model forecasting this never predicts the
-  model's output from its own history — every step still executes a real
-  transformer block over the real state — so the failure mode is a stale tail
-  rather than a diverging trajectory. Both modalities can veto a hit,
-  consecutive hits are bounded, and threshold `0` calibrates without ever
-  skipping. Not yet promoted to a preset: awaiting the calibration matrix.
-- **H3 Sparse Attention (experimental node).** `H3 Sparse Attention (Apple
-  Silicon, Experimental)` — corrected Sol-style block-sparse self-attention,
+- **FirstBlockCache (`cache_mode=first_block_cache` or
+  `first_block_cache_per_step`).** Block 0 runs exactly on every evaluation;
+  its own residual is the change detector, and when it is stable the cached
+  aggregate residual of blocks 1–49 stands in for running them. Unlike
+  whole-model forecasting this never predicts the model's output from its own
+  history — every step still executes a real transformer block over the real
+  state — so the failure mode is a stale tail rather than a diverging
+  trajectory. Both modalities can veto a hit, consecutive hits are bounded,
+  and threshold `0` calibrates without ever skipping.
+
+  The original `first_block_cache` uses a sampled detector and accumulates
+  relative change across consecutive reuses, which makes repeated small
+  changes eventually force a refresh. `first_block_cache_per_step` reproduces
+  the Discord-style policy: it measures the full target video and audio block-0
+  residuals separately and compares only the latest relative-L1 change. The
+  matching controls are threshold `0.10`, start `0.00`, end `0.95`, maximum
+  consecutive skips `5`, audio weight `1.0`, and suffix blocks `0`. The latter
+  is more aggressive and can be faster, but is also more likely to carry a
+  stale tail through gradual motion. Not yet promoted to a preset: awaiting the
+  calibration matrix.
+- **H3 token reduction.** The Structural Acceleration section of the unified
+  node exposes the implemented [h3.c](https://github.com/antirez/h3.c)-derived
+  target-video token reduction:
+
+  - `token_reduction` runs blocks 0–3 at full sequence length, horizontally
+    pairs only the target-video tokens, and leaves text, conditioning,
+    references, and audio exact. During the first ten evaluations it restores
+    the full sequence before block 40; later it restores before block 30. Each
+    restored token is its original full-resolution value plus its pair's learned
+    update, scaled by `reduction_scale`.
+  The published h3.c M5 Max result at 512×512×22 was 39.13 → 28.06 seconds of
+  denoising for token reduction alone (28.3%), with final video/audio latent
+  relative-L2 changes of 5.56%/15.14%. That is a native h3.c measurement, **not
+  a predicted ComfyUI/MPS gain**; PyTorch allocation, graph, and attention costs
+  differ. This implementation also retains an owned
+  full-resolution bypass and pooled baseline, so it reduces middle-block
+  attention/MLP work but may briefly raise activation memory at the reduction
+  boundary.
+
+  Layer thinning was removed after real 15-second H3 renders damaged audio with
+  both the combined configuration and `active_layers=45` alone. A saved legacy
+  workflow that combines token reduction with fewer than 50 layers now runs
+  token reduction at all 50 layers and logs that the old value was ignored; a
+  legacy thinning-only configuration fails with an explicit error instead of
+  silently producing bad audio.
+
+  Apply Spectrum first and the unified node second so the coordinator can
+  compose the existing Spectrum block wrappers. FirstBlockCache and token
+  reduction are ordered correctly inside the unified node. Sparse attention is
+  kept logically aligned, but stacking all three approximations compounds
+  spatial and temporal error and must be A/B tested. With Turbo's 4–8 steps,
+  test the LoRA alone before adding cache or structural approximation.
+- **H3 Sparse Attention.** The Sparse Attention section of the unified node is
+  corrected Sol-style block-sparse self-attention,
   routed by **NVIDIA's released H3 policy (`diag64`)** adapted to Metal.
   A block-centroid proxy picks the exact KV blocks per head and 64-row query
   block; the `sol_ext` Metal 4.1 kernel computes only those; and every
@@ -581,12 +811,10 @@ default**, change the result, and should be A/B tested with the same seed.
   twenty evaluations), `end_percent=0.85` (protects the final three),
   `dense_leading_blocks=2`, `block_size=64`, `temporal_taps=0`,
   `min_sequence_tokens=8192`. The intended split is evaluations 0–9 dense,
-  10–16 sparse and 17–19 dense. The current percentage-boundary implementation
-  compares Python-double thresholds with float32 runtime sigmas, however, and
-  selects 11–17 on ComfyUI's shift=12.0 simple 20-step schedule. Treat that as
-  a known scheduling bug until the implementation and its scheduler-level test
-  are corrected. Quality is the gate, and it has not yet been measured on real
-  renders; do not treat the speedups above as a shipped result.
+  10–16 sparse and 17–19 dense. A scheduler-level regression test uses the real
+  shift=12.0 20-step sigma sequence and verifies that exact split. Quality is
+  still the gate, and it has not yet been measured on real `diag64` renders; do
+  not treat the synthetic speedups above as a shipped quality result.
 
   `block_size` and `temporal_taps` remain as widgets **only** because ComfyUI
   maps saved-workflow values positionally, so removing them would shift every
@@ -683,22 +911,22 @@ default**, change the result, and should be A/B tested with the same seed.
   decode is a small share of a normal 20-step render, so expect only roughly
   **3-6% end-to-end** on a 5-second clip. Watch tile boundaries, fog, gradients,
   and fast motion before adopting it.
-- **Batched H3 video-VAE tile decode.** `ASFP8_MINIMAX_VAE_DECODE_BATCH=5`.
-  Not an approximation — `tiled_decode` walks the spatial grid calling the
-  decoder once per tile (15 sequential launches at 864x480 with the reference
-  64-pixel overlap, 8 with overlap=32), and every tile is exactly the same size,
-  so they stack on the batch dimension. Fifteen small launches leave the GPU
-  idle; a few large ones fill it. On a decoder-shaped conv3d workload (15 tiles,
-  256px, 4 frames, fp16) this measured **131 ms -> 68 ms, 1.92x**, with a
-  maximum difference of **exactly 0.0** against the sequential result. Batch 4
-  gave 1.47x and 8 gave 1.70x, so the useful range is 4-8; the peak is
-  workload-dependent because decoder activation memory scales with the batch.
-  Tile order and the blending pass are untouched. Off by default because the
-  memory cost depends on the machine and the resolution.
+- **Batched H3 video-VAE tile decode (rejected speed experiment).**
+  `ASFP8_MINIMAX_VAE_DECODE_BATCH=N` still exposes the exact scheduling probe:
+  tiles are stacked only on the batch dimension, while tile order and blending
+  are untouched. A decoder-shaped microbenchmark improved 131 → 68 ms at
+  batch 5 with a maximum difference of 0.0, but that result did not transfer to
+  the real long decode. At 864×480 × 124 frames, sequential decode took
+  36.21 s versus 38.43 / 38.50 / 39.03 / 40.25 s at batches 2 / 4 / 5 / 8.
+  It therefore remains off by default and is retained for controlled
+  experiments, not recommended as an H3 speed setting. Peak decoder memory
+  also scales with the batch.
 - **Different H3 VAE tile size.** `ASFP8_MINIMAX_VAE_TILE_SIZE` is exposed for
   controlled experiments, not as a recommended speed preset. Larger tiles can
   reduce the grid but make the VAE transformer's attention much more expensive
-  and can sharply increase peak memory; smaller tiles do the reverse.
+  and can sharply increase peak memory; smaller tiles do the reverse. Values
+  above 320 are rejected because the observed attention/memory cost and tile
+  artifacts made them unsuitable as a supported path.
 
 `dev/bench_workflows.py` can inject EasyCache or H3Cache and pin duration, step
 count, and megapixels without modifying the source workflow. For H3Cache,
@@ -707,8 +935,10 @@ count, and megapixels without modifying the source workflow. For H3Cache,
 `--h3cache-predictor velocity_hold` selects the H3-aware full-model predictor,
 `--h3cache-predictor denoised_hold` or `denoised_linear` selects the
 sampler-facing research controls, `--h3cache-predictor first_block_cache`
-selects the block-0-detector cache, and `--h3cache-suffix-blocks 5` changes the
-experiment to a five-block tail.
+selects the cumulative block-0 detector, and `--h3cache-predictor
+first_block_cache_per_step` selects the Discord-style per-step detector.
+`--h3cache-suffix-blocks 5` changes compatible full-model modes to a five-block
+tail; it must remain `0` for either first-block mode.
 `--h3-sparse corrected 1.0 0.20 2 8192` injects the sparse attention node and
 composes with either cache flag (it is applied after the cache node, matching
 the preset order); `--h3-preset exact|balanced|aggressive` injects the combined
@@ -724,20 +954,29 @@ alone—by accident.
 
 | Var | Default | Meaning |
 |---|---|---|
-| `ASFP8_NATIVE` | off | Master switch: enables all six below |
+| `ASFP8_NATIVE` | off | Master switch: enables the six exact/native feature groups below; it does not apply LoRAs or approximation nodes |
 | `ASFP8_FP8_EXT` | off | fp8-native `_scaled_mm` kernel (M5+, Metal 4.1) |
 | `ASFP8_FP8_SGEMM` | off | staged half×fp8 W8A16 backend |
 | `ASFP8_INT8_EXT` | off | int8 W8A8 kernel + fused epilogue (M5+) |
 | `ASFP8_ATTN_ROUTER` | off | per-call attention routing (flash41 / bmm / sub-quad) |
+| `ASFP8_ATTN_NA` | 1 | production independent-simdgroup flash41 kernel; `0` restores the older cooperative kernel |
 | `ASFP8_DIT_EXT` | off | DiT block-fusion kernels (all families) |
 | `ASFP8_CONV3D` | off | conv3d → sliced conv2d + Wan VAE fast path |
 | `ASFP8_FLUX_FAST` / `KREA2_FAST` / `LTX_FAST` / `WAN_FAST` / `WAN_VAE_FAST` / `IDEOGRAM_FAST` / `MINIMAX_FAST` | on (under DIT_EXT/CONV3D) | per-architecture kill switches |
 | `ASFP8_MINIMAX_ATTN` / `ASFP8_MINIMAX_BLOCK` | 1 | MiniMax direct QKV/attention-output layout and segmented block-glue fusions |
+| `ASFP8_MINIMAX_GRAPH` | 1 | exact guarded H3 final-layer graph rewrite (target RMSNorm + modulation + fp32 casts) |
+| `ASFP8_INT8_QKV_SCATTER` | 1 | exact H3 INT8 QKV epilogue directly to three attention-layout tensors; `0` restores the full fused-QKV buffer |
+| `ASFP8_INT8_QKV_NORM_ROPE` | 1 | exact D=128 H3 INT8 projection + optional standard runtime-LoRA delta + Q/K RMSNorm + partial-RoPE epilogue |
+| `ASFP8_MINIMAX_CROSS_BLOCK` | 1 | exact MLP-gate → next-attention-AdaLN carry when no workflow block replacement is active |
+| `ASFP8_INT8_ACT_CACHE` | 1 | one-slot reuse of identical rotate + row-quant inputs shared by projection groups |
 | `ASFP8_INT8_LONG_SCHEDULE` / `ASFP8_INT8_LONG_QKV_TAIL` | 1 | exact long-M INT8 schedule / exact QKV suffix dispatch (active only at M≥8192) |
 | `ASFP8_INT8_OPROJ_FUSE` | 1 | fused o-proj pre-pass: `1` exact D=256 rotation or full cross-head FWHT for D<256, `2` always full FWHT, `0` off |
-| `ASFP8_INT8_SWIGLU_ROT` | 1 | fuse SwiGLU + convrot before H3's INT8 fc2 (rare ±1 quantized-byte drift from FWHT reassociation) |
+| `ASFP8_INT8_SWIGLU` | 1 | keep H3's SwiGLU down-projection in native W8A8; `0` restores ComfyUI's stock dequantized W8A16 seam |
+| `ASFP8_INT8_SWIGLU_ROT` | 1 | fuse SwiGLU + convrot before H3's INT8 FC2 (rare ±1 quantized-byte drift from FWHT reassociation) |
+| `ASFP8_INT8_MLP_BRIDGE` | 1 | tiled H3 FC1 → SwiGLU/convrot/premax quant → FC2 bridge; exact relative to the native SwiGLU/convrot route, `0` restores its materialized tensors |
+| `ASFP8_INT8_MLP_LORA_TILE_ROWS` | 2048 | row scratch size for the exact standard-LoRA H3 FC1/SwiGLU/FC2 bridge; minimum/alignment 128 |
 | `ASFP8_MINIMAX_VAE_OVERLAP` | unset (reference 64) | approximate H3 video-VAE tile overlap; 32 is the tested faster setting |
-| `ASFP8_MINIMAX_VAE_DECODE_BATCH` | 1 (off) | decode N H3 video-VAE tiles per launch — **exact**, scheduling only; 4-8 is the useful range, peak decoder memory scales with it |
+| `ASFP8_MINIMAX_VAE_DECODE_BATCH` | 1 (off) | exact experimental tile batching; slower in the real 124-frame test, with peak decoder memory scaling by batch |
 | `ASFP8_SOL_EXT` | 1 | set `0` to force-disable the Sol sparse-attention Metal kernel (the H3 sparse node then refuses to apply) |
 | `ASFP8_SOL_ROUTER` | `diag64` | set `legacy_empirical` to route H3 sparse attention with the **rejected** 32-row-tile router (proxy-row mean/variance threshold), for diagnostics only. `tau` is not comparable between the two |
 | `ASFP8_MINIMAX_VAE_TILE_SIZE` | unset (reference 256) | experimental H3 video-VAE tile size (multiple of 16) |
@@ -780,8 +1019,9 @@ see the master-switch line listing what it implied. Kernels JIT-build on
 first use (a one-time delay per dtype) and print nothing when they fall back
 — set the debug vars above to see routing decisions.
 
-> Developed and tested on: M5 Max / 128 GB, macOS 27 dev beta, PyTorch
-> 2.10 & 2.13, Python 3.12, ComfyUI Desktop. M1–M4 get the compatibility
+> Primary release validation: `ComfyUI-torch213-latest` on M5 Max / 128 GB,
+> macOS 27 dev beta, PyTorch 2.13.0, Python 3.13, ComfyUI Desktop. M1–M4 get
+> the compatibility
 > layer and flash attention; the int8/fp8 matmul kernels need M5-class
 > TensorOps and fall back cleanly below that.
 
@@ -807,8 +1047,8 @@ A few load-bearing lessons encoded in this repo, for future work:
   sequential 36.21 s versus batch-2 38.43 s, batch-4 38.50 s, batch-5
   39.03 s, and batch-8 40.25 s in the one-step control workflow. All 105
   batch-4 tile outputs were bit-exact, but launch reduction cannot repay the
-  decoder's larger working set, so the experiment was rejected rather than
-  shipped.
+  decoder's larger working set, so the experiment was rejected as a recommended
+  fast path and retained only behind its explicit research switch.
 - **MPS traps**: conv2d silently miscomputes with non-contiguous weights;
   per-tap rounding compounds through recursive causal VAE caches; tensor
   prints during execution go to a swallowed stdout (use stderr); the first
@@ -885,6 +1125,14 @@ A few load-bearing lessons encoded in this repo, for future work:
   static-extent slices, row-reduction softmax, relaxed precision). The Metal
   4.1 port, the register-chained P variant, the ragged-tail handling, and the
   torch host integration are ours.
+- [h3.c](https://github.com/antirez/h3.c) (Salvatore Sanfilippo) — the released
+  MiniMax H3 horizontal token-reduction schedule adapted by the structural
+  workflow node. The ComfyUI implementation retains its own full-resolution
+  bypass and composes cache and sparse-attention metadata around that schedule.
+- [Sol-Attn](https://arxiv.org/abs/2607.24027) and NVIDIA's released H3 routing
+  policy — the block-centroid sparse-attention method behind `diag64`. The
+  Metal router, corrected sparse kernel integration, ragged handling, and
+  ComfyUI ownership/fallback plumbing in this repository are local work.
 
 ## License
 

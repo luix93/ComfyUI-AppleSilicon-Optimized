@@ -599,6 +599,120 @@ kernel void rms_mod_seg_bf16(
   }
 }
 
+// H3 FinalLayer variant: the eager graph performs two sliced RMSNorm/modulate
+// chains and then casts both bf16 results to fp32 for the checkpoint's fp32
+// output heads.  Process the contiguous audio+video target tail in one pass
+// and write the already-rounded bf16 values as exact fp32 conversions.
+kernel void rms_mod_seg_f32(
+    device const bfloat* x     [[buffer(0)]],
+    device const bfloat* w     [[buffer(1)]],
+    device const bfloat* scale [[buffer(2)]],
+    device const bfloat* shift [[buffer(3)]],
+    device const int*    rows  [[buffer(4)]],
+    device float*        out   [[buffer(5)]],
+    constant uint& Dm           [[buffer(6)]],
+    constant float& eps         [[buffer(7)]],
+    uint tgid        [[threadgroup_position_in_grid]],
+    ushort lid       [[thread_index_in_threadgroup]],
+    ushort simd_lane [[thread_index_in_simdgroup]],
+    ushort simd_id   [[simdgroup_index_in_threadgroup]])
+{
+  threadgroup float tg[8];
+  const device bfloat* row = x + (ulong)tgid * Dm;
+  float ss = 0.0f;
+  for (uint d = lid; d < Dm; d += 256) {
+    const float value = float(row[d]);
+    ss += value * value;
+  }
+  ss = simd_sum(ss);
+  if (simd_lane == 0) tg[simd_id] = ss;
+  threadgroup_barrier(mem_flags::mem_threadgroup);
+  float total = 0.0f;
+  for (ushort i = 0; i < 8; ++i) total += tg[i];
+  const float inv = precise::rsqrt(precise::divide(total, float(Dm)) + eps);
+
+  const ulong mod_off = (ulong)rows[tgid] * Dm;
+  const device bfloat* sc = scale + mod_off;
+  const device bfloat* sh = shift + mod_off;
+  device float* output = out + (ulong)tgid * Dm;
+  for (uint d = lid; d < Dm; d += 256) {
+    const bfloat yn = bf16_rte(float(row[d]) * inv);
+    const bfloat weighted = bf16_rte(float(yn) * float(w[d]));
+    const bfloat modulation = bf16_rte(1.0f + float(sc[d]));
+    const bfloat shifted = bf16_rte(
+        bf16_rte(float(weighted) * float(modulation)) + float(sh[d]));
+    output[d] = float(shifted);
+  }
+}
+
+// H3 attention residual + following RMSNorm/modulate in one pass.  The
+// updated stream row is kept in threadgroup memory while its RMS is reduced,
+// so it is written to x and h without a global-memory write/read round trip.
+kernel void gate_norm_mod_seg_bf16(
+    device bfloat*       x     [[buffer(0)]],  // [S,Dm], updated in place
+    device const bfloat* other [[buffer(1)]],  // attention output
+    device const bfloat* gate  [[buffer(2)]],  // [M,Dm]
+    device const bfloat* w     [[buffer(3)]],  // next norm weight [Dm]
+    device const bfloat* scale [[buffer(4)]],  // next modulation [M,Dm]
+    device const bfloat* shift [[buffer(5)]],
+    device const int*    rows  [[buffer(6)]],  // [S]
+    device bfloat*       out   [[buffer(7)]],  // next block input h [S,Dm]
+    constant uint& Dm           [[buffer(8)]],
+    constant float& eps         [[buffer(9)]],
+    threadgroup bfloat* updated [[threadgroup(0)]],
+    uint tgid        [[threadgroup_position_in_grid]],
+    ushort lid       [[thread_index_in_threadgroup]],
+    ushort simd_lane [[thread_index_in_simdgroup]],
+    ushort simd_id   [[simdgroup_index_in_threadgroup]])
+{
+  threadgroup float tg[8];
+  const ulong off = (ulong)tgid * Dm;
+  const ulong moff = (ulong)rows[tgid] * Dm;
+  float ss = 0.0f;
+  for (uint d = lid; d < Dm; d += 256) {
+    // MPS addcmul_ accumulates the exact bf16*bf16 product in fp32 and rounds
+    // only the sum back to bf16 (the product's 16-bit significand is exactly
+    // representable in fp32).
+    const bfloat u = bf16_rte(float(x[off + d])
+        + float(other[off + d]) * float(gate[moff + d]));
+    updated[d] = u;
+    x[off + d] = u;
+    const float uf = float(u);
+    ss += uf * uf;
+  }
+  ss = simd_sum(ss);
+  if (simd_lane == 0) tg[simd_id] = ss;
+  threadgroup_barrier(mem_flags::mem_threadgroup);
+  float tot = 0.0f;
+  for (ushort i = 0; i < 8; ++i) tot += tg[i];
+  const float inv = precise::rsqrt(precise::divide(tot, float(Dm)) + eps);
+  for (uint d = lid; d < Dm; d += 256) {
+    const bfloat yn = bf16_rte(float(updated[d]) * inv);
+    const bfloat y = bf16_rte(float(yn) * float(w[d]));
+    const bfloat m = bf16_rte(1.0f + float(scale[moff + d]));
+    out[off + d] = bf16_rte(
+        bf16_rte(float(y) * float(m)) + float(shift[moff + d]));
+  }
+}
+
+// Final H3 MLP residual: replace three segmented addcmul_ graph launches with
+// one row-map-driven Metal pass.
+kernel void gate_residual_seg_bf16(
+    device bfloat*       x     [[buffer(0)]],
+    device const bfloat* other [[buffer(1)]],
+    device const bfloat* gate  [[buffer(2)]],
+    device const int*    rows  [[buffer(3)]],
+    constant uint& Dm           [[buffer(4)]],
+    constant uint& N            [[buffer(5)]],
+    uint gid [[thread_position_in_grid]])
+{
+  if (gid >= N) return;
+  const uint s = gid / Dm, d = gid - s * Dm;
+  const ulong goff = (ulong)rows[s] * Dm + d;
+  x[gid] = bf16_rte(float(x[gid])
+      + float(other[gid]) * float(gate[goff]));
+}
+
 // ── silu_mul_split: SwiGLU gating straight off the fused [M, 2F] projection
 // output, so the two halves never need a .contiguous() copy (2 x 154 MB per
 // call at H3's fc2). silu in fp32 + RTE, matching the eager path.
@@ -629,6 +743,131 @@ kernel void silu_mul_split_bf16(
 // stored at model dtype (bf16), so torch rounds after every op.
 // Pairs are (i, i+R), NOT adjacent lanes: eager reshapes [.., 2, R] and moves
 // the pair axis last, so lane i partners with lane i+R.
+//
+// The out-of-place qkv variant below is the production H3 fast path.  It reads
+// the fused qkv projection once and writes q/k/v directly in contiguous
+// [1,H,S,D] attention layout.  This subsumes the in-place rope pass plus the
+// three transpose-contiguous copies that the attention router would otherwise
+// materialize.  The q/k arithmetic is deliberately identical to the in-place
+// kernel below, so replacing the layout chain does not introduce a new
+// numerical mode.
+kernel void qkv_rms_rope_sh_partial_bf16(
+    device const bfloat* qkv [[buffer(0)]],   // [S,3*H*D] contiguous
+    device const bfloat* fr  [[buffer(1)]],   // [S,R,2,2]
+    device const float* qw   [[buffer(2)]],   // [D]
+    device const float* kw   [[buffer(3)]],
+    device bfloat* qo        [[buffer(4)]],   // [1,H,S,D]
+    device bfloat* ko        [[buffer(5)]],
+    device bfloat* vo        [[buffer(6)]],
+    constant uint& S         [[buffer(7)]],
+    constant uint& H         [[buffer(8)]],
+    constant uint& D         [[buffer(9)]],
+    constant uint& R         [[buffer(10)]],
+    constant float& eps      [[buffer(11)]],
+    uint2  tgid      [[threadgroup_position_in_grid]],
+    ushort lid       [[thread_index_in_threadgroup]],
+    ushort simd_lane [[thread_index_in_simdgroup]],
+    ushort simd_id   [[simdgroup_index_in_threadgroup]])
+{
+  threadgroup float tg[8];
+  threadgroup float ybuf[256];
+
+  const uint s = tgid.x;
+  const uint slot = tgid.y;              // q heads, k heads, v heads
+  const uint kind = slot / H;
+  const uint h = slot % H;
+  const uint W = H * D;
+  const device bfloat* src = qkv + (ulong)s * (3u * W)
+                                  + (ulong)(kind * H + h) * D;
+  device bfloat* dst = (kind == 0u ? qo : (kind == 1u ? ko : vo))
+                       + ((ulong)h * S + s) * D;
+
+  if (kind == 2u) {
+    dst[lid] = src[lid];
+    return;
+  }
+
+  const device float* w = (kind == 0u) ? qw : kw;
+  const float x = float(src[lid]);
+  const float ss = simd_sum(x * x);
+  if (simd_lane == 0) tg[simd_id] = ss;
+  threadgroup_barrier(mem_flags::mem_threadgroup);
+  float tot = 0.0f;
+  const ushort nsg = ushort(D >> 5);
+  for (ushort i = 0; i < nsg; i++) tot += tg[i];
+
+  const float inv = precise::rsqrt(precise::divide(tot, float(D)) + eps);
+  const bfloat yn = bf16_rte(x * inv);
+  const bfloat y = bf16_rte(float(yn) * w[lid]);
+  ybuf[lid] = float(y);
+  threadgroup_barrier(mem_flags::mem_threadgroup);
+
+  if (lid >= (R * 2u)) {
+    dst[lid] = y;
+    return;
+  }
+  const uint i = (lid < R) ? lid : (lid - R);
+  const uint r = (lid < R) ? 0u : 1u;
+  const device bfloat* m = fr + (((ulong)s * R + i) * 2u + r) * 2u;
+  const bfloat p0 = bf16_rte(float(m[0]) * ybuf[i]);
+  const bfloat p1 = bf16_rte(float(m[1]) * ybuf[i + R]);
+  dst[lid] = bf16_rte(float(p0) + float(p1));
+}
+
+// In-place Q/K norm + partial RoPE for tensors already emitted in attention
+// layout [1,H,S,D] by the INT8 QKV GEMM epilogue. Arithmetic and reduction
+// order intentionally mirror qkv_rms_rope_sh_partial_bf16 above.
+kernel void rms_rope_attention_partial_bf16(
+    device bfloat* q        [[buffer(0)]],
+    device bfloat* k        [[buffer(1)]],
+    device const bfloat* fr [[buffer(2)]],
+    device const float* qw  [[buffer(3)]],
+    device const float* kw  [[buffer(4)]],
+    constant uint& S        [[buffer(5)]],
+    constant uint& H        [[buffer(6)]],
+    constant uint& D        [[buffer(7)]],
+    constant uint& R        [[buffer(8)]],
+    constant float& eps     [[buffer(9)]],
+    uint2 tgid      [[threadgroup_position_in_grid]],
+    ushort lid       [[thread_index_in_threadgroup]],
+    ushort simd_lane [[thread_index_in_simdgroup]],
+    ushort simd_id   [[simdgroup_index_in_threadgroup]])
+{
+  threadgroup float tg[8];
+  threadgroup float ybuf[256];
+  const uint s = tgid.x;
+  const uint slot = tgid.y;
+  const uint kind = slot / H;
+  const uint h = slot % H;
+  device bfloat* base = (kind == 0u ? q : k)
+      + ((ulong)h * S + s) * D;
+  const device float* w = kind == 0u ? qw : kw;
+
+  const float x = float(base[lid]);
+  const float ss = simd_sum(x * x);
+  if (simd_lane == 0) tg[simd_id] = ss;
+  threadgroup_barrier(mem_flags::mem_threadgroup);
+  float tot = 0.0f;
+  const ushort nsg = ushort(D >> 5);
+  for (ushort i = 0; i < nsg; ++i) tot += tg[i];
+  const float inv = precise::rsqrt(precise::divide(tot, float(D)) + eps);
+  const bfloat yn = bf16_rte(x * inv);
+  const bfloat y = bf16_rte(float(yn) * w[lid]);
+  ybuf[lid] = float(y);
+  threadgroup_barrier(mem_flags::mem_threadgroup);
+
+  if (lid >= 2u * R) {
+    base[lid] = y;
+    return;
+  }
+  const uint i = lid < R ? lid : lid - R;
+  const uint r = lid < R ? 0u : 1u;
+  const device bfloat* m = fr + (((ulong)s * R + i) * 2u + r) * 2u;
+  const bfloat p0 = bf16_rte(float(m[0]) * ybuf[i]);
+  const bfloat p1 = bf16_rte(float(m[1]) * ybuf[i + R]);
+  base[lid] = bf16_rte(float(p0) + float(p1));
+}
+
 kernel void rms_rope_sh_partial_bf16(
     device bfloat* q        [[buffer(0)]],   // [S,H,D] view, row stride rstride
     device bfloat* k        [[buffer(1)]],
@@ -1214,6 +1453,136 @@ torch::Tensor rms_mod_seg(torch::Tensor x, torch::Tensor w, torch::Tensor scale,
   return out;
 }
 
+torch::Tensor rms_mod_seg_f32(torch::Tensor x, torch::Tensor w,
+                              torch::Tensor scale, torch::Tensor shift,
+                              torch::Tensor rows, double eps) {
+  TORCH_CHECK(x.is_mps() && x.scalar_type() == torch::kBFloat16 && x.dim() == 2
+              && x.is_contiguous(), "x must be contiguous bf16 [S,Dm] on mps");
+  const int64_t S=x.size(0), Dm=x.size(1);
+  TORCH_CHECK(w.numel() == Dm && w.scalar_type() == torch::kBFloat16
+              && w.is_contiguous(), "w must be contiguous bf16 [Dm]");
+  TORCH_CHECK(scale.dim() == 2 && scale.size(1) == Dm
+              && shift.sizes() == scale.sizes()
+              && scale.scalar_type() == torch::kBFloat16
+              && shift.scalar_type() == torch::kBFloat16
+              && scale.is_contiguous() && shift.is_contiguous(),
+              "scale/shift must be contiguous bf16 [M,Dm]");
+  TORCH_CHECK(rows.numel() == S && rows.scalar_type() == torch::kInt
+              && rows.is_contiguous(), "rows must be contiguous int32 [S]");
+  TORCH_CHECK(Dm % 32 == 0, "Dm must be a multiple of 32");
+
+  auto out=torch::empty({S,Dm},x.options().dtype(torch::kFloat));
+  id<MTLComputePipelineState> p=pso_named(@"rms_mod_seg_f32");
+  MPSStream* stream=getCurrentMPSStream();
+  std::array<id<MTLBuffer>,6> bufs;
+  std::array<NSUInteger,6> offs;
+  torch::Tensor tensors[6]={x,w,scale,shift,rows,out};
+  for (int i=0; i<6; ++i) {
+    bufs[i]=__builtin_bit_cast(id<MTLBuffer>,tensors[i].storage().data());
+    offs[i]=tensors[i].storage_offset()*tensors[i].element_size();
+  }
+  uint Dmu=(uint)Dm;
+  float epsilon=(float)eps;
+  dispatch_sync(stream->queue(), ^(){
+    @autoreleasepool {
+      id<MTLComputeCommandEncoder> enc=stream->commandEncoder();
+      [enc setComputePipelineState:p];
+      for (int i=0; i<6; ++i)
+        [enc setBuffer:bufs[i] offset:offs[i] atIndex:i];
+      [enc setBytes:&Dmu length:sizeof(uint) atIndex:6];
+      [enc setBytes:&epsilon length:sizeof(float) atIndex:7];
+      [enc dispatchThreadgroups:MTLSizeMake((NSUInteger)S,1,1)
+          threadsPerThreadgroup:MTLSizeMake(256,1,1)];
+    }
+  });
+  return out;
+}
+
+std::vector<torch::Tensor> gate_norm_mod_seg(
+    torch::Tensor x, torch::Tensor other, torch::Tensor gate,
+    torch::Tensor w, torch::Tensor scale, torch::Tensor shift,
+    torch::Tensor rows, double eps) {
+  TORCH_CHECK(x.is_mps() && x.scalar_type() == torch::kBFloat16
+              && x.dim() == 2 && x.is_contiguous(),
+              "x must be contiguous bf16 [S,Dm] on mps");
+  const int64_t S = x.size(0), Dm = x.size(1);
+  TORCH_CHECK(other.sizes() == x.sizes() && other.scalar_type() == torch::kBFloat16
+              && other.is_contiguous(), "other must match x");
+  TORCH_CHECK(w.numel() == Dm && w.scalar_type() == torch::kBFloat16
+              && w.is_contiguous(), "w must be contiguous bf16 [Dm]");
+  TORCH_CHECK(gate.dim() == 2 && gate.size(1) == Dm
+              && gate.scalar_type() == torch::kBFloat16 && gate.is_contiguous(),
+              "gate must be contiguous bf16 [M,Dm]");
+  TORCH_CHECK(scale.sizes() == gate.sizes() && shift.sizes() == gate.sizes()
+              && scale.scalar_type() == torch::kBFloat16
+              && shift.scalar_type() == torch::kBFloat16
+              && scale.is_contiguous() && shift.is_contiguous(),
+              "scale/shift must match gate");
+  TORCH_CHECK(rows.numel() == S && rows.scalar_type() == torch::kInt
+              && rows.is_contiguous(), "rows must be contiguous int32 [S]");
+  TORCH_CHECK(Dm % 32 == 0 && Dm * 2 <= 30 * 1024,
+              "Dm must be a supported multiple of 32");
+
+  auto out = torch::empty_like(x);
+  id<MTLComputePipelineState> p = pso_named(@"gate_norm_mod_seg_bf16");
+  MPSStream* stream = getCurrentMPSStream();
+  std::array<id<MTLBuffer>, 8> bufs;
+  std::array<NSUInteger, 8> offs;
+  torch::Tensor ts[8] = {x, other, gate, w, scale, shift, rows, out};
+  for (int i = 0; i < 8; ++i) {
+    bufs[i] = __builtin_bit_cast(id<MTLBuffer>, ts[i].storage().data());
+    offs[i] = ts[i].storage_offset() * ts[i].element_size();
+  }
+  uint Dmu = (uint)Dm;
+  float ef = (float)eps;
+  dispatch_sync(stream->queue(), ^(){
+    @autoreleasepool {
+      id<MTLComputeCommandEncoder> enc = stream->commandEncoder();
+      [enc setComputePipelineState:p];
+      for (int i = 0; i < 8; ++i)
+        [enc setBuffer:bufs[i] offset:offs[i] atIndex:i];
+      [enc setBytes:&Dmu length:sizeof(uint) atIndex:8];
+      [enc setBytes:&ef length:sizeof(float) atIndex:9];
+      [enc setThreadgroupMemoryLength:(NSUInteger)(Dm * 2) atIndex:0];
+      [enc dispatchThreadgroups:MTLSizeMake((NSUInteger)S, 1, 1)
+          threadsPerThreadgroup:MTLSizeMake(256, 1, 1)];
+    }
+  });
+  return {x, out};
+}
+
+torch::Tensor gate_residual_seg(torch::Tensor x, torch::Tensor other,
+                                torch::Tensor gate, torch::Tensor rows) {
+  TORCH_CHECK(x.is_mps() && x.scalar_type() == torch::kBFloat16
+              && x.dim() == 2 && x.is_contiguous(),
+              "x must be contiguous bf16 [S,Dm] on mps");
+  const int64_t S = x.size(0), Dm = x.size(1);
+  TORCH_CHECK(other.sizes() == x.sizes() && other.scalar_type() == torch::kBFloat16
+              && other.is_contiguous(), "other must match x");
+  TORCH_CHECK(gate.dim() == 2 && gate.size(1) == Dm
+              && gate.scalar_type() == torch::kBFloat16 && gate.is_contiguous(),
+              "gate must be contiguous bf16 [M,Dm]");
+  TORCH_CHECK(rows.numel() == S && rows.scalar_type() == torch::kInt
+              && rows.is_contiguous(), "rows must be contiguous int32 [S]");
+  id<MTLComputePipelineState> p = pso_named(@"gate_residual_seg_bf16");
+  MPSStream* stream = getCurrentMPSStream();
+  auto a = enc_args({x, other, gate, rows});
+  uint Dmu = (uint)Dm, N = (uint)(S * Dm);
+  dispatch_sync(stream->queue(), ^(){
+    @autoreleasepool {
+      id<MTLComputeCommandEncoder> enc = stream->commandEncoder();
+      [enc setComputePipelineState:p];
+      for (int i = 0; i < a.nbuf; ++i)
+        [enc setBuffer:a.bufs[i] offset:a.offs[i] atIndex:i];
+      [enc setBytes:&Dmu length:sizeof(uint) atIndex:4];
+      [enc setBytes:&N length:sizeof(uint) atIndex:5];
+      [enc dispatchThreads:MTLSizeMake((NSUInteger)N, 1, 1)
+          threadsPerThreadgroup:MTLSizeMake(256, 1, 1)];
+    }
+  });
+  return x;
+}
+
 // SwiGLU gating read straight from a fused [M, 2F] projection (no half copies).
 torch::Tensor silu_mul_split(torch::Tensor x) {
   TORCH_CHECK(x.is_mps() && x.scalar_type() == torch::kBFloat16 && x.dim() == 2
@@ -1238,6 +1607,116 @@ torch::Tensor silu_mul_split(torch::Tensor x) {
     }
   });
   return out;
+}
+
+// MiniMax H3 production path: qkv [S,3*H*D] -> contiguous q/k/v
+// [1,H,S,D], with Q/K RMSNorm + partial split-half RoPE folded into the copy.
+std::vector<torch::Tensor> qkv_rms_rope_sh_partial(
+    torch::Tensor qkv, torch::Tensor fr, torch::Tensor qw, torch::Tensor kw,
+    int64_t H, int64_t D, double eps) {
+  TORCH_CHECK(qkv.is_mps() && fr.is_mps() && qw.is_mps() && kw.is_mps(),
+              "inputs must be on mps");
+  TORCH_CHECK(qkv.scalar_type() == torch::kBFloat16
+              && fr.scalar_type() == torch::kBFloat16,
+              "qkv/freqs must be bf16");
+  TORCH_CHECK(qkv.dim() == 2 && qkv.is_contiguous(),
+              "qkv must be contiguous [S,3*H*D]");
+  TORCH_CHECK(qkv.size(1) == 3 * H * D, "qkv width mismatch");
+  TORCH_CHECK(D <= 256 && (D % 32) == 0,
+              "D must be <= 256 and a multiple of 32");
+  TORCH_CHECK(fr.is_contiguous(), "freqs table must be contiguous");
+  const int64_t S = qkv.size(0), R = fr.size(-3);
+  TORCH_CHECK(fr.numel() == S * R * 4, "freqs numel mismatch");
+  TORCH_CHECK(2 * R <= D, "rot_dim must be <= D");
+  TORCH_CHECK(qw.numel() == D && kw.numel() == D && qw.is_contiguous()
+              && kw.is_contiguous() && qw.scalar_type() == torch::kFloat
+              && kw.scalar_type() == torch::kFloat,
+              "qw/kw must be contiguous fp32 [D]");
+
+  auto opts = qkv.options();
+  auto q = torch::empty({1, H, S, D}, opts);
+  auto k = torch::empty({1, H, S, D}, opts);
+  auto v = torch::empty({1, H, S, D}, opts);
+  id<MTLComputePipelineState> p =
+      pso_named(@"qkv_rms_rope_sh_partial_bf16");
+  MPSStream* stream = getCurrentMPSStream();
+  std::array<id<MTLBuffer>, 7> bufs;
+  std::array<NSUInteger, 7> offs;
+  torch::Tensor ts[7] = {qkv, fr, qw, kw, q, k, v};
+  for (int i = 0; i < 7; i++) {
+    bufs[i] = __builtin_bit_cast(id<MTLBuffer>, ts[i].storage().data());
+    offs[i] = ts[i].storage_offset() * ts[i].element_size();
+  }
+  uint Su = (uint)S, Hu = (uint)H, Du = (uint)D, Ru = (uint)R;
+  float ef = (float)eps;
+  dispatch_sync(stream->queue(), ^(){
+    @autoreleasepool {
+      id<MTLComputeCommandEncoder> enc = stream->commandEncoder();
+      [enc setComputePipelineState:p];
+      for (int i = 0; i < 7; i++)
+        [enc setBuffer:bufs[i] offset:offs[i] atIndex:i];
+      [enc setBytes:&Su length:sizeof(uint) atIndex:7];
+      [enc setBytes:&Hu length:sizeof(uint) atIndex:8];
+      [enc setBytes:&Du length:sizeof(uint) atIndex:9];
+      [enc setBytes:&Ru length:sizeof(uint) atIndex:10];
+      [enc setBytes:&ef length:sizeof(float) atIndex:11];
+      [enc dispatchThreadgroups:MTLSizeMake((NSUInteger)S,
+                                            (NSUInteger)(3 * H), 1)
+          threadsPerThreadgroup:MTLSizeMake((NSUInteger)D, 1, 1)];
+    }
+  });
+  return {q, k, v};
+}
+
+// MiniMax H3: in-place Q/K RMSNorm + partial split-half RoPE on contiguous
+// attention-layout [1,H,S,D] tensors emitted by the INT8 QKV epilogue.
+void rms_rope_attention_partial(torch::Tensor q, torch::Tensor k,
+                                torch::Tensor fr, torch::Tensor qw,
+                                torch::Tensor kw, double eps) {
+  TORCH_CHECK(q.is_mps() && k.is_mps() && fr.is_mps(),
+              "inputs must be on mps");
+  TORCH_CHECK(q.scalar_type() == torch::kBFloat16
+              && k.scalar_type() == torch::kBFloat16
+              && fr.scalar_type() == torch::kBFloat16,
+              "q/k/freqs must be bf16");
+  TORCH_CHECK(q.dim() == 4 && q.sizes() == k.sizes() && q.size(0) == 1
+              && q.is_contiguous() && k.is_contiguous(),
+              "q/k must be contiguous [1,H,S,D]");
+  const int64_t H = q.size(1), S = q.size(2), D = q.size(3);
+  TORCH_CHECK(D <= 256 && (D % 32) == 0,
+              "D must be <=256 and a multiple of 32");
+  TORCH_CHECK(fr.is_contiguous(), "freqs table must be contiguous");
+  const int64_t R = fr.size(-3);
+  TORCH_CHECK(fr.numel() == S * R * 4 && 2 * R <= D,
+              "freqs shape mismatch");
+  TORCH_CHECK(qw.numel() == D && kw.numel() == D
+              && qw.scalar_type() == torch::kFloat
+              && kw.scalar_type() == torch::kFloat
+              && qw.is_contiguous() && kw.is_contiguous(),
+              "qw/kw must be contiguous fp32 [D]");
+
+  id<MTLComputePipelineState> p =
+      pso_named(@"rms_rope_attention_partial_bf16");
+  MPSStream* stream = getCurrentMPSStream();
+  auto a = enc_args({q, k, fr, qw, kw});
+  uint Su = (uint)S, Hu = (uint)H, Du = (uint)D, Ru = (uint)R;
+  float ef = (float)eps;
+  dispatch_sync(stream->queue(), ^(){
+    @autoreleasepool {
+      id<MTLComputeCommandEncoder> enc = stream->commandEncoder();
+      [enc setComputePipelineState:p];
+      for (int i = 0; i < a.nbuf; ++i)
+        [enc setBuffer:a.bufs[i] offset:a.offs[i] atIndex:i];
+      [enc setBytes:&Su length:sizeof(uint) atIndex:5];
+      [enc setBytes:&Hu length:sizeof(uint) atIndex:6];
+      [enc setBytes:&Du length:sizeof(uint) atIndex:7];
+      [enc setBytes:&Ru length:sizeof(uint) atIndex:8];
+      [enc setBytes:&ef length:sizeof(float) atIndex:9];
+      [enc dispatchThreadgroups:MTLSizeMake((NSUInteger)S,
+                                            (NSUInteger)(2 * H), 1)
+          threadsPerThreadgroup:MTLSizeMake((NSUInteger)D, 1, 1)];
+    }
+  });
 }
 
 // MiniMax H3: in-place per-head RMSNorm + partial split-half RoPE on strided
@@ -1290,8 +1769,18 @@ void rms_rope_sh_partial(torch::Tensor q, torch::Tensor k, torch::Tensor fr,
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("rms_mod_seg", &rms_mod_seg,
         "Affine RMSNorm + per-segment modulate in one pass (bf16, MPS)");
+  m.def("rms_mod_seg_f32", &rms_mod_seg_f32,
+        "Affine RMSNorm + per-segment modulate with exact bf16-to-f32 output (MPS)");
+  m.def("gate_norm_mod_seg", &gate_norm_mod_seg,
+        "Fused segmented gate residual + following RMSNorm/modulate (bf16, MPS)");
+  m.def("gate_residual_seg", &gate_residual_seg,
+        "Fused segmented gate residual in place (bf16, MPS)");
   m.def("silu_mul_split", &silu_mul_split,
         "SwiGLU gating from a fused [M,2F] buffer, no half copies (bf16, MPS)");
+  m.def("qkv_rms_rope_sh_partial", &qkv_rms_rope_sh_partial,
+        "Fused H3 qkv split + QK RMSNorm + partial split-half RoPE + attention layout");
+  m.def("rms_rope_attention_partial", &rms_rope_attention_partial,
+        "In-place H3 QK RMSNorm + partial RoPE on [1,H,S,D] bf16 tensors");
   m.def("rms_rope_sh_partial", &rms_rope_sh_partial,
         "In-place per-head RMSNorm + partial split-half RoPE on strided q/k (bf16, MPS)");
   m.def("rope_qk", &rope_qk,
@@ -1318,6 +1807,14 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
         pso_named(@"norm_modulate_bf16");
         pso_named(@"norm_gate_residual_bf16");
         pso_named(@"silu_mul_bf16");
+        pso_named(@"qkv_rms_rope_sh_partial_bf16");
+        pso_named(@"rms_rope_attention_partial_bf16");
+        pso_named(@"rms_rope_sh_partial_bf16");
+        pso_named(@"rms_mod_seg_bf16");
+        pso_named(@"rms_mod_seg_f32");
+        pso_named(@"gate_norm_mod_seg_bf16");
+        pso_named(@"gate_residual_seg_bf16");
+        pso_named(@"silu_mul_split_bf16");
         return true;
       }, "compile pipelines");
 }

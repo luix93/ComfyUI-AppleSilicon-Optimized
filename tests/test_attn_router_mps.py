@@ -48,6 +48,82 @@ def _sentinels(monkeypatch, flash_ok=True):
     return calls
 
 
+class _Container:
+    def __init__(self, value):
+        self.value = value
+
+    def peek(self):
+        if self.value is None:
+            raise RuntimeError("consumed")
+        return self.value
+
+    def take(self):
+        value = self.peek()
+        self.value = None
+        return value
+
+
+def test_router_consumes_all_three_ownership_containers_once(monkeypatch):
+    seen = []
+    monkeypatch.setattr(patch, "_default", object(), raising=False)
+    monkeypatch.setattr(
+        patch, "_router_tensors",
+        lambda q, k, v, heads, **kwargs: seen.append((q, k, v, heads)) or "ok",
+    )
+    q, k, v = (_Container(name) for name in "qkv")
+    assert patch._router(q, k, v, 7) == "ok"
+    assert seen == [("q", "k", "v", 7)]
+    assert all(item.value is None for item in (q, k, v))
+
+
+def test_router_rejects_mixed_tensor_and_container_inputs(monkeypatch):
+    monkeypatch.setattr(patch, "_default", object(), raising=False)
+    q, k = _Container("q"), _Container("k")
+    with pytest.raises(TypeError, match="must all be attention tensor containers"):
+        patch._router(q, k, "v", 8)
+    # Validate before consuming anything; a caller may still take a fallback.
+    assert q.peek() == "q" and k.peek() == "k"
+
+
+def test_workflow_backend_strips_its_outer_override(monkeypatch):
+    seen = {}
+
+    def routed(q, k, v, heads, **kwargs):
+        seen.update(kwargs)
+        return "routed"
+
+    monkeypatch.setattr(patch, "_router", routed)
+    options = {
+        "optimized_attention_override": object(),
+        "sigmas": "preserved",
+    }
+    assert patch.workflow_attention(
+        "q", "k", "v", 8, transformer_options=options,
+        _inside_attn_wrapper=True) == "routed"
+    assert "optimized_attention_override" not in seen["transformer_options"]
+    assert seen["transformer_options"]["sigmas"] == "preserved"
+    assert "_inside_attn_wrapper" not in seen
+    assert "optimized_attention_override" in options
+
+
+def test_comfy_default_backend_bypasses_the_apple_router(monkeypatch):
+    seen = {}
+
+    def default(q, k, v, heads, **kwargs):
+        seen.update(kwargs)
+        return "default"
+
+    monkeypatch.setattr(patch, "_default", default)
+    monkeypatch.setattr(patch, "_default_masked", default)
+    monkeypatch.setattr(
+        patch, "_router", lambda *args, **kwargs: pytest.fail("router fired"))
+    options = {"optimized_attention_override": object(), "keep": 1}
+    result = patch.comfy_default_attention(
+        "q", "k", "v", 8, mask=None, transformer_options=options)
+    assert result == "default"
+    assert seen["transformer_options"] == {"keep": 1}
+
+
 @pytest.mark.skipif(not torch.backends.mps.is_available(), reason="needs MPS device")
 class TestRouting:
     """Pure routing decisions; sentinel backends, tiny tensors."""
@@ -217,3 +293,86 @@ def test_flash_route_matches_sub_quad():
         assert rel < 2e-2, f"rel={rel}"
     finally:
         mfa.uninstall()
+
+
+# --- dense fallback for attention overrides ---------------------------------
+#
+# A node that installs `optimized_attention_override` must be able to decline a
+# call and still get this router's fast paths, not stock attention.
+
+def test_dense_without_override_strips_only_the_override_key(monkeypatch):
+    seen = {}
+
+    def fake_router(q, k, v, heads, **kwargs):
+        seen.update(kwargs)
+        seen["heads"] = heads
+        return "routed"
+
+    monkeypatch.setattr(patch, "_router", fake_router, raising=False)
+    monkeypatch.setattr(patch, "_installed", True, raising=False)
+
+    options = {
+        "optimized_attention_override": lambda *a, **k: "override",
+        "sigmas": "keep-me",
+    }
+    result = patch.dense_without_override(
+        None, "q", "k", "v", 8, mask=None, scale=0.5, skip_reshape=True,
+        skip_output_reshape=True, transformer_options=options)
+
+    assert result == "routed"
+    assert seen["heads"] == 8
+    assert seen["scale"] == 0.5
+    assert seen["skip_reshape"] is True
+    assert seen["skip_output_reshape"] is True
+    # the override is gone for this call, everything else survives
+    assert "optimized_attention_override" not in seen["transformer_options"]
+    assert seen["transformer_options"]["sigmas"] == "keep-me"
+    # the caller's dict is untouched
+    assert "optimized_attention_override" in options
+
+
+def test_dense_without_override_calls_the_router_exactly_once(monkeypatch):
+    calls = []
+    monkeypatch.setattr(patch, "_router",
+                        lambda *a, **k: calls.append(1) or "routed", raising=False)
+    monkeypatch.setattr(patch, "_installed", True, raising=False)
+    patch.dense_without_override(None, "q", "k", "v", 8, transformer_options={
+        "optimized_attention_override": lambda *a, **k: "override"})
+    assert len(calls) == 1
+
+
+def test_dense_without_override_cannot_recurse_into_the_override(monkeypatch):
+    """Re-entering must not fire the override again — that would loop forever."""
+    fired = []
+
+    def override(func, *args, **kwargs):
+        fired.append(1)
+        return patch.dense_without_override(func, *args, **kwargs)
+
+    monkeypatch.setattr(patch, "_router",
+                        lambda *a, **k: "dense-result", raising=False)
+    monkeypatch.setattr(patch, "_installed", True, raising=False)
+    options = {"optimized_attention_override": override}
+    result = override(None, "q", "k", "v", 8, transformer_options=options)
+    assert result == "dense-result"
+    assert len(fired) == 1
+
+
+def test_dense_without_override_uses_comfy_function_when_not_installed(monkeypatch):
+    monkeypatch.setattr(patch, "_installed", False, raising=False)
+    result = patch.dense_without_override(
+        lambda q, k, v, heads, **kw: "comfy", "q", "k", "v", 8,
+        transformer_options={"optimized_attention_override": object()})
+    assert result == "comfy"
+
+
+def test_dense_without_override_drops_the_wrap_attn_reentry_key(monkeypatch):
+    seen = {}
+    monkeypatch.setattr(patch, "_router",
+                        lambda q, k, v, h, **kw: seen.update(kw) or "routed",
+                        raising=False)
+    monkeypatch.setattr(patch, "_installed", True, raising=False)
+    patch.dense_without_override(None, "q", "k", "v", 8,
+                                 _inside_attn_wrapper=True,
+                                 transformer_options={})
+    assert "_inside_attn_wrapper" not in seen

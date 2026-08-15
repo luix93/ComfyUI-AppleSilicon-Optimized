@@ -36,6 +36,8 @@ import sys
 import torch
 
 TAG = "[AppleSilicon-Optimized/attn_router]"
+DENSE_BACKEND_KEY = "asfp8_dense_attention_backend"
+DENSE_BACKEND_NAME_KEY = "asfp8_dense_attention_backend_name"
 
 _installed = False
 _default = None        # optimized_attention as chosen by ComfyUI at startup
@@ -46,6 +48,27 @@ _flash_ok = False      # mtlflashattn SDPA reroute confirmed active
 
 _SDPA_DTYPES = (torch.float16, torch.bfloat16, torch.float32)
 _fa41 = None           # mfa4_ext flash kernel (bf16, Metal 4.1) if it built
+
+
+def _is_attention_container(value):
+    """Recognize ComfyUI's single-owner attention container by protocol.
+
+    The class landed after this package's minimum supported ComfyUI version,
+    so importing it at module load would make older installations fail. A
+    tensor has ``take`` but not ``peek``; requiring both keeps normal tensors
+    out without tying us to one ComfyUI class identity.
+    """
+    return callable(getattr(value, "peek", None)) and callable(
+        getattr(value, "take", None))
+
+
+def _take_attention_inputs(q, k, v):
+    flags = tuple(_is_attention_container(value) for value in (q, k, v))
+    if any(flags) and not all(flags):
+        raise TypeError("q, k, and v must all be attention tensor containers")
+    if all(flags):
+        return q.take(), k.take(), v.take(), True
+    return q, k, v, False
 
 
 def _flash_min_seq():
@@ -224,8 +247,8 @@ def _bmm_attention(q, k, v, heads, scale=None, skip_reshape=False,
     return out
 
 
-def _router(q, k, v, heads, mask=None, attn_precision=None, skip_reshape=False,
-            skip_output_reshape=False, **kwargs):
+def _router_tensors(q, k, v, heads, mask=None, attn_precision=None,
+                    skip_reshape=False, skip_output_reshape=False, **kwargs):
     if q.device.type != "mps":
         return _default(q, k, v, heads, mask=mask, attn_precision=attn_precision,
                         skip_reshape=skip_reshape,
@@ -346,23 +369,138 @@ def _router(q, k, v, heads, mask=None, attn_precision=None, skip_reshape=False,
               **kwargs)
 
 
-def install():
-    global _installed, _default, _default_masked, _sub_quad, _pytorch, _flash_ok, _fa41
-    if _installed:
-        return
-    if sys.platform != "darwin":
-        return
-    if os.environ.get("ASFP8_ATTN_ROUTER") != "1":
-        return  # opt-in
-    mps = getattr(torch.backends, "mps", None)
-    if mps is None or not mps.is_available():
-        return
+def _router(q, k, v, heads, mask=None, attn_precision=None,
+            skip_reshape=False, skip_output_reshape=False, **kwargs):
+    """Container-compatible public entry point for the tensor router."""
+    if _default is None and not _prepare_backend():
+        raise RuntimeError("ComfyUI attention backends are unavailable")
+    q, k, v, consumed = _take_attention_inputs(q, k, v)
+    try:
+        return _router_tensors(
+            q, k, v, heads, mask=mask, attn_precision=attn_precision,
+            skip_reshape=skip_reshape,
+            skip_output_reshape=skip_output_reshape, **kwargs)
+    finally:
+        if consumed:
+            # The Metal command retains its resources until execution finishes;
+            # these are only Python references that would otherwise survive
+            # into the caller's output projection.
+            q = k = v = None
 
+
+def workflow_attention(q, k, v, heads, **kwargs):
+    """Workflow-selected Apple Silicon backend.
+
+    A ModelPatcher override remains present in transformer_options while it
+    invokes this function. Strip that key before entering the router so the
+    router does not bounce back into the same override.
+    """
+    topts = kwargs.get("transformer_options")
+    if isinstance(topts, dict) and "optimized_attention_override" in topts:
+        stripped = dict(topts)
+        stripped.pop("optimized_attention_override", None)
+        kwargs = dict(kwargs)
+        kwargs["transformer_options"] = stripped
+    kwargs.pop("_inside_attn_wrapper", None)
+    return _router(q, k, v, heads, **kwargs)
+
+
+def _workflow_attention_containers(q, k, v, heads, **kwargs):
+    q, k, v, consumed = _take_attention_inputs(q, k, v)
+    if not consumed:
+        raise TypeError("container_function requires q, k, and v containers")
+    try:
+        return workflow_attention(q, k, v, heads, **kwargs)
+    finally:
+        q = k = v = None
+
+
+workflow_attention.container_function = _workflow_attention_containers
+
+
+def comfy_default_attention(q, k, v, heads, mask=None, **kwargs):
+    """Call the startup ComfyUI backend, bypassing our global router."""
+    if _default is None and not _prepare_backend():
+        raise RuntimeError("ComfyUI attention backends are unavailable")
+    topts = kwargs.get("transformer_options")
+    if isinstance(topts, dict) and "optimized_attention_override" in topts:
+        stripped = dict(topts)
+        stripped.pop("optimized_attention_override", None)
+        kwargs = dict(kwargs)
+        kwargs["transformer_options"] = stripped
+    kwargs.pop("_inside_attn_wrapper", None)
+    fn = _default if mask is None else _default_masked
+    return fn(q, k, v, heads, mask=mask, **kwargs)
+
+
+def _comfy_default_attention_containers(q, k, v, heads, **kwargs):
+    q, k, v, consumed = _take_attention_inputs(q, k, v)
+    if not consumed:
+        raise TypeError("container_function requires q, k, and v containers")
+    try:
+        return comfy_default_attention(q, k, v, heads, **kwargs)
+    finally:
+        q = k = v = None
+
+
+comfy_default_attention.container_function = (
+    _comfy_default_attention_containers)
+
+
+def dense_without_override(comfy_fn, q, k, v, heads, **kwargs):
+    """Run one dense attention call with this router's fast paths available.
+
+    An `optimized_attention_override` installed by a node (e.g. H3 sparse
+    attention) must be able to decline a call — short sequences, protected
+    blocks, unsupported shapes — and get the *fast* dense path back. Calling the
+    `func` comfy hands the override would land on the stock implementation and
+    silently skip flash41.
+
+    This re-enters the router with only the override key removed from a shallow
+    copy of transformer_options, so exactly one dense call happens and every
+    other argument (scale, skip_reshape, skip_output_reshape, mask, ...) is
+    preserved. Without the router installed, the supplied comfy function is
+    used, which is the correct default behaviour there.
+    """
+    topts = kwargs.get("transformer_options")
+    selected_backend = (
+        topts.get(DENSE_BACKEND_KEY) if isinstance(topts, dict) else None)
+    if isinstance(topts, dict) and "optimized_attention_override" in topts:
+        stripped = dict(topts)
+        stripped.pop("optimized_attention_override", None)
+        kwargs = dict(kwargs)
+        kwargs["transformer_options"] = stripped
+    # `_inside_attn_wrapper` is wrap_attn's re-entry guard. It is set on the
+    # kwargs comfy passes an override; leaving it in would make the stock
+    # wrappers skip their own override check, which is what we want, but it
+    # would also be passed down to backends that do not accept it.
+    kwargs.pop("_inside_attn_wrapper", None)
+    if callable(selected_backend):
+        return selected_backend(q, k, v, heads, **kwargs)
+    if _installed:
+        return _router(q, k, v, heads, **kwargs)
+    if comfy_fn is not None:
+        return comfy_fn(q, k, v, heads, **kwargs)
+    import comfy.ldm.modules.attention as A
+    return A.optimized_attention(q, k, v, heads, **kwargs)
+
+
+def _prepare_backend():
+    """Capture ComfyUI backends and load optional Metal routes once.
+
+    Unlike ``install()``, this does not replace global dispatch. It lets the
+    workflow-local backend use the router even when ASFP8_ATTN_ROUTER is off.
+    """
+    global _default, _default_masked, _sub_quad, _pytorch, _flash_ok, _fa41
+    if all(value is not None for value in (
+        _default, _default_masked, _sub_quad, _pytorch,
+    )):
+        return True
     try:
         import comfy.ldm.modules.attention as A
     except Exception as e:
-        print(f"{TAG} comfy attention module unavailable ({e!r}); not installed.")
-        return
+        print(f"{TAG} comfy attention module unavailable ({e!r}).")
+        return False
 
     _default = A.optimized_attention
     _default_masked = A.optimized_attention_masked
@@ -393,6 +531,24 @@ def install():
             _fa41 = None
     except Exception:
         _fa41 = None
+    return True
+
+
+def install():
+    global _installed
+    if _installed:
+        return
+    if sys.platform != "darwin":
+        return
+    if os.environ.get("ASFP8_ATTN_ROUTER") != "1":
+        return  # opt-in
+    mps = getattr(torch.backends, "mps", None)
+    if mps is None or not mps.is_available():
+        return
+    if not _prepare_backend():
+        return
+
+    import comfy.ldm.modules.attention as A
 
     # Rebind the dispatcher names, then sweep already-imported model modules
     # that captured the original objects with `from ... import optimized_attention`.
@@ -417,9 +573,9 @@ def install():
              if _flash_ok else "flash route OFF (mtlflashattn inactive)")
     if _fa41 is not None:
         na = (_FA41_NA and hasattr(_fa41, "flash_fwd_na"))
-        wide = ("flash41 attention v2 'na' per-simdgroup kernel where "
-                "Lk%128==0 & D%32==0, cooperative kernel otherwise (Metal "
-                "4.1 TensorOps)" if na
+        wide = ("flash41 attention v2 'na' per-simdgroup kernel "
+                "(ragged sequences zero-padded and tail-masked; Metal 4.1 "
+                "TensorOps)" if na
                 else "flash41 cooperative kernel (Metal 4.1 TensorOps; "
                      "attention v2 off)")
     else:

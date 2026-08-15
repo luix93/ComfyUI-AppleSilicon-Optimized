@@ -27,6 +27,7 @@ __all__ = [
     "linear_fp8_w8a16",     # patch #18 — standard-fp8 Linear via half×fp8 W8A16 kernel (opt-in)
     "attn_router_mps",      # patch #19 — per-call MPS attention routing (opt-in ASFP8_ATTN_ROUTER=1:
                             #   unmasked long-seq → mtlflashattn flash, masked long-seq → sub-quad, never stock SDPA)
+    "attention_backend",    # workflow-local exact dense backend + ComfyUI Q/K/V ownership compatibility
     "fp8_fill_mps",         # patch #20 — fp8 fill/factory ops (zeros/ones/full/eye/_like/fill_) via CPU on MPS
                             #   (no Metal fp8 fill kernel; torch>=2.13 regressed fp8 torch.zeros on MPS)
     "lumina_attn_fast",     # patch #21 — Lumina/Z-Image fused qkv-split+QKNorm+RoPE+transpose (opt-in

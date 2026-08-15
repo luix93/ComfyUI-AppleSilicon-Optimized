@@ -190,6 +190,597 @@ def test_channelwise_fused_matches_chunked_bit_exact():
 
 
 @requires_int8_ext
+def test_channelwise_split_tail_is_bit_exact():
+    """The optional small suffix dispatch must not change any output byte."""
+    from _patches.int8_ext import loader
+
+    mod = loader.module()
+    assert mod is not None and hasattr(mod, "i8_matmul2d_nt_fused_cs")
+    g = torch.Generator().manual_seed(19)
+    M, K, N = 130, 512, 256  # 128-row prefix + two-row suffix (H3 pattern)
+    a = torch.randint(-128, 128, (M, K), generator=g, dtype=torch.int8).to("mps")
+    b = torch.randint(-128, 128, (N, K), generator=g, dtype=torch.int8).to("mps")
+    rs = (torch.rand(M, generator=g) * 0.01).to("mps")
+    cs = (torch.rand(N, generator=g) * 0.01).to("mps")
+    bias = torch.randn(N, generator=g, dtype=torch.bfloat16).to("mps")
+    ref = mod.i8_matmul2d_nt_fused_cs(a, b, rs, cs, bias, False)
+    out = mod.i8_matmul2d_nt_fused_cs(a, b, rs, cs, bias, True)
+    torch.mps.synchronize()
+    assert torch.equal(ref, out)
+
+
+@requires_int8_ext
+def test_channelwise_long_schedule_is_bit_exact():
+    """The long-M compiler schedule must preserve every output byte."""
+    from _patches.int8_ext import loader
+
+    mod = loader.module()
+    assert mod is not None and hasattr(mod, "i8_matmul2d_nt_fused_cs")
+    g = torch.Generator().manual_seed(23)
+    M, K, N = 8209, 96, 129
+    a = torch.randint(-128, 128, (M, K), generator=g, dtype=torch.int8).to("mps")
+    b = torch.randint(-128, 128, (N, K), generator=g, dtype=torch.int8).to("mps")
+    rs = (torch.rand(M, generator=g) * 0.01).to("mps")
+    cs = (torch.rand(N, generator=g) * 0.01).to("mps")
+    ref = mod.i8_matmul2d_nt_fused_cs(a, b, rs, cs, None, False, False)
+    out = mod.i8_matmul2d_nt_fused_cs(a, b, rs, cs, None, False, True)
+    torch.mps.synchronize()
+    assert torch.equal(ref, out)
+
+
+@requires_int8_ext
+def test_channelwise_qkv_scatter_is_bit_exact():
+    """The H3 epilogue changes only storage layout, not GEMM arithmetic."""
+    from _patches.int8_ext import loader
+
+    mod = loader.module()
+    assert mod is not None and hasattr(mod, "i8_matmul2d_nt_fused_cs_qkv")
+    g = torch.Generator().manual_seed(31)
+    m, kin, heads, dim = 130, 512, 4, 32
+    n = 3 * heads * dim
+    a = torch.randint(-128, 128, (m, kin), generator=g, dtype=torch.int8).to("mps")
+    b = torch.randint(-128, 128, (n, kin), generator=g, dtype=torch.int8).to("mps")
+    rs = (torch.rand(m, generator=g) * 0.01).to("mps")
+    cs = (torch.rand(n, generator=g) * 0.01).to("mps")
+    bias = torch.randn(n, generator=g, dtype=torch.bfloat16).to("mps")
+
+    dense = mod.i8_matmul2d_nt_fused_cs(a, b, rs, cs, bias, False, False)
+    q, k, v = mod.i8_matmul2d_nt_fused_cs_qkv(
+        a, b, rs, cs, bias, heads, dim, False)
+    expected = tuple(
+        part.reshape(m, heads, dim).permute(1, 0, 2).unsqueeze(0).contiguous()
+        for part in dense.split(heads * dim, dim=-1)
+    )
+    torch.mps.synchronize()
+    assert all(torch.equal(actual, reference)
+               for actual, reference in zip((q, k, v), expected))
+
+
+@requires_int8_ext
+def test_qkv_rms_rope_epilogue_matches_two_kernel_chain_bit_exact():
+    """The fused H3 epilogue preserves projection, norm, and RoPE bytes."""
+    from _patches.dit_ext import loader as dit_loader
+    from _patches.int8_ext import loader as int8_loader
+
+    int8 = int8_loader.module()
+    dit = dit_loader.module()
+    if (int8 is None or dit is None
+            or not hasattr(int8, "i8_matmul2d_nt_fused_cs_qkv_rms_rope")
+            or not hasattr(dit, "rms_rope_attention_partial")):
+        pytest.skip("fused QKV and dit reference kernels unavailable")
+
+    g = torch.Generator().manual_seed(37)
+    m, kin, heads, dim, rotary_half = 259, 512, 4, 128, 48
+    n = 3 * heads * dim
+    a = torch.randint(
+        -128, 128, (m, kin), generator=g, dtype=torch.int8).to("mps")
+    b = torch.randint(
+        -128, 128, (n, kin), generator=g, dtype=torch.int8).to("mps")
+    row_scale = (torch.rand(m, generator=g) * 0.01 + 1.0e-5).to("mps")
+    col_scale = (torch.rand(n, generator=g) * 0.01 + 1.0e-5).to("mps")
+    bias = torch.randn(n, generator=g, dtype=torch.bfloat16).to("mps")
+    angles = torch.randn(m, rotary_half, generator=g).to("mps")
+    cosine, sine = torch.cos(angles), torch.sin(angles)
+    freqs = torch.stack((cosine, -sine, sine, cosine), dim=-1).reshape(
+        1, m, 1, rotary_half, 2, 2).to(torch.bfloat16).contiguous()
+    q_weight = torch.randn(
+        dim, generator=g, dtype=torch.bfloat16).float().to("mps").contiguous()
+    k_weight = torch.randn(
+        dim, generator=g, dtype=torch.bfloat16).float().to("mps").contiguous()
+
+    expected = int8.i8_matmul2d_nt_fused_cs_qkv(
+        a, b, row_scale, col_scale, bias, heads, dim, False)
+    dit.rms_rope_attention_partial(
+        expected[0], expected[1], freqs, q_weight, k_weight, 1.0e-6)
+    actual = int8.i8_matmul2d_nt_fused_cs_qkv_rms_rope(
+        a, b, row_scale, col_scale, bias, freqs, q_weight, k_weight,
+        heads, dim, 1.0e-6, False)
+    torch.mps.synchronize()
+
+    for label, observed, reference in zip("qkv", actual, expected):
+        assert torch.equal(observed, reference), (
+            label,
+            (observed.float() - reference.float()).abs().max().item(),
+        )
+
+
+@requires_int8_ext
+@pytest.mark.parametrize("strength", [0.375, -0.6, 1.0])
+def test_qkv_lora_epilogue_matches_runtime_adapter_chain_bit_exact(strength):
+    """LoRA is added with PyTorch's bf16 semantics before Q/K normalization."""
+    from _patches.dit_ext import loader as dit_loader
+    from _patches.int8_ext import loader as int8_loader
+
+    int8 = int8_loader.module()
+    dit = dit_loader.module()
+    if (int8 is None or dit is None
+            or not hasattr(int8, "i8_matmul2d_nt_fused_cs_qkv_lora_part")
+            or not hasattr(dit, "rms_rope_attention_partial")):
+        pytest.skip("LoRA QKV epilogue and dit reference kernels unavailable")
+
+    g = torch.Generator().manual_seed(71)
+    m, kin, heads, dim, rotary_half = 259, 512, 4, 128, 48
+    part_width = heads * dim
+    width = 3 * part_width
+    a = torch.randint(
+        -128, 128, (m, kin), generator=g, dtype=torch.int8).to("mps")
+    b = torch.randint(
+        -128, 128, (width, kin), generator=g, dtype=torch.int8).to("mps")
+    row_scale = (torch.rand(m, generator=g) * 0.01 + 1.0e-5).to("mps")
+    col_scale = (torch.rand(width, generator=g) * 0.01 + 1.0e-5).to("mps")
+    bias = torch.randn(width, generator=g, dtype=torch.bfloat16).to("mps")
+    delta = torch.randn(
+        m, width, generator=g, dtype=torch.bfloat16).to("mps")
+    angles = torch.randn(m, rotary_half, generator=g).to("mps")
+    cosine, sine = torch.cos(angles), torch.sin(angles)
+    freqs = torch.stack((cosine, -sine, sine, cosine), dim=-1).reshape(
+        1, m, 1, rotary_half, 2, 2).to(torch.bfloat16).contiguous()
+    q_weight = torch.randn(
+        dim, generator=g, dtype=torch.bfloat16).float().to("mps").contiguous()
+    k_weight = torch.randn(
+        dim, generator=g, dtype=torch.bfloat16).float().to("mps").contiguous()
+
+    expected = int8.i8_matmul2d_nt_fused_cs_qkv(
+        a, b, row_scale, col_scale, bias, heads, dim, False)
+    for base, part in zip(expected, delta.split(part_width, dim=-1)):
+        shaped = part.reshape(m, heads, dim).permute(1, 0, 2).unsqueeze(0)
+        base.add_(shaped, alpha=strength)
+    dit.rms_rope_attention_partial(
+        expected[0], expected[1], freqs, q_weight, k_weight, 1.0e-6)
+
+    actual = tuple(
+        int8.i8_matmul2d_nt_fused_cs_qkv_lora_part(
+            a, b[kind * part_width:(kind + 1) * part_width].contiguous(),
+            row_scale,
+            col_scale[kind * part_width:(kind + 1) * part_width].contiguous(),
+            bias[kind * part_width:(kind + 1) * part_width].contiguous(),
+            delta[:, kind * part_width:(kind + 1) * part_width].contiguous(),
+            freqs, q_weight if kind != 1 else k_weight,
+            heads, dim, kind, strength, 1.0e-6, False)
+        for kind in range(3)
+    )
+    torch.mps.synchronize()
+
+    for label, observed, reference in zip("qkv", actual, expected):
+        assert torch.equal(observed, reference), (
+            label,
+            strength,
+            torch.count_nonzero(observed != reference).item(),
+            (observed.float() - reference.float()).abs().max().item(),
+        )
+
+
+def test_qkv_norm_rope_epilogue_rejects_unsupported_runtime_lora(monkeypatch):
+    """Unknown adapter protocols fall back instead of being applied out of order."""
+    class Kernel:
+        @staticmethod
+        def i8_matmul2d_nt_fused_cs_qkv_rms_rope(*args):
+            raise AssertionError("native fused epilogue must not be called")
+
+    layer = type("Layer", (), {})()
+    setattr(layer, patch._RUNTIME_LORA_ATTR, type("LoRA", (), {"fast": True})())
+    monkeypatch.setattr(patch, "_kernel", Kernel())
+    monkeypatch.setenv("ASFP8_INT8_QKV_NORM_ROPE", "1")
+
+    assert patch.int8_qkv_rms_rope_prequant(
+        layer, object(), object(), object(), object(), 56, 128, 1.0e-6
+    ) is None
+
+
+@requires_int8_ext
+def test_qkv_norm_rope_python_route_matches_layout_route(monkeypatch):
+    """The guarded QuantizedTensor route selects the native fused epilogue."""
+    from comfy.quant_ops import TensorWiseINT8Layout
+    from comfy_kitchen.tensor import QuantizedTensor
+    from _patches.dit_ext import loader as dit_loader
+    from _patches.int8_ext import loader as int8_loader
+
+    int8 = int8_loader.module()
+    dit = dit_loader.module()
+    if int8 is None or dit is None:
+        pytest.skip("native reference kernels unavailable")
+    monkeypatch.setattr(patch, "_kernel", int8)
+    monkeypatch.setenv("ASFP8_INT8_QKV_SCATTER", "1")
+    monkeypatch.setenv("ASFP8_INT8_QKV_NORM_ROPE", "1")
+
+    g = torch.Generator().manual_seed(43)
+    m, hidden, heads, dim, rotary_half = 259, 512, 4, 128, 48
+    width = 3 * heads * dim
+    x = (torch.randn(m, hidden, generator=g) * 0.25).to(
+        device="mps", dtype=torch.bfloat16).contiguous()
+    qdata = torch.randint(
+        -128, 128, (width, hidden), generator=g,
+        dtype=torch.int8).to("mps")
+    scale = (torch.rand(width, generator=g) * 0.01 + 1.0e-4).to("mps")
+    params = TensorWiseINT8Layout.Params(
+        scale=scale, orig_dtype=torch.bfloat16,
+        orig_shape=tuple(qdata.shape), convrot=False,
+        convrot_groupsize=256)
+    weight = QuantizedTensor(qdata, "TensorWiseINT8Layout", params)
+    layer = type("Linear", (), {
+        "weight": weight,
+        "bias": None,
+        "weight_function": [],
+        "bias_function": [],
+        "_full_precision_mm": False,
+        "comfy_force_cast_weights": False,
+    })()
+    angles = torch.randn(m, rotary_half, generator=g).to("mps")
+    cosine, sine = torch.cos(angles), torch.sin(angles)
+    freqs = torch.stack((cosine, -sine, sine, cosine), dim=-1).reshape(
+        1, m, 1, rotary_half, 2, 2).to(torch.bfloat16).contiguous()
+    q_weight = torch.randn(
+        dim, generator=g, dtype=torch.bfloat16).float().to("mps").contiguous()
+    k_weight = torch.randn(
+        dim, generator=g, dtype=torch.bfloat16).float().to("mps").contiguous()
+
+    patch._act_cache = None
+    expected = patch.int8_qkv_prequant(layer, x, heads, dim)
+    assert expected is not None
+    dit.rms_rope_attention_partial(
+        expected[0], expected[1], freqs, q_weight, k_weight, 1.0e-6)
+    patch._act_cache = None
+    actual = patch.int8_qkv_rms_rope_prequant(
+        layer, x, freqs, q_weight, k_weight, heads, dim, 1.0e-6)
+    torch.mps.synchronize()
+
+    assert actual is not None
+    for label, observed, reference in zip("qkv", actual, expected):
+        assert torch.equal(observed, reference), (
+            label,
+            torch.count_nonzero(observed != reference).item(),
+            (observed.float() - reference.float()).abs().max().item(),
+        )
+    monkeypatch.setenv("ASFP8_INT8_QKV_NORM_ROPE", "0")
+    assert patch.int8_qkv_rms_rope_prequant(
+        layer, x, freqs, q_weight, k_weight, heads, dim, 1.0e-6) is None
+
+
+@requires_int8_ext
+def test_qkv_norm_rope_python_route_applies_standard_runtime_lora_exactly(
+    monkeypatch,
+):
+    from comfy.quant_ops import TensorWiseINT8Layout
+    from comfy_kitchen.tensor import QuantizedTensor
+    from _patches.dit_ext import loader as dit_loader
+    from _patches.int8_ext import loader as int8_loader
+    from _patches.minimax_h3_turbo import H3RuntimeLoRA
+
+    int8 = int8_loader.module()
+    dit = dit_loader.module()
+    if int8 is None or dit is None:
+        pytest.skip("native reference kernels unavailable")
+    monkeypatch.setattr(patch, "_kernel", int8)
+    monkeypatch.setenv("ASFP8_INT8_QKV_SCATTER", "1")
+    monkeypatch.setenv("ASFP8_INT8_QKV_NORM_ROPE", "1")
+
+    g = torch.Generator().manual_seed(73)
+    m, hidden, heads, dim, rank, rotary_half = 259, 512, 4, 128, 8, 48
+    width = 3 * heads * dim
+    x = torch.randn(m, hidden, generator=g).to(
+        device="mps", dtype=torch.bfloat16).contiguous()
+    qdata = torch.randint(
+        -128, 128, (width, hidden), generator=g,
+        dtype=torch.int8).to("mps")
+    scale = (torch.rand(width, generator=g) * 0.01 + 1.0e-4).to("mps")
+    params = TensorWiseINT8Layout.Params(
+        scale=scale, orig_dtype=torch.bfloat16,
+        orig_shape=tuple(qdata.shape), convrot=False,
+        convrot_groupsize=256)
+    weight = QuantizedTensor(qdata, "TensorWiseINT8Layout", params)
+    layer = type("Linear", (), {
+        "weight": weight,
+        "bias": None,
+        "weight_function": [],
+        "bias_function": [],
+        "_full_precision_mm": False,
+        "comfy_force_cast_weights": False,
+    })()
+    adapter = H3RuntimeLoRA((
+        torch.randn(width, rank, generator=g),
+        torch.randn(rank, hidden, generator=g),
+        5.0, None, None, None,
+    ), fast=True)
+    adapter.multiplier = -0.6
+    setattr(layer, patch._RUNTIME_LORA_ATTR, adapter)
+    angles = torch.randn(m, rotary_half, generator=g).to("mps")
+    cosine, sine = torch.cos(angles), torch.sin(angles)
+    freqs = torch.stack((cosine, -sine, sine, cosine), dim=-1).reshape(
+        1, m, 1, rotary_half, 2, 2).to(torch.bfloat16).contiguous()
+    q_weight = torch.randn(
+        dim, generator=g, dtype=torch.bfloat16).float().to("mps").contiguous()
+    k_weight = torch.randn(
+        dim, generator=g, dtype=torch.bfloat16).float().to("mps").contiguous()
+
+    patch._act_cache = None
+    expected = patch.int8_qkv_prequant(layer, x, heads, dim)
+    assert expected is not None
+    dit.rms_rope_attention_partial(
+        expected[0], expected[1], freqs, q_weight, k_weight, 1.0e-6)
+    patch._act_cache = None
+    actual = patch.int8_qkv_rms_rope_prequant(
+        layer, x, freqs, q_weight, k_weight, heads, dim, 1.0e-6)
+    torch.mps.synchronize()
+
+    assert actual is not None
+    for label, observed, reference in zip("qkv", actual, expected):
+        assert torch.equal(observed, reference), (
+            label,
+            torch.count_nonzero(observed != reference).item(),
+            (observed.float() - reference.float()).abs().max().item(),
+        )
+
+
+@requires_int8_ext
+def test_mlp_bridge_prequant_matches_materialized_pipeline_bit_exact():
+    """The bridge removes FC1's wide output without changing FC2 input bytes."""
+    from _patches.int8_ext import loader
+
+    mod = loader.module()
+    assert mod is not None and hasattr(mod, "i8_mlp_bridge_prequant")
+    g = torch.Generator().manual_seed(41)
+    m, kin, ffn = 130, 512, 512
+    activation = torch.randint(
+        -128, 128, (m, kin), generator=g, dtype=torch.int8).to("mps")
+    weight = torch.randint(
+        -128, 128, (2 * ffn, kin), generator=g, dtype=torch.int8).to("mps")
+    row_scale = (torch.rand(m, generator=g) * 0.01 + 1.0e-4).to("mps")
+    col_scale = (
+        torch.rand(2 * ffn, generator=g) * 0.01 + 1.0e-4).to("mps")
+    bias = torch.randn(
+        2 * ffn, generator=g, dtype=torch.bfloat16).to("mps")
+
+    wide = mod.i8_matmul2d_nt_fused_cs(
+        activation, weight, row_scale, col_scale, bias, False, False)
+    rotated = mod.i8_swiglu_rot(wide)
+    expected_q, expected_scale = mod.i8_quant_rowwise(rotated)
+    actual_q, actual_scale = mod.i8_mlp_bridge_prequant(
+        activation, weight, row_scale, col_scale, bias, False)
+    torch.mps.synchronize()
+
+    assert torch.equal(actual_q, expected_q)
+    assert torch.equal(actual_scale, expected_scale)
+
+
+@requires_int8_ext
+def test_mlp_bridge_long_schedule_is_bit_exact():
+    from _patches.int8_ext import loader
+
+    mod = loader.module()
+    assert mod is not None and hasattr(mod, "i8_mlp_bridge_prequant")
+    g = torch.Generator().manual_seed(43)
+    m, kin, ffn = 8209, 96, 256
+    activation = torch.randint(
+        -128, 128, (m, kin), generator=g, dtype=torch.int8).to("mps")
+    weight = torch.randint(
+        -128, 128, (2 * ffn, kin), generator=g, dtype=torch.int8).to("mps")
+    row_scale = (torch.rand(m, generator=g) * 0.01 + 1.0e-4).to("mps")
+    col_scale = (
+        torch.rand(2 * ffn, generator=g) * 0.01 + 1.0e-4).to("mps")
+
+    reference = mod.i8_mlp_bridge_prequant(
+        activation, weight, row_scale, col_scale, None, False)
+    actual = mod.i8_mlp_bridge_prequant(
+        activation, weight, row_scale, col_scale, None, True)
+    torch.mps.synchronize()
+    assert torch.equal(actual[0], reference[0])
+    assert torch.equal(actual[1], reference[1])
+
+
+@requires_int8_ext
+def test_mlp_bridge_tiled_scratch_reuse_is_stream_safe():
+    """Queued bridge calls may reuse their private scratch without corruption."""
+    from _patches.int8_ext import loader
+
+    mod = loader.module()
+    assert mod is not None and hasattr(mod, "i8_mlp_bridge_prequant")
+    g = torch.Generator().manual_seed(45)
+    m, kin, ffn = 385, 96, 256
+    weight = torch.randint(
+        -128, 128, (2 * ffn, kin), generator=g, dtype=torch.int8).to("mps")
+    col_scale = (
+        torch.rand(2 * ffn, generator=g) * 0.01 + 1.0e-4).to("mps")
+
+    def inputs():
+        activation = torch.randint(
+            -128, 128, (m, kin), generator=g, dtype=torch.int8).to("mps")
+        row_scale = (
+            torch.rand(m, generator=g) * 0.01 + 1.0e-4).to("mps")
+        return activation, row_scale
+
+    first_a, first_s = inputs()
+    second_a, second_s = inputs()
+    first_wide = mod.i8_matmul2d_nt_fused_cs(
+        first_a, weight, first_s, col_scale, None, False, False)
+    first_rot = mod.i8_swiglu_rot(first_wide)
+    expected_first = mod.i8_quant_rowwise(first_rot)
+    second_wide = mod.i8_matmul2d_nt_fused_cs(
+        second_a, weight, second_s, col_scale, None, False, False)
+    second_rot = mod.i8_swiglu_rot(second_wide)
+    expected_second = mod.i8_quant_rowwise(second_rot)
+
+    actual_first = mod.i8_mlp_bridge_prequant(
+        first_a, weight, first_s, col_scale, None, False, 128)
+    actual_second = mod.i8_mlp_bridge_prequant(
+        second_a, weight, second_s, col_scale, None, False, 128)
+    torch.mps.synchronize()
+
+    for actual, expected in zip(actual_first, expected_first):
+        assert torch.equal(actual, expected)
+    for actual, expected in zip(actual_second, expected_second):
+        assert torch.equal(actual, expected)
+
+
+@requires_int8_ext
+def test_h3_mlp_bridge_matches_existing_python_pipeline_bit_exact(monkeypatch):
+    from comfy.quant_ops import TensorWiseINT8Layout
+    from comfy_kitchen.tensor import QuantizedTensor
+    from _patches.int8_ext import loader
+
+    mod = loader.module()
+    assert mod is not None
+    monkeypatch.setattr(patch, "_kernel", mod)
+    monkeypatch.setenv("ASFP8_INT8_MLP_BRIDGE", "1")
+    monkeypatch.setenv("ASFP8_INT8_SWIGLU", "1")
+    monkeypatch.setenv("ASFP8_INT8_SWIGLU_ROT", "1")
+
+    g = torch.Generator().manual_seed(47)
+    m, hidden, ffn, output = 130, 512, 512, 256
+    x = (torch.randn((m, hidden), generator=g) * 0.25).to(
+        device="mps", dtype=torch.bfloat16).contiguous()
+    w1 = torch.randint(
+        -128, 128, (2 * ffn, hidden), generator=g,
+        dtype=torch.int8).to("mps")
+    w2 = torch.randint(
+        -128, 128, (output, ffn), generator=g,
+        dtype=torch.int8).to("mps")
+    s1 = (torch.rand(2 * ffn, generator=g) * 0.01 + 1.0e-4).to("mps")
+    s2 = (torch.rand(output, generator=g) * 0.01 + 1.0e-4).to("mps")
+
+    def layer(weight, scale):
+        params = TensorWiseINT8Layout.Params(
+            scale=scale, orig_dtype=torch.bfloat16,
+            orig_shape=tuple(weight.shape), convrot=True,
+            convrot_groupsize=256)
+        quantized = QuantizedTensor(weight, "TensorWiseINT8Layout", params)
+        return type("Linear", (), {
+            "weight": quantized,
+            "bias": None,
+            "weight_function": [],
+            "bias_function": [],
+            "_full_precision_mm": False,
+            "comfy_force_cast_weights": False,
+        })()
+
+    fc1, fc2 = layer(w1, s1), layer(w2, s2)
+    patch._act_cache = None
+    wide = patch._int8_linear_kernel(
+        x, w1, s1, None, torch.bfloat16, True, 256)
+    reference = patch._try_int8_swiglu_forward(fc2, wide)
+    assert reference is not None
+
+    patch._act_cache = None
+    actual = patch.int8_mlp_bridge(fc1, fc2, x)
+    torch.mps.synchronize()
+    assert actual is not None
+    assert torch.equal(actual, reference)
+
+    monkeypatch.setenv("ASFP8_INT8_MLP_BRIDGE", "0")
+    assert patch.int8_mlp_bridge(fc1, fc2, x) is None
+    monkeypatch.setenv("ASFP8_INT8_MLP_BRIDGE", "1")
+    setattr(fc1, patch._RUNTIME_LORA_ATTR, object())
+    assert patch.int8_mlp_bridge(fc1, fc2, x) is None
+
+
+@requires_int8_ext
+@pytest.mark.parametrize(
+    ("adapt_fc1", "adapt_fc2"),
+    [(True, False), (False, True), (True, True)],
+)
+def test_h3_mlp_bridge_applies_partial_or_full_runtime_lora_exactly(
+    monkeypatch, adapt_fc1, adapt_fc2,
+):
+    from comfy.quant_ops import TensorWiseINT8Layout
+    from comfy_kitchen.tensor import QuantizedTensor
+    from _patches.int8_ext import loader
+    from _patches.minimax_h3_turbo import H3RuntimeLoRA
+
+    mod = loader.module()
+    assert mod is not None
+    monkeypatch.setattr(patch, "_kernel", mod)
+    monkeypatch.setenv("ASFP8_INT8_MLP_BRIDGE", "1")
+    monkeypatch.setenv("ASFP8_INT8_SWIGLU", "1")
+    monkeypatch.setenv("ASFP8_INT8_SWIGLU_ROT", "1")
+    monkeypatch.setenv("ASFP8_INT8_MLP_LORA_TILE_ROWS", "128")
+
+    g = torch.Generator().manual_seed(79)
+    rows, hidden, ffn = 259, 512, 512
+    x = torch.randn(rows, hidden, generator=g).to(
+        device="mps", dtype=torch.bfloat16).contiguous()
+    w1 = torch.randint(
+        -128, 128, (2 * ffn, hidden), generator=g,
+        dtype=torch.int8).to("mps")
+    w2 = torch.randint(
+        -128, 128, (hidden, ffn), generator=g,
+        dtype=torch.int8).to("mps")
+    s1 = (torch.rand(2 * ffn, generator=g) * 0.01 + 1.0e-4).to("mps")
+    s2 = (torch.rand(hidden, generator=g) * 0.01 + 1.0e-4).to("mps")
+
+    def layer(weight, scale):
+        params = TensorWiseINT8Layout.Params(
+            scale=scale, orig_dtype=torch.bfloat16,
+            orig_shape=tuple(weight.shape), convrot=True,
+            convrot_groupsize=256)
+        quantized = QuantizedTensor(weight, "TensorWiseINT8Layout", params)
+        return type("Linear", (), {
+            "weight": quantized,
+            "bias": None,
+            "weight_function": [],
+            "bias_function": [],
+            "_full_precision_mm": False,
+            "comfy_force_cast_weights": False,
+        })()
+
+    fc1, fc2 = layer(w1, s1), layer(w2, s2)
+    lora1 = H3RuntimeLoRA((
+        torch.randn(2 * ffn, 8, generator=g),
+        torch.randn(8, hidden, generator=g),
+        5.0, None, None, None,
+    ), fast=True)
+    lora1.multiplier = -0.6
+    lora2 = H3RuntimeLoRA((
+        torch.randn(hidden, 6, generator=g),
+        torch.randn(6, ffn, generator=g),
+        3.0, None, None, None,
+    ), fast=True)
+    lora2.multiplier = 0.7
+    if adapt_fc1:
+        setattr(fc1, patch._RUNTIME_LORA_ATTR, lora1)
+    if adapt_fc2:
+        setattr(fc2, patch._RUNTIME_LORA_ATTR, lora2)
+
+    patch._act_cache = None
+    wide = patch._int8_linear_kernel(
+        x, w1, s1, None, torch.bfloat16, True, 256)
+    if adapt_fc1:
+        lora1.add_to(wide, x)
+    act = patch._swiglu_activation(wide)
+    reference = patch._int8_linear_kernel(
+        act, w2, s2, None, torch.bfloat16, True, 256)
+    if adapt_fc2:
+        lora2.add_to(reference, act)
+
+    patch._act_cache = None
+    actual = patch.int8_mlp_bridge(fc1, fc2, x)
+    torch.mps.synchronize()
+    assert actual is not None
+    assert torch.equal(actual, reference), (
+        torch.count_nonzero(actual != reference).item(),
+        (actual.float() - reference.float()).abs().max().item(),
+    )
+
+
+@requires_int8_ext
 def test_merge_rot_quant_matches_eager_pipeline():
     """i8_merge_rot_quant (fused head-merge + convrot + rowwise quant) vs the
     three-pass reference (transpose copy -> bf16 Hadamard matmul -> rowwise
@@ -204,16 +795,19 @@ def test_merge_rot_quant_matches_eager_pipeline():
     assert mod is not None and hasattr(mod, "i8_merge_rot_quant")
 
     g = torch.Generator().manual_seed(5)
-    for B, H, S in ((1, 18, 777), (2, 18, 64), (1, 1, 256), (1, 4, 5037)):
-        D = 256
+    for B, H, S, D in ((1, 18, 777, 256), (2, 18, 64, 256),
+                       (1, 1, 256, 256), (1, 4, 5037, 256),
+                       (1, 56, 257, 128)):
         x = (torch.randn((B, H, S, D), generator=g) * 2).to("mps").to(torch.bfloat16)
         # poison the pool between allocations so stale garbage would surface
         junk = torch.full((32, 1 << 20), float("nan"), dtype=torch.bfloat16, device="mps")
         del junk
 
         merged = x.transpose(1, 2).reshape(B * S, H * D).contiguous()
-        h = _build_hadamard(D, device="mps", dtype=torch.bfloat16)
-        rot_ref = _rotate_activation(merged, h, D)
+        # Convrot groups are 256 wide. For H3 D=128, each group spans two
+        # adjacent attention heads in the merged layout.
+        h = _build_hadamard(256, device="mps", dtype=torch.bfloat16)
+        rot_ref = _rotate_activation(merged, h, 256)
         q_ref, s_ref = mod.i8_quant_rowwise(rot_ref.contiguous())
 
         q_k, s_k = mod.i8_merge_rot_quant(x)
@@ -263,6 +857,61 @@ def test_o_proj_prequant_matches_layer_path():
     denom = ref.float().abs().max().item() + 1e-9
     rel = (out.float() - ref.float()).abs().max().item() / denom
     assert rel < 2e-2, f"o-proj prequant rel err {rel}"
+
+
+@requires_int8_ext
+def test_h3_o_proj_prequant_applies_runtime_lora_exactly(monkeypatch):
+    from comfy.quant_ops import TensorWiseINT8Layout
+    from comfy_kitchen.tensor import QuantizedTensor
+    from _patches.int8_ext import loader
+    from _patches.minimax_h3_turbo import H3RuntimeLoRA
+
+    mod = loader.module()
+    assert mod is not None
+    monkeypatch.setattr(patch, "_kernel", mod)
+    monkeypatch.setenv("ASFP8_INT8_OPROJ_FUSE", "1")
+
+    g = torch.Generator().manual_seed(83)
+    batch, heads, seq, dim, output, rank = 1, 4, 259, 128, 512, 8
+    merged = heads * dim
+    attention = torch.randn(
+        batch, heads, seq, dim, generator=g,
+        dtype=torch.bfloat16).to("mps")
+    qdata = torch.randint(
+        -128, 128, (output, merged), generator=g,
+        dtype=torch.int8).to("mps")
+    scale = (torch.rand(output, generator=g) * 0.01 + 1.0e-4).to("mps")
+    params = TensorWiseINT8Layout.Params(
+        scale=scale, orig_dtype=torch.bfloat16,
+        orig_shape=tuple(qdata.shape), convrot=True,
+        convrot_groupsize=256)
+    layer = type("Linear", (), {
+        "weight": QuantizedTensor(qdata, "TensorWiseINT8Layout", params),
+        "bias": None,
+        "weight_function": [],
+        "bias_function": [],
+        "_full_precision_mm": False,
+        "comfy_force_cast_weights": False,
+    })()
+    adapter = H3RuntimeLoRA((
+        torch.randn(output, rank, generator=g),
+        torch.randn(rank, merged, generator=g),
+        5.0, None, None, None,
+    ), fast=True)
+    adapter.multiplier = -0.6
+
+    expected = patch.int8_o_proj_prequant(layer, attention)
+    assert expected is not None
+    adapter.add_bhsd_to(expected, attention)
+    setattr(layer, patch._RUNTIME_LORA_ATTR, adapter)
+    actual = patch.int8_o_proj_prequant(layer, attention)
+    torch.mps.synchronize()
+
+    assert actual is not None
+    assert torch.equal(actual, expected), (
+        torch.count_nonzero(actual != expected).item(),
+        (actual.float() - expected.float()).abs().max().item(),
+    )
 
 
 @requires_int8_ext

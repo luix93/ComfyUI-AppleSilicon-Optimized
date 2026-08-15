@@ -37,11 +37,10 @@ Opt-in: only active when ``ASFP8_INT8_EXT=1`` (the kernel build flag).
 
 import os
 import sys
-
-import os
 import weakref
 
 import torch
+import torch.nn.functional as F
 
 TAG = "[AppleSilicon-Optimized/int8_kernel]"
 
@@ -49,7 +48,14 @@ _installed = False
 _orig_int8_linear = None
 _kernel = None
 _oproj_announced = False
+_qkv_scatter_announced = False
+_qkv_norm_rope_announced = False
+_qkv_lora_norm_rope_announced = False
+_swiglu_rot_announced = False
+_mlp_bridge_announced = False
+_mlp_lora_bridge_announced = False
 _verify_dumped = False
+_RUNTIME_LORA_ATTR = "_asfp8_runtime_lora"
 
 # 1-slot cache of the rotated+quantized activation. Krea2-style blocks call the
 # kernel with the SAME input tensor for wq/wk/wv/gate (and SwiGLU gate/up), so
@@ -109,6 +115,61 @@ def _load_kernel():
     return loader.module()
 
 
+def _int8_linear_prequant(
+    x_8, x_scale, weight, weight_scale, bias, out_dtype, input_shape,
+    split_tail=False,
+):
+    """Run the INT8 GEMM/epilogue from an already quantized activation."""
+    weight_scale = weight_scale.view(-1)
+
+    if (
+        out_dtype == torch.bfloat16
+        and weight_scale.numel() == 1
+        and hasattr(_kernel, "i8_matmul2d_nt_fused")
+    ):
+        row_scale = (weight_scale.float() * x_scale.reshape(-1).float()).contiguous()
+        bias_arg = bias.to(torch.bfloat16) if bias is not None else None
+        result = _kernel.i8_matmul2d_nt_fused(
+            x_8.contiguous(), weight.contiguous(), row_scale, bias_arg
+        )
+        return result.reshape(*input_shape[:-1], weight.shape[0])
+
+    if (
+        out_dtype == torch.bfloat16
+        and weight_scale.numel() == weight.shape[0]
+        and hasattr(_kernel, "i8_matmul2d_nt_fused_cs")
+    ):
+        bias_arg = bias.to(torch.bfloat16) if bias is not None else None
+        args = (
+            x_8.contiguous(), weight.contiguous(),
+            x_scale.reshape(-1).float().contiguous(),
+            weight_scale.float().contiguous(), bias_arg,
+        )
+        # H3's fc2 has M=5378: the 128-row main kernel wastes 3/4 of
+        # its final tile. A second 32-row dispatch for that two-row suffix is
+        # exact and measures ~1.3% faster for fc2; it is neutral/slower on the
+        # other H3 projections, so only the SwiGLU down-projection opts in.
+        long_schedule = os.environ.get(
+            "ASFP8_INT8_LONG_SCHEDULE", "1") == "1"
+        result = _kernel.i8_matmul2d_nt_fused_cs(
+            *args, split_tail, long_schedule)
+        return result.reshape(*input_shape[:-1], weight.shape[0])
+
+    result = _kernel.i8_matmul2d_nt(x_8.contiguous(), weight.contiguous())
+    m, n = result.shape
+    chunk_size = max(1, min(m, 256 * 1024 * 1024 // (n * 4)))
+    scaled_parts = []
+    for i in range(0, m, chunk_size):
+        end_i = min(i + chunk_size, m)
+        chunk = result[i:end_i].float()
+        chunk = chunk * (weight_scale * x_scale[i:end_i])
+        scaled_parts.append(chunk.to(out_dtype))
+    result = torch.cat(scaled_parts, dim=0)
+    if bias is not None:
+        result = result + bias.to(device=result.device, dtype=result.dtype)
+    return result.reshape(*input_shape[:-1], weight.shape[0])
+
+
 def _int8_linear_kernel(
     x,
     weight,
@@ -137,75 +198,201 @@ def _int8_linear_kernel(
 
     orig_shape = x.shape
     x_8, x_scale = _quant_cached(x, convrot, convrot_groupsize)
-    weight_scale = weight_scale.view(-1)
+    # MiniMax H3 long clips leave a small suffix in the 128-row GEMM tile.
+    # At M=15,787 the exact 32-row suffix kernel is ~2% faster for QKV, while
+    # it is slightly slower at the 1-second shape; keep the dispatch narrowly
+    # shape/length gated. The INT32 reduction and epilogue are unchanged.
+    split_tail = (
+        x_8.shape[0] >= 8192
+        and weight.shape == (21504, 5376)
+        and os.environ.get("ASFP8_INT8_LONG_QKV_TAIL", "1") == "1"
+    )
+    return _int8_linear_prequant(
+        x_8, x_scale, weight, weight_scale, bias, out_dtype, orig_shape,
+        split_tail=split_tail,
+    )
 
-    # Fused fast path: when the rescale is purely per-row (tensorwise weight
-    # scale, the int8_tensorwise case) and the output is bf16, fold
-    # float(C)*row_scale[m] (+bias) straight into the kernel's store epilogue so
-    # the int32 product never round-trips through global memory. Bit-identical to
-    # the chunked path below (verified equal across convrot/bias/3D/M=1).
-    if (
-        out_dtype == torch.bfloat16
-        and weight_scale.numel() == 1
-        and hasattr(_kernel, "i8_matmul2d_nt_fused")
-    ):
-        row_scale = (weight_scale.float() * x_scale.reshape(-1).float()).contiguous()
-        bias_arg = bias.to(torch.bfloat16) if bias is not None else None
-        result = _kernel.i8_matmul2d_nt_fused(
-            x_8.contiguous(), weight.contiguous(), row_scale, bias_arg
-        )
-        return result.reshape(*orig_shape[:-1], weight.shape[0])
 
-    # Channelwise fast path: per-output-channel weight scales ([N,1] checkpoints
-    # — Z-Image / Krea2 convrot ship these, so the scalar path above never fires
-    # for them). The kernel epilogue computes (col_scale[n] * row_scale[m]) first
-    # and then rescales C, matching the chunked path's fp32 op order bit-exactly.
-    if (
-        out_dtype == torch.bfloat16
-        and weight_scale.numel() == weight.shape[0]
-        and hasattr(_kernel, "i8_matmul2d_nt_fused_cs")
-    ):
+def _int8_qkv_prequant(layer, x, heads, head_dim, norm_rope):
+    """Shared guarded H3 QKV projection route.
+
+    ``norm_rope`` is either None for the layout-only epilogue or
+    (freqs, q_weight_fp32, k_weight_fp32, eps) for the D=128 fused epilogue.
+    A fast standard runtime LoRA uses a partitioned native epilogue which adds
+    each bf16 delta before Q/K normalization without materializing full QKV.
+    """
+    fused_norm_rope = norm_rope is not None
+    runtime_lora = getattr(layer, _RUNTIME_LORA_ATTR, None)
+    lora_norm_rope = fused_norm_rope and runtime_lora is not None
+    kernel_name = (
+        "i8_matmul2d_nt_fused_cs_qkv_lora_part" if lora_norm_rope else
+        "i8_matmul2d_nt_fused_cs_qkv_rms_rope"
+        if fused_norm_rope else "i8_matmul2d_nt_fused_cs_qkv"
+    )
+    if (_kernel is None
+            or not hasattr(_kernel, kernel_name)
+            or os.environ.get("ASFP8_INT8_QKV_SCATTER", "1") != "1"
+            or (fused_norm_rope and os.environ.get(
+                "ASFP8_INT8_QKV_NORM_ROPE", "1") != "1")):
+        return None
+    if (runtime_lora is not None and (
+            not getattr(runtime_lora, "fast", False)
+            or not hasattr(runtime_lora, "linear_parts"))):
+        return None
+    try:
+        from comfy_kitchen.tensor import QuantizedTensor
+
+        if (not isinstance(x, torch.Tensor) or x.dim() != 2
+                or x.device.type != "mps" or x.dtype != torch.bfloat16
+                or not x.is_contiguous()):
+            return None
+        w = layer.weight
+        if (not isinstance(w, QuantizedTensor)
+                or getattr(w, "_layout_cls", None) != "TensorWiseINT8Layout"):
+            return None
+        if (getattr(layer, "_full_precision_mm", False)
+                or getattr(layer, "comfy_force_cast_weights", False)
+                or len(getattr(layer, "weight_function", []))
+                or len(getattr(layer, "bias_function", []))):
+            return None
+        params = w._params
+        if getattr(params, "transposed", False):
+            return None
+        qdata = w._qdata
+        if qdata.shape != (3 * heads * head_dim, x.shape[1]):
+            return None
+        weight_scale = params.scale.view(-1)
+        if weight_scale.numel() != qdata.shape[0]:
+            return None
+        convrot = getattr(params, "convrot", False)
+        groupsize = getattr(params, "convrot_groupsize", 256)
+        x_8, x_scale = _quant_cached(x, convrot, groupsize)
+        bias = layer.bias
         bias_arg = bias.to(torch.bfloat16) if bias is not None else None
-        result = _kernel.i8_matmul2d_nt_fused_cs(
-            x_8.contiguous(), weight.contiguous(),
+        long_schedule = os.environ.get(
+            "ASFP8_INT8_LONG_SCHEDULE", "1") == "1"
+        common = (
+            x_8, qdata.contiguous(),
             x_scale.reshape(-1).float().contiguous(),
             weight_scale.float().contiguous(), bias_arg,
         )
-        return result.reshape(*orig_shape[:-1], weight.shape[0])
+        if fused_norm_rope:
+            freqs, q_weight, k_weight, eps = norm_rope
+            if (head_dim != 128 or not isinstance(freqs, torch.Tensor)
+                    or freqs.device.type != "mps"
+                    or freqs.dtype != torch.bfloat16
+                    or not freqs.is_contiguous() or freqs.dim() < 3
+                    or freqs.numel() != x.shape[0] * freqs.shape[-3] * 4
+                    or 2 * freqs.shape[-3] > head_dim
+                    or not isinstance(q_weight, torch.Tensor)
+                    or not isinstance(k_weight, torch.Tensor)
+                    or q_weight.device.type != "mps"
+                    or k_weight.device.type != "mps"
+                    or q_weight.dtype != torch.float32
+                    or k_weight.dtype != torch.float32
+                    or not q_weight.is_contiguous()
+                    or not k_weight.is_contiguous()
+                    or q_weight.numel() != head_dim
+                    or k_weight.numel() != head_dim):
+                return None
+            if lora_norm_rope:
+                up, down, lora_scale = runtime_lora.linear_parts(x)
+                part_width = heads * head_dim
+                if (up.shape[0] != 3 * part_width
+                        or up.shape[1] != down.shape[0]
+                        or down.shape[1] != x.shape[1]):
+                    return None
+                low_rank = F.linear(x, down)
+                outputs = []
+                for kind in range(3):
+                    start = kind * part_width
+                    end = start + part_width
+                    delta = F.linear(low_rank, up[start:end]).contiguous()
+                    part_bias = (
+                        bias_arg[start:end].contiguous()
+                        if bias_arg is not None else None)
+                    outputs.append(getattr(_kernel, kernel_name)(
+                        x_8, qdata[start:end].contiguous(),
+                        x_scale.reshape(-1).float().contiguous(),
+                        weight_scale[start:end].float().contiguous(),
+                        part_bias, delta, freqs,
+                        k_weight if kind == 1 else q_weight,
+                        heads, head_dim, kind, float(lora_scale),
+                        float(eps), long_schedule))
+                    del delta
+                q, k, v = outputs
+            else:
+                q, k, v = getattr(_kernel, kernel_name)(
+                    *common, freqs, q_weight, k_weight, heads, head_dim,
+                    float(eps), long_schedule)
+        else:
+            q, k, v = getattr(_kernel, kernel_name)(
+                *common, heads, head_dim, long_schedule)
+        if runtime_lora is not None and not fused_norm_rope:
+            q, k, v = runtime_lora.add_qkv_to(
+                q, k, v, x, heads, head_dim)
+        global _qkv_scatter_announced, _qkv_norm_rope_announced
+        global _qkv_lora_norm_rope_announced
+        if lora_norm_rope:
+            if not _qkv_lora_norm_rope_announced:
+                _qkv_lora_norm_rope_announced = True
+                sys.stderr.write(
+                    f"{TAG} exact runtime-LoRA INT8 QKV + Q/K RMSNorm + "
+                    "partial RoPE epilogue engaged.\n")
+        elif fused_norm_rope:
+            if not _qkv_norm_rope_announced:
+                _qkv_norm_rope_announced = True
+                sys.stderr.write(
+                    f"{TAG} INT8 QKV + Q/K RMSNorm + partial RoPE "
+                    "epilogue engaged.\n")
+        elif not _qkv_scatter_announced:
+            _qkv_scatter_announced = True
+            sys.stderr.write(
+                f"{TAG} direct INT8 QKV attention-layout epilogue engaged; "
+                "fused qkv bf16 buffer eliminated.\n")
+        return q, k, v
+    except Exception as e:
+        route = "qkv norm/RoPE epilogue" if fused_norm_rope else "qkv scatter"
+        print(f"{TAG} {route} fell back ({e!r})")
+        return None
 
-    # C[M,N] int32 = x_8[M,K] @ weight[N,K]^T  (NT: weight in stored layout).
-    result = _kernel.i8_matmul2d_nt(x_8.contiguous(), weight.contiguous())
 
-    m, n = result.shape
-    chunk_size = max(1, min(m, 256 * 1024 * 1024 // (n * 4)))
-    scaled_parts = []
-    for i in range(0, m, chunk_size):
-        end_i = min(i + chunk_size, m)
-        chunk = result[i:end_i].float()
-        chunk = chunk * (weight_scale * x_scale[i:end_i])
-        scaled_parts.append(chunk.to(out_dtype))
-    result = torch.cat(scaled_parts, dim=0)
+def int8_qkv_prequant(layer, x, heads, head_dim):
+    """H3 QKV projection directly to contiguous [1,H,S,D] Q/K/V.
 
-    if bias is not None:
-        result = result + bias.to(device=result.device, dtype=result.dtype)
+    A fast H3 Turbo adapter adds its Q/K/V deltas after the base projection;
+    normalization therefore remains a later pass for that route.
+    """
+    return _int8_qkv_prequant(layer, x, heads, head_dim, None)
 
-    return result.reshape(*orig_shape[:-1], weight.shape[0])
+
+def int8_qkv_rms_rope_prequant(
+    layer, x, freqs, q_weight, k_weight, heads, head_dim, eps,
+):
+    """Bit-exact H3 INT8 projection + Q/K RMSNorm/partial-RoPE epilogue.
+
+    Eligible standard runtime adapters are added before the nonlinear norm;
+    unsupported adapter protocols fall back to the ordinary exact route.
+    """
+    return _int8_qkv_prequant(
+        layer, x, heads, head_dim, (freqs, q_weight, k_weight, eps))
 
 
 def int8_o_proj_prequant(layer, out_bhsd):
     """o-projection straight from the attention layout [B,H,S,D].
 
-    When head_dim == the convrot groupsize (Ideogram 4: D=256), each head is
-    exactly one rotation group, so the head-merge transpose copy and the
-    rowwise-quant pass collapse into one Metal kernel (i8_merge_rot_quant);
-    the GEMM then runs on the pre-quantized (x_8, x_scale).
+    When the merged head width tiles the convrot groupsize (Ideogram 4: D=256;
+    MiniMax H3: D=128, two heads per group), the head-merge transpose copy and
+    rowwise-quant pass collapse into one Metal kernel (i8_merge_rot_quant); the
+    GEMM then runs on the pre-quantized (x_8, x_scale).
 
     ASFP8_INT8_OPROJ_FUSE selects the mode:
-      "1" (default) BIT-EXACT: the convrot rotation stays the eager bf16
+      "1" (default) BIT-EXACT when D=256: the convrot rotation stays the eager bf16
           torch.matmul, applied directly in [B,H,S,D] layout (measured
           bit-identical to the merged-layout matmul, so no merge copy);
-          the kernel does gather + quant only — pixel-identical output,
-          verified by same-seed e2e A/B.
+          the kernel does gather + quant only.  For D<256 (H3), a rotation
+          group spans heads and mode 1 uses the full fused FWHT instead; its
+          rounding class is therefore the same as mode 2.
       "2" FULL FUSION: the rotation runs as in-kernel FWHT butterflies —
           fastest (one pass total), same quality, but fp32 summation order
           differs from the eager matmul, so outputs drift within the usual
@@ -215,6 +402,9 @@ def int8_o_proj_prequant(layer, out_bhsd):
     Returns bf16 [B, S, N], or None when any eligibility check fails (caller
     falls back to the ordinary merge + layer(input) path).
     """
+    runtime_lora = getattr(layer, _RUNTIME_LORA_ATTR, None)
+    if runtime_lora is not None and not getattr(runtime_lora, "fast", False):
+        return None
     if _kernel is None or not hasattr(_kernel, "i8_merge_rot_quant"):
         return None
     mode = os.environ.get("ASFP8_INT8_OPROJ_FUSE", "1")
@@ -242,7 +432,8 @@ def int8_o_proj_prequant(layer, out_bhsd):
         if not getattr(params, "convrot", False):
             return None
         B, H, S, D = out_bhsd.shape
-        if D != 256 or getattr(params, "convrot_groupsize", 256) != D:
+        if (D <= 0 or D > 256 or (H * D) % 256
+                or getattr(params, "convrot_groupsize", 256) != 256):
             return None
         qdata = w._qdata
         if H * D != qdata.shape[1]:
@@ -251,7 +442,7 @@ def int8_o_proj_prequant(layer, out_bhsd):
         bias = layer.bias
         bias_arg = bias.to(torch.bfloat16) if bias is not None else None
 
-        if mode == "2":
+        if mode == "2" or D != 256:
             x_8, x_scale = _kernel.i8_merge_rot_quant(out_bhsd.contiguous())
         else:
             from comfy_kitchen.tensor.int8_utils import _build_hadamard
@@ -263,21 +454,168 @@ def int8_o_proj_prequant(layer, out_bhsd):
             r = _kernel.i8_matmul2d_nt_fused(x_8, qdata.contiguous(), row_scale, bias_arg)
         elif (weight_scale.numel() == qdata.shape[0]
               and hasattr(_kernel, "i8_matmul2d_nt_fused_cs")):
+            long_schedule = os.environ.get(
+                "ASFP8_INT8_LONG_SCHEDULE", "1") == "1"
             r = _kernel.i8_matmul2d_nt_fused_cs(
                 x_8, qdata.contiguous(),
                 x_scale.reshape(-1).float().contiguous(),
-                weight_scale.float().contiguous(), bias_arg)
+                weight_scale.float().contiguous(), bias_arg,
+                False, long_schedule)
         else:
             return None
         global _oproj_announced
         if not _oproj_announced:
             _oproj_announced = True
-            what = ("full FWHT fusion (rounding-equivalent)" if mode == "2"
+            what = ("full FWHT fusion (rounding-equivalent)" if mode == "2" or D != 256
                     else "bit-exact merge+quant fusion")
             sys.stderr.write(f"{TAG} fused o-projection engaged: {what}.\n")
-        return r.reshape(B, S, qdata.shape[0])
+        r = r.reshape(B, S, qdata.shape[0])
+        if runtime_lora is not None:
+            # The direct o-projection intentionally bypasses Linear.forward.
+            # Apply the registered H3 runtime LoRA explicitly so the fused path
+            # cannot silently drop the output-projection delta.
+            r = runtime_lora.add_bhsd_to(r, out_bhsd)
+        return r
     except Exception as e:
         print(f"{TAG} o-proj prequant fell back ({e!r})")
+        return None
+
+
+def int8_mlp_bridge(fc1, fc2, x):
+    """Run an H3 INT8 FC1/SwiGLU/FC2 without FC1's [M,2F] output."""
+    if (_kernel is None
+            or not hasattr(_kernel, "i8_mlp_bridge_prequant")
+            or os.environ.get("ASFP8_INT8_MLP_BRIDGE", "1") != "1"
+            or os.environ.get("ASFP8_INT8_SWIGLU", "1") != "1"
+            or os.environ.get("ASFP8_INT8_SWIGLU_ROT", "1") != "1"):
+        return None
+    lora1 = getattr(fc1, _RUNTIME_LORA_ATTR, None)
+    lora2 = getattr(fc2, _RUNTIME_LORA_ATTR, None)
+    runtime_lora = lora1 is not None or lora2 is not None
+    if runtime_lora and any(
+            adapter is not None and (
+                not getattr(adapter, "fast", False)
+                or not hasattr(adapter, "linear_parts"))
+            for adapter in (lora1, lora2)):
+        return None
+    try:
+        from comfy_kitchen.tensor import QuantizedTensor
+
+        if (not isinstance(x, torch.Tensor) or x.dim() != 2
+                or x.device.type != "mps" or x.dtype != torch.bfloat16
+                or not x.is_contiguous()):
+            return None
+        weights = (fc1.weight, fc2.weight)
+        if any(not isinstance(weight, QuantizedTensor)
+               or getattr(weight, "_layout_cls", None) != "TensorWiseINT8Layout"
+               for weight in weights):
+            return None
+        if any(getattr(layer, "_full_precision_mm", False)
+               or getattr(layer, "comfy_force_cast_weights", False)
+               or len(getattr(layer, "weight_function", []))
+               or len(getattr(layer, "bias_function", []))
+               for layer in (fc1, fc2)):
+            return None
+        p1, p2 = weights[0]._params, weights[1]._params
+        if (getattr(p1, "transposed", False)
+                or getattr(p2, "transposed", False)
+                or not getattr(p2, "convrot", False)
+                or getattr(p2, "convrot_groupsize", 256) != 256):
+            return None
+        w1, w2 = weights[0]._qdata, weights[1]._qdata
+        if (w1.dim() != 2 or w2.dim() != 2 or w1.shape[0] % 512
+                or w1.shape[1] != x.shape[1]
+                or w2.shape[1] * 2 != w1.shape[0]):
+            return None
+        s1, s2 = p1.scale.view(-1), p2.scale.view(-1)
+        if s1.numel() != w1.shape[0] or s2.numel() != w2.shape[0]:
+            return None
+
+        x_8, x_scale = _quant_cached(
+            x, getattr(p1, "convrot", False),
+            getattr(p1, "convrot_groupsize", 256))
+        bias1 = fc1.bias
+        bias1_arg = bias1.to(torch.bfloat16) if bias1 is not None else None
+        long_schedule = os.environ.get(
+            "ASFP8_INT8_LONG_SCHEDULE", "1") == "1"
+        if not runtime_lora:
+            fc2_8, fc2_scale = _kernel.i8_mlp_bridge_prequant(
+                x_8.contiguous(), w1.contiguous(),
+                x_scale.reshape(-1).float().contiguous(),
+                s1.float().contiguous(), bias1_arg, long_schedule)
+        else:
+            if (not hasattr(_kernel, "i8_matmul2d_nt_fused_cs")
+                    or not hasattr(_kernel, "i8_quant_rowwise")):
+                return None
+            rows = x.shape[0]
+            ffn = w2.shape[1]
+            parts1 = lora1.linear_parts(x) if lora1 is not None else None
+            parts2 = lora2.linear_parts(x) if lora2 is not None else None
+            if parts1 is not None:
+                up1, down1, scale1 = parts1
+                if (up1.shape != (2 * ffn, down1.shape[0])
+                        or down1.shape[1] != x.shape[1]):
+                    return None
+                low1 = F.linear(x, down1)
+            if parts2 is not None:
+                up2, down2, scale2 = parts2
+                if (up2.shape != (w2.shape[0], down2.shape[0])
+                        or down2.shape[1] != ffn):
+                    return None
+                low2 = torch.empty(
+                    (rows, down2.shape[0]), device=x.device, dtype=x.dtype)
+
+            fc2_8 = torch.empty(
+                (rows, ffn), device=x.device, dtype=torch.int8)
+            fc2_scale = torch.empty(
+                (rows, 1), device=x.device, dtype=torch.float32)
+            tile_rows = max(128, int(os.environ.get(
+                "ASFP8_INT8_MLP_LORA_TILE_ROWS", "2048")))
+            tile_rows = (tile_rows // 128) * 128
+            row_scales = x_scale.reshape(-1).float().contiguous()
+            col_scales = s1.float().contiguous()
+            for start in range(0, rows, tile_rows):
+                end = min(start + tile_rows, rows)
+                wide = _kernel.i8_matmul2d_nt_fused_cs(
+                    x_8[start:end].contiguous(), w1.contiguous(),
+                    row_scales[start:end].contiguous(), col_scales,
+                    bias1_arg, False, long_schedule)
+                if parts1 is not None:
+                    delta1 = F.linear(low1[start:end], up1)
+                    wide.add_(delta1, alpha=scale1)
+                    del delta1
+                act = _swiglu_activation(wide)
+                del wide
+                if parts2 is not None:
+                    low2[start:end].copy_(F.linear(act, down2))
+                quantized, scales = _quant_cached(
+                    act, getattr(p2, "convrot", False),
+                    getattr(p2, "convrot_groupsize", 256))
+                fc2_8[start:end].copy_(quantized)
+                fc2_scale[start:end].copy_(scales)
+                del act, quantized, scales
+        bias2 = fc2.bias
+        result = _int8_linear_prequant(
+            fc2_8, fc2_scale, w2, s2, bias2, x.dtype, x.shape,
+            split_tail=True)
+        if runtime_lora and parts2 is not None:
+            delta2 = F.linear(low2, up2)
+            result.add_(delta2, alpha=scale2)
+            del delta2
+        global _mlp_bridge_announced, _mlp_lora_bridge_announced
+        if runtime_lora and not _mlp_lora_bridge_announced:
+            _mlp_lora_bridge_announced = True
+            sys.stderr.write(
+                f"{TAG} exact runtime-LoRA H3 FC1/SwiGLU/FC2 tiled bridge "
+                "engaged.\n")
+        elif not runtime_lora and not _mlp_bridge_announced:
+            _mlp_bridge_announced = True
+            sys.stderr.write(
+                f"{TAG} fused H3 FC1/SwiGLU/FC2 bridge engaged; "
+                "wide FC1 and separate rotated BF16 allocations eliminated.\n")
+        return result
+    except Exception as e:
+        print(f"{TAG} MLP bridge fell back ({e!r})")
         return None
 
 
@@ -298,13 +636,31 @@ def _dit_silu_mul():
     return _dit or None
 
 
+def _swiglu_activation(x):
+    """Materialize H3's SwiGLU once, preferring the bit-matched Metal helper."""
+    wide = x.shape[-1]
+    half = wide // 2
+    x2 = x.reshape(-1, wide)
+    dk = _dit_silu_mul()
+    if (dk is not None and x.dtype == torch.bfloat16
+            and os.environ.get("ASFP8_INT8_SWIGLU_EAGERACT") != "1"):
+        if hasattr(dk, "silu_mul_split") and x2.is_contiguous():
+            return dk.silu_mul_split(x2).reshape(*x.shape[:-1], half)
+        return dk.silu_mul(
+            x[..., :half].contiguous(), x[..., half:].contiguous())
+    return torch.nn.functional.silu(x[..., :half]) * x[..., half:]
+
+
 def _try_int8_swiglu_forward(linear, x):
     """linear(swiglu(x)) via fused silu*mul + the kernel W8A8 path, or None.
 
     Same eligibility contract as _try_int8_kernel_forward. The silu*mul
     kernel computes silu in fp32 with RTE exactly like the eager MPS op, so
     the activation bytes match comfy's _swiglu_eager."""
-    global _kernel
+    global _kernel, _swiglu_rot_announced
+    runtime_lora = getattr(linear, _RUNTIME_LORA_ATTR, None)
+    if runtime_lora is not None and not getattr(runtime_lora, "fast", False):
+        return None
     if _kernel is None:
         return None
     try:
@@ -330,22 +686,38 @@ def _try_int8_swiglu_forward(linear, x):
         if wide % 2:
             return None
         half = wide // 2
-        dk = _dit_silu_mul()
-        if (dk is not None and x.dtype == torch.bfloat16
-                and os.environ.get("ASFP8_INT8_SWIGLU_EAGERACT") != "1"):
-            x2 = x.reshape(-1, wide)
-            if hasattr(dk, "silu_mul_split") and x2.is_contiguous():
-                # read both halves straight from the projection output — skips
-                # two full-size .contiguous() copies (2 x 154 MB at H3's fc2)
-                act = dk.silu_mul_split(x2).reshape(*x.shape[:-1], half)
-            else:
-                act = dk.silu_mul(x[..., :half].contiguous(), x[..., half:].contiguous())
-        else:
-            act = torch.nn.functional.silu(x[..., :half]) * x[..., half:]
+        x2 = x.reshape(-1, wide)
+        convrot = getattr(params, "convrot", False)
+        groupsize = getattr(params, "convrot_groupsize", 256)
+        if runtime_lora is not None:
+            # A low-rank delta needs the unrotated SwiGLU activation.  Keep the
+            # quantized base GEMM, materialize that activation once, and add the
+            # small-rank projection in activation space.  This avoids both the
+            # lossy INT8 weight merge and the silent forward-hook bypass.
+            act = _swiglu_activation(x)
+            base = _int8_linear_kernel(
+                act, w._qdata, params.scale, linear.bias, x.dtype,
+                convrot, groupsize)
+            return runtime_lora.add_to(base, act)
+        if (os.environ.get("ASFP8_INT8_SWIGLU_ROT", "1") == "1"
+                and convrot and groupsize == 256
+                and x.dtype == torch.bfloat16 and x2.is_contiguous()
+                and hasattr(_kernel, "i8_swiglu_rot")
+                and hasattr(_kernel, "i8_quant_rowwise")):
+            rot = _kernel.i8_swiglu_rot(x2)
+            x_8, x_scale = _kernel.i8_quant_rowwise(rot)
+            if not _swiglu_rot_announced:
+                _swiglu_rot_announced = True
+                sys.stderr.write(f"{TAG} fused SwiGLU+convrot pre-pass "
+                                 "engaged for INT8 fc2.\n")
+            return _int8_linear_prequant(
+                x_8, x_scale, w._qdata, params.scale, linear.bias,
+                x.dtype, x.shape, split_tail=True)
+
+        act = _swiglu_activation(x)
         return _int8_linear_kernel(
             act, w._qdata, params.scale, linear.bias, x.dtype,
-            getattr(params, "convrot", False),
-            getattr(params, "convrot_groupsize", 256))
+            convrot, groupsize)
     except Exception:
         return None
 
@@ -474,6 +846,7 @@ def install():
             _orig_lia = ops.linear_input_act
 
             def linear_input_act_wrapped(linear, x, input_act):
+                runtime_lora = getattr(linear, _RUNTIME_LORA_ATTR, None)
                 if (input_act == "swiglu"
                         and os.environ.get("ASFP8_INT8_SWIGLU_VERIFY") == "1"):
                     # diagnostic: run BOTH paths, dump the first divergence
@@ -505,12 +878,22 @@ def install():
                                         "scale": linear.weight._params.scale.cpu(),
                                         "convrot": getattr(linear.weight._params, "convrot", False)},
                                        "/tmp/asfp8_swiglu_mismatch.pt")
-                    return ref
+                    if runtime_lora is None:
+                        return ref
+                    # The stock reference bypasses Linear.forward for INT8 and
+                    # therefore omits a runtime adapter. Fall through to the
+                    # explicit forward path below when one is registered.
                 if (input_act == "swiglu"
                         and os.environ.get("ASFP8_INT8_SWIGLU", "1") == "1"):
                     res = _try_int8_swiglu_forward(linear, x)
                     if res is not None:
                         return res
+                if input_act == "swiglu" and runtime_lora is not None:
+                    # Eligibility changes (dtype/device/layout/kill switch)
+                    # must fall back through Linear.forward, not ComfyUI's
+                    # quantized linear_input_act helper, because only the
+                    # former invokes the runtime LoRA hook.
+                    return linear(_swiglu_activation(x))
                 return _orig_lia(linear, x, input_act)
 
             linear_input_act_wrapped._asfp8_wrapped = True

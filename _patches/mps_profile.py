@@ -196,13 +196,34 @@ def install():
     except Exception:
         pass
 
-    # Our own int8 W8A8 Metal kernel (patch #17) replaces Linear.forward wholesale;
-    # its matmuls never pass F.linear. The forward looks the function up by module
-    # global, so wrapping the module attribute catches every call.
+    # Our INT8 paths replace Linear.forward wholesale and the MiniMax attention
+    # and SwiGLU projections bypass it again with prequantized activations. Time
+    # the three top-level entry points separately so the buckets are complete
+    # and non-overlapping (wrapping only _int8_linear_kernel missed both newer
+    # paths and made MiniMax's largest cost look like "unwrapped").
     try:
         from . import int8_linear_kernel_mps as _i8k
-        if hasattr(_i8k, "_int8_linear_kernel"):
-            _i8k._int8_linear_kernel = _timed("int8_kernel", _i8k._int8_linear_kernel)
+        for _attr, _bucket in (
+            ("_try_int8_kernel_forward", "int8_linear"),
+            ("_try_int8_swiglu_forward", "int8_swiglu"),
+            ("int8_qkv_prequant", "int8_qkv_layout"),
+            ("int8_qkv_rms_rope_prequant", "int8_qkv_norm_rope"),
+            ("int8_mlp_bridge", "int8_mlp_bridge"),
+            ("int8_o_proj_prequant", "int8_oproj"),
+        ):
+            _fn = getattr(_i8k, _attr, None)
+            if callable(_fn) and not getattr(_fn, "_asfp8_timed", False):
+                setattr(_i8k, _attr, _timed(_bucket, _fn))
+    except Exception:
+        pass
+
+    # The attention router calls the Metal 4.1 extension directly, bypassing
+    # both F.scaled_dot_product_attention and comfy's SDPA wrapper.
+    try:
+        from . import attn_router_mps as _ar
+        if (callable(getattr(_ar, "_fa41_attention", None))
+                and not getattr(_ar._fa41_attention, "_asfp8_timed", False)):
+            _ar._fa41_attention = _timed("flash41", _ar._fa41_attention)
     except Exception:
         pass
 

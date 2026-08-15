@@ -28,6 +28,14 @@ COOLDOWN_S = float(os.environ.get("ASFP8_BENCH_COOLDOWN", "3.0"))
 
 # (label, M, K, N) — the production shapes that matter most.
 BENCH_SHAPES = [
+    ("h3 qkv N=21504", 5378, 5376, 21504),
+    ("h3 oproj K=7168", 5378, 7168, 5376),
+    ("h3 fc1 N=28672", 5378, 5376, 28672),
+    ("h3 fc2 K=14336", 5378, 14336, 5376),
+    ("h3 5s qkv N=21504", 15787, 5376, 21504),
+    ("h3 5s oproj K=7168", 15787, 7168, 5376),
+    ("h3 5s fc1 N=28672", 15787, 5376, 28672),
+    ("h3 5s fc2 K=14336", 15787, 14336, 5376),
     ("krea wq 6144^2", 4300, 6144, 6144),
     ("krea wk/wv N=1536", 4300, 6144, 1536),
     ("krea down K=16384", 4300, 16384, 6144),
@@ -94,8 +102,13 @@ _V4 = [(
 # V5: drop the volatile compiler barrier (forces load/compute grouping; the
 # compiler may schedule better without it — or blow registers; measure).
 _V5 = [
-    ("      volatile int compiler_barrier;\n", ""),
-    ("      (void)compiler_barrier;\n", ""),
+    ("""template <> struct compiler_barrier_slot<true> {
+  volatile int value;
+  inline void touch() { (void)value; }
+};""",
+     """template <> struct compiler_barrier_slot<true> {
+  inline void touch() {}
+};""")
 ]
 
 # V6: vectorized interior stores — when the simdgroup's whole 32x32 tile is
@@ -285,6 +298,17 @@ def bench_interleaved(cand, base, M, K, N, rounds=8, reps=8):
     return med_ratio, 2 * M * K * N / med_base / 1e12
 
 
+def selected_bench_shapes():
+    """Optional label filter keeps architecture-specific tournaments short."""
+    needle = os.environ.get("ASFP8_BENCH_SHAPE", "").strip().lower()
+    if not needle:
+        return BENCH_SHAPES
+    shapes = [shape for shape in BENCH_SHAPES if needle in shape[0].lower()]
+    if not shapes:
+        raise RuntimeError(f"ASFP8_BENCH_SHAPE={needle!r} matched no shapes")
+    return shapes
+
+
 def main_ab(name):
     from _patches.int8_ext import loader
 
@@ -297,7 +321,7 @@ def main_ab(name):
         print(f"{name}: PARITY FAILED — {err}")
         return
     print(f"{name}: parity OK (torch.equal); interleaved A/B, median of 8 rounds")
-    for label, M, K, N in BENCH_SHAPES:
+    for label, M, K, N in selected_bench_shapes():
         r, base_tf = bench_interleaved(cand, base, M, K, N)
         print(f"  {label:>20}: base {base_tf:6.1f} TF/s, cand {base_tf*r:6.1f} TF/s ({r:5.3f}x)")
         time.sleep(COOLDOWN_S)
@@ -315,7 +339,7 @@ def main():
 
     # Baseline row (measured in the same session so ratios are thermal-robust).
     base_t = {}
-    for label, M, K, N in BENCH_SHAPES:
+    for label, M, K, N in selected_bench_shapes():
         base_t[label] = bench_one(base, M, K, N)
         print(f"  baseline {label:>20}: {2*M*K*N/base_t[label]/1e12:6.1f} TF/s")
         time.sleep(COOLDOWN_S)
@@ -332,7 +356,7 @@ def main():
             print(f"{name}: PARITY FAILED — {err}")
             continue
         rows = []
-        for label, M, K, N in BENCH_SHAPES:
+        for label, M, K, N in selected_bench_shapes():
             t = bench_one(cand, M, K, N)
             rows.append(f"{label}: {2*M*K*N/t/1e12:6.1f} TF/s ({base_t[label]/t:5.3f}x)")
             time.sleep(COOLDOWN_S)
@@ -347,6 +371,109 @@ def main_rate_desc64():
     doubles, the unit is MAC-rate-limited and there is nothing to win."""
     for dm, dn, dk in ((16, 32, 32), (32, 32, 16), (32, 32, 32)):
         probe_desc(dm, dn, dk)
+
+
+def main_split_tail():
+    """A/B the optional 128-row-prefix + 32-row-tail dispatch in one module."""
+    from _patches.int8_ext import loader
+
+    os.environ.setdefault("ASFP8_INT8_EXT", "1")
+    mod = loader.module()
+    assert mod is not None, "kernel failed to build"
+    print("split-tail: same kernel/module, interleaved false/true, exact parity")
+    for label, M, K, N in selected_bench_shapes():
+        a = torch.randint(-128, 128, (M, K), dtype=torch.int8, device="mps")
+        b = torch.randint(-128, 128, (N, K), dtype=torch.int8, device="mps")
+        rs = torch.rand(M, dtype=torch.float32, device="mps") * 0.01
+        cs = torch.rand(N, dtype=torch.float32, device="mps") * 0.01
+
+        def run(split):
+            return mod.i8_matmul2d_nt_fused_cs(a, b, rs, cs, None, split)
+
+        ref = run(False)
+        cand = run(True)
+        torch.mps.synchronize()
+        assert torch.equal(ref, cand), f"split-tail mismatch at {(M, K, N)}"
+
+        def timed(split, reps=8):
+            run(split)
+            torch.mps.synchronize()
+            t0 = time.perf_counter()
+            for _ in range(reps):
+                run(split)
+            torch.mps.synchronize()
+            return (time.perf_counter() - t0) / reps
+
+        ratios, base_ts = [], []
+        for round_idx in range(12):
+            if round_idx % 2:
+                tc = timed(True)
+                tb = timed(False)
+            else:
+                tb = timed(False)
+                tc = timed(True)
+            base_ts.append(tb)
+            ratios.append(tb / tc)
+        ratios.sort()
+        base_ts.sort()
+        ratio = ratios[len(ratios) // 2]
+        base_t = base_ts[len(base_ts) // 2]
+        base_tf = 2 * M * K * N / base_t / 1e12
+        print(f"  {label:>20}: base {base_tf:6.1f} TF/s, split "
+              f"{base_tf * ratio:6.1f} TF/s ({ratio:5.3f}x)")
+        time.sleep(COOLDOWN_S)
+
+
+def main_long_schedule():
+    """A/B the long-M compiler schedule in one module, with exact parity."""
+    from _patches.int8_ext import loader
+
+    os.environ.setdefault("ASFP8_INT8_EXT", "1")
+    mod = loader.module()
+    assert mod is not None, "kernel failed to build"
+    print("long-schedule: same module, interleaved old/new, exact parity")
+    for label, M, K, N in selected_bench_shapes():
+        a = torch.randint(-128, 128, (M, K), dtype=torch.int8, device="mps")
+        b = torch.randint(-128, 128, (N, K), dtype=torch.int8, device="mps")
+        rs = torch.rand(M, dtype=torch.float32, device="mps") * 0.01
+        cs = torch.rand(N, dtype=torch.float32, device="mps") * 0.01
+
+        def run(long_schedule):
+            return mod.i8_matmul2d_nt_fused_cs(
+                a, b, rs, cs, None, False, long_schedule)
+
+        ref = run(False)
+        cand = run(True)
+        torch.mps.synchronize()
+        assert torch.equal(ref, cand), f"long-schedule mismatch at {(M, K, N)}"
+
+        def timed(long_schedule, reps=8):
+            run(long_schedule)
+            torch.mps.synchronize()
+            t0 = time.perf_counter()
+            for _ in range(reps):
+                run(long_schedule)
+            torch.mps.synchronize()
+            return (time.perf_counter() - t0) / reps
+
+        ratios, base_ts = [], []
+        for round_idx in range(12):
+            if round_idx % 2:
+                tc = timed(True)
+                tb = timed(False)
+            else:
+                tb = timed(False)
+                tc = timed(True)
+            base_ts.append(tb)
+            ratios.append(tb / tc)
+        ratios.sort()
+        base_ts.sort()
+        ratio = ratios[len(ratios) // 2]
+        base_t = base_ts[len(base_ts) // 2]
+        base_tf = 2 * M * K * N / base_t / 1e12
+        print(f"  {label:>20}: old {base_tf:6.1f} TF/s, long "
+              f"{base_tf * ratio:6.1f} TF/s ({ratio:5.3f}x)")
+        time.sleep(COOLDOWN_S)
 
 
 def probe_desc(dm, dn, dk):
@@ -383,6 +510,10 @@ def probe_desc(dm, dn, dk):
 if __name__ == "__main__":
     if len(sys.argv) == 2 and sys.argv[1] == "--rate-desc64":
         main_rate_desc64()
+    elif len(sys.argv) == 2 and sys.argv[1] == "--split-tail":
+        main_split_tail()
+    elif len(sys.argv) == 2 and sys.argv[1] == "--long-schedule":
+        main_long_schedule()
     elif len(sys.argv) == 3 and sys.argv[1] == "--ab":
         main_ab(sys.argv[2])
     else:
