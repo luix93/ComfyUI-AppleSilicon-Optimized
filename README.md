@@ -187,6 +187,39 @@ nominal **0.075% sampling difference** is within observed variation, so no
 new sampling change was promoted. All latent bytes, raw FP32 frames and
 decoded exported video/audio matched the previous production reference.
 
+The **relaxed-kernel sprint** adds an independently optional FP16 H3 VAE
+attention path. On identical saved latents, dense FlashAttention reduces the
+complete **124-frame, 864×480 decoder from 13.223 to 10.668 s** (four warmed,
+alternating pairs: **19.3% less decode time / 2.555 s saved**). Three further
+boat/scarf/butterfly short references improve by about 19–20%. Sampling and
+projection GEMMs retain their existing implementation. This changes decoded
+frame bytes: full-clip pixel RMSE is **0.0000962**, PSNR **80.33 dB** and sampled
+SSIM **0.9999973**. Inspected lossless crops and sampled sequences show no
+visible detail/color change at the displayed scale; temporal-difference
+measurements are close. That scoped assessment is not a guarantee for every
+prompt or frame.
+
+**Exact remains the default.** Set `ASFP8_MINIMAX_VAE_DENSE_ATTENTION=1` in
+the environment used to launch ComfyUI, then restart to try it. Set it to `0`
+or remove it and restart to restore exact attention. Native mode does not
+enable this relaxation implicitly. The switch requires the native FP16 VAE
+fast path and dense Metal attention extension; failures fall back to the
+existing backend. Default/enabled startup checks reproduce their saved outputs,
+and **42 VAE/native regression tests pass**. See the
+[sprint-three report](benchmarks/m5-ultra-relaxed-sprint3.md) for complete
+measurements, visual-assessment limits and the independent tail, softmax and
+FP16 GEMM experiments. The latter softmax variants were slower; FC1/SwiGLU
+GEMM fusion saved only 0.09 s on the full decoder and was not promoted.
+
+Six warmed **124-frame, 864×480, 20-step** runs confirm **161.24 → 158.64 s
+E2E** for the optional dense VAE (**2.60 s / 1.61% saved**). Live video decode
+averages **13.157 → 10.707 s**; all sampler latents and decoded audio remain
+byte-identical. Both exact controls reproduce the previous raw-frame hash.
+The separately tested tail specialization averages **147.022 → 143.936 s
+sampling (7.351 → 7.197 s/step)**, but changes same-seed composition, motion
+and audio and gives no consistent smaller-workflow gain. It stays benchmark-only
+pending further perceptual review; the two candidates were not combined.
+
 The earlier **163.65 s E2E / 146.13 s sampling** result used the same prompt,
 seed and workflow. Sampling instrumentation, operation shapes/counts and kernel
 sources match the later VAE-sprint run, and controlled old/current attention
@@ -1093,6 +1126,7 @@ alone—by accident.
 | `ASFP8_MINIMAX_GRAPH` | 1 | exact guarded H3 final-layer graph rewrite (target RMSNorm + modulation + fp32 casts) |
 | `ASFP8_MINIMAX_VAE_FAST` | 1 (under DIT_EXT) | FP16 H3 video-decoder QK normalization/RoPE/layout and elementwise kernels; `0` restores core forwards |
 | `ASFP8_MINIMAX_VAE_SWIGLU` / `ASFP8_MINIMAX_VAE_MERGE` | 1 | per-feature switches for exact FP16 SwiGLU and attention-output merge/sanitization |
+| `ASFP8_MINIMAX_VAE_DENSE_ATTENTION` | 0 (off) | optional non-bit-exact dense FP16 H3 VAE attention; requires native VAE/Metal attention, restart to change; independent of sampling |
 | `ASFP8_INT8_QKV_SCATTER` | 1 | exact H3 INT8 QKV epilogue directly to three attention-layout tensors; `0` restores the full fused-QKV buffer |
 | `ASFP8_INT8_QKV_NORM_ROPE` | 1 | exact D=128 H3 INT8 projection + optional standard runtime-LoRA delta + Q/K RMSNorm + partial-RoPE epilogue |
 | `ASFP8_MINIMAX_CROSS_BLOCK` | 1 | exact MLP-gate → next-attention-AdaLN carry when no workflow block replacement is active |

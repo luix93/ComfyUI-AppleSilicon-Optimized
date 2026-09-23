@@ -1,8 +1,10 @@
-"""FP16 MiniMax video VAE glue, preserving the selected GEMMs and attention.
+"""FP16 MiniMax video VAE glue, preserving the selected GEMMs and attention by default.
 
 The decoder's [head, qkv, dim] layout and FP16 rounding differ from the BF16
 denoiser. These kernels are deliberately separate from minimax_fast. Native
 mode enables the patch; ASFP8_MINIMAX_VAE_FAST=0 restores the core forwards.
+ASFP8_MINIMAX_VAE_DENSE_ATTENTION=1 independently opts into non-bit-exact
+dense FlashAttention; it is never enabled implicitly by native mode.
 """
 from __future__ import annotations
 
@@ -19,6 +21,9 @@ _kernel = None
 _attention_dead = False
 _ff_dead = False
 _merge = True
+_dense = False
+_dense_dead = False
+_dense_kernel = None
 _vm = None
 _ops = None
 _original_attention = None
@@ -47,6 +52,23 @@ def _attention_ok(self, x, rope):
             and rope.shape[:3] == (*x.shape[:2], 1)
             and 0 < rope.shape[3] <= 32 and rope.shape[4:] == (2, 2))
 
+def _run_attention(q, k, v, heads):
+    """Dense FP16 FlashAttention is separately opt-in and changes output bytes."""
+    global _dense_dead
+    if _dense and not _dense_dead and _dense_kernel is not None:
+        try:
+            out = _dense_kernel.flash_fwd_na(q, k, v, 64 ** -0.5)
+            if not _merge:
+                out = out.transpose(1, 2).reshape(q.shape[0], q.shape[2], heads * 64)
+            return out
+        except Exception as exc:
+            _dense_dead = True
+            print(f"{TAG} optional dense attention disabled ({str(exc)[:180]}); "
+                  "restoring the exact attention path.")
+    return _vm.optimized_attention(q, k, v, heads, skip_reshape=True,
+                                   skip_output_reshape=_merge)
+
+
 def _attention(self, x, rotary_pos_emb, pre_norm, residual, residual_scale):
     global _attention_dead
     if not _attention_ok(self, x, rotary_pos_emb):
@@ -58,8 +80,7 @@ def _attention(self, x, rotary_pos_emb, pre_norm, residual, residual_scale):
         _attention_dead = True
         print(f"{TAG} QKV fusion disabled ({str(exc)[:180]}).")
         return _original_attention(self, x, rotary_pos_emb, pre_norm, residual, residual_scale)
-    out = _vm.optimized_attention(q, k, v, self.heads, skip_reshape=True,
-                                  skip_output_reshape=_merge)
+    out = _run_attention(q, k, v, self.heads)
     if _merge:
         if _half_mps(out) and out.shape == q.shape:
             try:
@@ -113,6 +134,7 @@ def _compatible(vm, rope_impl):
 
 def install():
     global _installed, _kernel, _vm, _ops, _original_attention, _original_ff, _merge
+    global _dense, _dense_kernel
     if (_installed or sys.platform != "darwin" or os.environ.get("ASFP8_DIT_EXT") != "1"
             or os.environ.get("ASFP8_MINIMAX_VAE_FAST", "1") != "1"
             or not torch.backends.mps.is_available()):
@@ -132,6 +154,18 @@ def install():
         return
     _vm, _ops, _kernel = vm, ops, kernel
     _merge = os.environ.get("ASFP8_MINIMAX_VAE_MERGE", "1") == "1"
+    # Native mode enables exact kernels only. Numerical relaxation requires
+    # this independent switch, even when ASFP8_NATIVE=1 is already set.
+    _dense = os.environ.get("ASFP8_MINIMAX_VAE_DENSE_ATTENTION", "0") == "1"
+    if _dense:
+        from . import attn_router_mps
+        candidate = attn_router_mps._fa41
+        if (attn_router_mps._FA41_NA and not attn_router_mps._na_dead
+                and hasattr(candidate, "flash_fwd_na")):
+            _dense_kernel = candidate
+        else:
+            _dense = False
+            print(f"{TAG} optional dense attention unavailable; keeping exact attention.")
     _original_attention, _original_ff = vm.Attention.forward, vm.FeedForward.forward
     attention = functools.wraps(_original_attention)(_attention)
     attention._asfp8_vae_fp16 = True
@@ -142,5 +176,9 @@ def install():
         ff._asfp8_original = _original_ff
         vm.FeedForward.forward = ff
     _installed = True
-    print(f"{TAG} FP16 decoder QK norm/RoPE/layout and elementwise fusions enabled; "
-          "matrix multiplies, attention backend and tiling preserved.")
+    if _dense:
+        print(f"{TAG} optional NON-BIT-EXACT dense FP16 VAE attention enabled; "
+              "set ASFP8_MINIMAX_VAE_DENSE_ATTENTION=0 and restart for exact attention.")
+    else:
+        print(f"{TAG} FP16 decoder QK norm/RoPE/layout and elementwise fusions enabled; "
+              "matrix multiplies, attention backend and tiling preserved.")

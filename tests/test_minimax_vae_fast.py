@@ -52,6 +52,43 @@ def test_unknown_and_old_rotary_apis_rejected():
         def forward(self,x):return x
     assert not patch._compatible(SimpleNamespace(Attention=Attention),SimpleNamespace())
 
+def test_dense_attention_disabled_and_failure_use_exact_backend(monkeypatch):
+    calls=[]
+    q=torch.zeros(1,32,5,64,dtype=torch.float16)
+    def exact(*args,**kwargs):
+        calls.append(('exact',kwargs))
+        return q
+    def fail(*args):
+        calls.append(('dense',{}))
+        raise RuntimeError('intentional compiler failure')
+    monkeypatch.setattr(patch,'_vm',SimpleNamespace(optimized_attention=exact))
+    monkeypatch.setattr(patch,'_dense_kernel',SimpleNamespace(flash_fwd_na=fail))
+    monkeypatch.setattr(patch,'_merge',True)
+    monkeypatch.setattr(patch,'_dense_dead',False)
+    monkeypatch.setattr(patch,'_dense',False)
+    assert patch._run_attention(q,q,q,32) is q
+    assert [c[0] for c in calls]==['exact']
+    monkeypatch.setattr(patch,'_dense',True)
+    assert patch._run_attention(q,q,q,32) is q
+    assert patch._dense_dead
+    assert patch._run_attention(q,q,q,32) is q
+    assert [c[0] for c in calls]==['exact','dense','exact','exact']
+    assert calls[-1][1]=={'skip_reshape':True,'skip_output_reshape':True}
+
+@pytest.mark.parametrize('merge',[False,True])
+def test_dense_attention_preserves_requested_output_layout(monkeypatch,merge):
+    q=torch.arange(32*5*64,dtype=torch.float32).reshape(1,32,5,64)
+    monkeypatch.setattr(patch,'_dense',True)
+    monkeypatch.setattr(patch,'_dense_dead',False)
+    monkeypatch.setattr(patch,'_merge',merge)
+    def dense(a,b,c,scale):
+        assert scale==64**-.5
+        return q
+    monkeypatch.setattr(patch,'_dense_kernel',SimpleNamespace(flash_fwd_na=dense))
+    actual=patch._run_attention(q,q,q,32)
+    expected=q if merge else q.transpose(1,2).reshape(1,5,2048)
+    assert torch.equal(actual,expected)
+
 @gpu
 @pytest.mark.parametrize('batch,length,rot',[(1,1,16),(1,261,24),(2,517,24),(4,1797,24),(3,37,32)])
 def test_qkv_strided_reference_and_input_ownership(kernel,batch,length,rot):
