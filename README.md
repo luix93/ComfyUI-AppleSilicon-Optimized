@@ -19,9 +19,9 @@ matrix multiplies, and each model family's glue code. Image models render in
 roughly **half** their stock time; long video generation becomes genuinely
 viable on a laptop. On an M5 Max, Z-Image runs ~7.6 s, Krea2 ~14 s,
 Ideogram 4 ~41 s, and an 81-frame Wan 2.2 video ~111 s — matching or beating
-the fastest native Mac apps (full table below). Several of these numbers are
-measured *hardware floors*: the kernels run at the silicon's own limits, and
-the receipts for that claim are in this README.
+the fastest native Mac apps (full table below). These are measured results
+for specific hardware, software and kernel designs; the tuning experiments
+below do not establish an absolute hardware limit.
 
 **What to expect:** identical or visually identical output (most fast paths
 are bit-exact or within one rounding step of stock math — see
@@ -111,6 +111,90 @@ the long Ultra H3 path, with full query-tile padding so inactive tail groups
 participate safely. All latent bytes and decoded video/audio frames matched;
 34 attention boundary tests passed. This pass saves another **13.29 s** in the
 matched workflow; it does not establish 7.0 s/step or another 30–50 s reduction.
+
+Further long-sequence query ordering reduced a fresh warm control from
+**7.48 to 7.31 s/step**: **149.53 → 146.13 s** sampling and
+**167.09 → 163.65 s** total. For H3 sequences of at least 12,288 tokens,
+up to 64 adjacent query tiles run together before the remaining query/head
+bits are interleaved; shorter sequences retain the previous traversal.
+All latent bytes and decoded video/audio frames matched, and **42 attention
+checks passed**, including both dtypes and batch size two above the new cutoff.
+This saves another **3.44 s** end to end in the matched 20-step workflow;
+7.0 s/step remains unachieved. Alternative attention layouts, larger TensorOps,
+and a single-SIMD feed-forward bridge were slower or neutral and were not retained.
+
+The next Ultra research pass tested **19 attention/INT8/feed-forward variants**
+without retaining a new production change. FC1/SwiGLU fusion, shared activation
+loads, smaller tiles, shared query storage and interleaved FC1 output layouts
+were exact but slower; attention loop unrolling was neutral. Separating the
+ragged attention tail gained roughly 3–4% in operator tests but changed output
+bytes, so it was rejected. Lossless INT8 weight packing improved alternating
+warm two-step H3 probes from **7.489 to 7.445 s/step** (0.58%), but required an
+additional **17.94 GiB** for 200 packed weights. All latent bytes matched, but
+that tradeoff was not promoted. These short probes are not a new full 20-step
+result: the last verified installed result remains **7.31 s/step** above.
+The public Metal counter API exposed timestamps only, so register pressure and
+memory-stall explanations remain hypotheses rather than counter measurements.
+
+The FP16 H3 video-VAE sprint then reduced **decode-only** time from **2.351 s
+to 1.875 s** (**20.3% less time**) on a fixed **864×480, 22-frame** latent
+reference. These are medians of eight alternating warmed comparisons; model
+loading and compilation are excluded. The accepted Metal kernels fuse the
+decoder's head-interleaved FP16 QKV normalization/RoPE/layout conversion,
+standalone SwiGLU with its intermediate FP16 rounding, and attention-output
+head merging with `nan_to_num`. Existing matrix multiplies, the selected
+attention backend, spatial tiling, overlap and temporal chunking are preserved.
+All output bytes matched for Q/K/V, 72 captured decoder-block cases, 72 further
+batch/sequence cases, and every complete decoded FP32 frame tensor. SwiGLU
+was also checked across all 63,488 finite FP16 bit patterns with five multipliers,
+and the layout/sanitization pass across all 65,536 FP16 bit patterns.
+A residual-plus-following-RMSNorm fusion was exact but had no repeatable
+incremental decode gain in ten alternating comparisons, so it was not retained.
+Those initial measurements used a short decode. The decoder fast path is
+enabled under `ASFP8_NATIVE=1` / `ASFP8_DIT_EXT=1`; set
+`ASFP8_MINIMAX_VAE_FAST=0` to restore the core decoder forwards. Unsupported
+dtypes, layouts, training calls and unrecognized decoder/rotary APIs fall back.
+
+Full **124-frame, 864×480, 20-step** validation then measured **166.55 →
+162.67 s end to end**, with video decode falling from **16.71 → 13.24 s**
+(**20.8% less decode time**). Both paths were warmed before this matched pair;
+the two optimized full executions took **162.82 and 162.67 s**, with **13.22
+and 13.24 s** decodes. Only the exact VAE fusions were toggled. Sampling was
+**148.70 → 148.34 s** (about **7.42 s/step** in this session); that small
+variation is not a new sampling improvement. The measured saving is **3.88 s
+end to end (2.3%)**, of which **3.48 s** comes from video decode. Every raw
+FP32 frame byte matched the baseline, and all video/audio latents plus decoded
+exported video/audio matched the previous production output. E2E includes
+audio decode and MP4 export; post-run byte checks are outside the timer.
+
+The next **bit-exact sampling sprint** kept those VAE changes frozen. An
+adapted final-layer wrapper and kernel matched current ComfyUI's FP32
+modulation and new arguments, reducing a captured complete layer from
+**0.921 to 0.404 ms**. However, alternating one-second, 20-step workflow
+medians were **19.274 vs 19.267 s**—within run-to-run variation. The candidate
+is archived rather than enabled as a claimed sampler speedup; **31 regression
+checks passed**. Fused normalization/modulation/rotation/INT8 quantization
+improved preprocessing by about 10%, but the 20-step check found **six
+different INT8 values across 2,000 calls**, so it was rejected. Four exact
+attention register/compiler variants were neutral or slower; two exact INT32
+partial-accumulation schedules were slower. See the
+[sprint-two benchmark report](benchmarks/m5-ultra-sampling-sprint2.md).
+
+Four warmed **124-frame, 864×480, 20-step** confirmation runs averaged
+**147.713 s sampling / 162.048 s E2E** for the frozen baseline and
+**147.603 s sampling / 161.839 s E2E** for the final-layer candidate. That
+nominal **0.075% sampling difference** is within observed variation, so no
+new sampling change was promoted. All latent bytes, raw FP32 frames and
+decoded exported video/audio matched the previous production reference.
+
+The earlier **163.65 s E2E / 146.13 s sampling** result used the same prompt,
+seed and workflow. Sampling instrumentation, operation shapes/counts and kernel
+sources match the later VAE-sprint run, and controlled old/current attention
+binary tests show essentially identical performance. The later **162.67 s**
+result is only **0.98 s faster than that historical total**; its 3.88 s saving
+above is against its fresh matched control. Historical GPU-clock and background
+load telemetry is missing, so the extra sampling time cannot be attributed to
+a particular thermal, clock or contention cause.
 
 † generic patches already on — Ideogram 4 shipped after the generic layer, so
 its "before" is the pre-#32 state, not compatibility-alone.
@@ -323,13 +407,13 @@ Metal INT8 attention measured 0.89x/0.78x the fp16 kernel at Wan/LTX shapes.
   the backbone of the Z-Image / Flux2 / Krea2 / Ideogram / Wan int8 numbers
   above. A 1-slot activation cache also skips repeat rotate+quant passes when
   several projections share one input (qkv triples, SwiGLU pairs).
-  **This rate is the silicon ceiling, not a tuning artifact**: a dedicated
-  variant tournament (`dev/tournament_int8.py`) showed the kernel flat at
-  97–107 TF/s from fully cache-resident to streaming working sets
-  (issue-bound, not memory-bound), every schedule variant a wash under
-  interleaved A/B, and the Metal API's larger tensor-op descriptors
-  2.5–4× *slower* — 16×32×16 maps 1:1 onto the native op. GEMM-bound int8
-  models are at their hardware floor.
+  An earlier M5 Max variant tournament (`dev/tournament_int8.py`) found
+  97–107 TF/s from cache-resident to streaming working sets, with no dependable
+  gain from the tested schedules under interleaved A/B. The Metal API's larger
+  tensor-op descriptors were 2.5–4× slower in those tests. That result applies
+  to that kernel family and environment, not an absolute silicon ceiling:
+  the subsequent Ultra tests above improved throughput by changing the inner
+  step, unrolling and dispatch schedule.
 - **Fused o-projection pre-pass** (`ASFP8_INT8_OPROJ_FUSE`, on): when
   `head_dim == convrot groupsize` (Ideogram 4: both 256, so each head is
   exactly one rotation group), the attention output goes straight from its
@@ -1007,6 +1091,8 @@ alone—by accident.
 | `ASFP8_FLUX_FAST` / `KREA2_FAST` / `LTX_FAST` / `WAN_FAST` / `WAN_VAE_FAST` / `IDEOGRAM_FAST` / `MINIMAX_FAST` | on (under DIT_EXT/CONV3D) | per-architecture kill switches |
 | `ASFP8_MINIMAX_ATTN` / `ASFP8_MINIMAX_BLOCK` | 1 | MiniMax direct QKV/attention-output layout and segmented block-glue fusions |
 | `ASFP8_MINIMAX_GRAPH` | 1 | exact guarded H3 final-layer graph rewrite (target RMSNorm + modulation + fp32 casts) |
+| `ASFP8_MINIMAX_VAE_FAST` | 1 (under DIT_EXT) | FP16 H3 video-decoder QK normalization/RoPE/layout and elementwise kernels; `0` restores core forwards |
+| `ASFP8_MINIMAX_VAE_SWIGLU` / `ASFP8_MINIMAX_VAE_MERGE` | 1 | per-feature switches for exact FP16 SwiGLU and attention-output merge/sanitization |
 | `ASFP8_INT8_QKV_SCATTER` | 1 | exact H3 INT8 QKV epilogue directly to three attention-layout tensors; `0` restores the full fused-QKV buffer |
 | `ASFP8_INT8_QKV_NORM_ROPE` | 1 | exact D=128 H3 INT8 projection + optional standard runtime-LoRA delta + Q/K RMSNorm + partial-RoPE epilogue |
 | `ASFP8_MINIMAX_CROSS_BLOCK` | 1 | exact MLP-gate → next-attention-AdaLN carry when no workflow block replacement is active |

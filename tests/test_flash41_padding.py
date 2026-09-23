@@ -36,7 +36,8 @@ def test_query_tail_matches_explicit_threadgroup_padding(length, dtype):
 @requires_flash
 @pytest.mark.parametrize('batch,length', [
     (1, 8191), (1, 8192), (2, 8193), (1, 8256), (1, 8320),
-    (1, 8321), (1, 15456), (1, 15458), (1, 15552), (1, 16384), (1, 16385),
+    (1, 8321), (1, 12287), (1, 12288), (1, 12289), (2, 12289),
+    (1, 15456), (1, 15458), (1, 15552), (1, 16384), (1, 16385),
 ])
 @pytest.mark.parametrize('dtype', [torch.bfloat16, torch.float16])
 def test_long_h3_schedule_matches_original(batch, length, dtype):

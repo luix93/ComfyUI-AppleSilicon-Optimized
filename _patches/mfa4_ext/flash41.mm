@@ -642,16 +642,21 @@ kernel void flash_attn_fwd_na(
     const float dot_scale = PR[0] * 1.4426950408889634f;   // exp2 domain
 
 #if @NAMORTON@
-    // Interleave query-tile and head bits for locality across neighboring
-    // threadgroups. The CCV/DrawThings NA backend uses this traversal too.
-    // Each SIMD group still computes the same rows in the same order.
+    // Keep up to 64 neighboring query tiles together on longer H3 sequences
+    // before interleaving the remaining query/head bits. With synchronized
+    // KV traversal this improves reuse on Ultra; shorter sequences retain
+    // the original Morton order. Arithmetic within each SIMD group is unchanged.
     const uint qgroups = uint((Lq + NANSG * NASR - 1) / (NANSG * NASR));
     const uint qbits = qgroups > 1u ? 32u - clz(qgroups - 1u) : 0u;
     const uint hbits = Hq > 1 ? 32u - clz(uint(Hq - 1)) : 0u;
     uint code = tgid.x, tile = 0u, head = 0u;
-    for (uint bit = 0; bit < max(qbits, hbits); ++bit) {
-        if (bit < qbits) { tile |= (code & 1u) << bit; code >>= 1; }
-        if (bit < hbits) { head |= (code & 1u) << bit; code >>= 1; }
+    const uint lead = Lq >= 12288 ? min(6u, qbits) : 0u;
+    tile = code & ((1u << lead) - 1u);
+    code >>= lead;
+    uint qi = lead, hi = 0u;
+    while (qi < qbits || hi < hbits) {
+        if (qi < qbits) { tile |= (code & 1u) << qi++; code >>= 1; }
+        if (hi < hbits) { head |= (code & 1u) << hi++; code >>= 1; }
     }
     if (tile >= qgroups || head >= uint(Hq)) return;
     const int b = int(tgid.y), hq = int(head), bh = b * Hq + hq;
