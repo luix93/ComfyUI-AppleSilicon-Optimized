@@ -132,7 +132,7 @@ template <> struct compiler_barrier_slot<true> {
   inline void touch() { (void)value; }
 };
 
-template <int BM, int BN, int BK, int SK, int WM, int WN,
+template <int BM, int BN, int DEFAULT_BK, int DEFAULT_SK, int WM, int WN,
           bool USE_COMPILER_BARRIER>
 bool w8a8_gemm_compute(
     const device int8_t *A, const device int8_t *B,
@@ -140,6 +140,17 @@ bool w8a8_gemm_compute(
     thread short2 &sc_out, thread uint &m_base_out, thread uint &n_base_out,
     uint M, uint N, uint K, uint swizzle_log, uint tiles_m, uint tiles_n,
     uint2 tgid, uint sgid, uint lid) {
+#if ASFP8_INT8_ULTRA_SCHEDULE
+  // M5 Ultra / macOS 27: one K fragment per load/compute group avoids the
+  // SK=32 throughput cliff (81 -> 167 TOP/s at M=4300,K=N=6144).
+  // BK=256 avoids the slower remainder loop for K=3840/5376. Two-way
+  // unrolling improves Ultra scheduling without changing integer arithmetic.
+  constexpr int SK = 16;
+  constexpr int BK = 256;
+#else
+  constexpr int SK = DEFAULT_SK;
+  constexpr int BK = DEFAULT_BK;
+#endif
   constexpr int SM = BM / WM;
   constexpr int SN = BN / WN;
   constexpr short TM = SM / 16;
@@ -189,6 +200,9 @@ bool w8a8_gemm_compute(
   int gemm_k_iters = int(K) / BK;
   for (int kk0 = 0; kk0 < gemm_k_iters; kk0++) {
     threadgroup_barrier(mem_flags::mem_none);
+#if ASFP8_INT8_ULTRA_SCHEDULE
+    #pragma unroll 2
+#endif
     for (int kk1 = 0; kk1 < BK; kk1 += SK) {
       int8_t a_frags[TM][TK][kElemsPerFrag];
       int8_t b_frags[TN][TK][kElemsPerFrag];
@@ -664,6 +678,50 @@ inline void int8_matmul_fused_cs_qkv_rms_rope_impl(
   }
   threadgroup_barrier(mem_flags::mem_threadgroup);
 
+#if ASFP8_INT8_ULTRA_SCHEDULE
+  const device float *norm_weight = kind == 0u ? qw : kw;
+  device bfloat *dst_base = kind == 0u ? Q : Kout;
+  // One simdgroup owns a complete row. Four separate reductions preserve
+  // the old four-simdgroup reduction order, with no cross-group rendezvous.
+  for (uint row_in_tile = sgid; row_in_tile < 128u; row_in_tile += 16u) {
+    float x[4];
+    float partial[4];
+    for (uint j = 0; j < 4u; ++j) {
+      x[j] = float(work->value[row_in_tile * 128u + j * 32u + lid]);
+      partial[j] = simd_sum(x[j] * x[j]);
+    }
+    float total = 0.0f;
+    for (uint j = 0; j < 4u; ++j) total += partial[j];
+    const float inv = precise::rsqrt(precise::divide(total, 128.0f) + eps);
+    for (uint j = 0; j < 4u; ++j) {
+      const uint d = j * 32u + lid;
+      const bfloat normalized = bf16_rte(x[j] * inv);
+      work->value[row_in_tile * 128u + d] =
+          bf16_rte(float(normalized) * norm_weight[d]);
+    }
+    simdgroup_barrier(mem_flags::mem_threadgroup);
+    const uint mi = tile_m_base + row_in_tile;
+    if (mi < M) {
+      device bfloat *dst = dst_base + ((ulong)head * M + mi) * 128u;
+      for (uint j = 0; j < 4u; ++j) {
+        const uint d = j * 32u + lid;
+        if (d >= 2u * R) {
+          dst[d] = work->value[row_in_tile * 128u + d];
+        } else {
+          const uint i = d < R ? d : d - R;
+          const uint r = d < R ? 0u : 1u;
+          const device bfloat *matrix =
+              fr + (((ulong)mi * R + i) * 2u + r) * 2u;
+          const bfloat p0 = bf16_rte(
+              float(matrix[0]) * float(work->value[row_in_tile * 128u + i]));
+          const bfloat p1 = bf16_rte(
+              float(matrix[1]) * float(work->value[row_in_tile * 128u + i + R]));
+          dst[d] = bf16_rte(float(p0) + float(p1));
+        }
+      }
+    }
+  }
+#else
   const uint row_lane = tid >> 7;
   const uint d = tid & 127u;
   const device float *norm_weight = kind == 0u ? qw : kw;
@@ -719,6 +777,7 @@ inline void int8_matmul_fused_cs_qkv_rms_rope_impl(
     // aliased fp32 reduction writes.
     threadgroup_barrier(mem_flags::mem_threadgroup);
   }
+#endif
 }
 
 kernel void int8_matmul_fused_cs_qkv_rms_rope(
@@ -1329,11 +1388,20 @@ static id<MTLComputePipelineState> g_pso_fused_small = nil;
 static id<MTLLibrary> g_lib = nil;
 static std::string g_compile_error;
 
+static bool use_ultra_schedule() {
+  static const bool ultra =
+      [MPSDevice::getInstance()->device().name containsString:@"M5 Ultra"];
+  return ultra;
+}
+
 static id<MTLLibrary> build_library() {
   if (g_lib) return g_lib;
   id<MTLDevice> dev = MPSDevice::getInstance()->device();
   MTLCompileOptions* opts = [MTLCompileOptions new];
   opts.languageVersion = MTLLanguageVersion4_1;
+  opts.preprocessorMacros = @{
+    @"ASFP8_INT8_ULTRA_SCHEDULE": @(use_ultra_schedule())
+  };
   // Safe math: default fast-math reassociates float chains (observed:
   // C*(cs*rs) -> (C*cs)*rs in the channelwise epilogue), breaking 1-ulp parity
   // with torch's op order. The GEMM core is integer TensorOps — unaffected.
@@ -1390,9 +1458,10 @@ struct Geom {
   uint THREADS, swizzle_log, grid_x, grid_y, tiles_m, tiles_n;
 };
 
-static Geom geom_for(int M, int N) {
+static Geom geom_for(int M, int N, bool force_large = false) {
   Geom g;
-  g.small = (M <= 64);
+  // Direct QKV epilogues require 512 threads even for 65..128 rows.
+  g.small = !force_large && M <= (use_ultra_schedule() ? 128 : 64);
   const uint BM = g.small ? 32u : 128u;
   const uint BN = 128u;
   g.THREADS = g.small ? 128u : 512u;
@@ -1698,7 +1767,7 @@ std::vector<torch::Tensor> i8_matmul2d_nt_fused_cs_qkv(
     TORCH_CHECK(bias.is_mps() && bias.numel() == N,
                 "bias must have N MPS elements");
 
-  Geom g = geom_for(M, N);
+  Geom g = geom_for(M, N, /*force_large=*/true);
   TORCH_CHECK(!g.small, "unexpected small QKV geometry");
   const bool use_long = long_schedule && M >= 8192;
   id<MTLComputePipelineState> pso = pso_for_name(
@@ -1796,7 +1865,7 @@ std::vector<torch::Tensor> i8_matmul2d_nt_fused_cs_qkv_rms_rope(
     TORCH_CHECK(bias.is_mps() && bias.numel() == N,
                 "bias must have N MPS elements");
 
-  Geom g = geom_for(M, N);
+  Geom g = geom_for(M, N, /*force_large=*/true);
   TORCH_CHECK(!g.small && g.THREADS == 512,
               "unexpected fused QKV geometry");
   const bool use_long = long_schedule && M >= 8192;
@@ -1900,7 +1969,7 @@ torch::Tensor i8_matmul2d_nt_fused_cs_qkv_lora_part(
     TORCH_CHECK(bias.is_mps() && bias.numel() == N,
                 "bias must have H*D MPS elements");
 
-  Geom g = geom_for(M, N);
+  Geom g = geom_for(M, N, /*force_large=*/true);
   TORCH_CHECK(!g.small && g.THREADS == 512,
               "unexpected LoRA QKV geometry");
   const bool use_long = long_schedule && M >= 8192;
@@ -2038,10 +2107,16 @@ std::vector<torch::Tensor> i8_mlp_bridge_prequant(
   const int F = W / 2;
   TORCH_CHECK(row_scale.numel() == M && fc1_col_scale.numel() == W,
               "scale shape mismatch");
-  TORCH_CHECK(tile_rows_arg == 0 || tile_rows_arg >= 128,
-              "tile_rows must be zero or at least 128");
-  const int requested_rows = tile_rows_arg == 0
-      ? M : (int)std::min<int64_t>(M, tile_rows_arg);
+  TORCH_CHECK(tile_rows_arg == -1 || tile_rows_arg == 0 || tile_rows_arg >= 128,
+              "tile_rows must be -1 (auto), zero, or at least 128");
+  // Larger Ultra H3 chunks reduce repeated dispatch/weight-stream overhead.
+  // Cap scratch at 8192 rows (~448 MiB for H3) instead of scaling with a clip.
+  // Explicit tile sizes remain available for parity checks and tuning.
+  const int64_t selected_rows = tile_rows_arg >= 0 ? tile_rows_arg
+      : (use_ultra_schedule() && long_schedule && M >= 8192
+          && K == 5376 && W == 28672 ? 8192 : 1024);
+  const int requested_rows = selected_rows == 0
+      ? M : (int)std::min<int64_t>(M, selected_rows);
   const int tile_rows = requested_rows >= 128
       ? (requested_rows / 128) * 128 : requested_rows;
 
@@ -2262,7 +2337,7 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
         pybind11::arg("row_scale"), pybind11::arg("fc1_col_scale"),
         pybind11::arg("fc1_bias") = c10::optional<torch::Tensor>(),
         pybind11::arg("long_schedule") = true,
-        pybind11::arg("tile_rows") = 1024);
+        pybind11::arg("tile_rows") = -1);
   m.def("i8_swiglu_rot", &i8_swiglu_rot,
         "Fused H3 SwiGLU + 256-wide convrot FWHT: "
         "x[M,2F] bf16 -> rotated[M,F] bf16");

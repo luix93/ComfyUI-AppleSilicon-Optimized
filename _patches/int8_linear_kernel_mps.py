@@ -35,6 +35,7 @@ functions, non-MPS) falls back to comfy's original forward unchanged.
 Opt-in: only active when ``ASFP8_INT8_EXT=1`` (the kernel build flag).
 """
 
+import inspect
 import os
 import sys
 import weakref
@@ -810,8 +811,18 @@ def install():
             _installed = True
             return
 
+        factory_signature = inspect.signature(orig_factory)
+
         def wrapped_factory(*a, **k):
-            cls = orig_factory(*a, **k)
+            bound = factory_signature.bind(*a, **k)
+            disabled = bound.arguments.get("disabled")
+            if disabled is not None:
+                # ComfyUI's hardware probe does not know about this MPS INT8
+                # implementation. Keep other exclusions and explicit
+                # full_precision_mm / checkpoint precision requests intact.
+                bound.arguments["disabled"] = [
+                    fmt for fmt in disabled if fmt != "int8_tensorwise"]
+            cls = orig_factory(*bound.args, **bound.kwargs)
             linear_cls = getattr(cls, "Linear", None)
             if linear_cls is not None and not getattr(linear_cls, "_asfp8_int8_patched", False):
                 orig_forward = linear_cls.forward
@@ -845,7 +856,12 @@ def install():
                 ops.linear_input_act, "_asfp8_wrapped", False):
             _orig_lia = ops.linear_input_act
 
-            def linear_input_act_wrapped(linear, x, input_act):
+            def linear_input_act_wrapped(linear, x, input_act, *args, **kwargs):
+                # Newer ComfyUI callers pass RMSNorm weights/eps and residual
+                # epilogues. Our SwiGLU fast path only implements the original
+                # three-argument contract; preserve extended calls unchanged.
+                if args or kwargs:
+                    return _orig_lia(linear, x, input_act, *args, **kwargs)
                 runtime_lora = getattr(linear, _RUNTIME_LORA_ATTR, None)
                 if (input_act == "swiglu"
                         and os.environ.get("ASFP8_INT8_SWIGLU_VERIFY") == "1"):
@@ -904,7 +920,7 @@ def install():
 
     _installed = True
     print(
-        f"{TAG} INT8 convrot Linear routed through bit-exact Metal kernel on MPS "
+        f"{TAG} native INT8 convrot Linear registered on MPS for eligible layers "
         f"(clean W8A8: rotate->per-row quant->int8 matmul; weight-only fp32 "
         f"dequant/un-rotation bypassed)."
     )

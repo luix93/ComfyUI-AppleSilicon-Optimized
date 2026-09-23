@@ -70,6 +70,48 @@ models); "after" is with `ASFP8_NATIVE=1`.
 | Wan 2.2 i2v 14B×2 int8, 512² × 81 f | 445 s | **111 s** | DrawThings-class ≈ 100 s |
 | MiniMax H3 int8, 864×480 × 124 f / 20 steps | 490.4 s‡ | **461.3 s** | exact paths only; workflow approximations off |
 
+**M5 Ultra validation (2026-09-22):** Z-Image Turbo INT8 convrot, 1024×1024,
+8 res_multistep/simple steps, improved from **7.33 s to 4.29 s** end to end in
+warm, alternating runs on macOS 27.0 (26A428), PyTorch 2.13.0, ComfyUI
+`b33e2b55`. Two fixes are required: override ComfyUI's newly added MPS INT8
+hardware exclusion for our native implementation, and use a 16-wide inner
+GEMM step on M5 Ultra. The latter preserves every output pixel against the
+previous native INT8 schedule; other chips retain their existing schedule.
+Restoring INT8 routing resumes the existing W8A8 numerical policy, rather than
+the W8A16 fallback that newer ComfyUI had selected. Explicit full-precision
+requests are still honored. This does not establish whether the kernel
+slowdown originated in a macOS update or Ultra-specific compiler behavior.
+
+Further Ultra tuning reduced warm Z-Image runs from **4.23 s to 3.75 s**
+end to end. A fixed **864×480, 22-frame, 20-step MiniMax H3** benchmark
+reduced sampling from **21.4 s to 19.4 s**. The Ultra schedule now uses
+BK=256 with two-way unrolling, small-row GEMM through 128 rows, and
+SIMD-local Q/K normalization with the original reduction/rounding order.
+Attention pads Q to each active 16-row slice, avoiding unnecessary copies.
+Video/audio latents, decoded video/audio, and Z-Image pixels matched the
+previous native build exactly. Longer H3 operator benchmarks improved by
+20–28%; a full 5-second clip was deliberately not benchmarked in this round.
+
+The subsequent **124-frame, 864×480, 20-step H3** benchmark reduced warm
+sampling from **193.99 s to 172.66 s** (**9.70 → 8.63 s/step**), and total
+execution from **211.57 s to 190.34 s**. Long H3 attention on M5 Ultra now
+interleaves query tiles and heads in Morton order, with shape specialization
+for ragged lengths. Aligned lengths retain dynamic dimensions to avoid a
+compiler rounding change. The long H3 feed-forward bridge also uses larger,
+capped scratch tiles. All video/audio latent bytes and decoded frames matched
+the preceding native build exactly; **106 tests passed**. Z-Image remained
+at **3.81 s** warm with identical pixels. These are another **11% less sampling
+time**, not an additional halving; first-run model loading is excluded from
+the warm comparison.
+
+A subsequent exact attention synchronization pass reduced a fresh, warmed H3
+control from **8.34 to 7.68 s/step**: **166.75 → 153.51 s** sampling and
+**184.38 → 171.08 s** total. Periodic threadgroup barriers are enabled only for
+the long Ultra H3 path, with full query-tile padding so inactive tail groups
+participate safely. All latent bytes and decoded video/audio frames matched;
+34 attention boundary tests passed. This pass saves another **13.29 s** in the
+matched workflow; it does not establish 7.0 s/step or another 30–50 s reduction.
+
 † generic patches already on — Ideogram 4 shipped after the generic layer, so
 its "before" is the pre-#32 state, not compatibility-alone.
 ‡ H3 isolates the latest exact final-layer graph rewrite against the preceding

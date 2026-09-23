@@ -634,18 +634,36 @@ kernel void flash_attn_fwd_na(
     uint  sgid [[simdgroup_index_in_threadgroup]],
     uint  lane [[thread_index_in_simdgroup]])
 {
-    const int Hq=SH[1], Hkv=SH[2], Lq=SH[3], Lk=SH[4];
+    const int Hq=@NAHQ@, Hkv=@NAHKV@, Lq=@NALQ@, Lk=@NALK@;
     // Padded per-head row strides: the host zero-pads ragged L dims to tile
     // boundaries, so buffer strides differ from the TRUE lengths used for
     // masking/loops. Mixing them up shifts every head after the first.
-    const int LqS=SH[6], LkS=SH[7];
+    const int LqS=@NALQS@, LkS=@NALKS@;
     const float dot_scale = PR[0] * 1.4426950408889634f;   // exp2 domain
 
+#if @NAMORTON@
+    // Interleave query-tile and head bits for locality across neighboring
+    // threadgroups. The CCV/DrawThings NA backend uses this traversal too.
+    // Each SIMD group still computes the same rows in the same order.
+    const uint qgroups = uint((Lq + NANSG * NASR - 1) / (NANSG * NASR));
+    const uint qbits = qgroups > 1u ? 32u - clz(qgroups - 1u) : 0u;
+    const uint hbits = Hq > 1 ? 32u - clz(uint(Hq - 1)) : 0u;
+    uint code = tgid.x, tile = 0u, head = 0u;
+    for (uint bit = 0; bit < max(qbits, hbits); ++bit) {
+        if (bit < qbits) { tile |= (code & 1u) << bit; code >>= 1; }
+        if (bit < hbits) { head |= (code & 1u) << bit; code >>= 1; }
+    }
+    if (tile >= qgroups || head >= uint(Hq)) return;
+    const int b = int(tgid.y), hq = int(head), bh = b * Hq + hq;
+    const int hkv = hq / (Hq / Hkv);
+    const int q0 = (int(tile) * NANSG + int(sgid)) * NASR;
+#else
     const int bh  = int(tgid.y);
     const int b   = bh / Hq;
     const int hq  = bh % Hq;
     const int hkv = hq / (Hq / Hkv);
     const int q0  = (int(tgid.x) * NANSG + int(sgid)) * NASR;
+#endif
 
 #if !@NABYP@
     // Per-SG-private P slice; 16 SGs x 16x64 x 2B = 32KB (the full budget).
@@ -653,7 +671,9 @@ kernel void flash_attn_fwd_na(
     threadgroup @DT@* P_buf = tgPall + NASR * NABC * int(sgid);
 #endif
 
+#if !@NASYNC@
     if (q0 >= Lq) return;   // uniform per SG; no threadgroup barriers follow
+#endif
 
     // Head strides use the PADDED lengths (LqS/LkS): the host zero-pads
     // ragged L dims, so buffer geometry differs from the true Lq/Lk used
@@ -725,6 +745,11 @@ kernel void flash_attn_fwd_na(
     }
 
     for (int c = 0; c < Lk; c += NABLK*NABC) {
+#if @NASYNC@
+        // All query groups participate, including zero-padded tail groups.
+        // Keep the long H3 traversal in phase without changing its reductions.
+        if (c % 1024 == 0) threadgroup_barrier(mem_flags::mem_none);
+#endif
         // Init S (accumulate-mode matmul adds Q.K^T onto the init value):
         // 0 for valid columns, -inf for tail columns beyond Lk — the -inf
         // survives the accumulate and masks the padding keys (DrawThings'
@@ -1631,9 +1656,11 @@ static id<MTLComputePipelineState> pso_for(int D, int BR, int BC, bool bf16s,
                                            bool pv_static = false, int nsg = 0,
                                            bool half_io = false, bool db = false,
                                            bool na_rp = true, bool na_byp = false,
-                                           int na_bc = 64, int na_blk = 2) {
+                                           int na_bc = 64, int na_blk = 2,
+                                           std::array<int32_t, 6> na_shape = {},
+                                           bool na_morton = false) {
   const std::string function(fn_name);
-  const std::string key =
+  std::string key =
       std::to_string(D) + ":" + std::to_string(BR) + ":" +
       std::to_string(BC) + ":" + std::to_string(bf16s) + ":" +
       std::to_string(SR) + ":" + std::to_string(BCV) + ":" + function + ":" +
@@ -1641,6 +1668,8 @@ static id<MTLComputePipelineState> pso_for(int D, int BR, int BC, bool bf16s,
       std::to_string(half_io) + ":" + std::to_string(db) + ":" +
       std::to_string(na_rp) + ":" + std::to_string(na_byp) + ":" +
       std::to_string(na_bc) + ":" + std::to_string(na_blk);
+  for (int32_t value : na_shape) key += ":" + std::to_string(value);
+  key += ":" + std::to_string(na_morton);
   auto it = g_pso.find(key);
   if (it != g_pso.end()) return it->second;
 
@@ -1664,6 +1693,15 @@ static id<MTLComputePipelineState> pso_for(int D, int BR, int BC, bool bf16s,
   source.set("NABYP", na_byp ? "1" : "0");
   source.set("NABCV", std::to_string(na_bc));
   source.set("NABLK", std::to_string(na_blk));
+  // Long H3: specialize true lengths AND padded strides. This removes
+  // dynamic index/bounds work without changing attention arithmetic.
+  const bool na_specialized = na_shape[0] > 0;
+  source.set("NAMORTON", na_morton ? "1" : "0");
+  source.set("NASYNC", na_morton ? "1" : "0");
+  const char* shape_keys[] = {"NAHQ", "NAHKV", "NALQ", "NALK", "NALQS", "NALKS"};
+  const char* shape_defaults[] = {"SH[1]", "SH[2]", "SH[3]", "SH[4]", "SH[6]", "SH[7]"};
+  for (int i = 0; i < 6; ++i)
+    source.set(shape_keys[i], na_specialized ? std::to_string(na_shape[i]) : shape_defaults[i]);
   const int naik = getenv("ASFP8_FA41_NAIK") ? atoi(getenv("ASFP8_FA41_NAIK")) : 0;
   source.set("NAIK", naik > 0 ? std::to_string(naik) : std::to_string(D));
   // diagnostic: ASFP8_FA41_NA_DIAG = 1 no-softmax / 2 QK-only / 3 no-P-roundtrip
@@ -1904,7 +1942,7 @@ torch::Tensor flash_fwd_frag(torch::Tensor q, torch::Tensor k, torch::Tensor v,
 // Gates: non-causal, Lk % 128 == 0 (no tail path in v1).
 torch::Tensor flash_fwd_na(torch::Tensor q, torch::Tensor k, torch::Tensor v,
                            double scale, int64_t nsg, int64_t rp, int64_t byp,
-                           int64_t bc, int64_t blk) {
+                           int64_t bc, int64_t blk, bool long_schedule) {
   TORCH_CHECK(q.is_mps() && k.is_mps() && v.is_mps(), "inputs must be on mps");
   const bool half_io = q.scalar_type() == torch::kHalf;
   TORCH_CHECK((q.scalar_type() == torch::kBFloat16 || half_io)
@@ -1941,7 +1979,18 @@ torch::Tensor flash_fwd_na(torch::Tensor q, torch::Tensor k, torch::Tensor v,
   // -inf-masked in the score init, zero V rows meet P=0, and zero Q pad
   // rows are never stored (row-guarded epilogue). SH keeps the TRUE Lq/Lk.
   const int rows_tg = 16 * NSG;
-  const int64_t LqP = ((Lq + rows_tg - 1) / rows_tg) * (int64_t)rows_tg;
+  // Each independent simdgroup exits before loading Q when q0 >= Lq.
+  // Ultra only needs its active 16-row slices padded, avoiding a full Q
+  // allocation/copy at Z-Image's 4192-row shape. K/V padding is unchanged.
+  static const bool ultra =
+      [MPSDevice::getInstance()->device().name containsString:@"M5 Ultra"];
+  const bool morton = long_schedule && ultra && D == 128 && Hq == 56 && Hkv == 56
+      && Lq == Lk && Lq >= 8192 && NSG == 16 && BC == 64 && BLK == 2
+      && rp != 0 && byp != 0;
+  // Synchronized long H3 must keep every SIMD group alive at the barriers.
+  // Pad its whole query tile; other Ultra paths retain per-group padding.
+  const int q_alignment = morton ? rows_tg : (ultra ? 16 : rows_tg);
+  const int64_t LqP = ((Lq + q_alignment - 1) / q_alignment) * (int64_t)q_alignment;
   const int64_t LkP = ((Lk + BC * BLK - 1) / (BC * BLK)) * (int64_t)(BC * BLK);
   if (LqP != Lq)
     qc = at::constant_pad_nd(qc, {0, 0, 0, LqP - Lq}, 0);
@@ -1954,10 +2003,18 @@ torch::Tensor flash_fwd_na(torch::Tensor q, torch::Tensor k, torch::Tensor v,
                                   (int32_t)LqP, (int32_t)LkP};
   std::array<float, 1> prArr = {(float)scale};
 
+  // Keep shorter sequences and other attention geometries on their existing
+  // path. Validated on M5 Ultra H3; no dispatch change for other chips.
+  // For aligned lengths, specializing away the tail changes Metal's floating
+  // point code generation (observed at L=8192). Keep the original dynamic
+  // dimensions there; Morton traversal itself does not change reduction order.
+  const std::array<int32_t, 6> na_shape = morton && Lq % (BC * BLK) != 0
+      ? std::array<int32_t, 6>{Hq, Hkv, Lq, Lk, (int32_t)LqP, (int32_t)LkP}
+      : std::array<int32_t, 6>{};
   id<MTLComputePipelineState> pso =
       pso_for(D, 16, 64, /*bf16s=*/true, 16, 64, "flash_attn_fwd_na",
               /*pv_static=*/false, NSG, half_io, /*db=*/false, rp != 0, byp != 0,
-              BC, BLK);
+              BC, BLK, na_shape, morton);
   MPSStream* stream = getCurrentMPSStream();
   id<MTLBuffer> qB = __builtin_bit_cast(id<MTLBuffer>, qc.storage().data());
   id<MTLBuffer> kB = __builtin_bit_cast(id<MTLBuffer>, kc.storage().data());
@@ -1968,8 +2025,15 @@ torch::Tensor flash_fwd_na(torch::Tensor q, torch::Tensor k, torch::Tensor v,
   const NSUInteger vO = vc.storage_offset() * vc.element_size();
   const NSUInteger oO = out.storage_offset() * out.element_size();
   const int rows_per_tg = 16 * NSG;
-  const NSUInteger gx = (NSUInteger)((Lq + rows_per_tg - 1) / rows_per_tg);
-  const NSUInteger gy = (NSUInteger)(B * Hq);
+  NSUInteger gx = (NSUInteger)((Lq + rows_per_tg - 1) / rows_per_tg);
+  NSUInteger gy = (NSUInteger)(B * Hq);
+  if (morton) {
+    NSUInteger q_extent = 1, h_extent = 1;
+    while (q_extent < gx) q_extent <<= 1;
+    while (h_extent < (NSUInteger)Hq) h_extent <<= 1;
+    gx = q_extent * h_extent;
+    gy = B;
+  }
 
   dispatch_sync(stream->queue(), ^(){
     @autoreleasepool {
@@ -2268,7 +2332,8 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
         "per-simdgroup independent flash fwd (DrawThings NAX recipe) on MPS",
         py::arg("q"), py::arg("k"), py::arg("v"), py::arg("scale"),
         py::arg("nsg") = 16, py::arg("rp") = 1, py::arg("byp") = 1,
-        py::arg("bc") = 64, py::arg("blk") = 2);
+        py::arg("bc") = 64, py::arg("blk") = 2,
+        py::arg("long_schedule") = true);
   m.def("warmup", [](int64_t D, int64_t BR, int64_t BC) { pso_for((int)D, (int)BR, (int)BC, false); return true; },
         "compile + build pipeline for head dim D / BR rows / BC cols",
         py::arg("D") = 128, py::arg("BR") = 32, py::arg("BC") = 128);

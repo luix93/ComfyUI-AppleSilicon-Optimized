@@ -7,6 +7,8 @@ Integration test (opt-in, ASFP8_INT8_EXT=1 on an MPS box): the kernel-backed
 int8_linear is bit-identical to comfy_kitchen's original across convrot/bias/3D/M=1.
 """
 import os
+import sys
+from types import ModuleType
 
 import pytest
 import torch
@@ -46,6 +48,104 @@ def test_wrapper_falls_back_off_mps(monkeypatch):
     ws = torch.ones(1)
     out = patch._int8_linear_kernel(x, w, ws)
     assert out is sentinel and called.get("hit") is True
+
+
+@pytest.fixture
+def linear_input_act_wrapper(monkeypatch):
+    comfy = ModuleType("comfy")
+    ops = ModuleType("comfy.ops")
+    comfy.ops = ops
+    def factory(quant_config=None, compute_dtype=torch.bfloat16,
+                full_precision_mm=False, disabled=()):
+        return type('Operations', (), {
+            '_quant_config': quant_config, '_compute_dtype': compute_dtype,
+            '_full_precision_mm': full_precision_mm, '_disabled': disabled})
+    ops.mixed_precision_ops = factory
+    calls = []
+    fallback = object()
+
+    def original(*args, **kwargs):
+        calls.append((args, kwargs))
+        return fallback
+
+    ops.linear_input_act = original
+    monkeypatch.setitem(sys.modules, "comfy", comfy)
+    monkeypatch.setitem(sys.modules, "comfy.ops", ops)
+    monkeypatch.setattr(patch, "_installed", False)
+    monkeypatch.setattr(patch, "_kernel", None)
+    monkeypatch.setattr(patch, "_orig_int8_linear", None)
+    monkeypatch.setattr(patch.sys, "platform", "darwin")
+    monkeypatch.setattr(torch.backends.mps, "is_available", lambda: True)
+    monkeypatch.setattr(patch, "_load_kernel", lambda: object())
+    monkeypatch.setenv("ASFP8_INT8_EXT", "1")
+    monkeypatch.delenv("ASFP8_INT8_SWIGLU_VERIFY", raising=False)
+    patch.install()
+    assert patch._installed
+    return ops, calls, fallback
+
+
+@pytest.mark.parametrize("activation, positional", [
+    ("rms_norm", True), ("rms_norm", False),
+    ("swiglu", False), (None, True),
+])
+def test_linear_input_act_preserves_extended_contract(
+        monkeypatch, linear_input_act_wrapper, activation, positional):
+    ops, calls, fallback = linear_input_act_wrapper
+    linear, x, weight, residual, scale = (object() for _ in range(5))
+    native_calls = []
+    monkeypatch.setattr(
+        patch, "_try_int8_swiglu_forward",
+        lambda *args: native_calls.append(args))
+    args = (linear, x, activation)
+    kwargs = {}
+    if positional:
+        args += ((weight, 1e-5) if activation == "rms_norm"
+                 else (weight, 1e-5, residual, scale))
+    else:
+        kwargs = {"residual": residual, "residual_scale": scale}
+        if activation == "rms_norm":
+            kwargs.update(act_weight=weight, act_eps=1e-5)
+    assert ops.linear_input_act(*args, **kwargs) is fallback
+    assert calls == [(args, kwargs)]
+    assert native_calls == []
+
+
+def test_linear_input_act_keeps_native_three_argument_swiglu(
+        monkeypatch, linear_input_act_wrapper):
+    ops, calls, _ = linear_input_act_wrapper
+    result = object()
+    monkeypatch.setenv("ASFP8_INT8_SWIGLU", "1")
+    monkeypatch.setattr(patch, "_try_int8_swiglu_forward", lambda *args: result)
+    assert ops.linear_input_act(object(), object(), "swiglu") is result
+    assert calls == []
+
+
+@pytest.mark.parametrize('positional', [False, True])
+@pytest.mark.parametrize('full_precision', [False, True])
+def test_factory_enables_only_native_int8_and_preserves_precision_requests(
+        linear_input_act_wrapper, positional, full_precision):
+    ops, _, _ = linear_input_act_wrapper
+    disabled = {'int8_tensorwise', 'nvfp4', 'convrot_w4a4'}
+    quant_config = {'layer': {'full_precision_matrix_mult': True}}
+    if positional:
+        result = ops.mixed_precision_ops(
+            quant_config, torch.float16, full_precision, disabled)
+    else:
+        result = ops.mixed_precision_ops(
+            quant_config=quant_config, compute_dtype=torch.float16,
+            full_precision_mm=full_precision, disabled=disabled)
+    assert set(result._disabled) == {'nvfp4', 'convrot_w4a4'}
+    assert disabled == {'int8_tensorwise', 'nvfp4', 'convrot_w4a4'}
+    assert result._full_precision_mm is full_precision
+    assert result._compute_dtype is torch.float16
+    assert result._quant_config is quant_config
+
+
+def test_factory_keeps_default_arguments(linear_input_act_wrapper):
+    ops, _, _ = linear_input_act_wrapper
+    result = ops.mixed_precision_ops()
+    assert result._disabled == ()
+    assert result._full_precision_mm is False
 
 
 @requires_int8_ext
@@ -176,6 +276,9 @@ def test_channelwise_fused_matches_chunked_bit_exact():
     g = torch.Generator().manual_seed(11)
     for M, K, N, convrot, bias in ((256, 2560, 1024, False, True),
                                    (512, 3840, 1152, True, False),
+                                   (65, 768, 129, False, True),
+                                   (96, 704, 385, False, False),
+                                   (128, 512, 256, True, True),
                                    (33, 512, 256, True, True),
                                    (1, 2560, 512, False, False)):
         x = (torch.randn((M, K), generator=g, dtype=torch.bfloat16) * 0.5).to("mps")
@@ -229,14 +332,15 @@ def test_channelwise_long_schedule_is_bit_exact():
 
 
 @requires_int8_ext
-def test_channelwise_qkv_scatter_is_bit_exact():
+@pytest.mark.parametrize("m", [65, 96, 128, 130])
+def test_channelwise_qkv_scatter_is_bit_exact(m):
     """The H3 epilogue changes only storage layout, not GEMM arithmetic."""
     from _patches.int8_ext import loader
 
     mod = loader.module()
     assert mod is not None and hasattr(mod, "i8_matmul2d_nt_fused_cs_qkv")
     g = torch.Generator().manual_seed(31)
-    m, kin, heads, dim = 130, 512, 4, 32
+    kin, heads, dim = 512, 4, 32
     n = 3 * heads * dim
     a = torch.randint(-128, 128, (m, kin), generator=g, dtype=torch.int8).to("mps")
     b = torch.randint(-128, 128, (n, kin), generator=g, dtype=torch.int8).to("mps")
@@ -257,7 +361,9 @@ def test_channelwise_qkv_scatter_is_bit_exact():
 
 
 @requires_int8_ext
-def test_qkv_rms_rope_epilogue_matches_two_kernel_chain_bit_exact():
+@pytest.mark.parametrize("m", [65, 96, 128, 259])
+@pytest.mark.parametrize("rotary_half", [1, 16, 48, 64])
+def test_qkv_rms_rope_epilogue_matches_two_kernel_chain_bit_exact(m, rotary_half):
     """The fused H3 epilogue preserves projection, norm, and RoPE bytes."""
     from _patches.dit_ext import loader as dit_loader
     from _patches.int8_ext import loader as int8_loader
@@ -270,7 +376,7 @@ def test_qkv_rms_rope_epilogue_matches_two_kernel_chain_bit_exact():
         pytest.skip("fused QKV and dit reference kernels unavailable")
 
     g = torch.Generator().manual_seed(37)
-    m, kin, heads, dim, rotary_half = 259, 512, 4, 128, 48
+    kin, heads, dim = 512, 4, 128
     n = 3 * heads * dim
     a = torch.randint(
         -128, 128, (m, kin), generator=g, dtype=torch.int8).to("mps")
@@ -306,7 +412,8 @@ def test_qkv_rms_rope_epilogue_matches_two_kernel_chain_bit_exact():
 
 @requires_int8_ext
 @pytest.mark.parametrize("strength", [0.375, -0.6, 1.0])
-def test_qkv_lora_epilogue_matches_runtime_adapter_chain_bit_exact(strength):
+@pytest.mark.parametrize("m", [65, 96, 128, 259])
+def test_qkv_lora_epilogue_matches_runtime_adapter_chain_bit_exact(strength, m):
     """LoRA is added with PyTorch's bf16 semantics before Q/K normalization."""
     from _patches.dit_ext import loader as dit_loader
     from _patches.int8_ext import loader as int8_loader
@@ -319,7 +426,7 @@ def test_qkv_lora_epilogue_matches_runtime_adapter_chain_bit_exact(strength):
         pytest.skip("LoRA QKV epilogue and dit reference kernels unavailable")
 
     g = torch.Generator().manual_seed(71)
-    m, kin, heads, dim, rotary_half = 259, 512, 4, 128, 48
+    kin, heads, dim, rotary_half = 512, 4, 128, 48
     part_width = heads * dim
     width = 3 * part_width
     a = torch.randint(
@@ -563,13 +670,13 @@ def test_mlp_bridge_prequant_matches_materialized_pipeline_bit_exact():
 
 
 @requires_int8_ext
-def test_mlp_bridge_long_schedule_is_bit_exact():
+@pytest.mark.parametrize('m,kin,ffn', [(8209, 96, 256), (8193, 5376, 14336)])
+def test_mlp_bridge_long_schedule_is_bit_exact(m, kin, ffn):
     from _patches.int8_ext import loader
 
     mod = loader.module()
     assert mod is not None and hasattr(mod, "i8_mlp_bridge_prequant")
     g = torch.Generator().manual_seed(43)
-    m, kin, ffn = 8209, 96, 256
     activation = torch.randint(
         -128, 128, (m, kin), generator=g, dtype=torch.int8).to("mps")
     weight = torch.randint(
