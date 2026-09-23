@@ -4,7 +4,8 @@ The decoder's [head, qkv, dim] layout and FP16 rounding differ from the BF16
 denoiser. These kernels are deliberately separate from minimax_fast. Native
 mode enables the patch; ASFP8_MINIMAX_VAE_FAST=0 restores the core forwards.
 ASFP8_MINIMAX_VAE_DENSE_ATTENTION=1 independently opts into non-bit-exact
-dense FlashAttention; it is never enabled implicitly by native mode.
+dense FlashAttention. The explicit ASFP8_MINIMAX_RELAXED preset also enables
+it unless overridden with zero; native mode alone never enables it.
 """
 from __future__ import annotations
 
@@ -24,6 +25,9 @@ _merge = True
 _dense = False
 _dense_dead = False
 _dense_kernel = None
+_dense_tuning = False
+_qkv_kernel = None
+_qkv_dead = False
 _vm = None
 _ops = None
 _original_attention = None
@@ -57,7 +61,10 @@ def _run_attention(q, k, v, heads):
     global _dense_dead
     if _dense and not _dense_dead and _dense_kernel is not None:
         try:
-            out = _dense_kernel.flash_fwd_na(q, k, v, 64 ** -0.5)
+            options = {}
+            if _dense_tuning:
+                options = dict(nsg=4, bc=32, blk=2) if q.shape[0] == 1 else dict(nsg=4, bc=64, blk=1)
+            out = _dense_kernel.flash_fwd_na(q, k, v, 64 ** -0.5, **options)
             if not _merge:
                 out = out.transpose(1, 2).reshape(q.shape[0], q.shape[2], heads * 64)
             return out
@@ -69,17 +76,49 @@ def _run_attention(q, k, v, heads):
                                    skip_output_reshape=_merge)
 
 
+def _qkv_layer_ok(layer):
+    # Preserve lazy materialization, LoRA functions, hooks and custom forwards.
+    supported = (torch.nn.Linear, _ops.disable_weight_init.Linear, _ops.manual_cast.Linear)
+    return (type(layer) in supported and "forward" not in vars(layer)
+            and not hasattr(layer, "_v")
+            and not any(getattr(layer, name, ()) for name in (
+                "weight_function", "bias_function", "_forward_hooks", "_forward_pre_hooks")))
+
+
+def _project_qkv(self, x, rope, pre_norm):
+    """Return None to retain the exact projection and QKV glue."""
+    global _qkv_dead
+    if (_qkv_kernel is None or _qkv_dead or not _qkv_layer_ok(self.to_qkv)
+            or not _half_mps(self.to_qkv.weight)
+            or self.to_qkv.weight.shape != (6144, 2048)
+            or not _half_mps(self.to_qkv.bias)
+            or self.to_qkv.bias.shape != (6144,)):
+        return None
+    try:
+        h = _ops._eager_input_act(x, "rms_norm", pre_norm.weight, pre_norm.eps)
+        return _qkv_kernel(h, self.to_qkv.weight, self.to_qkv.bias, rope,
+                           self.qk_norm_scale, self.norm_q.eps)
+    except Exception as exc:
+        _qkv_dead = True
+        print(f"{TAG} optional QKV projection disabled ({str(exc)[:180]}); "
+              "restoring the exact projection.")
+        return None
+
+
 def _attention(self, x, rotary_pos_emb, pre_norm, residual, residual_scale):
     global _attention_dead
     if not _attention_ok(self, x, rotary_pos_emb):
         return _original_attention(self, x, rotary_pos_emb, pre_norm, residual, residual_scale)
-    h = _ops.linear_input_act(self.to_qkv, x, "rms_norm", pre_norm.weight, pre_norm.eps)
-    try:
-        q, k, v = _kernel.qkv(h, rotary_pos_emb, self.qk_norm_scale, self.heads, self.norm_q.eps)
-    except Exception as exc:
-        _attention_dead = True
-        print(f"{TAG} QKV fusion disabled ({str(exc)[:180]}).")
-        return _original_attention(self, x, rotary_pos_emb, pre_norm, residual, residual_scale)
+    projected = _project_qkv(self, x, rotary_pos_emb, pre_norm)
+    if projected is None:
+        h = _ops.linear_input_act(self.to_qkv, x, "rms_norm", pre_norm.weight, pre_norm.eps)
+        try:
+            projected = _kernel.qkv(h, rotary_pos_emb, self.qk_norm_scale, self.heads, self.norm_q.eps)
+        except Exception as exc:
+            _attention_dead = True
+            print(f"{TAG} QKV fusion disabled ({str(exc)[:180]}).")
+            return _original_attention(self, x, rotary_pos_emb, pre_norm, residual, residual_scale)
+    q, k, v = projected
     out = _run_attention(q, k, v, self.heads)
     if _merge:
         if _half_mps(out) and out.shape == q.shape:
@@ -134,7 +173,7 @@ def _compatible(vm, rope_impl):
 
 def install():
     global _installed, _kernel, _vm, _ops, _original_attention, _original_ff, _merge
-    global _dense, _dense_kernel
+    global _dense, _dense_kernel, _qkv_kernel, _dense_tuning
     if (_installed or sys.platform != "darwin" or os.environ.get("ASFP8_DIT_EXT") != "1"
             or os.environ.get("ASFP8_MINIMAX_VAE_FAST", "1") != "1"
             or not torch.backends.mps.is_available()):
@@ -155,8 +194,10 @@ def install():
     _vm, _ops, _kernel = vm, ops, kernel
     _merge = os.environ.get("ASFP8_MINIMAX_VAE_MERGE", "1") == "1"
     # Native mode enables exact kernels only. Numerical relaxation requires
-    # this independent switch, even when ASFP8_NATIVE=1 is already set.
-    _dense = os.environ.get("ASFP8_MINIMAX_VAE_DENSE_ATTENTION", "0") == "1"
+    # an explicit per-feature or relaxed-preset switch.
+    from .minimax_relaxed import vae_dense_enabled, vae_qkv_enabled, vae_tuning_enabled
+    _dense = vae_dense_enabled()
+    _dense_tuning = vae_tuning_enabled()
     if _dense:
         from . import attn_router_mps
         candidate = attn_router_mps._fa41
@@ -166,6 +207,11 @@ def install():
         else:
             _dense = False
             print(f"{TAG} optional dense attention unavailable; keeping exact attention.")
+    if vae_qkv_enabled() and hasattr(ops, "_eager_input_act"):
+        from .minimax_vae_qkv import Qkv
+        _qkv_kernel = Qkv((64, 256, 4))
+        print(f"{TAG} optional FP32-accumulating FP16 QKV projection enabled; "
+              "ASFP8_MINIMAX_VAE_QKV=0 and restart restores the exact projection.")
     _original_attention, _original_ff = vm.Attention.forward, vm.FeedForward.forward
     attention = functools.wraps(_original_attention)(_attention)
     attention._asfp8_vae_fp16 = True
@@ -181,4 +227,4 @@ def install():
               "set ASFP8_MINIMAX_VAE_DENSE_ATTENTION=0 and restart for exact attention.")
     else:
         print(f"{TAG} FP16 decoder QK norm/RoPE/layout and elementwise fusions enabled; "
-              "matrix multiplies, attention backend and tiling preserved.")
+              "attention backend and tiling preserved.")

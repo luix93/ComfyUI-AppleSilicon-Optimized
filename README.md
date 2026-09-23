@@ -217,8 +217,47 @@ averages **13.157 → 10.707 s**; all sampler latents and decoded audio remain
 byte-identical. Both exact controls reproduce the previous raw-frame hash.
 The separately tested tail specialization averages **147.022 → 143.936 s
 sampling (7.351 → 7.197 s/step)**, but changes same-seed composition, motion
-and audio and gives no consistent smaller-workflow gain. It stays benchmark-only
-pending further perceptual review; the two candidates were not combined.
+and audio and gives no consistent smaller-workflow gain. In that sprint it stayed
+benchmark-only; the two candidates were not combined.
+
+**Optional H3 relaxed preset.** The next kernel round adds
+`ASFP8_MINIMAX_RELAXED=1`, set before starting ComfyUI alongside
+`ASFP8_NATIVE=1`. It selects the experimental long-H3 attention route, dense
+FP16 VAE attention with tuned tiles, and a fused FP16 QKV projection with FP32
+accumulation, normalization, RoPE and layout conversion. It does not change
+steps, caches, sparsity, tokens, VAE tiling or other model families.
+Warmed full-workflow means are **161.13 s exact →
+153.35 s with the preset**, versus **155.93 s**
+for the previous tail-plus-dense combination. Sampling averages
+**7.11 s/step** and video decode **10.15 s**.
+This saves **7.78 s E2E** against the matched exact control,
+including **2.58 s beyond the earlier experiments**; it does not yet reach
+7.0 s/step. See the [sprint-four report](benchmarks/m5-ultra-relaxed-sprint4.md).
+
+Every component remains independently selectable, with explicit settings taking
+precedence over the preset:
+
+```bash
+export ASFP8_NATIVE=1
+export ASFP8_MINIMAX_RELAXED=1
+# Optional overrides:
+# export ASFP8_MINIMAX_ATTN_MODE=exact       # exact | tail | tuned
+# export ASFP8_MINIMAX_VAE_DENSE_ATTENTION=0
+# export ASFP8_MINIMAX_VAE_ATTN_TUNING=0     # retain the original dense tiles
+# export ASFP8_MINIMAX_VAE_QKV=0             # retain the existing projection
+```
+
+**All of these changes remain off by default.** Native mode alone retains the
+accepted exact stack. To restore it, remove the relaxed preset and individual
+relaxed overrides, then restart. To try only the earlier dense VAE path, leave
+the preset unset and set `ASFP8_MINIMAX_VAE_DENSE_ATTENTION=1`. The earlier tail
+experiment remains available with `ASFP8_MINIMAX_ATTN_MODE=tail`.
+
+The sampling changes can visibly alter same-seed composition, motion and audio.
+They are experimental choices for review, not a claim of perceptual equivalence.
+The exact route stays available. Previous rejected kernel experiments remain
+separately runnable in the diagnostic harness; slower candidates are not enabled
+by the preset.
 
 The earlier **163.65 s E2E / 146.13 s sampling** result used the same prompt,
 seed and workflow. Sampling instrumentation, operation shapes/counts and kernel
@@ -1126,7 +1165,11 @@ alone—by accident.
 | `ASFP8_MINIMAX_GRAPH` | 1 | exact guarded H3 final-layer graph rewrite (target RMSNorm + modulation + fp32 casts) |
 | `ASFP8_MINIMAX_VAE_FAST` | 1 (under DIT_EXT) | FP16 H3 video-decoder QK normalization/RoPE/layout and elementwise kernels; `0` restores core forwards |
 | `ASFP8_MINIMAX_VAE_SWIGLU` / `ASFP8_MINIMAX_VAE_MERGE` | 1 | per-feature switches for exact FP16 SwiGLU and attention-output merge/sanitization |
-| `ASFP8_MINIMAX_VAE_DENSE_ATTENTION` | 0 (off) | optional non-bit-exact dense FP16 H3 VAE attention; requires native VAE/Metal attention, restart to change; independent of sampling |
+| `ASFP8_MINIMAX_RELAXED` | 0 (off) | explicit experimental H3 kernel preset; independent of `ASFP8_NATIVE`; per-feature settings override it; restart to change |
+| `ASFP8_MINIMAX_ATTN_MODE` | exact (tuned under RELAXED) | `exact`, original relaxed `tail`, or `tuned`; the relaxed preset supplies its selected mode when unset; long H3 only, workflow attention overrides take precedence |
+| `ASFP8_MINIMAX_VAE_DENSE_ATTENTION` | 0 (1 under RELAXED) | optional non-bit-exact dense FP16 H3 VAE attention; requires native VAE/Metal attention; independent of sampling |
+| `ASFP8_MINIMAX_VAE_ATTN_TUNING` | 0 (1 under RELAXED) | tuned batch-dependent tiles within optional dense VAE attention; `0` retains the original dense kernel settings |
+| `ASFP8_MINIMAX_VAE_QKV` | 0 (1 under RELAXED) | FP16 QKV projection with FP32 accumulation and fused normalization/RoPE/layout; `0` retains the existing GEMM; independent of dense attention |
 | `ASFP8_INT8_QKV_SCATTER` | 1 | exact H3 INT8 QKV epilogue directly to three attention-layout tensors; `0` restores the full fused-QKV buffer |
 | `ASFP8_INT8_QKV_NORM_ROPE` | 1 | exact D=128 H3 INT8 projection + optional standard runtime-LoRA delta + Q/K RMSNorm + partial-RoPE epilogue |
 | `ASFP8_MINIMAX_CROSS_BLOCK` | 1 | exact MLP-gate → next-attention-AdaLN carry when no workflow block replacement is active |
