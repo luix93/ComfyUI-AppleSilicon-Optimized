@@ -1,4 +1,4 @@
-"""FP16 MiniMax video VAE glue, preserving the selected GEMMs and attention by default.
+"""MiniMax video VAE glue; existing FP16 GEMMs and attention stay the default.
 
 The decoder's [head, qkv, dim] layout and FP16 rounding differ from the BF16
 denoiser. These kernels are deliberately separate from minimax_fast. Native
@@ -6,6 +6,8 @@ mode enables the patch; ASFP8_MINIMAX_VAE_FAST=0 restores the core forwards.
 ASFP8_MINIMAX_VAE_DENSE_ATTENTION=1 independently opts into non-bit-exact
 dense FlashAttention. The explicit ASFP8_MINIMAX_RELAXED preset also enables
 it unless overridden with zero; native mode alone never enables it.
+Loading the INT8 ConvRot VAE selects a separate native W8A8 projection path;
+ASFP8_MINIMAX_VAE_INT8=0 restores the previous quantized decoder forwards.
 """
 from __future__ import annotations
 
@@ -15,6 +17,8 @@ import os
 import sys
 
 import torch
+
+from . import minimax_vae_int8
 
 TAG = "[AppleSilicon-Optimized/minimax_vae_fast]"
 _installed = False
@@ -47,10 +51,20 @@ def _plain_linear(layer):
     return (isinstance(weight, torch.Tensor) and weight.dtype == torch.float16
             and not isinstance(weight, _ops.QuantizedTensor))
 
+def _supported_linear(layer):
+    return _plain_linear(layer) or minimax_vae_int8.eligible(layer)
+
+def _linear_input_act(layer, x, input_act, *args, **kwargs):
+    if not _plain_linear(layer):
+        result = minimax_vae_int8.linear(layer, x, input_act, *args, **kwargs)
+        if result is not None:
+            return result
+    return _ops.linear_input_act(layer, x, input_act, *args, **kwargs)
+
 def _attention_ok(self, x, rope):
     return (not _attention_dead and _kernel is not None and _input_ok(x)
             and self.heads == 32 and self.dim_head == 64
-            and _plain_linear(self.to_qkv) and _plain_linear(self.to_out)
+            and _supported_linear(self.to_qkv) and _supported_linear(self.to_out)
             and _half_mps(self.qk_norm_scale) and self.qk_norm_scale.shape == (64,)
             and _half_mps(rope) and rope.ndim == 6
             and rope.shape[:3] == (*x.shape[:2], 1)
@@ -111,7 +125,7 @@ def _attention(self, x, rotary_pos_emb, pre_norm, residual, residual_scale):
         return _original_attention(self, x, rotary_pos_emb, pre_norm, residual, residual_scale)
     projected = _project_qkv(self, x, rotary_pos_emb, pre_norm)
     if projected is None:
-        h = _ops.linear_input_act(self.to_qkv, x, "rms_norm", pre_norm.weight, pre_norm.eps)
+        h = _linear_input_act(self.to_qkv, x, "rms_norm", pre_norm.weight, pre_norm.eps)
         try:
             projected = _kernel.qkv(h, rotary_pos_emb, self.qk_norm_scale, self.heads, self.norm_q.eps)
         except Exception as exc:
@@ -133,26 +147,26 @@ def _attention(self, x, rotary_pos_emb, pre_norm, residual, residual_scale):
             out = torch.nan_to_num(out.transpose(1, 2).reshape(*x.shape))
     else:
         out = torch.nan_to_num(out)
-    return _ops.linear_input_act(self.to_out, out, None,
+    return _linear_input_act(self.to_out, out, None,
                                 residual=residual, residual_scale=residual_scale)
 
 def _feed_forward(self, x, pre_norm, residual, residual_scale):
     global _ff_dead
     if (_ff_dead or _kernel is None or not _input_ok(x)
-            or not _plain_linear(self.w1) or not _plain_linear(self.w2)):
+            or not _supported_linear(self.w1) or not _supported_linear(self.w2)):
         return _original_ff(self, x, pre_norm, residual, residual_scale)
-    h = _ops.linear_input_act(self.w1, x, "rms_norm", pre_norm.weight, pre_norm.eps)
+    h = _linear_input_act(self.w1, x, "rms_norm", pre_norm.weight, pre_norm.eps)
     if not _half_mps(h) or h.ndim != 3 or h.shape[-1] != 16384:
-        return _ops.linear_input_act(self.w2, h, "swiglu",
+        return _linear_input_act(self.w2, h, "swiglu",
                                     residual=residual, residual_scale=residual_scale)
     try:
         activated = _kernel.swiglu(h)
     except Exception as exc:
         _ff_dead = True
         print(f"{TAG} SwiGLU fusion disabled ({str(exc)[:180]}).")
-        return _ops.linear_input_act(self.w2, h, "swiglu",
+        return _linear_input_act(self.w2, h, "swiglu",
                                     residual=residual, residual_scale=residual_scale)
-    return _ops.linear_input_act(self.w2, activated, None,
+    return _linear_input_act(self.w2, activated, None,
                                 residual=residual, residual_scale=residual_scale)
 
 def _compatible(vm, rope_impl):

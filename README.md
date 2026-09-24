@@ -259,6 +259,43 @@ The exact route stays available. Previous rejected kernel experiments remain
 separately runnable in the diagnostic harness; slower candidates are not enabled
 by the preset.
 
+**INT8 ConvRot video VAE on M5.** Loading
+`minimax_h3_video_vae_int8_convrot.safetensors` with `ASFP8_NATIVE=1` now selects
+a guarded native W8A8 decoder path. The checkpoint alone previously used
+ComfyUI's MPS weight-only fallback, repeatedly dequantizing weights into FP16.
+The new route rotates and quantizes activations, keeps INT32 matrix accumulation,
+and fuses channelwise scaling and two separately rounded FP16 bias/output stages
+into the matrix kernel. The existing VAE Q/K normalization, RoPE, layout and
+SwiGLU kernels also accept these eligible quantized layers.
+
+This is **not bit-exact to the FP16 checkpoint or to the prior weight-only
+fallback**. `ASFP8_MINIMAX_VAE_INT8=0` restores that previous INT8-checkpoint path;
+selecting the FP16 VAE retains the existing exact/relaxed FP16 choices.
+Dense attention stays independently optional:
+`ASFP8_MINIMAX_RELAXED=1` enables the combined preset, or set just
+`ASFP8_MINIMAX_VAE_DENSE_ATTENTION=1` and
+`ASFP8_MINIMAX_VAE_ATTN_TUNING=1` to relax VAE attention while retaining the
+existing sampler. The FP16 QKV projection override is bypassed for quantized
+weights. Restart after changing environment settings.
+
+Custom/offloaded layers, runtime weight/bias transforms, hooks, explicit
+full-precision requests and unsupported shapes retain the core path. Optional
+kernel failures latch back to that path. The model selector determines which
+checkpoint loads; the relaxed flag never changes the VAE file automatically.
+
+On the M5 Ultra, repeated complete decodes of the same **864×480, 124-frame**
+latents take **13.10 s exact FP16**, **11.28 s native INT8**, and **8.41 s INT8
+with dense attention**. The previous relaxed FP16 mode takes **10.11 s**:
+the new fastest VAE saves **1.70 s / 16.8%** against it. The unadapted INT8
+checkpoint takes **22.29 s** on this MPS setup. All are warm medians of four
+alternating repetitions, including allocation, rotation, quantization and layout
+costs. In the full 20-step workflow, alternating FP16/INT8/INT8/FP16 runs average
+**154.65 s → 152.80 s E2E**, saving **1.85 s** against the previous relaxed
+preset. Complete video/audio sampler latents remain byte-identical; this change
+speeds up decoding, not sampling. See the
+[INT8 VAE report](benchmarks/m5-ultra-int8-vae.md) for individual runs, numerical
+differences and validation scope.
+
 The earlier **163.65 s E2E / 146.13 s sampling** result used the same prompt,
 seed and workflow. Sampling instrumentation, operation shapes/counts and kernel
 sources match the later VAE-sprint run, and controlled old/current attention
@@ -1170,6 +1207,7 @@ alone—by accident.
 | `ASFP8_MINIMAX_VAE_DENSE_ATTENTION` | 0 (1 under RELAXED) | optional non-bit-exact dense FP16 H3 VAE attention; requires native VAE/Metal attention; independent of sampling |
 | `ASFP8_MINIMAX_VAE_ATTN_TUNING` | 0 (1 under RELAXED) | tuned batch-dependent tiles within optional dense VAE attention; `0` retains the original dense kernel settings |
 | `ASFP8_MINIMAX_VAE_QKV` | 0 (1 under RELAXED) | FP16 QKV projection with FP32 accumulation and fused normalization/RoPE/layout; `0` retains the existing GEMM; independent of dense attention |
+| `ASFP8_MINIMAX_VAE_INT8` | 1 (under native INT8/VAE kernels) | native W8A8 for an explicitly loaded H3 INT8 ConvRot VAE; `0` restores the prior weight-only MPS decoder; FP16 VAE and sampler unchanged |
 | `ASFP8_INT8_QKV_SCATTER` | 1 | exact H3 INT8 QKV epilogue directly to three attention-layout tensors; `0` restores the full fused-QKV buffer |
 | `ASFP8_INT8_QKV_NORM_ROPE` | 1 | exact D=128 H3 INT8 projection + optional standard runtime-LoRA delta + Q/K RMSNorm + partial-RoPE epilogue |
 | `ASFP8_MINIMAX_CROSS_BLOCK` | 1 | exact MLP-gate → next-attention-AdaLN carry when no workflow block replacement is active |
