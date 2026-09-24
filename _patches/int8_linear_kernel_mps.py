@@ -65,6 +65,29 @@ _RUNTIME_LORA_ATTR = "_asfp8_runtime_lora"
 # identical bytes unless someone mutates it in-place between projections, which
 # comfy's functional model blocks never do. Disable: ASFP8_INT8_ACT_CACHE=0.
 _act_cache = None  # (x_weakref, convrot, groupsize, x_8, x_scale)
+_LINEAR_MAX_ELEMS = 2**31 - 1
+
+
+def _int8_linear_bounded(x, weight, weight_scale, bias, out_dtype,
+                         convrot, convrot_groupsize):
+    """Keep ConvRot and native GEMM indexing within bounded row buffers.
+
+    SeedVR2 at 234 MP produces a QKV projection with 8.4 billion elements.
+    The native GEMM uses 32-bit element offsets; a single dispatch would wrap.
+    Rows are independent. Keep the same K reduction and quantization per row.
+    """
+    flat = x.reshape(-1, x.shape[-1])
+    output = torch.empty((flat.shape[0], weight.shape[0]),
+                         device=x.device, dtype=out_dtype)
+    rows = max(1, min(8192, _LINEAR_MAX_ELEMS // max(
+        flat.shape[-1], weight.shape[0])))
+    for start in range(0, flat.shape[0], rows):
+        stop = min(start + rows, flat.shape[0])
+        chunk = flat[start:stop].clone(memory_format=torch.contiguous_format)
+        value = _int8_linear_kernel(chunk, weight, weight_scale, bias, out_dtype,
+                                    convrot, convrot_groupsize)
+        output[start:stop].copy_(value)
+    return output.reshape(*x.shape[:-1], weight.shape[0])
 
 
 def _quant_cached(x, convrot, convrot_groupsize):
@@ -83,9 +106,15 @@ def _quant_cached(x, convrot, convrot_groupsize):
     from comfy_kitchen.tensor.int8_utils import _build_hadamard, _rotate_activation
 
     xr = x
+    if (x.device.type == "mps" and x.numel() < 2**31
+            and x.untyped_storage().nbytes() // x.element_size() >= 2**31):
+        # SeedVR2's large-image MLP chunks can be contiguous views into a
+        # >INT_MAX backing buffer. MPSGraph's ConvRot matmul still sees that
+        # buffer. contiguous() is a no-op here; clone only the active chunk.
+        xr = x.clone(memory_format=torch.contiguous_format)
     if convrot:
         h = _build_hadamard(convrot_groupsize, device=x.device, dtype=x.dtype)
-        xr = _rotate_activation(x, h, convrot_groupsize)
+        xr = _rotate_activation(xr, h, convrot_groupsize)
     x_2d = xr.reshape(-1, xr.shape[-1])
     if (
         _kernel is not None
@@ -198,6 +227,11 @@ def _int8_linear_kernel(
         )
 
     orig_shape = x.shape
+    rows = x.numel() // x.shape[-1]
+    if (x.numel() > _LINEAR_MAX_ELEMS
+            or rows * weight.shape[0] > _LINEAR_MAX_ELEMS):
+        return _int8_linear_bounded(x, weight, weight_scale, bias, out_dtype,
+                                    convrot, convrot_groupsize)
     x_8, x_scale = _quant_cached(x, convrot, convrot_groupsize)
     # MiniMax H3 long clips leave a small suffix in the 128-row GEMM tile.
     # At M=15,787 the exact 32-row suffix kernel is ~2% faster for QKV, while

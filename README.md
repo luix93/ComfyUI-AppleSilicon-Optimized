@@ -631,7 +631,7 @@ mirrors eager rounding op-for-op (exact-or-1-ulp) and falls back per call:
   default, validates the module graph and runtime geometry, and falls back to
   the original forward on anything it does not recognize.
 
-### Video VAE (patches #26, #29, #31)
+### Video VAE and SeedVR2 (patches #26, #29, #31, #36, #37)
 
 - **Conv3d → sliced conv2d (#26, `ASFP8_CONV3D`)**: MPS's conv3d lowering is
   ~10× slower than the equivalent per-slice conv2d. Temporal taps fold into
@@ -661,6 +661,47 @@ mirrors eager rounding op-for-op (exact-or-1-ulp) and falls back per call:
   The patch floors the slice count to a per-slice element budget and treats
   the INT_MAX error as retryable. Numerically free — the query rows are merely
   divided into more calls and each still sees the full key length.
+- **SeedVR2 VAE tile scheduling (#36, `ASFP8_SEEDVR2_VAE_SYNC`)**: waits for
+  MPS completion between spatial encoder/decoder tiles. On the tested M5 Ultra
+  setup, the original tile loop grows Metal temporary allocations even while
+  live tensor memory stays flat; the same growth occurs without this custom
+  node. Waiting lets buffers be reused across tiles. This changes scheduling
+  only, preserving precision, arithmetic and tile overlap. It is enabled by
+  default on MPS, independent of native/relaxed kernel flags; set
+  `ASFP8_SEEDVR2_VAE_SYNC=0` before startup to restore the original scheduling.
+  Non-tiled SeedVR2 calls, other VAEs, CPU and CUDA retain their original calls.
+  The **2400×1600 → 7200×4800** INT8 7B image workflow completed in **80.15 s
+  first run / 73.41 s warm**, including PNG writing, with **40.26 GiB** maximum
+  observed Metal allocation. A smaller complete workflow preserves encoded
+  latents, sampler latents and decoded frame bytes with the fix on/off. See the
+  [SeedVR2 memory report](benchmarks/m5-ultra-seedvr2-memory.md) for measurement
+  scope, numerical checks and the guarded disabled-path reproduction.
+  The [SeedVR2 acceleration audit](benchmarks/m5-ultra-seedvr2-acceleration.md)
+  records the original INT8/convolution coverage. The subsequent exact stack
+  below supersedes its preliminary optimization status.
+- **SeedVR2 exact kernels and bounded attention (#37)**: with
+  `ASFP8_NATIVE=1`, cache convolution weight layouts only during each tiled VAE
+  call, fuse FP16 SiLU with causal padding/channel packing, fuse BF16
+  normalization/modulation and gated residual memory passes, cache RoPE
+  trigonometry, and batch matching attention windows. Existing INT8 matrix
+  multiplies, attention arithmetic, convolution operands and intermediate
+  rounding are retained. At **2400×1600 → 7200×4800**, the complete sequence
+  including PNG writing fell from **73.52 s to 50.98 s warm** (30.6% less time), with identical
+  encoded latents, sampled latents and final frame bytes. Set
+  `ASFP8_SEEDVR2_FAST=0` before startup to disable these performance additions.
+  The MPS attention buffer fix remains enabled independently: a small window
+  can otherwise fail with `INT_MAX` when its backing feature buffer exceeds
+  2,147,483,647 elements. Compact MLP inputs also prevent the same issue from
+  forcing INT8 projections onto their fallback path. Very large projections
+  use bounded row dispatches, and large window gathers use explicit 64-bit
+  offsets. See the
+  [SeedVR2 exact optimization report](benchmarks/m5-ultra-seedvr2-exact.md)
+  for full-size tests, the 18,720×12,480 reproduction, numerical acceptance,
+  and the GroupNorm experiment retained off by default.
+  The **6240×4160 → 18720×12480** job now completes: **370.60 s** including
+  PNG writing in the first complete final run, with finite output and no
+  INT8 fallbacks. Maximum observed Metal allocation was **125.51 GiB**;
+  this is sampled allocator memory, not total system RAM or a continuous peak.
 
 ### Memory accounting (patch #30)
 
@@ -1227,6 +1268,14 @@ alone—by accident.
 | `ASFP8_WAN_VAE_CHUNK` | 16 | Wan VAE frames per causal pass (even, 2–32; lower caps decode memory peak) |
 | `ASFP8_FREE_MEM` | on | MPS free-memory accounting fix (patch #30) |
 | `ASFP8_VAE_SLICE_FIX` | on | VAE slice_attention INT_MAX cap (patch #31) |
+| `ASFP8_SEEDVR2_VAE_SYNC` | on | wait between SeedVR2 VAE spatial tiles on MPS to bound temporary allocations; scheduling-only, independent of native/relaxed flags |
+| `ASFP8_SEEDVR2_FAST` | on | SeedVR2 exact performance additions; native sampling/SiLU kernels require `ASFP8_DIT_EXT=1` (implied by `ASFP8_NATIVE=1`); `0` at startup retains the memory/error safeguards |
+| `ASFP8_SEEDVR2_ATTN_FIX` | on | pack MPS attention windows into bounded buffers to avoid oversized-backing-storage `INT_MAX` failures; independent of the native kernel flag |
+| `ASFP8_SEEDVR2_ATTN_BATCH` | 8 with native/FAST, otherwise 1 | maximum equal-size windows per call, clamped to 1–16; small safe images keep the original loop |
+| `ASFP8_SEEDVR2_VAE_PACK` | on | reuse folded convolution weights within a tiled SeedVR2 VAE call; requires FAST and VAE_SYNC wrappers |
+| `ASFP8_SEEDVR2_VAE_SILU` | on | native FP16 single-frame SiLU + causal padding + channel packing, retaining MPS Conv2D |
+| `ASFP8_SEEDVR2_MOD` / `ASFP8_SEEDVR2_RMS` / `ASFP8_SEEDVR2_ROPE` | on | independent native SeedVR2 BF16 sampling fusions; RMS retains PyTorch's existing mean/rsqrt reduction |
+| `ASFP8_SEEDVR2_VAE_GN` | off | experimental exact GroupNorm + SiLU + packing on tested PyTorch 2.13; whole-decoder timing was neutral, so it is not enabled by default |
 | `ASFP8_FREE_INTERLEAVE` | on | drain the MPS pool between models on explicit free-all requests |
 | `ASFP8_MPS_RESERVE_GB` | max(16, 15%) | OS memory reserve held back from comfy's estimate |
 | `ASFP8_FA41_F32S` | off | fp32 score tiles in flash41 |

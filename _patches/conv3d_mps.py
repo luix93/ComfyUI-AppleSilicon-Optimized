@@ -22,6 +22,9 @@ Kill switch: ASFP8_CONV3D=0 (ASFP8_NATIVE=1 implies on).
 
 import os
 import sys
+import weakref
+from contextlib import contextmanager
+from contextvars import ContextVar
 
 import torch
 import torch.nn.functional as F
@@ -34,6 +37,42 @@ _orig_conv_forward = None
 # MPSGraph rejects tensors over INT_MAX elements; keep conv2d batches under
 # a comfortable ceiling (elements per activation tensor).
 _MAX_ELEMS = 1 << 30
+_packing_state = ContextVar('asfp8_conv_packing', default=None)
+
+
+@contextmanager
+def packing_scope():
+    """Cache only within one immutable inference encode/decode operation.
+
+    Dropping the context releases every packed weight, including on exceptions.
+    No cache survives model patching, offloading or a later inference request.
+    """
+    token = _packing_state.set({})
+    try:
+        yield
+    finally:
+        _packing_state.reset(token)
+
+
+def _pack_weight(weight, co, kt, ci, groups, kh, kw):
+    cache = _packing_state.get()
+    if cache is None or torch.is_grad_enabled():
+        return weight.transpose(1, 2).reshape(co, kt * (ci // groups), kh, kw).contiguous()
+    try:
+        version = weight._version
+    except RuntimeError:
+        # Inference tensors have no counter. Reuse is restricted to the active
+        # encode/decode, during which model weights are immutable.
+        version = None
+    signature = (version, tuple(weight.shape), tuple(weight.stride()),
+                 weight.storage_offset(), weight.dtype, weight.device,
+                 co, kt, ci, groups, kh, kw)
+    old = cache.get(id(weight))
+    if old is not None and old[0]() is weight and old[1] == signature:
+        return old[2]
+    packed = weight.transpose(1, 2).reshape(co, kt * (ci // groups), kh, kw).contiguous()
+    cache[id(weight)] = (weakref.ref(weight), signature, packed)
+    return packed
 
 
 def _conv3d_decomposed(input, weight, bias, stride, padding, dilation, groups):
@@ -73,7 +112,7 @@ def _conv3d_decomposed(input, weight, bias, stride, padding, dilation, groups):
     # per-tap convs there (rare in VAEs).
     fold = groups == 1 or kT == 1
     if fold:
-        wf = weight.transpose(1, 2).reshape(Co, kT * (Ci // groups), kH, kW).contiguous()
+        wf = _pack_weight(weight, Co, kT, Ci, groups, kH, kW)
     else:
         w2 = [weight[:, :, kt].float().contiguous() for kt in range(kT)]
 
@@ -101,6 +140,8 @@ def _conv3d_decomposed(input, weight, bias, stride, padding, dilation, groups):
                 acc = acc.add_(bias.float().view(1, -1, 1, 1))
             acc = acc.to(input.dtype)
         outs.append(acc.reshape(B, n, Co, Ho, Wo))
+    if len(outs) == 1 and _packing_state.get() is not None:
+        return outs[0].transpose(1, 2)
     return torch.cat(outs, 1).transpose(1, 2)
 
 

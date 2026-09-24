@@ -38,6 +38,25 @@ def _rms_norm(input, normalized_shape, weight=None, eps=None):
     if input.device.type != "mps" or rows <= _THRESHOLD:
         return _orig(input, normalized_shape, weight, eps)
 
+    if (not torch.is_grad_enabled() and input.dim() > len(normalized_shape)
+            and input.untyped_storage().nbytes() // input.element_size() >= 2**31):
+        # Giant SeedVR2 Q/K views share a fused QKV buffer with >INT_MAX
+        # elements. Materialize bounded token slices before float conversion;
+        # keep the existing manual reduction and BF16 weight rounding below.
+        out = torch.empty_like(input, memory_format=torch.contiguous_format)
+        width = input.numel() // input.shape[0]
+        step = max(1, min(8192, (1 << 26) // width))
+        for start in range(0, input.shape[0], step):
+            chunk = input[start:start + step].clone(memory_format=torch.contiguous_format)
+            out[start:start + step].copy_(
+                _manual_rms_norm(chunk, normalized_shape, weight, eps))
+        return out
+
+    return _manual_rms_norm(input, normalized_shape, weight, eps)
+
+
+def _manual_rms_norm(input, normalized_shape, weight, eps):
+
     # Manual rms_norm in fp32 — exact at any size.
     ndims = len(normalized_shape)
     dims = tuple(range(input.dim() - ndims, input.dim()))

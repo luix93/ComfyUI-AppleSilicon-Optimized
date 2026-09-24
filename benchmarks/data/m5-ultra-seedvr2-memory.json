@@ -1,0 +1,171 @@
+{
+  "date": "2026-09-24",
+  "baseline_commit": "db2a013",
+  "hardware": "M5 Ultra, 80 GPU cores, 256 GiB",
+  "torch": "2.13.0",
+  "comfy_commit": "b33e2b55",
+  "input_size": [
+    2400,
+    1600
+  ],
+  "output_size": [
+    7200,
+    4800
+  ],
+  "tile_size": 512,
+  "overlap": 128,
+  "tiles": 247,
+  "sampler": {
+    "seed": 959948902156062,
+    "steps": 1,
+    "cfg": 1,
+    "sampler": "euler",
+    "scheduler": "simple",
+    "denoise": 1
+  },
+  "full_runs": [
+    {
+      "repeat": 0,
+      "timings": {
+        "resize": 0.3354588749934919,
+        "preprocess": 0.01666637501330115,
+        "load_vae": 0.126783458981663,
+        "encode": 16.761261000006925,
+        "load_model": 0.2296136660152115,
+        "sample": 24.717101333022583,
+        "decode": 36.03543687501224,
+        "postprocess": 0.018016957998042926,
+        "save_image": 1.9002929169801064
+      },
+      "total_seconds": 80.14848662499571,
+      "encoded_sha256": "c0d9ebdc04e62fc6eecfabdf9f5874182d5bc2f8817b1cf21dc37a70eabac50e",
+      "sampled_sha256": "b9dbc7e67f0b4a49e1fc9106e9e914bacd3f2043587e5c3d88b3888cf911fcc7",
+      "frames_sha256": "c5ab4984ce62faeb08e12cfbbc9978979d393f6eb665da8afe7614f3dde89151",
+      "frames_finite": true,
+      "output_shape": [
+        1,
+        4800,
+        7200,
+        4
+      ]
+    },
+    {
+      "repeat": 1,
+      "timings": {
+        "resize": 0.2933933329768479,
+        "preprocess": 0.017068459012079984,
+        "encode": 16.3519999999844,
+        "sample": 18.906576084002154,
+        "decode": 35.86049483300303,
+        "postprocess": 0.01830054199672304,
+        "save_image": 1.9588583750010002
+      },
+      "total_seconds": 73.41272983298404,
+      "encoded_sha256": "c0d9ebdc04e62fc6eecfabdf9f5874182d5bc2f8817b1cf21dc37a70eabac50e",
+      "sampled_sha256": "b9dbc7e67f0b4a49e1fc9106e9e914bacd3f2043587e5c3d88b3888cf911fcc7",
+      "frames_sha256": "c5ab4984ce62faeb08e12cfbbc9978979d393f6eb665da8afe7614f3dde89151",
+      "frames_finite": true,
+      "output_shape": [
+        1,
+        4800,
+        7200,
+        4
+      ]
+    }
+  ],
+  "full_memory": {
+    "stage": "verification",
+    "max_driver_gib": 40.26383972167969,
+    "max_live_gib": 27.472652912139893,
+    "max_rss_gib": 5.7200164794921875,
+    "completed": true
+  },
+  "original_encoder_stop": {
+    "stage": "encode",
+    "max_driver_gib": 17.579299926757812,
+    "max_live_gib": 1.6071205139160156,
+    "max_rss_gib": 4.44683837890625,
+    "stopped": "memory watchdog"
+  },
+  "small_original": [
+    {
+      "repeat": 0,
+      "timings": {
+        "resize": 0.005648625025060028,
+        "preprocess": 0.0012801249977201223,
+        "load_vae": 0.09748291698633693,
+        "encode": 0.7418007500236854,
+        "load_model": 0.14120608300436288,
+        "sample": 3.261128291982459,
+        "decode": 0.6533680830034427,
+        "postprocess": 0.0007070419960655272,
+        "save_image": 0.03206191697972827
+      },
+      "total_seconds": 4.936282207985641,
+      "encoded_sha256": "ec4f08048f3bb4ba21cee93cd7a83b283818a4e015af035bd68f7c81d6039347",
+      "sampled_sha256": "bf87bf60301183324294fbe208e2e794fdcb20b880671e05857587b1f694fa34",
+      "frames_sha256": "2ad24a132a1df365bbe87e5e68c7446ca3df174d4a2143f90f3926f19fc608d1",
+      "frames_finite": true,
+      "output_shape": [
+        1,
+        638,
+        960,
+        4
+      ]
+    }
+  ],
+  "small_fixed": [
+    {
+      "repeat": 0,
+      "timings": {
+        "resize": 0.006619916995987296,
+        "preprocess": 0.0008017499931156635,
+        "load_vae": 0.10401291699963622,
+        "encode": 0.6296453750110231,
+        "load_model": 0.12197241699323058,
+        "sample": 1.485120666999137,
+        "decode": 0.6480400419968646,
+        "postprocess": 0.0009395410015713423,
+        "save_image": 0.03654712499701418
+      },
+      "total_seconds": 3.0352871250070166,
+      "encoded_sha256": "ec4f08048f3bb4ba21cee93cd7a83b283818a4e015af035bd68f7c81d6039347",
+      "sampled_sha256": "bf87bf60301183324294fbe208e2e794fdcb20b880671e05857587b1f694fa34",
+      "frames_sha256": "2ad24a132a1df365bbe87e5e68c7446ca3df174d4a2143f90f3926f19fc608d1",
+      "frames_finite": true,
+      "output_shape": [
+        1,
+        638,
+        960,
+        4
+      ]
+    }
+  ],
+  "equivalence": {
+    "encoded_sha256": true,
+    "sampled_sha256": true,
+    "frames_sha256": true,
+    "encoded_bytes_equal": true,
+    "sampled_bytes_equal": true,
+    "frames_bytes_equal": true
+  },
+  "installed_default": {
+    "default_enabled": true,
+    "encoded_sha256": true,
+    "sampled_sha256": true,
+    "frames_sha256": true
+  },
+  "workflow_validation": [
+    true,
+    null,
+    [
+      "9"
+    ],
+    {}
+  ],
+  "tests_passed": 7,
+  "source_sha256": {
+    "__init__.py": "eac12dcdc6d4f6a46f716f85a9d085cacfd2215f17e6059822448c0c3d5ec98a",
+    "_patches/seedvr2_vae_mps.py": "313f5a087e0b9732831ec223c266c4927383b5fd18dad2dac2a887d7e98b0e33"
+  }
+}
