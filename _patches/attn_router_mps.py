@@ -35,6 +35,8 @@ import sys
 
 import torch
 
+from . import torch_attention
+
 TAG = "[AppleSilicon-Optimized/attn_router]"
 DENSE_BACKEND_KEY = "asfp8_dense_attention_backend"
 DENSE_BACKEND_NAME_KEY = "asfp8_dense_attention_backend_name"
@@ -264,6 +266,12 @@ def _router_tensors(q, k, v, heads, mask=None, attn_precision=None,
         return fn(q, k, v, heads, mask=mask, attn_precision=attn_precision,
                   skip_reshape=skip_reshape,
                   skip_output_reshape=skip_output_reshape, **kwargs)
+    if torch_attention.supports(q, k, v, heads, mask, attn_precision, skip_reshape):
+        _route_log("pytorch214", q, k, heads, mask, attn_precision, skip_reshape)
+        return torch_attention.attention(
+            q, k, v, heads, mask=mask, skip_reshape=skip_reshape,
+            skip_output_reshape=skip_output_reshape, scale=kwargs.get("scale"),
+            enable_gqa=kwargs.get("enable_gqa", False))
     L, D = _seq_and_head_dim(q, k, heads, skip_reshape)
     B = int(q.shape[0])
     H = int(heads)
@@ -580,7 +588,11 @@ def install():
                      "attention v2 off)")
     else:
         wide = "bmm (flash41 unavailable)"
-    print(f"{TAG} per-call attention routing on MPS: {flash}; "
+    if torch_attention.enabled():
+        print(f"{TAG} PyTorch 2.14 SDPA selected for supported FP16/BF16 calls; "
+              "mtlflashattn interception bypassed, model fusions retained.")
+    routing = "fallback" if torch_attention.enabled() else "per-call"
+    print(f"{TAG} {routing} attention routing on MPS: {flash}; "
           f"unmasked long-seq D>{_flash_max_head_dim()} fp16/bf16 -> {wide}; "
           f"masked >= {_safe_masked_min_seq()} tok -> sub-quad (memory-safe); "
           f"else startup default. ({rebound} module bindings rerouted)")

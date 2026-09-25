@@ -1947,7 +1947,8 @@ torch::Tensor flash_fwd_frag(torch::Tensor q, torch::Tensor k, torch::Tensor v,
 // Gates: non-causal, Lk % 128 == 0 (no tail path in v1).
 torch::Tensor flash_fwd_na(torch::Tensor q, torch::Tensor k, torch::Tensor v,
                            double scale, int64_t nsg, int64_t rp, int64_t byp,
-                           int64_t bc, int64_t blk, bool long_schedule) {
+                           int64_t bc, int64_t blk, bool long_schedule,
+                           bool krea_schedule) {
   TORCH_CHECK(q.is_mps() && k.is_mps() && v.is_mps(), "inputs must be on mps");
   const bool half_io = q.scalar_type() == torch::kHalf;
   TORCH_CHECK((q.scalar_type() == torch::kBFloat16 || half_io)
@@ -1989,10 +1990,17 @@ torch::Tensor flash_fwd_na(torch::Tensor q, torch::Tensor k, torch::Tensor v,
   // allocation/copy at Z-Image's 4192-row shape. K/V padding is unchanged.
   static const bool ultra =
       [MPSDevice::getInstance()->device().name containsString:@"M5 Ultra"];
-  const bool morton = long_schedule && ultra && D == 128 && Hq == 56 && Hkv == 56
+  const bool h3_morton = long_schedule && ultra && D == 128 && Hq == 56 && Hkv == 56
       && Lq == Lk && Lq >= 8192 && NSG == 16 && BC == 64 && BLK == 2
       && rp != 0 && byp != 0;
-  // Synchronized long H3 must keep every SIMD group alive at the barriers.
+  // Opted in only by Krea2's wrapper. Reuse the synchronized Morton launch
+  // order at 2MP GQA shapes, retaining dynamic dimensions and all arithmetic.
+  const bool krea_morton = krea_schedule && ultra && !half_io && B == 1
+      && D == 128 && Hq == 48 && Hkv == 12 && Lq == Lk
+      && Lq >= 8192 && Lq < 12288 && NSG == 16 && BC == 64 && BLK == 2
+      && rp != 0 && byp != 0;
+  const bool morton = h3_morton || krea_morton;
+  // Synchronized H3/Krea2 must keep every SIMD group alive at the barriers.
   // Pad its whole query tile; other Ultra paths retain per-group padding.
   const int q_alignment = morton ? rows_tg : (ultra ? 16 : rows_tg);
   const int64_t LqP = ((Lq + q_alignment - 1) / q_alignment) * (int64_t)q_alignment;
@@ -2009,11 +2017,11 @@ torch::Tensor flash_fwd_na(torch::Tensor q, torch::Tensor k, torch::Tensor v,
   std::array<float, 1> prArr = {(float)scale};
 
   // Keep shorter sequences and other attention geometries on their existing
-  // path. Validated on M5 Ultra H3; no dispatch change for other chips.
+  // path. Krea2 opts into launch ordering only; no static shape specialization.
   // For aligned lengths, specializing away the tail changes Metal's floating
   // point code generation (observed at L=8192). Keep the original dynamic
   // dimensions there; Morton traversal itself does not change reduction order.
-  const std::array<int32_t, 6> na_shape = morton && Lq % (BC * BLK) != 0
+  const std::array<int32_t, 6> na_shape = h3_morton && Lq % (BC * BLK) != 0
       ? std::array<int32_t, 6>{Hq, Hkv, Lq, Lk, (int32_t)LqP, (int32_t)LkP}
       : std::array<int32_t, 6>{};
   id<MTLComputePipelineState> pso =
@@ -2338,7 +2346,7 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
         py::arg("q"), py::arg("k"), py::arg("v"), py::arg("scale"),
         py::arg("nsg") = 16, py::arg("rp") = 1, py::arg("byp") = 1,
         py::arg("bc") = 64, py::arg("blk") = 2,
-        py::arg("long_schedule") = true);
+        py::arg("long_schedule") = true, py::arg("krea_schedule") = false);
   m.def("warmup", [](int64_t D, int64_t BR, int64_t BC) { pso_for((int)D, (int)BR, (int)BC, false); return true; },
         "compile + build pipeline for head dim D / BR rows / BC cols",
         py::arg("D") = 128, py::arg("BR") = 32, py::arg("BC") = 128);

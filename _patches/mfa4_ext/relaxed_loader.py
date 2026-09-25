@@ -73,7 +73,7 @@ def module(mode="tail"):
         try:
             cpp.TORCH_LIB_PATH = loader._nospace_torch_lib()
             _modules[mode] = cpp.load(name="asfp8_flash41_" + mode, sources=[str(path)],
-                extra_cflags=["-std=c++17", "-ObjC++", "-I" + str(here)],
+                extra_cflags=["-ObjC++", "-I" + str(here)],
                 extra_ldflags=["-framework", "Metal", "-framework", "Foundation"],
                 build_directory=str(directory), verbose=False)
         finally:

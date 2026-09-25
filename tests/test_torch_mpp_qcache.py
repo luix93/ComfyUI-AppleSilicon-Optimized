@@ -1,0 +1,55 @@
+"""Byte-level regression coverage for the guarded 2.14 MPP query cache."""
+import pytest
+import torch
+import torch.nn.functional as F
+
+from _patches import torch_mpp_qcache as patch
+
+
+def _available():
+    return (torch.backends.mps.is_available()
+            and torch.__version__.split('+')[0] == '2.14.0'
+            and torch.version.git_version == patch._TORCH_GIT
+            and patch._hardware())
+
+
+@pytest.mark.skipif(not _available(), reason='requires validated M5 Ultra / PyTorch 2.14')
+@pytest.mark.parametrize('heads,kv,seq', [(30,30,2048),(48,12,2051),(56,56,2111),
+                                       (48,12,8306),(56,56,15458)])
+@pytest.mark.parametrize('scale', [None, 0., .2])
+def test_ragged_strided_gqa_and_scales(monkeypatch, heads, kv, seq, scale):
+    monkeypatch.setenv('ASFP8_ATTN_BACKEND', 'pytorch')
+    monkeypatch.setenv('ASFP8_MPP_QCACHE', '1')
+    with torch.inference_mode():
+        # Interleaved Q/K/V-style storage, nonzero offsets and padded rows.
+        torch.manual_seed(seq)
+        q = torch.randn(1,seq+2,heads,128,device='mps',dtype=torch.bfloat16)[:,1:-1].transpose(1,2)
+        k, v = [torch.randn(1,seq+2,kv,128,device='mps',dtype=torch.bfloat16)[:,1:-1].transpose(1,2)
+                for _ in range(2)]
+        kw = dict(scale=scale,enable_gqa=heads!=kv)
+        expected = F.scaled_dot_product_attention(q,k,v,**kw)
+        got = patch.maybe_attention(q,k,v,**kw)
+        assert got is not None and not patch._dead
+        assert torch.equal(got.cpu().contiguous().view(torch.uint8),expected.cpu().contiguous().view(torch.uint8))
+        assert patch._parameters.cache_info().maxsize == 128
+        for unsupported in [dict(attn_mask=torch.ones(seq,seq,device='mps',dtype=torch.bool)),
+                            dict(is_causal=True), dict(dropout_p=.1)]:
+            assert patch.maybe_attention(q,k,v,**dict(kw,**unsupported)) is None
+        if heads != kv:
+            assert patch.maybe_attention(q,k,v) is None
+        monkeypatch.setenv('ASFP8_MPP_QCACHE', '0')
+        assert patch.maybe_attention(q,k,v,**kw) is None
+
+
+def test_cpu_falls_back(monkeypatch):
+    monkeypatch.setenv('ASFP8_ATTN_BACKEND', 'pytorch')
+    q = torch.zeros(1,30,2048,128,dtype=torch.bfloat16)
+    with torch.inference_mode():
+        assert patch.maybe_attention(q,q,q) is None
+
+
+def test_unsupported_build_falls_back(monkeypatch):
+    monkeypatch.setenv('ASFP8_ATTN_BACKEND', 'pytorch')
+    monkeypatch.setattr(torch.version,'git_version','unvalidated')
+    with torch.inference_mode():
+        assert patch.maybe_attention(None,None,None) is None

@@ -75,6 +75,18 @@ class TestFallbackGuards:
         assert calls["fell_back"]
 
 
+@pytest.mark.parametrize("hook", ["attn1_patch", "attn1_output_patch"])
+def test_preserves_current_comfy_attention_hooks(monkeypatch, hook):
+    if not torch.backends.mps.is_available():
+        pytest.skip("needs MPS")
+    test = TestFallbackGuards()
+    calls = test._sentinel(monkeypatch)
+    x = torch.zeros(1, 16, 512, dtype=torch.bfloat16, device="mps")
+    options = {"block_index": 0, "patches": {hook: [object()]}}
+    assert patch._fast_attn_forward(test._self(), x, transformer_options=options) == "orig"
+    assert calls["fell_back"]
+
+
 @pytest.mark.skipif(
     not (torch.backends.mps.is_available() and _dit_on
          and os.environ.get("ASFP8_ATTN_ROUTER") == "1"),

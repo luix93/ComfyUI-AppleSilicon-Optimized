@@ -1,0 +1,1648 @@
+{
+  "environment": {
+    "device": "M5 Ultra",
+    "macOS": "27",
+    "torch": "2.13.0",
+    "comfyui": "0.37.0"
+  },
+  "source_png": "Krea2_turbo_00019_.png",
+  "focused_tests_passed": 24,
+  "experiments": {
+    "baseline": {
+      "config": {
+        "label": "baseline",
+        "steps": 8,
+        "repeats": 2,
+        "profile": false,
+        "candidate": null,
+        "no_lora": false,
+        "installed": false
+      },
+      "prompt": "Product photography, a luxury parfume, in the middle of a scene full of nature., ",
+      "setup": {
+        "load_clip": 0.8544679159822408,
+        "encode_prompt": 0.22601404201122932,
+        "load_model": 0.046051458979491144,
+        "load_lora": 0.018865209014620632,
+        "load_vae": 0.12484408399905078
+      },
+      "records": [
+        {
+          "repeat": 0,
+          "timings": {
+            "sample": 21.65840520898928,
+            "decode": 0.4444885829871055,
+            "save": 0.064226124988636
+          },
+          "total_seconds": 22.173651374992914,
+          "sampled_sha256": "b8f7c6a25f9bb278fda696d9291648937b168b822b7d7a3f337a090dd9ce2452",
+          "frames_sha256": "4c233cb7ad07a74db68ec6e08756c65d4cf2e176e58c33c8b998a2a3a92874b1",
+          "pixels_sha256": "0c37173257b88e4d22f2abbeb77aeaaa2b77354ba167cfb8df28ef9b081ac9cb",
+          "finite": true,
+          "matches_source_png": true,
+          "linear_audit": {}
+        },
+        {
+          "repeat": 1,
+          "timings": {
+            "sample": 18.076322375010932,
+            "decode": 0.36279720900347456,
+            "save": 0.06541379098780453
+          },
+          "total_seconds": 18.508126500004437,
+          "sampled_sha256": "b8f7c6a25f9bb278fda696d9291648937b168b822b7d7a3f337a090dd9ce2452",
+          "frames_sha256": "4c233cb7ad07a74db68ec6e08756c65d4cf2e176e58c33c8b998a2a3a92874b1",
+          "pixels_sha256": "0c37173257b88e4d22f2abbeb77aeaaa2b77354ba167cfb8df28ef9b081ac9cb",
+          "finite": true,
+          "matches_source_png": true
+        }
+      ],
+      "profile": {}
+    },
+    "profile": {
+      "config": {
+        "label": "profile",
+        "steps": 2,
+        "repeats": 2,
+        "profile": true,
+        "candidate": "capture.py",
+        "no_lora": false,
+        "installed": false
+      },
+      "prompt": "Product photography, a luxury parfume, in the middle of a scene full of nature., ",
+      "setup": {
+        "load_clip": 0.8442411250143778,
+        "encode_prompt": 0.23144929099362344,
+        "load_model": 0.04418520801118575,
+        "load_lora": 0.01810112499515526,
+        "load_vae": 0.12098991699167527
+      },
+      "records": [
+        {
+          "repeat": 0,
+          "timings": {
+            "sample": 8.401776874990901,
+            "decode": 0.44287862500641495,
+            "save": 0.06062841700622812
+          },
+          "total_seconds": 8.911386541003594,
+          "sampled_sha256": "3f5f28e11fe752e17dcca3097d2fff6722d1ff3ffc014a612247a0eed654de84",
+          "frames_sha256": "e4f139d858a8d9bddbafe0fd9b1e64f45181832d358e370afa1e5bccbe9645b7",
+          "pixels_sha256": "eaaf03520bf09b964e87220b4c06f96edeabe1edd74f764fe348d74d2e3b86db",
+          "finite": true,
+          "matches_source_png": false,
+          "linear_audit": {
+            "attn.wq": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.wk": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.wv": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.gate": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.wo": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "mlp.gate": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "mlp.up": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "mlp.down": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            }
+          }
+        },
+        {
+          "repeat": 1,
+          "timings": {
+            "sample": 4.968302624998614,
+            "decode": 0.3589971670007799,
+            "save": 0.060639250004896894
+          },
+          "total_seconds": 5.391451792005682,
+          "sampled_sha256": "3f5f28e11fe752e17dcca3097d2fff6722d1ff3ffc014a612247a0eed654de84",
+          "frames_sha256": "e4f139d858a8d9bddbafe0fd9b1e64f45181832d358e370afa1e5bccbe9645b7",
+          "pixels_sha256": "eaaf03520bf09b964e87220b4c06f96edeabe1edd74f764fe348d74d2e3b86db",
+          "finite": true,
+          "matches_source_png": false
+        }
+      ],
+      "profile": {
+        "F.linear": [
+          0.0373312498559244,
+          80
+        ],
+        "RMSNorm": [
+          0.14626333382329904,
+          148
+        ],
+        "Attention": [
+          2.5594698740169406,
+          64
+        ],
+        "SwiGLU": [
+          1.78642670402769,
+          64
+        ],
+        "TextFusionTransformer": [
+          0.040292958001373336,
+          2
+        ],
+        "_quant_cached": [
+          0.2014334088889882,
+          448
+        ],
+        "_int8_linear_prequant": [
+          2.2616650381241925,
+          448
+        ],
+        "_int8_linear_kernel": [
+          2.4672811180353165,
+          448
+        ],
+        "qkv3_norm_rope": [
+          0.05307391597307287,
+          56
+        ],
+        "flash_fwd_na": [
+          1.5984287959581707,
+          56
+        ],
+        "SingleStreamBlock": [
+          4.846679118898464,
+          56
+        ],
+        "LastLayer": [
+          0.007784499000990763,
+          2
+        ]
+      }
+    },
+    "glue-probe": {
+      "norm": {
+        "bit_equal": true,
+        "different": 0,
+        "max_abs": 0.0
+      },
+      "norm_times": [
+        [
+          0.004127729200990871,
+          0.0002973708003992215
+        ],
+        [
+          0.002859475000877865,
+          0.00030015840020496397
+        ],
+        [
+          0.0028658583003561946,
+          0.0002977333002490923
+        ],
+        [
+          0.002866441701189615,
+          0.00030245000089053066
+        ],
+        [
+          0.0028451332997065037,
+          0.000299537499086
+        ]
+      ],
+      "silu_all_finite_bf16": {
+        "bit_equal": true,
+        "different": 0,
+        "max_abs": 0.0
+      },
+      "sigmoid_all_finite_bf16": {
+        "bit_equal": true,
+        "different": 0,
+        "max_abs": 0.0
+      }
+    },
+    "attention-sweep": [
+      {
+        "name": "current",
+        "config": [
+          16,
+          1,
+          1,
+          64,
+          2
+        ],
+        "candidate_seconds": 0.02884795832990979,
+        "baseline_seconds": 0.028547264004979905,
+        "speedup": 0.9858376571147845,
+        "exact": true,
+        "max_abs": 0.0,
+        "max_rel": 0.0,
+        "error": null
+      },
+      {
+        "name": "groups1",
+        "config": [
+          1,
+          1,
+          1,
+          64,
+          2
+        ],
+        "candidate_seconds": 0.03195791666318352,
+        "baseline_seconds": 0.028737250007300947,
+        "speedup": 0.9144054197090418,
+        "exact": true,
+        "max_abs": 0.0,
+        "max_rel": 0.0,
+        "error": null
+      },
+      {
+        "name": "groups2",
+        "config": [
+          2,
+          1,
+          1,
+          64,
+          2
+        ],
+        "candidate_seconds": 0.03187326366120639,
+        "baseline_seconds": 0.02913856933203836,
+        "speedup": 0.9168145541932994,
+        "exact": true,
+        "max_abs": 0.0,
+        "max_rel": 0.0,
+        "error": null
+      },
+      {
+        "name": "groups4",
+        "config": [
+          4,
+          1,
+          1,
+          64,
+          2
+        ],
+        "candidate_seconds": 0.03086988899546365,
+        "baseline_seconds": 0.0288794306688942,
+        "speedup": 0.9355210403619544,
+        "exact": true,
+        "max_abs": 0.0,
+        "max_rel": 0.0,
+        "error": null
+      },
+      {
+        "name": "groups8",
+        "config": [
+          8,
+          1,
+          1,
+          64,
+          2
+        ],
+        "candidate_seconds": 0.029850777665463585,
+        "baseline_seconds": 0.028940694668563083,
+        "speedup": 0.9689834094110198,
+        "exact": true,
+        "max_abs": 0.0,
+        "max_rel": 0.0,
+        "error": null
+      },
+      {
+        "name": "sharedP4",
+        "config": [
+          4,
+          1,
+          0,
+          64,
+          2
+        ],
+        "candidate_seconds": 0.034983403000903,
+        "baseline_seconds": 0.029076916670116287,
+        "speedup": 0.8306389091342491,
+        "exact": true,
+        "max_abs": 0.0,
+        "max_rel": 0.0,
+        "error": null
+      },
+      {
+        "name": "sharedP8",
+        "config": [
+          8,
+          1,
+          0,
+          64,
+          2
+        ],
+        "candidate_seconds": 0.03547820833045989,
+        "baseline_seconds": 0.028942860992780577,
+        "speedup": 0.8063780184557507,
+        "exact": true,
+        "max_abs": 0.0,
+        "max_rel": 0.0,
+        "error": null
+      },
+      {
+        "name": "sharedP16",
+        "config": [
+          16,
+          1,
+          0,
+          64,
+          2
+        ],
+        "candidate_seconds": 0.037153125003290675,
+        "baseline_seconds": 0.029579360998468474,
+        "speedup": 0.7878500895156183,
+        "exact": true,
+        "max_abs": 0.0,
+        "max_rel": 0.0,
+        "error": null
+      }
+    ],
+    "int8-sweep": [
+      {
+        "shape_mkn": [
+          8306,
+          6144,
+          6144
+        ],
+        "variants": [
+          {
+            "name": "current",
+            "config": [
+              true
+            ],
+            "candidate_seconds": 0.004657597329545145,
+            "baseline_seconds": 0.005138166665953274,
+            "speedup": 0.9903410560562604,
+            "exact": true,
+            "max_abs": 0.0,
+            "max_rel": 0.0,
+            "error": null
+          },
+          {
+            "name": "krea_swizzle0",
+            "config": [
+              true
+            ],
+            "candidate_seconds": 0.0031583749999602637,
+            "baseline_seconds": 0.0032079863303806633,
+            "speedup": 1.0175513536590857,
+            "exact": true,
+            "max_abs": 0.0,
+            "max_rel": 0.0,
+            "error": null
+          },
+          {
+            "name": "krea_swizzle3",
+            "config": [
+              true
+            ],
+            "candidate_seconds": 0.0032223473341825106,
+            "baseline_seconds": 0.003210597341724982,
+            "speedup": 0.9963535921988033,
+            "exact": true,
+            "max_abs": 0.0,
+            "max_rel": 0.0,
+            "error": null
+          },
+          {
+            "name": "krea_swizzle4",
+            "config": [
+              true
+            ],
+            "candidate_seconds": 0.003218708336741353,
+            "baseline_seconds": 0.0032430696592200547,
+            "speedup": 1.011514318410377,
+            "exact": true,
+            "max_abs": 0.0,
+            "max_rel": 0.0,
+            "error": null
+          },
+          {
+            "name": "krea_bk128",
+            "config": [
+              true
+            ],
+            "candidate_seconds": 0.0034843749987582364,
+            "baseline_seconds": 0.0032452363326835134,
+            "speedup": 0.926349591485263,
+            "exact": true,
+            "max_abs": 0.0,
+            "max_rel": 0.0,
+            "error": null
+          },
+          {
+            "name": "krea_bk512",
+            "config": [
+              true
+            ],
+            "candidate_seconds": 0.003187333330667267,
+            "baseline_seconds": 0.0032253470077800253,
+            "speedup": 1.0119264831032906,
+            "exact": true,
+            "max_abs": 0.0,
+            "max_rel": 0.0,
+            "error": null
+          },
+          {
+            "name": "barrier",
+            "config": [
+              false
+            ],
+            "candidate_seconds": 0.003256889001931995,
+            "baseline_seconds": 0.003221680672140792,
+            "speedup": 1.001291975360894,
+            "exact": true,
+            "max_abs": 0.0,
+            "max_rel": 0.0,
+            "error": null
+          }
+        ]
+      },
+      {
+        "shape_mkn": [
+          8306,
+          6144,
+          1536
+        ],
+        "variants": [
+          {
+            "name": "current",
+            "config": [
+              true
+            ],
+            "candidate_seconds": 0.0009253890020772815,
+            "baseline_seconds": 0.0009224306656202922,
+            "speedup": 0.9964966906123139,
+            "exact": true,
+            "max_abs": 0.0,
+            "max_rel": 0.0,
+            "error": null
+          },
+          {
+            "name": "krea_swizzle0",
+            "config": [
+              true
+            ],
+            "candidate_seconds": 0.0008466390039150914,
+            "baseline_seconds": 0.0009197220012235144,
+            "speedup": 1.0891868072767577,
+            "exact": true,
+            "max_abs": 0.0,
+            "max_rel": 0.0,
+            "error": null
+          },
+          {
+            "name": "krea_swizzle3",
+            "config": [
+              true
+            ],
+            "candidate_seconds": 0.0009240416693501174,
+            "baseline_seconds": 0.0009272916649933904,
+            "speedup": 1.0045239612306585,
+            "exact": true,
+            "max_abs": 0.0,
+            "max_rel": 0.0,
+            "error": null
+          },
+          {
+            "name": "krea_swizzle4",
+            "config": [
+              true
+            ],
+            "candidate_seconds": 0.0009156249968024591,
+            "baseline_seconds": 0.0009328470041509718,
+            "speedup": 1.013354744634365,
+            "exact": true,
+            "max_abs": 0.0,
+            "max_rel": 0.0,
+            "error": null
+          },
+          {
+            "name": "krea_bk128",
+            "config": [
+              true
+            ],
+            "candidate_seconds": 0.001009916663557912,
+            "baseline_seconds": 0.0009216250036843121,
+            "speedup": 0.9199580238355254,
+            "exact": true,
+            "max_abs": 0.0,
+            "max_rel": 0.0,
+            "error": null
+          },
+          {
+            "name": "krea_bk512",
+            "config": [
+              true
+            ],
+            "candidate_seconds": 0.0009205416718032211,
+            "baseline_seconds": 0.0009353473336280634,
+            "speedup": 1.0101397677443342,
+            "exact": true,
+            "max_abs": 0.0,
+            "max_rel": 0.0,
+            "error": null
+          },
+          {
+            "name": "barrier",
+            "config": [
+              false
+            ],
+            "candidate_seconds": 0.0009660136614305278,
+            "baseline_seconds": 0.0009164306684397161,
+            "speedup": 0.9799877464499523,
+            "exact": true,
+            "max_abs": 0.0,
+            "max_rel": 0.0,
+            "error": null
+          }
+        ]
+      },
+      {
+        "shape_mkn": [
+          8306,
+          6144,
+          16384
+        ],
+        "variants": [
+          {
+            "name": "current",
+            "config": [
+              true
+            ],
+            "candidate_seconds": 0.008343958334686855,
+            "baseline_seconds": 0.008385111335276937,
+            "speedup": 0.999837755103468,
+            "exact": true,
+            "max_abs": 0.0,
+            "max_rel": 0.0,
+            "error": null
+          },
+          {
+            "name": "krea_swizzle0",
+            "config": [
+              true
+            ],
+            "candidate_seconds": 0.008233847339094305,
+            "baseline_seconds": 0.008301958325318992,
+            "speedup": 1.0096601267117817,
+            "exact": true,
+            "max_abs": 0.0,
+            "max_rel": 0.0,
+            "error": null
+          },
+          {
+            "name": "krea_swizzle3",
+            "config": [
+              true
+            ],
+            "candidate_seconds": 0.008394694663972283,
+            "baseline_seconds": 0.008322930661961436,
+            "speedup": 0.9963711806084375,
+            "exact": true,
+            "max_abs": 0.0,
+            "max_rel": 0.0,
+            "error": null
+          },
+          {
+            "name": "krea_swizzle4",
+            "config": [
+              true
+            ],
+            "candidate_seconds": 0.008323305664816871,
+            "baseline_seconds": 0.008431916668390235,
+            "speedup": 1.013049022581553,
+            "exact": true,
+            "max_abs": 0.0,
+            "max_rel": 0.0,
+            "error": null
+          },
+          {
+            "name": "krea_bk128",
+            "config": [
+              true
+            ],
+            "candidate_seconds": 0.008820930330936486,
+            "baseline_seconds": 0.008304639001532147,
+            "speedup": 0.9365527458478241,
+            "exact": true,
+            "max_abs": 0.0,
+            "max_rel": 0.0,
+            "error": null
+          },
+          {
+            "name": "krea_bk512",
+            "config": [
+              true
+            ],
+            "candidate_seconds": 0.008260930665225411,
+            "baseline_seconds": 0.008354013999147961,
+            "speedup": 1.0105255083006157,
+            "exact": true,
+            "max_abs": 0.0,
+            "max_rel": 0.0,
+            "error": null
+          },
+          {
+            "name": "barrier",
+            "config": [
+              false
+            ],
+            "candidate_seconds": 0.008386735998404523,
+            "baseline_seconds": 0.008314374999220794,
+            "speedup": 0.9937384393770311,
+            "exact": true,
+            "max_abs": 0.0,
+            "max_rel": 0.0,
+            "error": null
+          }
+        ]
+      },
+      {
+        "shape_mkn": [
+          8306,
+          16384,
+          6144
+        ],
+        "variants": [
+          {
+            "name": "current",
+            "config": [
+              true
+            ],
+            "candidate_seconds": 0.00874258333351463,
+            "baseline_seconds": 0.008764472334102416,
+            "speedup": 1.0117968351857216,
+            "exact": true,
+            "max_abs": 0.0,
+            "max_rel": 0.0,
+            "error": null
+          },
+          {
+            "name": "krea_swizzle0",
+            "config": [
+              true
+            ],
+            "candidate_seconds": 0.00849469432917734,
+            "baseline_seconds": 0.008789763999326775,
+            "speedup": 1.0177161374434396,
+            "exact": true,
+            "max_abs": 0.0,
+            "max_rel": 0.0,
+            "error": null
+          },
+          {
+            "name": "krea_swizzle3",
+            "config": [
+              true
+            ],
+            "candidate_seconds": 0.00874152765997375,
+            "baseline_seconds": 0.008658597003280496,
+            "speedup": 0.9951016203727879,
+            "exact": true,
+            "max_abs": 0.0,
+            "max_rel": 0.0,
+            "error": null
+          },
+          {
+            "name": "krea_swizzle4",
+            "config": [
+              true
+            ],
+            "candidate_seconds": 0.008682777998425687,
+            "baseline_seconds": 0.008637416671263054,
+            "speedup": 0.9914128852969963,
+            "exact": true,
+            "max_abs": 0.0,
+            "max_rel": 0.0,
+            "error": null
+          },
+          {
+            "name": "krea_bk128",
+            "config": [
+              true
+            ],
+            "candidate_seconds": 0.009418652664559582,
+            "baseline_seconds": 0.00871997233480215,
+            "speedup": 0.9247636549358212,
+            "exact": true,
+            "max_abs": 0.0,
+            "max_rel": 0.0,
+            "error": null
+          },
+          {
+            "name": "krea_bk512",
+            "config": [
+              true
+            ],
+            "candidate_seconds": 0.008989028002057845,
+            "baseline_seconds": 0.008543277993643036,
+            "speedup": 0.9495141374285847,
+            "exact": true,
+            "max_abs": 0.0,
+            "max_rel": 0.0,
+            "error": null
+          },
+          {
+            "name": "barrier",
+            "config": [
+              false
+            ],
+            "candidate_seconds": 0.00895311133353971,
+            "baseline_seconds": 0.008763999998336658,
+            "speedup": 0.9733079847062394,
+            "exact": true,
+            "max_abs": 0.0,
+            "max_rel": 0.0,
+            "error": null
+          }
+        ]
+      }
+    ],
+    "glue-verify": {
+      "config": {
+        "label": "glue-verify",
+        "steps": 2,
+        "repeats": 1,
+        "profile": false,
+        "candidate": "glue_candidate.py",
+        "no_lora": false,
+        "installed": false
+      },
+      "prompt": "Product photography, a luxury parfume, in the middle of a scene full of nature., ",
+      "setup": {
+        "load_clip": 0.8544214169960469,
+        "encode_prompt": 0.22862954100128263,
+        "load_model": 0.04577937501017004,
+        "load_lora": 0.018657707987586036,
+        "load_vae": 0.12242237498867325
+      },
+      "records": [
+        {
+          "repeat": 0,
+          "timings": {
+            "sample": 8.853182749997359,
+            "decode": 0.46249454098870046,
+            "save": 0.0598485829832498
+          },
+          "total_seconds": 9.38182133299415,
+          "sampled_sha256": "3f5f28e11fe752e17dcca3097d2fff6722d1ff3ffc014a612247a0eed654de84",
+          "frames_sha256": "e4f139d858a8d9bddbafe0fd9b1e64f45181832d358e370afa1e5bccbe9645b7",
+          "pixels_sha256": "eaaf03520bf09b964e87220b4c06f96edeabe1edd74f764fe348d74d2e3b86db",
+          "finite": true,
+          "matches_source_png": false,
+          "linear_audit": {
+            "attn.wq": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.wk": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.wv": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.gate": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.wo": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "mlp.gate": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "mlp.up": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "mlp.down": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            }
+          }
+        }
+      ],
+      "profile": {}
+    },
+    "glue-full": {
+      "config": {
+        "label": "glue-full",
+        "steps": 8,
+        "repeats": 2,
+        "profile": false,
+        "candidate": "glue_candidate.py",
+        "no_lora": false,
+        "installed": false
+      },
+      "prompt": "Product photography, a luxury parfume, in the middle of a scene full of nature., ",
+      "setup": {
+        "load_clip": 0.8590026249876246,
+        "encode_prompt": 0.2316467909840867,
+        "load_model": 0.045217417005915195,
+        "load_lora": 0.01827400000183843,
+        "load_vae": 0.12712258301326074
+      },
+      "records": [
+        {
+          "repeat": 0,
+          "timings": {
+            "sample": 19.877526874974137,
+            "decode": 0.4530217910069041,
+            "save": 0.06349324999609962
+          },
+          "total_seconds": 20.400124958978267,
+          "sampled_sha256": "b8f7c6a25f9bb278fda696d9291648937b168b822b7d7a3f337a090dd9ce2452",
+          "frames_sha256": "4c233cb7ad07a74db68ec6e08756c65d4cf2e176e58c33c8b998a2a3a92874b1",
+          "pixels_sha256": "0c37173257b88e4d22f2abbeb77aeaaa2b77354ba167cfb8df28ef9b081ac9cb",
+          "finite": true,
+          "matches_source_png": true,
+          "linear_audit": {
+            "attn.wq": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.wk": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.wv": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.gate": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.wo": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "mlp.gate": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "mlp.up": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "mlp.down": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            }
+          }
+        },
+        {
+          "repeat": 1,
+          "timings": {
+            "sample": 16.13435833400581,
+            "decode": 0.35857941600261256,
+            "save": 0.06297837500460446
+          },
+          "total_seconds": 16.55939408298582,
+          "sampled_sha256": "b8f7c6a25f9bb278fda696d9291648937b168b822b7d7a3f337a090dd9ce2452",
+          "frames_sha256": "4c233cb7ad07a74db68ec6e08756c65d4cf2e176e58c33c8b998a2a3a92874b1",
+          "pixels_sha256": "0c37173257b88e4d22f2abbeb77aeaaa2b77354ba167cfb8df28ef9b081ac9cb",
+          "finite": true,
+          "matches_source_png": true
+        }
+      ],
+      "profile": {}
+    },
+    "attention-morton": [
+      {
+        "name": "current",
+        "config": [],
+        "candidate_seconds": 0.02901461100555025,
+        "baseline_seconds": 0.02873666665982455,
+        "speedup": 0.9812514329194285,
+        "exact": true,
+        "max_abs": 0.0,
+        "max_rel": 0.0,
+        "error": null
+      },
+      {
+        "name": "GQA_Morton_synchronized",
+        "config": [],
+        "candidate_seconds": 0.02180448600362676,
+        "baseline_seconds": 0.028629722335608676,
+        "speedup": 1.3186879606112878,
+        "exact": true,
+        "max_abs": 0.0,
+        "max_rel": 0.0,
+        "error": null
+      }
+    ],
+    "morton-short": {
+      "config": {
+        "label": "morton-short",
+        "steps": 2,
+        "repeats": 2,
+        "profile": false,
+        "candidate": "morton_candidate.py",
+        "no_lora": false,
+        "installed": false
+      },
+      "prompt": "Product photography, a luxury parfume, in the middle of a scene full of nature., ",
+      "setup": {
+        "load_clip": 0.8384947500017006,
+        "encode_prompt": 0.2356361249985639,
+        "load_model": 0.044615917024202645,
+        "load_lora": 0.018167249974794686,
+        "load_vae": 0.11970250000013039
+      },
+      "records": [
+        {
+          "repeat": 0,
+          "timings": {
+            "sample": 7.383536834007828,
+            "decode": 0.4462599999969825,
+            "save": 0.061035499995341524
+          },
+          "total_seconds": 7.897378875000868,
+          "sampled_sha256": "3f5f28e11fe752e17dcca3097d2fff6722d1ff3ffc014a612247a0eed654de84",
+          "frames_sha256": "e4f139d858a8d9bddbafe0fd9b1e64f45181832d358e370afa1e5bccbe9645b7",
+          "pixels_sha256": "eaaf03520bf09b964e87220b4c06f96edeabe1edd74f764fe348d74d2e3b86db",
+          "finite": true,
+          "matches_source_png": false,
+          "linear_audit": {
+            "attn.wq": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.wk": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.wv": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.gate": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.wo": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "mlp.gate": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "mlp.up": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "mlp.down": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            }
+          }
+        },
+        {
+          "repeat": 1,
+          "timings": {
+            "sample": 3.655912541988073,
+            "decode": 0.3634595830226317,
+            "save": 0.06039216701174155
+          },
+          "total_seconds": 4.083459291985491,
+          "sampled_sha256": "3f5f28e11fe752e17dcca3097d2fff6722d1ff3ffc014a612247a0eed654de84",
+          "frames_sha256": "e4f139d858a8d9bddbafe0fd9b1e64f45181832d358e370afa1e5bccbe9645b7",
+          "pixels_sha256": "eaaf03520bf09b964e87220b4c06f96edeabe1edd74f764fe348d74d2e3b86db",
+          "finite": true,
+          "matches_source_png": false
+        }
+      ],
+      "profile": {}
+    },
+    "paired-full": {
+      "config": {
+        "label": "paired-full",
+        "steps": 8,
+        "repeats": 5,
+        "profile": false,
+        "candidate": null,
+        "no_lora": false,
+        "installed": false,
+        "modes": "baseline,baseline,current,current,baseline",
+        "seed": null,
+        "prompt": null
+      },
+      "prompt": "Product photography, a luxury parfume, in the middle of a scene full of nature., ",
+      "setup": {
+        "load_clip": 0.8387729999958538,
+        "encode_prompt": 0.23392729202168994,
+        "load_model": 0.04447275001439266,
+        "load_lora": 0.018103624985087663,
+        "load_vae": 0.11980625000433065
+      },
+      "records": [
+        {
+          "repeat": 0,
+          "mode": "baseline",
+          "timings": {
+            "sample": 21.717195666016778,
+            "decode": 0.4450994590006303,
+            "save": 0.06338891698396765
+          },
+          "total_seconds": 22.231964583013905,
+          "sampled_sha256": "b8f7c6a25f9bb278fda696d9291648937b168b822b7d7a3f337a090dd9ce2452",
+          "frames_sha256": "4c233cb7ad07a74db68ec6e08756c65d4cf2e176e58c33c8b998a2a3a92874b1",
+          "pixels_sha256": "0c37173257b88e4d22f2abbeb77aeaaa2b77354ba167cfb8df28ef9b081ac9cb",
+          "finite": true,
+          "matches_source_png": true,
+          "linear_audit": {
+            "attn.wq": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.wk": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.wv": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.gate": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.wo": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "mlp.gate": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "mlp.up": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "mlp.down": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            }
+          }
+        },
+        {
+          "repeat": 1,
+          "mode": "baseline",
+          "timings": {
+            "sample": 18.055899333005073,
+            "decode": 0.3635683750035241,
+            "save": 0.06373983298544772
+          },
+          "total_seconds": 18.486756917001912,
+          "sampled_sha256": "b8f7c6a25f9bb278fda696d9291648937b168b822b7d7a3f337a090dd9ce2452",
+          "frames_sha256": "4c233cb7ad07a74db68ec6e08756c65d4cf2e176e58c33c8b998a2a3a92874b1",
+          "pixels_sha256": "0c37173257b88e4d22f2abbeb77aeaaa2b77354ba167cfb8df28ef9b081ac9cb",
+          "finite": true,
+          "matches_source_png": true
+        },
+        {
+          "repeat": 2,
+          "mode": "current",
+          "timings": {
+            "sample": 14.66505529099959,
+            "decode": 0.36157354098395444,
+            "save": 0.07067966600880027
+          },
+          "total_seconds": 15.102001582999947,
+          "sampled_sha256": "b8f7c6a25f9bb278fda696d9291648937b168b822b7d7a3f337a090dd9ce2452",
+          "frames_sha256": "4c233cb7ad07a74db68ec6e08756c65d4cf2e176e58c33c8b998a2a3a92874b1",
+          "pixels_sha256": "0c37173257b88e4d22f2abbeb77aeaaa2b77354ba167cfb8df28ef9b081ac9cb",
+          "finite": true,
+          "matches_source_png": true
+        },
+        {
+          "repeat": 3,
+          "mode": "current",
+          "timings": {
+            "sample": 14.669160124991322,
+            "decode": 0.34328450000612065,
+            "save": 0.06643066598917358
+          },
+          "total_seconds": 15.082507457991596,
+          "sampled_sha256": "b8f7c6a25f9bb278fda696d9291648937b168b822b7d7a3f337a090dd9ce2452",
+          "frames_sha256": "4c233cb7ad07a74db68ec6e08756c65d4cf2e176e58c33c8b998a2a3a92874b1",
+          "pixels_sha256": "0c37173257b88e4d22f2abbeb77aeaaa2b77354ba167cfb8df28ef9b081ac9cb",
+          "finite": true,
+          "matches_source_png": true
+        },
+        {
+          "repeat": 4,
+          "mode": "baseline",
+          "timings": {
+            "sample": 18.093534291983815,
+            "decode": 0.34653937502298504,
+            "save": 0.0663409159751609
+          },
+          "total_seconds": 18.510056375002023,
+          "sampled_sha256": "b8f7c6a25f9bb278fda696d9291648937b168b822b7d7a3f337a090dd9ce2452",
+          "frames_sha256": "4c233cb7ad07a74db68ec6e08756c65d4cf2e176e58c33c8b998a2a3a92874b1",
+          "pixels_sha256": "0c37173257b88e4d22f2abbeb77aeaaa2b77354ba167cfb8df28ef9b081ac9cb",
+          "finite": true,
+          "matches_source_png": true
+        }
+      ],
+      "profile": {}
+    },
+    "fox-check": {
+      "config": {
+        "label": "fox-check",
+        "steps": 2,
+        "repeats": 2,
+        "profile": false,
+        "candidate": null,
+        "no_lora": false,
+        "installed": false,
+        "modes": "baseline,current",
+        "seed": 42,
+        "prompt": "Wildlife photograph of a red fox walking through fresh snow, soft morning light, fine fur detail and natural colors."
+      },
+      "prompt": "Wildlife photograph of a red fox walking through fresh snow, soft morning light, fine fur detail and natural colors.",
+      "setup": {
+        "load_clip": 0.8392674589995295,
+        "encode_prompt": 0.2308550000016112,
+        "load_model": 0.04622749998816289,
+        "load_lora": 0.01920429099118337,
+        "load_vae": 0.11897395801497623
+      },
+      "records": [
+        {
+          "repeat": 0,
+          "mode": "baseline",
+          "timings": {
+            "sample": 9.046442208986264,
+            "decode": 0.4301179579924792,
+            "save": 0.06334012499428354
+          },
+          "total_seconds": 9.545968292019097,
+          "sampled_sha256": "15f94c3e7ca0a44299af4d63f8cee6e2494cbeacc9239b6d6fdaa589766b9ecf",
+          "frames_sha256": "9dec84ff4757dc218f9f031e4fa3a7b1da2b05772078ec9e16f127cc122f1e09",
+          "pixels_sha256": "7b56eab94aa28468517a543d16b8894392ebcec0cc8def6ab2cccb78a26ac8a5",
+          "finite": true,
+          "matches_source_png": false,
+          "linear_audit": {
+            "attn.wq": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.wk": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.wv": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.gate": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.wo": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "mlp.gate": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "mlp.up": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "mlp.down": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            }
+          }
+        },
+        {
+          "repeat": 1,
+          "mode": "current",
+          "timings": {
+            "sample": 3.689977500005625,
+            "decode": 0.34650783299002796,
+            "save": 0.06293929202365689
+          },
+          "total_seconds": 4.103000500006601,
+          "sampled_sha256": "15f94c3e7ca0a44299af4d63f8cee6e2494cbeacc9239b6d6fdaa589766b9ecf",
+          "frames_sha256": "9dec84ff4757dc218f9f031e4fa3a7b1da2b05772078ec9e16f127cc122f1e09",
+          "pixels_sha256": "7b56eab94aa28468517a543d16b8894392ebcec0cc8def6ab2cccb78a26ac8a5",
+          "finite": true,
+          "matches_source_png": false
+        }
+      ],
+      "profile": {}
+    },
+    "watch-check": {
+      "config": {
+        "label": "watch-check",
+        "steps": 2,
+        "repeats": 2,
+        "profile": false,
+        "candidate": null,
+        "no_lora": false,
+        "installed": false,
+        "modes": "baseline,current",
+        "seed": 271828,
+        "prompt": "Studio photograph of a mechanical wristwatch on dark stone, brushed steel case, visible fine engraving, crisp dial markings, soft reflections and shallow depth of field."
+      },
+      "prompt": "Studio photograph of a mechanical wristwatch on dark stone, brushed steel case, visible fine engraving, crisp dial markings, soft reflections and shallow depth of field.",
+      "setup": {
+        "load_clip": 0.8519045000139158,
+        "encode_prompt": 0.22687416698317975,
+        "load_model": 0.045119124988559633,
+        "load_lora": 0.018281166994711384,
+        "load_vae": 0.1260194579954259
+      },
+      "records": [
+        {
+          "repeat": 0,
+          "mode": "baseline",
+          "timings": {
+            "sample": 8.14625854199403,
+            "decode": 0.4267312499869149,
+            "save": 0.056514083000365645
+          },
+          "total_seconds": 8.635847666009795,
+          "sampled_sha256": "94d04f4a815217647cae632ba83351c00e89ea7b5d5954833e09c1d20669b941",
+          "frames_sha256": "561ed9c8c8dd8dc187abadca1a6ce9e5aee0255f23b8e2f2a7c9bd46d01eab18",
+          "pixels_sha256": "6255588835b998d3c52aa1e6b044130f4dec2117f22f3777e67ca31f6b3f7f93",
+          "finite": true,
+          "matches_source_png": false,
+          "linear_audit": {
+            "attn.wq": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.wk": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.wv": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.gate": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.wo": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "mlp.gate": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "mlp.up": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "mlp.down": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            }
+          }
+        },
+        {
+          "repeat": 1,
+          "mode": "current",
+          "timings": {
+            "sample": 3.7091606250032783,
+            "decode": 0.3479877080244478,
+            "save": 0.06087991700042039
+          },
+          "total_seconds": 4.121693958994001,
+          "sampled_sha256": "94d04f4a815217647cae632ba83351c00e89ea7b5d5954833e09c1d20669b941",
+          "frames_sha256": "561ed9c8c8dd8dc187abadca1a6ce9e5aee0255f23b8e2f2a7c9bd46d01eab18",
+          "pixels_sha256": "6255588835b998d3c52aa1e6b044130f4dec2117f22f3777e67ca31f6b3f7f93",
+          "finite": true,
+          "matches_source_png": false
+        }
+      ],
+      "profile": {}
+    },
+    "attention-regression": [
+      {
+        "heads": [
+          48,
+          12
+        ],
+        "tokens": 1024,
+        "krea_schedule": false,
+        "bit_equal": true,
+        "max_abs": 0.0
+      },
+      {
+        "heads": [
+          48,
+          12
+        ],
+        "tokens": 1024,
+        "krea_schedule": true,
+        "bit_equal": true,
+        "max_abs": 0.0
+      },
+      {
+        "heads": [
+          48,
+          12
+        ],
+        "tokens": 8192,
+        "krea_schedule": false,
+        "bit_equal": true,
+        "max_abs": 0.0
+      },
+      {
+        "heads": [
+          48,
+          12
+        ],
+        "tokens": 8192,
+        "krea_schedule": true,
+        "bit_equal": true,
+        "max_abs": 0.0
+      },
+      {
+        "heads": [
+          48,
+          12
+        ],
+        "tokens": 8351,
+        "krea_schedule": false,
+        "bit_equal": true,
+        "max_abs": 0.0
+      },
+      {
+        "heads": [
+          48,
+          12
+        ],
+        "tokens": 8351,
+        "krea_schedule": true,
+        "bit_equal": true,
+        "max_abs": 0.0
+      },
+      {
+        "heads": [
+          56,
+          56
+        ],
+        "tokens": 15787,
+        "krea_schedule": false,
+        "bit_equal": true,
+        "max_abs": 0.0
+      },
+      {
+        "heads": [
+          56,
+          56
+        ],
+        "tokens": 15787,
+        "krea_schedule": true,
+        "bit_equal": true,
+        "max_abs": 0.0
+      }
+    ],
+    "installed-full": {
+      "config": {
+        "label": "installed-full",
+        "steps": 8,
+        "repeats": 2,
+        "profile": false,
+        "candidate": null,
+        "no_lora": false,
+        "installed": true,
+        "modes": null,
+        "seed": null,
+        "prompt": null
+      },
+      "prompt": "Product photography, a luxury parfume, in the middle of a scene full of nature., ",
+      "setup": {
+        "load_clip": 0.8775836669956334,
+        "encode_prompt": 0.23320958300610073,
+        "load_model": 0.044635666999965906,
+        "load_lora": 0.017929374997038394,
+        "load_vae": 0.12078637501690537
+      },
+      "records": [
+        {
+          "repeat": 0,
+          "mode": "current",
+          "timings": {
+            "sample": 18.262376500002574,
+            "decode": 0.44497900002170354,
+            "save": 0.06471316699753515
+          },
+          "total_seconds": 18.778517208993435,
+          "sampled_sha256": "b8f7c6a25f9bb278fda696d9291648937b168b822b7d7a3f337a090dd9ce2452",
+          "frames_sha256": "4c233cb7ad07a74db68ec6e08756c65d4cf2e176e58c33c8b998a2a3a92874b1",
+          "pixels_sha256": "0c37173257b88e4d22f2abbeb77aeaaa2b77354ba167cfb8df28ef9b081ac9cb",
+          "finite": true,
+          "matches_source_png": true,
+          "linear_audit": {
+            "attn.wq": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.wk": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.wv": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.gate": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "attn.wo": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "mlp.gate": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "mlp.up": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            },
+            "mlp.down": {
+              "weight_type": "QuantizedTensor",
+              "dtype": "torch.bfloat16",
+              "layout": "TensorWiseINT8Layout",
+              "weight_functions": 0
+            }
+          }
+        },
+        {
+          "repeat": 1,
+          "mode": "current",
+          "timings": {
+            "sample": 14.644409792002989,
+            "decode": 0.3680955419840757,
+            "save": 0.06437900001765229
+          },
+          "total_seconds": 15.080530416977126,
+          "sampled_sha256": "b8f7c6a25f9bb278fda696d9291648937b168b822b7d7a3f337a090dd9ce2452",
+          "frames_sha256": "4c233cb7ad07a74db68ec6e08756c65d4cf2e176e58c33c8b998a2a3a92874b1",
+          "pixels_sha256": "0c37173257b88e4d22f2abbeb77aeaaa2b77354ba167cfb8df28ef9b081ac9cb",
+          "finite": true,
+          "matches_source_png": true
+        }
+      ],
+      "profile": {}
+    }
+  }
+}

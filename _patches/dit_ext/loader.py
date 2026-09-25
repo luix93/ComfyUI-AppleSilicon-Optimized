@@ -12,7 +12,9 @@ import shutil
 _mod = None
 _tried = False
 
-_NOSPACE_ROOT = "/tmp/asfp8_build"
+from .._native_build import build_root
+
+_NOSPACE_ROOT = build_root()
 
 
 def _nospace_torch_lib():
@@ -76,7 +78,7 @@ def module():
         _mod = cpp_load(
             name="asfp8_dit_kernels",
             sources=[src],
-            extra_cflags=["-std=c++17", "-ObjC++"],
+            extra_cflags=["-ObjC++"],
             extra_ldflags=["-framework", "Metal", "-framework", "Foundation"],
             build_directory=build_dir,
             verbose=False,

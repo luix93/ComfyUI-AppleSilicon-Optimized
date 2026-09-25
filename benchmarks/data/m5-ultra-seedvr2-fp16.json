@@ -1,0 +1,272 @@
+{
+  "environment": {
+    "device": "M5 Ultra",
+    "macOS": "27",
+    "torch": "2.13.0",
+    "comfyui": "0.37.0",
+    "storage_dtype": "float16",
+    "compute_dtype": "bfloat16"
+  },
+  "model": "seedvr2_ema_7b_fp16.safetensors",
+  "upstream_conditioning_revision": "e4de8c24441a67e1b7df56abea10645059bb1185",
+  "runs": {
+    "fp16-small": {
+      "config": {
+        "label": "fp16-small",
+        "fix": false,
+        "stage": "full",
+        "input_size": 320,
+        "repeats": 2,
+        "limit_gib": 80,
+        "sample_file": null,
+        "installed": false,
+        "default_fix": true
+      },
+      "state": {
+        "stage": "verification",
+        "max_driver_gib": 22.154983520507812,
+        "max_live_gib": 16.056646823883057,
+        "max_rss_gib": 31.932037353515625,
+        "completed": true
+      },
+      "records": [
+        {
+          "repeat": 0,
+          "timings": {
+            "resize": 0.011026916006812826,
+            "preprocess": 0.00120133301243186,
+            "load_vae": 0.11906766600441188,
+            "encode": 0.5215536660107318,
+            "load_model": 3.8199863330228254,
+            "sample": 1.4110859590000473,
+            "decode": 0.5256971670023631,
+            "postprocess": 0.0008109589980449528,
+            "save_image": 0.034484124975278974
+          },
+          "total_seconds": 6.446930166013772,
+          "encoded_sha256": "ec4f08048f3bb4ba21cee93cd7a83b283818a4e015af035bd68f7c81d6039347",
+          "sampled_sha256": "9c81b2ed5c90f72cfde4f0b3f02b5f492fc961c269d942ac328e7fca229f0dc8",
+          "frames_sha256": "64bafd3441114224874cf2fd2ce9529c2bf2664621cb87eace7918b19b887e47",
+          "frames_finite": true,
+          "output_shape": [
+            1,
+            638,
+            960,
+            4
+          ]
+        },
+        {
+          "repeat": 1,
+          "timings": {
+            "resize": 0.005121249996591359,
+            "preprocess": 0.0018002500000875443,
+            "encode": 0.18522041701362468,
+            "sample": 0.34554854198358953,
+            "decode": 0.4093283749825787,
+            "postprocess": 0.0002824589901138097,
+            "save_image": 0.03087504199356772
+          },
+          "total_seconds": 0.979883666994283,
+          "encoded_sha256": "ec4f08048f3bb4ba21cee93cd7a83b283818a4e015af035bd68f7c81d6039347",
+          "sampled_sha256": "9c81b2ed5c90f72cfde4f0b3f02b5f492fc961c269d942ac328e7fca229f0dc8",
+          "frames_sha256": "64bafd3441114224874cf2fd2ce9529c2bf2664621cb87eace7918b19b887e47",
+          "frames_finite": true,
+          "output_shape": [
+            1,
+            638,
+            960,
+            4
+          ]
+        }
+      ],
+      "watchdog": {
+        "exit_code": 0,
+        "seconds": 45.580882416979875,
+        "peak_rss_gib": 31.862747192382812,
+        "watchdog_reason": null
+      }
+    },
+    "fp16-reference": {
+      "config": {
+        "label": "fp16-reference",
+        "fix": false,
+        "stage": "full",
+        "input_size": 320,
+        "repeats": 1,
+        "limit_gib": 80,
+        "sample_file": null,
+        "installed": true,
+        "default_fix": true
+      },
+      "state": {
+        "stage": "verification",
+        "max_driver_gib": 21.213577270507812,
+        "max_live_gib": 16.056646823883057,
+        "max_rss_gib": 30.907928466796875,
+        "completed": true
+      },
+      "records": [
+        {
+          "repeat": 0,
+          "timings": {
+            "resize": 0.010528707993216813,
+            "preprocess": 0.0012102080218028277,
+            "load_vae": 0.12013308302266523,
+            "encode": 0.5361309159779921,
+            "load_model": 1.5837224579881877,
+            "sample": 1.4035620409995317,
+            "decode": 0.5237432089925278,
+            "postprocess": 0.0008451250032521784,
+            "save_image": 0.03371325001353398
+          },
+          "total_seconds": 4.215839167009108,
+          "encoded_sha256": "ec4f08048f3bb4ba21cee93cd7a83b283818a4e015af035bd68f7c81d6039347",
+          "sampled_sha256": "9c81b2ed5c90f72cfde4f0b3f02b5f492fc961c269d942ac328e7fca229f0dc8",
+          "frames_sha256": "64bafd3441114224874cf2fd2ce9529c2bf2664621cb87eace7918b19b887e47",
+          "frames_finite": true,
+          "output_shape": [
+            1,
+            638,
+            960,
+            4
+          ]
+        }
+      ],
+      "watchdog": {
+        "exit_code": 0,
+        "seconds": 43.11230141701526,
+        "peak_rss_gib": 30.513931274414062,
+        "watchdog_reason": null
+      }
+    },
+    "fp16-installed": {
+      "config": {
+        "label": "fp16-installed",
+        "fix": false,
+        "stage": "full",
+        "input_size": 320,
+        "repeats": 1,
+        "limit_gib": 80,
+        "sample_file": null,
+        "installed": true,
+        "default_fix": true
+      },
+      "state": {
+        "stage": "verification",
+        "max_driver_gib": 21.213577270507812,
+        "max_live_gib": 16.056646823883057,
+        "max_rss_gib": 30.519607543945312,
+        "completed": true
+      },
+      "records": [
+        {
+          "repeat": 0,
+          "timings": {
+            "resize": 0.006706957996357232,
+            "preprocess": 0.0009562499762978405,
+            "load_vae": 0.10476412501884624,
+            "encode": 0.5030646660015918,
+            "load_model": 1.5184834579995368,
+            "sample": 1.3908509580069222,
+            "decode": 0.5306269580032676,
+            "postprocess": 0.0010654169891495258,
+            "save_image": 0.03405054201721214
+          },
+          "total_seconds": 4.0925268749997485,
+          "encoded_sha256": "ec4f08048f3bb4ba21cee93cd7a83b283818a4e015af035bd68f7c81d6039347",
+          "sampled_sha256": "9c81b2ed5c90f72cfde4f0b3f02b5f492fc961c269d942ac328e7fca229f0dc8",
+          "frames_sha256": "64bafd3441114224874cf2fd2ce9529c2bf2664621cb87eace7918b19b887e47",
+          "frames_finite": true,
+          "output_shape": [
+            1,
+            638,
+            960,
+            4
+          ]
+        }
+      ],
+      "watchdog": {
+        "exit_code": 0,
+        "seconds": 6.883208165992983,
+        "peak_rss_gib": 30.07061767578125,
+        "watchdog_reason": null
+      }
+    },
+    "fp16-7200": {
+      "config": {
+        "label": "fp16-7200",
+        "fix": false,
+        "stage": "full",
+        "input_size": 2400,
+        "repeats": 2,
+        "limit_gib": 80,
+        "sample_file": null,
+        "installed": false,
+        "default_fix": true
+      },
+      "state": {
+        "stage": "verification",
+        "max_driver_gib": 40.97673034667969,
+        "max_live_gib": 16.229044675827026,
+        "max_rss_gib": 32.27934265136719,
+        "completed": true
+      },
+      "records": [
+        {
+          "repeat": 0,
+          "timings": {
+            "resize": 0.34297604201128706,
+            "preprocess": 0.01716149999992922,
+            "load_vae": 0.13095616598729976,
+            "encode": 10.616671957977815,
+            "load_model": 1.963302082993323,
+            "sample": 17.33199495798908,
+            "decode": 25.147518290992593,
+            "postprocess": 0.015278542006853968,
+            "save_image": 1.8736838749900926
+          },
+          "total_seconds": 57.44863633302157,
+          "encoded_sha256": "c0d9ebdc04e62fc6eecfabdf9f5874182d5bc2f8817b1cf21dc37a70eabac50e",
+          "sampled_sha256": "c68da7400e80bb1370f17df86762282b7a8ded3eb282f49f46b525e08ae44e5b",
+          "frames_sha256": "df733eab9cc1b80d39a3ec5386736f39c8bc61262bf7de4dafd8b8d38ada73d5",
+          "frames_finite": true,
+          "output_shape": [
+            1,
+            4800,
+            7200,
+            4
+          ]
+        },
+        {
+          "repeat": 1,
+          "timings": {
+            "resize": 0.304367541015381,
+            "preprocess": 0.01802170800510794,
+            "encode": 10.512546417012345,
+            "sample": 16.27559287499753,
+            "decode": 25.141991499986034,
+            "postprocess": 0.015026250010123476,
+            "save_image": 1.9494245410023723
+          },
+          "total_seconds": 54.223288583016256,
+          "encoded_sha256": "c0d9ebdc04e62fc6eecfabdf9f5874182d5bc2f8817b1cf21dc37a70eabac50e",
+          "sampled_sha256": "c68da7400e80bb1370f17df86762282b7a8ded3eb282f49f46b525e08ae44e5b",
+          "frames_sha256": "df733eab9cc1b80d39a3ec5386736f39c8bc61262bf7de4dafd8b8d38ada73d5",
+          "frames_finite": true,
+          "output_shape": [
+            1,
+            4800,
+            7200,
+            4
+          ]
+        }
+      ],
+      "watchdog": {
+        "exit_code": 0,
+        "seconds": 115.04820329099311,
+        "peak_rss_gib": 32.62178039550781,
+        "watchdog_reason": null
+      }
+    }
+  }
+}

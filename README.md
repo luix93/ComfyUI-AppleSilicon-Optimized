@@ -2,6 +2,33 @@
 
 # ComfyUI-AppleSilicon-Optimized
 
+## Latest results — M5 Ultra (80 GPU cores)
+
+**Updated 2026-09-25 · 256 GB unified memory · macOS 27.0 · PyTorch 2.14.0**
+
+<!-- Canonical current benchmark table: update the date, measurements and linked
+     report together after validated runs. Keep earlier results below as history. -->
+
+| Workflow | Before (stock) | After (optimized) | Less total time |
+|---|---:|---:|---:|
+| SDXL, 896×1152 / 12 steps | 2.60 s | **2.42 s** | 7.0% |
+| Z-Image Turbo, 1024×1024 / 8 steps | 7.94 s | **3.44 s** | 56.6% |
+| Krea2 Turbo, 1448×1448 / 8 steps + LoKr | 28.04 s | **13.69 s** | 51.2% |
+| Krea2 Turbo, same workflow without LoKr | 27.92 s | **13.80 s** | 50.6% |
+| MiniMax H3, 864×480 / 124 frames / 20 steps | 236.75 s | **142.69 s** | 39.7% |
+
+Warm end-to-end averages, including sampling, VAE decode and file export;
+model loading and text encoding are cached. Both configurations use **PyTorch
+2.14 attention** and matching workflows, prompts and seeds. **Stock** has this
+custom node absent; **optimized** enables its native kernels and exact fusions.
+The optional relaxed H3 preset is **off**. H3 sampling averages **6.58 s/step**.
+
+The complete stock and optimized stacks are **not bit-exact to each other**;
+new exact fusions are validated against the otherwise unchanged optimized
+stack. See the [full benchmark, numerical checks and saved workflows](benchmarks/m5-ultra-torch214-production.md)
+and [startup settings](#pytorch-214-on-m5-ultra). This table tracks the latest
+validated results; earlier measurements remain below for reference.
+
 ## TL;DR
 
 **What this is:** one ComfyUI custom node that makes modern quantized models
@@ -35,7 +62,7 @@ didn't work are documented alongside the things that did.
 **A full Apple Silicon inference stack for ComfyUI: quantized-model
 compatibility plus custom Metal 4.1 kernels — flash attention, int8/fp8
 matmuls, per-architecture DiT block fusions, and video-VAE kernels — tuned on
-M5 Max.**
+M5 Max and M5 Ultra.**
 
 Private continuation of
 [ComfyUI-AppleSilicon-FP8](https://github.com/pawel-mazurkiewicz/ComfyUI-AppleSilicon-FP8).
@@ -52,7 +79,59 @@ are bit-exact or exact-or-1-ulp; the deliberate H3 W8A8 seam and every
 workflow-level approximation are called out separately in the
 [Numerics policy](#numerics-policy).
 
+## PyTorch 2.14 on M5 Ultra
+
+The separate `ComfyUI-AppleSilicon-2.14` installation now runs PyTorch 2.14.0
+and torchvision 0.29.0. The original installation remains on 2.13.
+The clone keeps native INT8/DiT/VAE kernels and selects PyTorch's new MPS
+attention with these startup settings:
+
+```text
+ASFP8_NATIVE=1
+ASFP8_ATTN_BACKEND=pytorch
+MTLFLASHATTN_SDPA=off
+```
+
+Use `--use-pytorch-cross-attention` in ComfyUI's launch arguments. The explicit
+backend setting routes supported calls directly to 2.14 SDPA, including Krea2's
+native grouped heads, while retaining fused Q/K normalization, RoPE, layouts,
+quantization and projections. Third-party attention overrides retain priority.
+Unsupported shapes retain the existing router. Removing the backend setting
+restores that router; it does not restore 2.13 arithmetic or output bytes.
+The earlier H3 relaxed preset remains separate and off by default.
+
+Native extensions use PyTorch's compiler-standard default (C++20 on 2.14),
+with build caches separated by PyTorch version/build and installation path.
+Krea2's accepted exact normalization and elementwise fusions are validated
+on 2.14 as well as 2.13. A new exact FP16 GEGLU fusion removes a memory pass
+from SDXL; `ASFP8_SDXL_GEGLU=0` disables it. Its 128 KiB lookup table contains
+PyTorch's evaluated GELU for every FP16 input bit pattern, retaining the
+intermediate rounding before multiplication.
+
+On the validated M5 Ultra / 2.14.0 build, dense BF16 D=128 attention also
+keeps query tiles in registers across the key loop. This retains PyTorch's
+arithmetic and reduction order. `ASFP8_MPP_QCACHE=0` restores the unmodified
+PyTorch kernel. The specialization checks both the Torch build and installed
+header hash, and falls back on unsupported inputs or initialization failure.
+
+The current stock-versus-optimized measurements are at the top of this README.
+Query caching alone saves **9.5 s** on H3
+against the otherwise unchanged optimized 2.14 stack (152.20 → 142.69 s),
+with byte-identical sampler latents, decoded frames and audio. The default
+keeps the earlier relaxed H3 modes off. **91 tests passed; 4 skipped.**
+
+Full stock-versus-optimized validation and the rejected experiments are recorded
+in the [2.14 production benchmark](benchmarks/m5-ultra-torch214-production.md).
+Stock here means the acceleration node is absent, with PyTorch attention
+selected in both configurations. The complete stacks are **not bit-exact to
+each other**: quantized compute and text-encoder placement differ, and changing
+attention backends also changes output bytes. New exact fusions are compared
+against the otherwise unchanged optimized stack.
+
 ## Results
+
+Earlier measurements and experiments follow. The current M5 Ultra / PyTorch
+2.14 stock-versus-optimized comparison is at the top of this README.
 
 Measured on an M5 Max (128 GB), macOS 27 dev beta, warm model cache. The
 "before" column is this node's compatibility layer alone (already several
@@ -69,6 +148,35 @@ models); "after" is with `ASFP8_NATIVE=1`.
 | LTX 2.3 video, 1024² × 5 s | 295 s | **86 s** | DrawThings ~120 s |
 | Wan 2.2 i2v 14B×2 int8, 512² × 81 f | 445 s | **111 s** | DrawThings-class ≈ 100 s |
 | MiniMax H3 int8, 864×480 × 124 f / 20 steps | 490.4 s‡ | **461.3 s** | exact paths only; workflow approximations off |
+
+**SDXL on M5 Ultra / PyTorch 2.13 (2026-09-25):** the embedded 896×1152, 12-step workflow
+replays in **3.1–3.2 s warm**, matching the original PNG pixels. Its FP16 UNet
+uses a different path from the INT8 models below. Exact projection/scheduling
+experiments were neutral. A diagnostic FlashAttention route measured
+**3.12 → 2.90 s**, but changed latents and images and remains uninstalled.
+See the [SDXL investigation](benchmarks/m5-ultra-sdxl-investigation.md) for
+profiling, controls, numerical errors and the limits of the Max/Ultra comparison.
+An isolated follow-up with **PyTorch 2.14** measured **3.15 → 2.77 s** with
+the current router and **2.39 s** with raw PyTorch SDPA, approximately **24%
+less total time**. Both 2.14 routes change the reference output bytes; the
+original environment remains on 2.13; the separate 2.14 clone is described above. See the [version comparison](benchmarks/m5-ultra-sdxl-investigation.md#follow-up-pytorch-213-vs-214)
+for repeatability, runtime metadata and the routing change needed to reach 2.39 s.
+
+**Matched PyTorch 2.14 tests on M5 Ultra (2026-09-25):** with the original
+workflows, prompts, seeds and warmup policy, raw PyTorch SDPA measured
+**Z-Image 1024²/8 steps: 3.82 → 3.51 s**, **Krea2 1448²/8 steps:
+15.05 → 14.01 s**, and **H3 864×480/124 frames/20 steps: 163.00 → 152.32 s**
+end to end against fresh 2.13 controls. H3 sampling averages **7.05 s/step**;
+FP16 video decode improves from **13.21 to 10.26 s**. Krea2's result required
+re-enabling its version-gated fusions in the isolated 2.14 copy; operator and
+complete-output checks passed. The production clone now includes that change.
+Without that compatibility change, 2.14/raw SDPA takes **15.90 s** for Krea2.
+The isolated native extensions also required **C++20** instead of the older
+loaders' C++17 setting. Switching attention changes output bytes and visible
+details. That initial investigation left defaults unchanged; the separate
+2.14 clone described above now uses the tested stack. See the
+[complete comparison](benchmarks/m5-ultra-torch214-models.md) and
+[frozen API workflows](benchmarks/data/m5-ultra-torch214-workflows.json).
 
 **M5 Ultra validation (2026-09-22):** Z-Image Turbo INT8 convrot, 1024×1024,
 8 res_multistep/simple steps, improved from **7.33 s to 4.29 s** end to end in
@@ -558,7 +666,19 @@ mirrors eager rounding op-for-op (exact-or-1-ulp) and falls back per call:
   modulation.
 - **Krea2 (#25)**: fused q/k/v norm+RoPE at native GQA head counts feeding
   flash41's grouped-KV path (the `repeat_interleave` and its 4× KV traffic
-  are gone).
+  are gone). On **M5 Ultra / PyTorch 2.13**, additional exact kernels fuse
+  FP32 RMSNorm reduction + BF16 modulation, gated residuals, SwiGLU, and
+  sigmoid gating + attention layout. The original reduction order and BF16
+  rounding points are retained. At 2MP, the attention kernel also uses the
+  Ultra's synchronized Morton traversal, retaining dynamic dimensions and
+  the same softmax/accumulation arithmetic. The tested **1448×1448, 8-step
+  INT8 ConvRot + LoKr 0.8** workflow falls from **18.50 s to 15.09 s warm**
+  including decode/PNG saving (**18.4% less time**), with identical sampler
+  latents, decoded tensors and original PNG pixels. Sampling alone falls
+  from **18.08 s to 14.67 s**. Set `ASFP8_KREA2_GLUE=0` and
+  `ASFP8_KREA2_ATTN_SCHEDULE=0` to restore the previous implementation.
+  See the [Krea2 Ultra report](benchmarks/m5-ultra-krea2-exact.md) for
+  interleaved measurements, numerical checks and rejected experiments.
 - **LTX (#27)**: one-pass split-RoPE (zero transposed copies) + fused
   rms_norm+modulate with per-frame timestep rows.
 - **Wan (#28)** (`wan_ext`, fp16/bf16-templated): fused LayerNorm+modulate
@@ -631,7 +751,7 @@ mirrors eager rounding op-for-op (exact-or-1-ulp) and falls back per call:
   default, validates the module graph and runtime geometry, and falls back to
   the original forward on anything it does not recognize.
 
-### Video VAE and SeedVR2 (patches #26, #29, #31, #36, #37)
+### Video VAE and SeedVR2 (patches #26, #29, #31, #36, #37, #38)
 
 - **Conv3d → sliced conv2d (#26, `ASFP8_CONV3D`)**: MPS's conv3d lowering is
   ~10× slower than the equivalent per-slice conv2d. Temporal taps fold into
@@ -702,6 +822,27 @@ mirrors eager rounding op-for-op (exact-or-1-ulp) and falls back per call:
   PNG writing in the first complete final run, with finite output and no
   INT8 fallbacks. Maximum observed Metal allocation was **125.51 GiB**;
   this is sampled allocator memory, not total system RAM or a continuous peak.
+- **Raw SeedVR2 7B FP16 loader compatibility (#38)**: the original
+  `seedvr2_ema_7b_fp16.safetensors` omits `positive_conditioning` and
+  `negative_conditioning`. ComfyUI recognizes its architecture but rejects
+  model-class matching without those buffers, reporting **"Could not detect
+  model type"**. The default macOS loader patch supplies ByteDance's fixed
+  conditioning in memory before matching. The bundled tensors preserve the
+  official BF16 bytes and also match the tested normal/sharp INT8 checkpoints.
+  All existing tensors and on-disk checkpoint files remain unchanged; models
+  with embedded conditioning retain their original loading path. This is
+  limited to the original 36-layer, separate-stream 7B architecture.
+  No model download, quantization or relaxed-math flag is involved. Disable
+  with `ASFP8_SEEDVR2_LOADER=0` before startup. See the
+  [conditioning provenance and license](_patches/seedvr2_assets/README.md).
+  ComfyUI chooses BF16 computation for these FP16 weights on the tested M5
+  setup, so the existing BF16 SeedVR2 fusions apply; dense matrix multiplies
+  use MPS, not the INT8 kernels. FP16 and INT8 results need not be identical.
+  The complete **2400×1600 → 7200×4800** FP16 workflow passed at **57.45 s
+  first / 54.22 s warm**, including PNG saving, with identical first/warm
+  latents and frame bytes. That compares with the prior **50.98 s warm**
+  INT8 run. See the [FP16 compatibility report](benchmarks/m5-ultra-seedvr2-fp16.md)
+  for reference checks, dtype behavior and measurement scope.
 
 ### Memory accounting (patch #30)
 
@@ -1235,10 +1376,15 @@ alone—by accident.
 | `ASFP8_FP8_SGEMM` | off | staged half×fp8 W8A16 backend |
 | `ASFP8_INT8_EXT` | off | int8 W8A8 kernel + fused epilogue (M5+) |
 | `ASFP8_ATTN_ROUTER` | off | per-call attention routing (flash41 / bmm / sub-quad) |
+| `ASFP8_ATTN_BACKEND` | unset | `pytorch` selects the tested PyTorch 2.14 MPS attention route; unset retains the existing router |
+| `ASFP8_MPP_QCACHE` | on | exact query-load hoisting under the PyTorch attention route; guarded to validated M5 Ultra / 2.14.0 build, headers and shapes; `0` restores the unmodified PyTorch kernel |
 | `ASFP8_ATTN_NA` | 1 | production independent-simdgroup flash41 kernel; `0` restores the older cooperative kernel |
 | `ASFP8_DIT_EXT` | off | DiT block-fusion kernels (all families) |
+| `ASFP8_SDXL_GEGLU` | on (under DIT_EXT) | exact FP16 GELU + multiplication fusion for SDXL on PyTorch 2.14 MPS; `0` restores eager GEGLU |
 | `ASFP8_CONV3D` | off | conv3d → sliced conv2d + Wan VAE fast path |
 | `ASFP8_FLUX_FAST` / `KREA2_FAST` / `LTX_FAST` / `WAN_FAST` / `WAN_VAE_FAST` / `IDEOGRAM_FAST` / `MINIMAX_FAST` | on (under DIT_EXT/CONV3D) | per-architecture kill switches |
+| `ASFP8_KREA2_GLUE` | on | exact Krea2 normalization/modulation, residual, SwiGLU and attention-layout fusions; guarded to M5 Ultra / PyTorch 2.13–2.14 under KREA2_FAST |
+| `ASFP8_KREA2_ATTN_SCHEDULE` | on | exact synchronized Morton attention schedule for M5 Ultra BF16 Krea2, B=1, 48Q/12KV, D=128, 8192–12287 tokens; other geometries keep their existing schedule |
 | `ASFP8_MINIMAX_ATTN` / `ASFP8_MINIMAX_BLOCK` | 1 | MiniMax direct QKV/attention-output layout and segmented block-glue fusions |
 | `ASFP8_MINIMAX_GRAPH` | 1 | exact guarded H3 final-layer graph rewrite (target RMSNorm + modulation + fp32 casts) |
 | `ASFP8_MINIMAX_VAE_FAST` | 1 (under DIT_EXT) | FP16 H3 video-decoder QK normalization/RoPE/layout and elementwise kernels; `0` restores core forwards |
@@ -1269,6 +1415,7 @@ alone—by accident.
 | `ASFP8_FREE_MEM` | on | MPS free-memory accounting fix (patch #30) |
 | `ASFP8_VAE_SLICE_FIX` | on | VAE slice_attention INT_MAX cap (patch #31) |
 | `ASFP8_SEEDVR2_VAE_SYNC` | on | wait between SeedVR2 VAE spatial tiles on MPS to bound temporary allocations; scheduling-only, independent of native/relaxed flags |
+| `ASFP8_SEEDVR2_LOADER` | on | supply official missing conditioning for raw original SeedVR2 7B checkpoints on macOS; existing conditioning and weights are preserved |
 | `ASFP8_SEEDVR2_FAST` | on | SeedVR2 exact performance additions; native sampling/SiLU kernels require `ASFP8_DIT_EXT=1` (implied by `ASFP8_NATIVE=1`); `0` at startup retains the memory/error safeguards |
 | `ASFP8_SEEDVR2_ATTN_FIX` | on | pack MPS attention windows into bounded buffers to avoid oversized-backing-storage `INT_MAX` failures; independent of the native kernel flag |
 | `ASFP8_SEEDVR2_ATTN_BATCH` | 8 with native/FAST, otherwise 1 | maximum equal-size windows per call, clamped to 1–16; small safe images keep the original loop |
