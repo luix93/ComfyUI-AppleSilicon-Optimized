@@ -152,6 +152,13 @@ def _int8_linear_prequant(
     """Run the INT8 GEMM/epilogue from an already quantized activation."""
     weight_scale = weight_scale.view(-1)
 
+    if out_dtype == torch.float16:
+        from . import wan_fp16
+        result = wan_fp16.maybe_prequant(
+            _kernel, x_8, x_scale, weight, weight_scale, bias, input_shape)
+        if result is not None:
+            return result
+
     if (
         out_dtype == torch.bfloat16
         and weight_scale.numel() == 1

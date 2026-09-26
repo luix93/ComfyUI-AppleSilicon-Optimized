@@ -18,6 +18,7 @@ import torch
 _TORCH_GIT = '08187d9e0fba026dc8217405802ab5381dc88d90'
 _SOURCE_HASH = '823c0df0b306a2a82b4c8903439e2b4b70bedb86c28b8f720adb92fb22892cff'
 _library = None
+_half_library = None
 _dead = False
 _calls = 0
 
@@ -32,7 +33,7 @@ def _hardware():
         return False
 
 
-def _source():
+def _source(dtype='bfloat'):
     root = Path(torch.__file__).parent / 'include'
     seen = set()
     def expand(name):
@@ -71,17 +72,48 @@ def _source():
     body = body.replace(before, load + before).replace(
         '          MPPTile<T, 1, 1, QFrag_t> Qtile;',
         '          thread auto& Qtile = Qcache[id];').replace(old_load, '')
+    assert dtype in ('bfloat', 'half')
     return (prefix + body + '\ninstantiate_kernel("custom_attn", prefill_attention_mpp, '
-            'bfloat, 64, 32, 128, 4, 1, false, false, true, bfloat);\n')
+            f'{dtype}, 64, 32, 128, 4, 1, false, false, true, {dtype});\n')
 
 
 @functools.lru_cache(maxsize=128)
-def _parameters(shape, keys, qstride, kstride, vstride, scale):
+def _parameters(shape, keys, qstride, kstride, vstride, scale, output_bshd=False):
     b, h, seq, dim = shape
-    output_stride = (h * seq * dim, seq * dim, dim)
+    output_stride = (h * seq * dim, dim, h * dim) if output_bshd else (h * seq * dim, seq * dim, dim)
     raw = struct.pack('=6i2f12q', b, h, dim, seq, keys[2], h // keys[1],
                       scale, 1., *qstride[:3], *kstride[:3], *vstride[:3], *output_stride)
     return torch.tensor(list(raw), dtype=torch.uint8, device='mps')
+
+
+def _qwen_edit(q, k):
+    # A full-resolution reference roughly doubles K/V for Qwen image edits.
+    # Short text-only prefixes did not benefit from query caching.
+    return (q.shape[1:] == (32, 4096, 128) and k.shape[1] == 32
+            and 8192 <= k.shape[2] <= 12288
+            and os.environ.get('ASFP8_QWEN21_FAST', '1') == '1'
+            and os.environ.get('ASFP8_QWEN21_ATTN', '1') == '1')
+
+
+def _ltx25(q, k):
+    return (q.shape[1] == k.shape[1] == 32 and q.shape[2:] == k.shape[2:]
+            and q.shape[2] >= 3520
+            and os.environ.get('PYTORCH_MPS_FAST_MATH', '0') == '0'
+            and os.environ.get('ASFP8_LTX25_FAST', '1') == '1'
+            and os.environ.get('ASFP8_LTX25_ATTN', '1') == '1')
+
+
+def _wan(q, k):
+    return (q.dtype == torch.float16 and q.shape[0] in (1, 2)
+            and q.shape[:2] == k.shape[:2] and q.shape[1] == 40
+            and q.shape[-1] == k.shape[-1]
+            and (q.shape[2] == k.shape[2] or (k.shape[2] == 512
+                 and os.environ.get('ASFP8_WAN_CROSS_ATTN', '1') == '1'))
+            and os.environ.get('ASFP8_DIT_EXT') == '1'
+            and os.environ.get('ASFP8_WAN_FAST', '1') == '1'
+            and os.environ.get('ASFP8_WAN_EXACT', '1') == '1'
+            and os.environ.get('ASFP8_WAN_ATTN', '1') == '1'
+            and os.environ.get('PYTORCH_MPS_FAST_MATH', '0') == '0')
 
 
 def _supports(q, k, v, kwargs):
@@ -91,12 +123,19 @@ def _supports(q, k, v, kwargs):
             or torch.__version__.split('+')[0] != '2.14.0'
             or torch.version.git_version != _TORCH_GIT):
         return False
-    if (any(type(t) is not torch.Tensor or not t.is_mps or t.dtype != torch.bfloat16
+    if any(type(t) is not torch.Tensor or not t.is_mps
+           or t.ndim != 4 for t in (q, k, v)):
+        return False
+    wan = _wan(q, k)
+    dtype = torch.float16 if wan else torch.bfloat16
+    if (any(t.dtype != dtype
             or t.ndim != 4 or t.stride(-1) != 1 for t in (q, k, v))
-            or q.shape[0] != 1 or q.shape[-1] != 128
+            or (q.shape[0] != 1 and not wan) or q.shape[-1] != 128
             or not 2048 <= q.shape[2] <= 32768 or k.shape != v.shape
-            or k.shape[0] != q.shape[0] or k.shape[2:] != q.shape[2:]
-            or (q.shape[1], k.shape[1]) not in ((30, 30), (48, 12), (56, 56))
+            or k.shape[0] != q.shape[0] or k.shape[-1] != q.shape[-1]
+            or not (wan or _qwen_edit(q, k) or _ltx25(q, k) or (
+                k.shape[2:] == q.shape[2:]
+                and (q.shape[1], k.shape[1]) in ((30, 30), (48, 12), (56, 56))))
             # Batch/head pointers use int64 strides. Only the in-tile row
             # offset is narrowed to int32 by the underlying MPP kernel.
             or any(s < 0 for t in (q, k, v) for s in t.stride())
@@ -111,20 +150,33 @@ def _supports(q, k, v, kwargs):
     return (scale is None or type(scale) in (float, int) and math.isfinite(scale)) and _hardware()
 
 
-def maybe_attention(q, k, v, **kwargs):
-    global _library, _dead, _calls
+def maybe_attention(q, k, v, *, output_bshd=False, **kwargs):
+    global _library, _half_library, _dead, _calls
     if not _supports(q, k, v, kwargs):
         return None
     try:
-        if _library is None:
-            _library = torch.mps.compile_shader(_source())
-            print('[AppleSilicon-Optimized/mpp_qcache] exact PyTorch 2.14 query-load hoisting enabled.')
+        wan = _wan(q, k)
+        if wan:
+            if _half_library is None:
+                _half_library = torch.mps.compile_shader(_source('half'))
+                print('[AppleSilicon-Optimized/mpp_qcache] exact Wan FP16 query-load hoisting enabled.')
+            library = _half_library
+        else:
+            if _library is None:
+                _library = torch.mps.compile_shader(_source())
+                print('[AppleSilicon-Optimized/mpp_qcache] exact PyTorch 2.14 query-load hoisting enabled.')
+            library = _library
         scale = kwargs.get('scale')
+        output_bshd = output_bshd and (wan or _qwen_edit(q, k) or _ltx25(q, k))
         params = _parameters(tuple(q.shape), tuple(k.shape), q.stride(), k.stride(), v.stride(),
-                             128**-.5 if scale is None else float(scale))
-        out = torch.empty(q.shape, device=q.device, dtype=q.dtype)
-        _library.custom_attn(q, k, v, out, params, params, params,
-                            threads=(((q.shape[2] + 63) // 64) * 128, q.shape[1], 1),
+                             128**-.5 if scale is None else float(scale), output_bshd)
+        if output_bshd:
+            out = torch.empty((q.shape[0], q.shape[2], q.shape[1], q.shape[3]),
+                              device=q.device, dtype=q.dtype).transpose(1, 2)
+        else:
+            out = torch.empty(q.shape, device=q.device, dtype=q.dtype)
+        library.custom_attn(q, k, v, out, params, params, params,
+                            threads=(((q.shape[2] + 63) // 64) * 128, q.shape[1], q.shape[0]),
                             group_size=(128, 1, 1))
         _calls += 1
         return out

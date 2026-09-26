@@ -53,3 +53,30 @@ def test_unsupported_build_falls_back(monkeypatch):
     monkeypatch.setattr(torch.version,'git_version','unvalidated')
     with torch.inference_mode():
         assert patch.maybe_attention(None,None,None) is None
+
+
+@pytest.mark.skipif(not _available(), reason='requires validated M5 Ultra / PyTorch 2.14')
+@pytest.mark.parametrize('keys', [8192, 8217, 12288])
+def test_qwen_edit_layout_and_optouts(monkeypatch, keys):
+    monkeypatch.setenv('ASFP8_ATTN_BACKEND', 'pytorch')
+    monkeypatch.setenv('ASFP8_MPP_QCACHE', '1')
+    monkeypatch.setenv('ASFP8_QWEN21_FAST', '1')
+    monkeypatch.setenv('ASFP8_QWEN21_ATTN', '1')
+    with torch.inference_mode():
+        torch.manual_seed(keys)
+        q = torch.randn(1,4098,32,128,device='mps',dtype=torch.bfloat16)[:,1:-1].transpose(1,2)
+        k,v = [torch.randn(1,keys+2,32,128,device='mps',dtype=torch.bfloat16)[:,1:-1].transpose(1,2)
+               for _ in range(2)]
+        expected = F.scaled_dot_product_attention(q,k,v)
+        for layout in (False, True):
+            got = patch.maybe_attention(q,k,v,output_bshd=layout)
+            assert got is not None and not patch._dead
+            assert torch.equal(got.cpu().contiguous().view(torch.uint8), expected.cpu().contiguous().view(torch.uint8))
+            if layout:
+                assert got.transpose(1,2).is_contiguous()
+        assert patch.maybe_attention(q,k[:,:,:4104],v[:,:,:4104]) is None
+        assert patch.maybe_attention(q,k,v,is_causal=True) is None
+        for flag in ('ASFP8_QWEN21_ATTN', 'ASFP8_QWEN21_FAST'):
+            monkeypatch.setenv(flag, '0')
+            assert patch.maybe_attention(q,k,v,output_bshd=True) is None
+            monkeypatch.setenv(flag, '1')

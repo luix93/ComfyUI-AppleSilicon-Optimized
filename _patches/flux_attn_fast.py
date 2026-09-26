@@ -17,7 +17,9 @@ concatenated [B, H, S, D] attention layout:
 
 RoPE is folded in, so attention runs via optimized_attention directly
 (comfy.ldm.flux.math.attention's apply_rope would double-rotate). The rest of
-the block (LayerNorms, modulation, MLPs, projections) stays eager torch.
+the block (LayerNorms, modulation and projections) stays eager torch. On the
+validated M5 Ultra / Torch 2.14 build, flux2_glue also fuses Klein 9B's exact
+SwiGLU and single-block MLP output layout.
 
 Numerics: same class as patch #21 — norm is fp32 normalize -> bf16 round ->
 bf16 weight multiply (verified bit-identical to F.rms_norm on MPS), RoPE is
@@ -33,6 +35,8 @@ import os
 import sys
 
 import torch
+
+from . import flux2_glue
 
 TAG = "[AppleSilicon-Optimized/flux_fast]"
 
@@ -218,13 +222,16 @@ def _fast_single_forward(self, x, vec, pe, attn_mask=None, modulation_dims=None,
                                transformer_options=transformer_options)
     del q, k, v
 
-    mlp = lin[..., 3 * self.hidden_size:]
-    if self.yak_mlp:
-        mlp = self.mlp_act(mlp[..., self.mlp_hidden_dim_first // 2:]) \
-            * mlp[..., :self.mlp_hidden_dim_first // 2]
-    else:
-        mlp = self.mlp_act(mlp)
-    output = self.linear2(torch.cat((attn, mlp), 2))
+    merged = flux2_glue.single_mlp_input(self, lin, attn)
+    if merged is None:
+        mlp = lin[..., 3 * self.hidden_size:]
+        if self.yak_mlp:
+            mlp = self.mlp_act(mlp[..., self.mlp_hidden_dim_first // 2:]) \
+                * mlp[..., :self.mlp_hidden_dim_first // 2]
+        else:
+            mlp = self.mlp_act(mlp)
+        merged = torch.cat((attn, mlp), 2)
+    output = self.linear2(merged)
     x = torch.addcmul(x, output, mod.gate)
     return x
 
@@ -260,5 +267,6 @@ def install():
     _orig_single = FL.SingleStreamBlock.forward
     FL.SingleStreamBlock.forward = _fast_single_forward
     _installed = True
+    flux2_glue.install()
     print(f"{TAG} Flux double/single block fast path on MPS: fused "
           f"qkv+QKNorm+RoPE+seq-cat via Metal (eager fallback per call).")

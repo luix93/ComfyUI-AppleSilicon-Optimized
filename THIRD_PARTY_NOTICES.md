@@ -31,3 +31,16 @@ from MLX's `mlx/backend/metal/kernels/rms_norm.metal`
 (Copyright © 2024 Apple Inc.). The original license notices are included in
 [_patches/krea2_ext/PYTORCH_LICENSE](_patches/krea2_ext/PYTORCH_LICENSE)
 and [_patches/krea2_ext/MLX_LICENSE](_patches/krea2_ext/MLX_LICENSE).
+
+The Qwen-Image 2.1 RMSNorm reduction in `_patches/qwen21_fast.metal`
+follows the same PyTorch/MLX reduction convention as the Krea2 kernels above.
+The PyTorch and MLX license notices are included in `_patches/krea2_ext`.
+
+The tile grouping and attention loop in `_patches/ltx25_vae.py` are adapted
+from Comfy Kitchen 0.2.35 `backends/eager/na.py`, Copyright (c) 2025 Comfy Org.
+All rights reserved. Changes batch independent MPS tiles under a bounded
+workspace, fuse neighborhood copies with bounded integer row maps, and build
+identical masks without GPU readback. Apache 2.0 license
+terms are reproduced in [_patches/seedvr2_assets/LICENSE](_patches/seedvr2_assets/LICENSE).
+The LTX RMSNorm reduction in `_patches/ltx25_fast.metal` follows the same
+PyTorch/MLX convention and license notices referenced above.

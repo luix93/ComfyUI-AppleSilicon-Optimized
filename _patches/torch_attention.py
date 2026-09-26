@@ -30,8 +30,8 @@ def supports(q, k, v, heads, mask=None, attn_precision=None, skip_reshape=False)
             and (mask is None or mask.dtype in (torch.bool, q.dtype)))
 
 
-def sdpa(q, k, v, **kwargs):
-    out = torch_mpp_qcache.maybe_attention(q, k, v, **kwargs)
+def sdpa(q, k, v, *, output_bshd=False, **kwargs):
+    out = torch_mpp_qcache.maybe_attention(q, k, v, output_bshd=output_bshd, **kwargs)
     if out is not None:
         return out
     # flash_attn_mtl may already have wrapped F.scaled_dot_product_attention.
@@ -57,5 +57,5 @@ def attention(q, k, v, heads, mask=None, skip_reshape=False,
         if mask.ndim == 3:
             mask = mask.unsqueeze(1)
     out = sdpa(q, k, v, attn_mask=mask, dropout_p=0.0, is_causal=False,
-               scale=scale, enable_gqa=enable_gqa)
+               scale=scale, enable_gqa=enable_gqa, output_bshd=not skip_output_reshape)
     return out if skip_output_reshape else out.transpose(1, 2).reshape(b, -1, heads * dim)

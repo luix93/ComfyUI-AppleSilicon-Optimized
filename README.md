@@ -4,7 +4,7 @@
 
 ## Latest results — M5 Ultra (80 GPU cores)
 
-**Updated 2026-09-25 · 256 GB unified memory · macOS 27.0 · PyTorch 2.14.0**
+**Updated 2026-09-26 · 256 GB unified memory · macOS 27.0 · PyTorch 2.14.0**
 
 <!-- Canonical current benchmark table: update the date, measurements and linked
      report together after validated runs. Keep earlier results below as history. -->
@@ -13,19 +13,36 @@
 |---|---:|---:|---:|
 | SDXL, 896×1152 / 12 steps | 2.60 s | **2.42 s** | 7.0% |
 | Z-Image Turbo, 1024×1024 / 8 steps | 7.94 s | **3.44 s** | 56.6% |
+| Flux.2 Klein 9B, text-to-image / 1024×1024 / 4 steps | 5.59 s† | **2.25 s** | 59.6% |
+| Flux.2 Klein 9B, image edit / 1024×1024 / 4 steps | 9.12 s† | **4.66 s** | 48.9% |
 | Krea2 Turbo, 1448×1448 / 8 steps + LoKr | 28.04 s | **13.69 s** | 51.2% |
 | Krea2 Turbo, same workflow without LoKr | 27.92 s | **13.80 s** | 50.6% |
+| Qwen-Image 2.1, 1024×1024 / 25 steps | 29.28 s | **12.59 s** | 57.0% |
+| Qwen-Image 2.1 edit, 1024×1024 / 40 steps | 50.77 s | **23.08 s** | 54.5% |
 | MiniMax H3, 864×480 / 124 frames / 20 steps | 236.75 s | **142.69 s** | 39.7% |
+| LTX 2.5, diffusion VAE / 1280×704 / 121 frames / 8+3 steps | 91.42 s | **46.38 s** | 49.3% |
+| LTX 2.5, convolutional VAE / same clip and original tiling | 51.71 s | **32.34 s** | 37.5% |
+| Wan 2.2 I2V 14B×2, 512×512 / 81 frames / 20 steps / CFG 3.5 | 423.62 s | **302.65 s** | 28.6% |
+| Wan 2.2 I2V 14B×2, same clip / 4-step LoRAs / CFG 1 | 45.76 s | **32.36 s** | 29.3% |
 
 Warm end-to-end averages, including sampling, VAE decode and file export;
-model loading and text encoding are cached. Both configurations use **PyTorch
+model loading and unchanged text/reference encoding are cached. Both configurations use **PyTorch
 2.14 attention** and matching workflows, prompts and seeds. **Stock** has this
 custom node absent; **optimized** enables its native kernels and exact fusions.
 The optional relaxed H3 preset is **off**. H3 sampling averages **6.58 s/step**.
 
+† Klein's checkpoint omits its INT8 format metadata. Its stock baseline uses
+only the existing metadata repair needed to load it, with acceleration absent.
+
 The complete stock and optimized stacks are **not bit-exact to each other**;
 new exact fusions are validated against the otherwise unchanged optimized
-stack. See the [full benchmark, numerical checks and saved workflows](benchmarks/m5-ultra-torch214-production.md)
+stack. See the [full benchmark, numerical checks and saved workflows](benchmarks/m5-ultra-torch214-production.md),
+the [Qwen 2.1 results](benchmarks/m5-ultra-qwen21.md),
+the [Flux.2 Klein results](benchmarks/m5-ultra-flux2-klein.md),
+the [40-step image-edit investigation](benchmarks/m5-ultra-qwen21-edit.md),
+the [LTX 2.5 video benchmark](benchmarks/m5-ultra-ltx25.md),
+the [further exact kernels and convolutional VAE comparison](benchmarks/m5-ultra-ltx25-followup.md),
+the [Wan 2.2 original and four-step LoRA results](benchmarks/m5-ultra-wan22.md),
 and [startup settings](#pytorch-214-on-m5-ultra). This table tracks the latest
 validated results; earlier measurements remain below for reference.
 
@@ -122,11 +139,134 @@ keeps the earlier relaxed H3 modes off. **91 tests passed; 4 skipped.**
 
 Full stock-versus-optimized validation and the rejected experiments are recorded
 in the [2.14 production benchmark](benchmarks/m5-ultra-torch214-production.md).
+An additional [H3 Sage-style attention screen](benchmarks/m5-ultra-h3-sage.md)
+replayed the saved 15,458-token attention inputs: the best tested qlip-style
+Metal port took **184.6 ms** with normal compiler settings, versus **64.0 ms**
+for the current exact path and **73.2 ms** for unmodified PyTorch 2.14. A
+separate fast-math control improved the port to **158.4 ms**, still slower
+than stock. All five workgroup sizes lost; the port remains a diagnostic
+and is not enabled in the H3 preset.
 Stock here means the acceleration node is absent, with PyTorch attention
 selected in both configurations. The complete stacks are **not bit-exact to
 each other**: quantized compute and text-encoder placement differ, and changing
 attention backends also changes output bytes. New exact fusions are compared
 against the otherwise unchanged optimized stack.
+
+## LTX 2.5 on M5 Ultra
+
+The saved two-pass text-to-video workflow averages **91.42 s stock → 46.38 s
+optimized**, including audio, video decoding and MP4 export. It retains
+121 frames, 24 fps, the original prompt/seeds and **8+3 sampling steps**.
+The spatial selector and latent rounding produce **1280×704** final frames.
+
+That is **0.901 MP**, 14.1% fewer pixels than the earlier M5 Max's
+1024×1024 LTX 2.3 benchmark (86 s). The versions also use different decoder
+architectures and attention backends: this workflow uses LTX 2.5's heavier
+diffusion VAE. These totals do not establish Max-to-Ultra hardware scaling
+or an optimization ceiling; see the comparison notes in the report.
+
+The first exact round reduced the previous native stack from **74.52 s to
+48.84 s**. A follow-up adds exact SwiGLU/modulation fusions and combined
+neighborhood copies: **48.66 s → 46.38 s** in a fresh paired comparison.
+Video decoding falls from **21.88 s to 19.59 s**; the earliest native decoder
+took **45.69 s**. A Metal mask kernel removes repeated GPU readbacks,
+independent attention tiles are batched within a bounded workspace, and fused
+Q/K normalization–RoPE removes memory passes. Sampling gains come from
+restoring the current split-RoPE interface and extending exact PyTorch
+query-load caching. Matrix arithmetic and attention reduction order stay intact.
+
+All full native runs matched byte for byte in both sampler outputs, audio and
+final frames; direct sampler/decoder block checks also passed. These additions
+are enabled under `ASFP8_NATIVE=1` on the validated M5 Ultra / PyTorch 2.14 build.
+`ASFP8_LTX25_FAST=0` restores the preceding native implementation;
+`ASFP8_LTX25_VAE=0` disables the decoder routes. The latest additions can be
+disabled independently with `ASFP8_LTX25_VAE_SWIGLU=0`,
+`ASFP8_LTX25_VAE_MODULATE=0` and `ASFP8_LTX25_VAE_LAYOUT=0`; setting all
+three to zero restores this round's 48.66 s paired control.
+
+The optional `ltx-2.5-video-vae-conv-bf16.safetensors` works with the standard
+Load VAE node and the original tiling: **51.71 s stock → 32.34 s optimized**.
+It is a different decoder with different output pixels, not a bit-exact
+replacement for the diffusion VAE. Each decoder repeats its own output bytes.
+Using regular **VAE Decode** instead of tiling takes **30.18 s** with the
+convolutional VAE; it needs more memory and also changes boundary pixels.
+A separate **1024×1024 / 121-frame / 8+3-step** run with the convolutional VAE
+and original tiling averages **37.82 s**. It is a measured resolution comparison;
+the historical M5 Max LTX 2.3 run still differs in model and backend.
+The [initial report](benchmarks/m5-ultra-ltx25.md) and
+[follow-up comparison](benchmarks/m5-ultra-ltx25-followup.md) record timings,
+numerical checks, optional settings, rejected experiments and raw results.
+
+## Flux.2 Klein 9B on M5 Ultra
+
+The original four-step Euler / Flux2Scheduler workflows average **5.59 → 2.25 s**
+for text-to-image and **9.12 → 4.66 s** for a reference-image edit at 1024×1024.
+Warm timings include sampling, VAE decoding and PNG export; model loading and
+unchanged input/text encoding are cached. The stock comparison needs only the
+existing missing-format metadata repair for the supplied INT8 ConvRot checkpoint.
+When the image and prompt are re-encoded on every run, the edit averages
+**12.52 → 5.92 s**, with model loading still warm.
+
+Most of the gain comes from the existing native INT8 projections, fused Flux
+Q/K normalization–RoPE, and exact PyTorch attention query caching. New BF16
+SwiGLU and activation/concatenation kernels give a smaller additional gain:
+**2.277 → 2.254 s** for text-to-image and **4.702 → 4.655 s** for editing in
+paired runs. The new kernels preserve the preceding native outputs byte for
+byte; the full stock/native stacks already differ numerically.
+
+`ASFP8_FLUX2_GLUE=0` disables the new additions. Standalone activation and
+single-block activation/layout fusion can be disabled independently with
+`ASFP8_FLUX2_SWIGLU=0` and `ASFP8_FLUX2_MLP_LAYOUT=0`. They default on only
+under the existing Flux fast path on the validated M5 Ultra / PyTorch 2.14 build.
+The [full report](benchmarks/m5-ultra-flux2-klein.md) includes fresh-input costs,
+exactness checks, saved images and rejected matrix/VAE experiments.
+
+## Qwen-Image 2.1 on M5 Ultra
+
+The saved 1024×1024 / 25-step workflow now averages **29.28 s stock → 12.59 s
+optimized**. The initial exact fusion pass reduced the repaired native stack
+from **15.29 s to 13.15 s**; the subsequent exact VAE scheduling improvement
+brings it to **12.59 s**, preserving the same complete latents and decoded pixels.
+
+The INT8 ConvRot text encoder now works with the node's MPS placement patch.
+ComfyUI's embedding cast can return an already-dequantized BF16 tensor;
+its INT8 embedding path previously attempted to dequantize that tensor again,
+raising `NoCapableBackendError: dequantize_int8_embedding`.
+The default compatibility repair gathers those floating rows directly, while
+retaining ordinary INT8 row decoding when the quantized layout survives.
+Checkpoint files, scales, inverse ConvRot and output dtype are preserved.
+Vanilla ComfyUI keeps this encoder on CPU and does not encounter that transfer bug.
+
+With native kernels enabled on the validated M5 Ultra / PyTorch 2.14.0 build,
+Qwen-Image 2.1 also gets exact **Q/K RMSNorm + RoPE**, **modulation**, and
+**gated residual** fusions. LayerNorm, matrix multiplies, attention and ComfyUI's
+existing prefix cache retain their arithmetic and behavior. The new fusions
+preserve the repaired native stack's complete latents and decoded pixels;
+the stock and native stacks themselves are not bit-exact.
+
+The saved **1024×1024 / 40-step image edit** now takes **23.08 s** with the
+native stack. New exact attention query caching/output layout and VAE
+normalization scheduling save **1.66 s / 6.7%** against the previous native
+stack's paired **24.74 s** control. Complete sampler latents and decoded
+pixels match byte for byte. Repeated decoding of identical saved latents
+improved from **0.788 s to 0.343 s**; decode inside full renders averages
+**0.441 s**. The Qwen VAE schedule also covers reference-image encoding.
+
+The tested qlip-style Metal Sage attention port was slower than 2.14 SDPA
+at this edit's actual shapes, so it is not installed. Comfy Kitchen 0.2.35
+INT8 attention has CUDA/HIP implementations and rejects MPS tensors;
+using it for Qwen or H3 on a Mac would require a new Metal backend. The
+[image-edit report](benchmarks/m5-ultra-qwen21-edit.md) records timings,
+compiler controls, numerical checks, scope and rejected experiments.
+
+`ASFP8_QWEN21_FAST=0` disables these new fusions while keeping the encoder
+repair and existing generic native kernels. The individual `ASFP8_QWEN21_ROPE`,
+`ASFP8_QWEN21_MODULATE`, `ASFP8_QWEN21_RESIDUAL`, `ASFP8_QWEN21_ATTN` and
+`ASFP8_QWEN21_VAE` switches can each be set to
+`0`. Other hardware, Torch builds, dtypes, shapes and attention hooks retain
+the original path. The [Qwen 2.1 benchmark](benchmarks/m5-ultra-qwen21.md)
+records the unchanged workflow, warm measurements, byte checks and rejected
+attention, feed-forward and VAE experiments.
 
 ## Results
 
@@ -146,7 +286,7 @@ models); "after" is with `ASFP8_NATIVE=1`.
 | Ideogram 4 int8 convrot (8.7B), 1MP / 12 steps | ~50 s† | **~41 s** | DrawThings ~42 s |
 | LTX 2.3 video, 512² × 5 s | 63 s | **22 s** | DrawThings ~35 s |
 | LTX 2.3 video, 1024² × 5 s | 295 s | **86 s** | DrawThings ~120 s |
-| Wan 2.2 i2v 14B×2 int8, 512² × 81 f | 445 s | **111 s** | DrawThings-class ≈ 100 s |
+| Wan 2.2 i2v 14B×2 int8, 512² × 81 f / 4-step LoRAs / CFG 1 | 445 s | **111 s** | DrawThings-class ≈ 100 s |
 | MiniMax H3 int8, 864×480 × 124 f / 20 steps | 490.4 s‡ | **461.3 s** | exact paths only; workflow approximations off |
 
 **SDXL on M5 Ultra / PyTorch 2.13 (2026-09-25):** the embedded 896×1152, 12-step workflow
@@ -1380,6 +1520,9 @@ alone—by accident.
 | `ASFP8_MPP_QCACHE` | on | exact query-load hoisting under the PyTorch attention route; guarded to validated M5 Ultra / 2.14.0 build, headers and shapes; `0` restores the unmodified PyTorch kernel |
 | `ASFP8_ATTN_NA` | 1 | production independent-simdgroup flash41 kernel; `0` restores the older cooperative kernel |
 | `ASFP8_DIT_EXT` | off | DiT block-fusion kernels (all families) |
+| `ASFP8_INT8_EMBEDDING` | on | preserve already-dequantized INT8 embedding weights across CPU/MPS casts; compatibility repair independent of native kernels |
+| `ASFP8_QWEN21_FAST` | on (under DIT_EXT) | exact Qwen-Image 2.1 fusions on the validated M5 Ultra / PyTorch 2.14.0 build; `0` retains the encoder fix and generic native paths |
+| `ASFP8_QWEN21_ROPE` / `ASFP8_QWEN21_MODULATE` / `ASFP8_QWEN21_RESIDUAL` | on (under QWEN21_FAST) | independent switches for Q/K RMSNorm + RoPE, modulation, and gated residual fusions |
 | `ASFP8_SDXL_GEGLU` | on (under DIT_EXT) | exact FP16 GELU + multiplication fusion for SDXL on PyTorch 2.14 MPS; `0` restores eager GEGLU |
 | `ASFP8_CONV3D` | off | conv3d → sliced conv2d + Wan VAE fast path |
 | `ASFP8_FLUX_FAST` / `KREA2_FAST` / `LTX_FAST` / `WAN_FAST` / `WAN_VAE_FAST` / `IDEOGRAM_FAST` / `MINIMAX_FAST` | on (under DIT_EXT/CONV3D) | per-architecture kill switches |
@@ -1411,6 +1554,9 @@ alone—by accident.
 | `ASFP8_SOL_ROUTER` | `diag64` | set `legacy_empirical` to route H3 sparse attention with the **rejected** 32-row-tile router (proxy-row mean/variance threshold), for diagnostics only. `tau` is not comparable between the two |
 | `ASFP8_MINIMAX_VAE_TILE_SIZE` | unset (reference 256) | experimental H3 video-VAE tile size (multiple of 16) |
 | `ASFP8_AUTOFIX` | on | self-heal JIT prerequisites at boot (install ninja, restore stripped torch headers) |
+| `ASFP8_WAN_EXACT` | on | Wan 14B exact FP16 INT8 output fusion and batched attention query caching on the validated M5 Ultra / PyTorch 2.14 build; `0` restores the preceding native paths |
+| `ASFP8_WAN_FP16_GEMM` / `ASFP8_WAN_ATTN` | on | independent switches for the Wan FP16 projection epilogue and exact attention optimization, under WAN_EXACT |
+| `ASFP8_WAN_CROSS_ATTN` | on | also use the exact Wan query-cache/layout kernel for 512-token text cross-attention; `0` keeps only its self-attention extension |
 | `ASFP8_WAN_VAE_CHUNK` | 16 | Wan VAE frames per causal pass (even, 2–32; lower caps decode memory peak) |
 | `ASFP8_FREE_MEM` | on | MPS free-memory accounting fix (patch #30) |
 | `ASFP8_VAE_SLICE_FIX` | on | VAE slice_attention INT_MAX cap (patch #31) |

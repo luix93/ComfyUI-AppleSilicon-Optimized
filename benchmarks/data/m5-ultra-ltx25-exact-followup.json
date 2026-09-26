@@ -1,0 +1,162 @@
+{
+  "runs": [
+    {
+      "index": 0,
+      "kv_mib": 128,
+      "seconds": 4.502972541027702,
+      "sha256": "ab7be1a65defdafafea85d8881a82286ab90db36b636d839ea19259d53433abf",
+      "profile": false,
+      "warmup": true
+    },
+    {
+      "index": 1,
+      "kv_mib": 128,
+      "seconds": 4.056659583002329,
+      "sha256": "ab7be1a65defdafafea85d8881a82286ab90db36b636d839ea19259d53433abf",
+      "profile": false,
+      "warmup": false
+    },
+    {
+      "index": 2,
+      "kv_mib": 64,
+      "seconds": 4.16494300001068,
+      "sha256": "ab7be1a65defdafafea85d8881a82286ab90db36b636d839ea19259d53433abf",
+      "profile": false,
+      "warmup": false
+    },
+    {
+      "index": 3,
+      "kv_mib": 256,
+      "seconds": 4.068089709035121,
+      "sha256": "ab7be1a65defdafafea85d8881a82286ab90db36b636d839ea19259d53433abf",
+      "profile": false,
+      "warmup": false
+    },
+    {
+      "index": 4,
+      "kv_mib": 512,
+      "seconds": 4.061545916018076,
+      "sha256": "ab7be1a65defdafafea85d8881a82286ab90db36b636d839ea19259d53433abf",
+      "profile": false,
+      "warmup": false
+    },
+    {
+      "index": 5,
+      "kv_mib": 128,
+      "seconds": 4.0743014580220915,
+      "sha256": "ab7be1a65defdafafea85d8881a82286ab90db36b636d839ea19259d53433abf",
+      "profile": false,
+      "warmup": false
+    },
+    {
+      "index": 6,
+      "kv_mib": 512,
+      "seconds": 4.028781540982891,
+      "sha256": "ab7be1a65defdafafea85d8881a82286ab90db36b636d839ea19259d53433abf",
+      "profile": false,
+      "warmup": false
+    },
+    {
+      "index": 7,
+      "kv_mib": 256,
+      "seconds": 4.005396875028964,
+      "sha256": "ab7be1a65defdafafea85d8881a82286ab90db36b636d839ea19259d53433abf",
+      "profile": false,
+      "warmup": false
+    },
+    {
+      "index": 8,
+      "kv_mib": 64,
+      "seconds": 4.114830125006847,
+      "sha256": "ab7be1a65defdafafea85d8881a82286ab90db36b636d839ea19259d53433abf",
+      "profile": false,
+      "warmup": false
+    },
+    {
+      "index": 9,
+      "kv_mib": 128,
+      "seconds": 4.023760957992636,
+      "sha256": "ab7be1a65defdafafea85d8881a82286ab90db36b636d839ea19259d53433abf",
+      "profile": false,
+      "warmup": false
+    },
+    {
+      "index": 10,
+      "kv_mib": 256,
+      "seconds": 4.0141444590408355,
+      "sha256": "ab7be1a65defdafafea85d8881a82286ab90db36b636d839ea19259d53433abf",
+      "profile": false,
+      "warmup": false
+    },
+    {
+      "index": 11,
+      "kv_mib": 64,
+      "seconds": 4.1562032920192,
+      "sha256": "ab7be1a65defdafafea85d8881a82286ab90db36b636d839ea19259d53433abf",
+      "profile": false,
+      "warmup": false
+    },
+    {
+      "index": 12,
+      "kv_mib": 512,
+      "seconds": 4.025685292028356,
+      "sha256": "ab7be1a65defdafafea85d8881a82286ab90db36b636d839ea19259d53433abf",
+      "profile": false,
+      "warmup": false
+    },
+    {
+      "index": 13,
+      "kv_mib": 128,
+      "seconds": 6.395832584006712,
+      "sha256": "ab7be1a65defdafafea85d8881a82286ab90db36b636d839ea19259d53433abf",
+      "profile": true,
+      "warmup": false
+    }
+  ],
+  "inclusive_profile": {
+    "linear": {
+      "seconds": 0.8536237110965885,
+      "calls": 1794
+    },
+    "rms_norm": {
+      "seconds": 0.12776199402287602,
+      "calls": 582
+    },
+    "stack": {
+      "seconds": 1.2981079610763118,
+      "calls": 4920
+    },
+    "mask": {
+      "seconds": 0.3092398777953349,
+      "calls": 1148
+    },
+    "attention": {
+      "seconds": 1.9367477388004772,
+      "calls": 1404
+    },
+    "neighborhood_block_inclusive": {
+      "seconds": 4.90914575435454,
+      "calls": 144
+    },
+    "swiglu_block_inclusive": {
+      "seconds": 1.1285206150496379,
+      "calls": 144
+    }
+  },
+  "description": "2026-09-25 fixed-latent current exact VAE batching sweep and synchronized profile; 25 frames, 1280x704, same 512/64 spatial and 64/16 temporal tiling. Diagnostic only; production budget remains 128 MiB.",
+  "reference_latents": "native-short-1-baseline-stage2_latents.pt: /0/samples/0",
+  "source_sha256": {
+    "_patches/ltx25_fast.py": "c6b6ed1f93f6fdcefd5fed84dd131403b5d097f486bf9836f7422a1c4b32d092",
+    "_patches/ltx25_fast.metal": "12fc9789d9190bb59372d44fb44a0e85880592220d1c8fd5105d9e13a279f008",
+    "_patches/ltx25_vae.py": "779c5c1c16cb33001657b2a617ade6025baf22201341d9ab6f70f9782f3a3537",
+    "_patches/torch_mpp_qcache.py": "156e69718cfe07942c653956d81b9a6e2402000f81502e96424f7093d9f5c79d"
+  },
+  "warm_means_seconds": {
+    "64": 4.145325472345576,
+    "128": 4.051573999672352,
+    "256": 4.02921034770164,
+    "512": 4.038670916343108
+  },
+  "profile_note": "Per-call synchronization inflates execution time. Block times include lower-level calls and must not be summed with them. Stack includes RoPE matrix construction as well as neighborhood Q/K/V tile gathering. This identifies candidates, not recoverable end-to-end savings.",
+  "probe_source": "\"\"\"Bounded, fixed-latent follow-up: batching sweep and current VAE profile.\"\"\"\nimport collections\nimport functools\nimport hashlib\nimport inspect\nimport json\nimport os\nfrom pathlib import Path\nimport sys\nimport threading\nimport time\nimport urllib.error\nimport urllib.request\n\nROOT = Path(__file__).resolve().parent\nREPO = ROOT.parents[1] / 'ComfyUI-AppleSilicon-Optimized'\nCORE = Path('/Users/luigis/ComfyUI-Installs/ComfyUI-AppleSilicon-2.14/ComfyUI')\nsys.path[:0] = [str(CORE), str(REPO)]\nsys.argv = [sys.argv[0]]\nos.environ.update(PYTORCH_ENABLE_MPS_FALLBACK='1', MTLFLASHATTN_SDPA='off',\n                  PYTORCH_MPS_FAST_MATH='0', ASFP8_DIT_EXT='1',\n                  PYTORCH_MPS_HIGH_WATERMARK_RATIO='0.4',\n                  PYTORCH_MPS_LOW_WATERMARK_RATIO='0.3')\n\ndef idle():\n    try:\n        with urllib.request.urlopen('http://127.0.0.1:8188/queue', timeout=3) as r:\n            q = json.load(r)\n    except urllib.error.URLError as exc:\n        if isinstance(exc.reason, ConnectionRefusedError):\n            return\n        raise\n    assert not q['queue_running'] and not q['queue_pending'], 'User server busy'\n\nidle()\nimport psutil\ndef guard():\n    while True:\n        if psutil.virtual_memory().available < 48 * 2**30:\n            print('Stopped: available memory below 48 GiB', flush=True)\n            os._exit(2)\n        time.sleep(1)\nthreading.Thread(target=guard, daemon=True).start()\n\nimport torch\nimport nodes\nimport comfy.sd\nimport comfy.utils\nimport comfy.ldm.lightricks.vae.na_diffusion_decoder as nd\nfrom _patches import ltx25_fast, ltx25_vae\n\nltx25_fast.install()\nassert ltx25_fast._installed and ltx25_fast._lib() is not None\nsource = inspect.getsource(ltx25_vae._batched_na)\nassert source.count('(2 ** 26)') == 1\n# All operations and tensors are unchanged; only independent tile grouping varies.\nnamespace = dict(vars(ltx25_vae))\nnamespace['kv_elements'] = 2**26\nexec(source.replace('(2 ** 26)', 'kv_elements'), namespace)\nltx25_vae._batched_na = namespace['_batched_na']\n\nstats = collections.defaultdict(lambda: {'seconds': 0., 'calls': 0})\nactive = False\ndef wrap(obj, name, label):\n    old = getattr(obj, name)\n    @functools.wraps(old)\n    def call(*a, **kw):\n        if not active:\n            return old(*a, **kw)\n        torch.mps.synchronize()\n        start = time.perf_counter()\n        out = old(*a, **kw)\n        torch.mps.synchronize()\n        stats[label]['seconds'] += time.perf_counter() - start\n        stats[label]['calls'] += 1\n        return out\n    setattr(obj, name, call)\n\nwrap(ltx25_vae, '_attention', 'attention')\nwrap(ltx25_vae, '_group_mask', 'mask')\nnamespace['_attention'] = ltx25_vae._attention\nnamespace['_group_mask'] = ltx25_vae._group_mask\nwrap(torch, 'stack', 'stack')\nwrap(torch.nn.functional, 'linear', 'linear')\nwrap(torch.nn.functional, 'rms_norm', 'rms_norm')\nwrap(nd.NeighborhoodAttention3D, 'forward', 'neighborhood_block_inclusive')\nwrap(nd.SwiGLU, 'forward', 'swiglu_block_inclusive')\n\nwith torch.inference_mode():\n    vae = comfy.sd.VAE(sd=comfy.utils.load_torch_file(\n        '/Volumes/OWC NVMe/comfyui/models/vae/ltx-2.5-video-vae-bf16.safetensors'),\n        device=torch.device('mps'), dtype=torch.bfloat16)\n    x = torch.load(ROOT / 'native-short-1-baseline-stage2_latents.pt',\n                   weights_only=True)['/0/samples/0']\n    rows = []\n    reference = None\n    schedule = [128, 128, 64, 256, 512, 128, 512, 256, 64, 128, 256, 64, 512]\n    for i, mib in enumerate(schedule + [128]):\n        idle()\n        active = i == len(schedule)\n        namespace['kv_elements'] = mib * 2**19  # two bytes per BF16 element\n        torch.mps.synchronize()\n        start = time.perf_counter()\n        out = nodes.VAEDecodeTiled().decode(vae, {'samples': x}, tile_size=512,\n            overlap=64, temporal_size=64, temporal_overlap=16)[0]\n        torch.mps.synchronize()\n        seconds = time.perf_counter() - start\n        active = False\n        raw = out.cpu().contiguous().view(torch.uint8)\n        digest = hashlib.sha256(raw.numpy()).hexdigest()\n        if reference is None:\n            reference = raw.clone()\n        assert torch.equal(raw, reference), f'Byte mismatch at budget {mib}'\n        row = {'index': i, 'kv_mib': mib, 'seconds': seconds, 'sha256': digest,\n               'profile': i == len(schedule), 'warmup': i == 0}\n        rows.append(row)\n        print(json.dumps(row), flush=True)\n        (ROOT / 'remaining-exact-probe.json').write_text(json.dumps(\n            {'runs': rows, 'inclusive_profile': dict(stats)}, indent=2))\n    assert not ltx25_vae._attention_dead\n"
+}
