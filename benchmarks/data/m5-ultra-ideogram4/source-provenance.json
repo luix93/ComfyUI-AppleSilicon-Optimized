@@ -1,0 +1,19 @@
+{
+  "source": "/Users/luigis/ComfyUI-Shared/workflows/ideagram.json",
+  "source_sha256": "e954c02d0919024129887541cdd8a8caf138eb42b0f6c56b5ca9014427fd2d21",
+  "changes": [
+    "Only CLIPTextEncode 98:24 text replaced with benign structured caption."
+  ],
+  "seed": 71584314815009,
+  "width": 1024,
+  "height": 1024,
+  "steps": 12,
+  "sampler": "euler",
+  "scheduler": {
+    "mu": 0.5,
+    "std": 1.75
+  },
+  "cfg": 7,
+  "cfg_late": 3,
+  "cfg_late_start": 0.7
+}

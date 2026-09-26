@@ -1,0 +1,54 @@
+{
+  "stock": {
+    "n": 2,
+    "e2e": 43.893,
+    "sampling": 43.53943458298454,
+    "vae": 0.30342539597768337,
+    "samples": [
+      43.873,
+      43.913
+    ]
+  },
+  "previous": {
+    "n": 2,
+    "e2e": 24.637999999999998,
+    "sampling": 24.373588146001566,
+    "vae": 0.2095926040201448,
+    "samples": [
+      24.561,
+      24.715
+    ]
+  },
+  "optimized": {
+    "n": 2,
+    "e2e": 18.2295,
+    "sampling": 17.98188489599852,
+    "vae": 0.19659987499471754,
+    "samples": [
+      18.26,
+      18.199
+    ]
+  },
+  "new_vs_previous_exact": {
+    "sampling_conditioning": true,
+    "sampling_noise": true,
+    "sampling_latents": true,
+    "frames": true
+  },
+  "reductions": {
+    "stock": 0.5846832068894812,
+    "previous": 0.2601063398003084,
+    "max_reference": 0.5553780487804878
+  },
+  "installed_replay": {
+    "samples": [
+      18.178,
+      18.195
+    ],
+    "mean": 18.186500000000002,
+    "cold_first_prompt": 22.686,
+    "all_tensors_exact": true,
+    "prep_and_attention_calls_per_render": 816,
+    "files_match": true
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "root": "/Users/luigis/ComfyUI-Installs/ComfyUI-AppleSilicon-2.14/ComfyUI/custom_nodes/ComfyUI-AppleSilicon-Optimized",
+  "files": {
+    "_patches/ideogram_fast.py": "7200b2099ce1a56a9186761091fef42dd87d5224ae6913bc6d93c0954bc79023",
+    "_patches/ideogram4_exact.py": "43e1b3a1eda85e98a65c0b1738e94f300137f02d02051f08288682af1867483d",
+    "_patches/ideogram4_exact.metal": "1afc1b2f42bbc06f7a3d404359ca233b7300b2ea474650b932258b63c3ce3902",
+    "_patches/torch_attention.py": "8375d033b8a93db509248517f12ce6566b75e676df1c65d3e4472edad804d87f",
+    "_patches/torch_mpp_qcache.py": "343fa8f4c68aa00e6ee8e03be7daa5caf230183e9d98bb8bd7ca7d0fd881be34"
+  },
+  "workflow": "/Users/luigis/ComfyUI-Shared/workflows/ideagram.json",
+  "workflow_sha256": "8d8d0c787ee5653c987c6aaa425ec30c05437c2b2acbc5c4f38c39749c91f724",
+  "original_backup": "/Users/luigis/Documents/ChatGPT/ComfyUI-AppleSilicon/diagnostics/ideogram4/original-ideagram.json",
+  "image": "/Users/luigis/ComfyUI-Shared/output/Ideogram4_M5Ultra_optimized.png"
+}

@@ -31,6 +31,10 @@ def supports(q, k, v, heads, mask=None, attn_precision=None, skip_reshape=False)
 
 
 def sdpa(q, k, v, *, output_bshd=False, **kwargs):
+    from . import ideogram4_exact
+    out = ideogram4_exact.maybe_attention(q, k, v, output_bshd=output_bshd, **kwargs)
+    if out is not None:
+        return out
     out = torch_mpp_qcache.maybe_attention(q, k, v, output_bshd=output_bshd, **kwargs)
     if out is not None:
         return out

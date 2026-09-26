@@ -1,0 +1,42 @@
+[
+  {
+    "name": "Ideogram4/ideogram4_int8_convrot.safetensors",
+    "folder": "diffusion_models",
+    "bytes": 9583465712,
+    "header_sha256": "ab6770360aaaa0dc11631d05719792b9f1ce7fd1df0d50075d037c6b41592d04",
+    "header_bytes": 90760,
+    "metadata": {
+      "format": "pt"
+    }
+  },
+  {
+    "name": "Ideogram4/ideogram4_unconditional_int8_convrot.safetensors",
+    "folder": "diffusion_models",
+    "bytes": 9583465712,
+    "header_sha256": "ab6770360aaaa0dc11631d05719792b9f1ce7fd1df0d50075d037c6b41592d04",
+    "header_bytes": 90760,
+    "metadata": {
+      "format": "pt"
+    }
+  },
+  {
+    "name": "qwen3vl_8b_fp8_scaled.safetensors",
+    "folder": "text_encoders",
+    "bytes": 10588637512,
+    "header_sha256": "cbd8007b7cd079bf41ea73661e23aff498f6a0639e352eb41419cf90d37d005d",
+    "header_bytes": 140400,
+    "metadata": {
+      "format": "pt"
+    }
+  },
+  {
+    "name": "flux2-vae.safetensors",
+    "folder": "vae",
+    "bytes": 336213556,
+    "header_sha256": "87f9d471e9e5e7cc57f56c43f6901c7d36da62ff88264f46395995b69dd0fe44",
+    "header_bytes": 28056,
+    "metadata": {
+      "format": "pt"
+    }
+  }
+]

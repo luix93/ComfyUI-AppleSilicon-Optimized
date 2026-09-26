@@ -1,0 +1,32 @@
+[
+  {
+    "file": "capture-native-profile-attention-3.pt",
+    "shape": [
+      1,
+      18,
+      4414,
+      256
+    ],
+    "mask": null,
+    "variant": "split2",
+    "exact": true,
+    "max": 0.0,
+    "torch": 0.01344476040394511,
+    "candidate": 0.012681658298242839
+  },
+  {
+    "file": "capture-native-profile-attention-3.pt",
+    "shape": [
+      1,
+      18,
+      4414,
+      256
+    ],
+    "mask": null,
+    "variant": "split4",
+    "exact": true,
+    "max": 0.0,
+    "torch": 0.013518860400654375,
+    "candidate": 0.016171139548532665
+  }
+]

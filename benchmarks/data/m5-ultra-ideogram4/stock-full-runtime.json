@@ -1,0 +1,16 @@
+{
+  "torch": "2.14.0",
+  "torch_git": "08187d9e0fba026dc8217405802ab5381dc88d90",
+  "torch_path": "/Users/luigis/ComfyUI-Installs/ComfyUI-AppleSilicon-2.14/ComfyUI/.venv/lib/python3.13/site-packages/torch/__init__.py",
+  "python": "3.13.12 (main, Feb 12 2026, 01:06:02) [Clang 21.1.4 ]",
+  "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+  "comfy_commit": "b33e2b55cae074eca5aec96283cceac19aa249ba",
+  "env": {
+    "PYTORCH_ENABLE_MPS_FALLBACK": "1",
+    "PYTORCH_MPS_FAST_MATH": "0",
+    "PYTORCH_MPS_HIGH_WATERMARK_RATIO": "0.4",
+    "PYTORCH_MPS_LOW_WATERMARK_RATIO": "0.3",
+    "MTLFLASHATTN_SDPA": "off"
+  },
+  "metadata_compatibility": false
+}

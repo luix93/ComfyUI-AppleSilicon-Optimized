@@ -1,0 +1,28 @@
+[
+  {
+    "file": "capture-native-profile-rms_rope_split_half-2.pt",
+    "shape": [
+      1,
+      4414,
+      18,
+      256
+    ],
+    "q": {
+      "exact": true,
+      "count": 0,
+      "max": 0.0
+    },
+    "k": {
+      "exact": true,
+      "count": 0,
+      "max": 0.0
+    },
+    "v": {
+      "exact": true,
+      "count": 0,
+      "max": 0.0
+    },
+    "eager": 0.0021832853992236776,
+    "fused": 0.00027579164889175446
+  }
+]

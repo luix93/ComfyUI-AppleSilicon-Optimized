@@ -1,0 +1,430 @@
+[
+  {
+    "shape": [
+      4414,
+      13824,
+      4608
+    ],
+    "baseline": [
+      0.007536264000615726,
+      0.007611250000384946
+    ],
+    "variants": [
+      {
+        "swizzle": 0,
+        "long": false,
+        "different_bytes": 0,
+        "seconds": [
+          0.004905375011730939,
+          0.004434708331245929
+        ]
+      },
+      {
+        "swizzle": 1,
+        "long": false,
+        "different_bytes": 0,
+        "seconds": [
+          0.0031876946644236646,
+          0.003021610997772465
+        ]
+      },
+      {
+        "swizzle": 2,
+        "long": false,
+        "different_bytes": 0,
+        "seconds": [
+          0.0030331946715402105,
+          0.002970555661401401
+        ]
+      },
+      {
+        "swizzle": 3,
+        "long": false,
+        "different_bytes": 0,
+        "seconds": [
+          0.0030055970031147203,
+          0.0029963889974169433
+        ]
+      },
+      {
+        "swizzle": 4,
+        "long": false,
+        "different_bytes": 0,
+        "seconds": [
+          0.0030017640092410147,
+          0.002933972340542823
+        ]
+      },
+      {
+        "swizzle": 0,
+        "long": true,
+        "different_bytes": 0,
+        "seconds": [
+          0.002971194335259497,
+          0.0028917223292713365
+        ]
+      },
+      {
+        "swizzle": 1,
+        "long": true,
+        "different_bytes": 0,
+        "seconds": [
+          0.002996527667467793,
+          0.002974013662120948
+        ]
+      },
+      {
+        "swizzle": 2,
+        "long": true,
+        "different_bytes": 0,
+        "seconds": [
+          0.002961430659828087,
+          0.0029358749937576554
+        ]
+      },
+      {
+        "swizzle": 3,
+        "long": true,
+        "different_bytes": 0,
+        "seconds": [
+          0.003006555683289965,
+          0.0029382359934970737
+        ]
+      },
+      {
+        "swizzle": 4,
+        "long": true,
+        "different_bytes": 0,
+        "seconds": [
+          0.002928472007624805,
+          0.0029803889920003712
+        ]
+      }
+    ],
+    "baseline_after": [
+      0.003022097342181951,
+      0.0029508750109622874
+    ]
+  },
+  {
+    "shape": [
+      4414,
+      12288,
+      4608
+    ],
+    "baseline": [
+      0.0026343473388502994,
+      0.002692902674122403
+    ],
+    "variants": [
+      {
+        "swizzle": 0,
+        "long": false,
+        "different_bytes": 0,
+        "seconds": [
+          0.0026327223361780248,
+          0.002580750015719483
+        ]
+      },
+      {
+        "swizzle": 1,
+        "long": false,
+        "different_bytes": 0,
+        "seconds": [
+          0.0027244306596306465,
+          0.0026398473419249058
+        ]
+      },
+      {
+        "swizzle": 2,
+        "long": false,
+        "different_bytes": 0,
+        "seconds": [
+          0.0026493609960501394,
+          0.002653986002163341
+        ]
+      },
+      {
+        "swizzle": 3,
+        "long": false,
+        "different_bytes": 0,
+        "seconds": [
+          0.002696639004473885,
+          0.0027102499928635857
+        ]
+      },
+      {
+        "swizzle": 4,
+        "long": false,
+        "different_bytes": 0,
+        "seconds": [
+          0.002677721999740849,
+          0.0026420833310112357
+        ]
+      },
+      {
+        "swizzle": 0,
+        "long": true,
+        "different_bytes": 0,
+        "seconds": [
+          0.0026255833411899707,
+          0.002560222327398757
+        ]
+      },
+      {
+        "swizzle": 1,
+        "long": true,
+        "different_bytes": 0,
+        "seconds": [
+          0.002629360998980701,
+          0.0026361803174950182
+        ]
+      },
+      {
+        "swizzle": 2,
+        "long": true,
+        "different_bytes": 0,
+        "seconds": [
+          0.0026662363282715282,
+          0.0026846943267931542
+        ]
+      },
+      {
+        "swizzle": 3,
+        "long": true,
+        "different_bytes": 0,
+        "seconds": [
+          0.002729374992971619,
+          0.002648166671860963
+        ]
+      },
+      {
+        "swizzle": 4,
+        "long": true,
+        "different_bytes": 0,
+        "seconds": [
+          0.002716111329694589,
+          0.002694472340711703
+        ]
+      }
+    ],
+    "baseline_after": [
+      0.002718055659594635,
+      0.002704152682175239
+    ]
+  },
+  {
+    "shape": [
+      4414,
+      4608,
+      12288
+    ],
+    "baseline": [
+      0.00283483334351331,
+      0.00276068066402028
+    ],
+    "variants": [
+      {
+        "swizzle": 0,
+        "long": false,
+        "different_bytes": 0,
+        "seconds": [
+          0.0027156109960439303,
+          0.0026818886787320175
+        ]
+      },
+      {
+        "swizzle": 1,
+        "long": false,
+        "different_bytes": 0,
+        "seconds": [
+          0.0027518333323920765,
+          0.002758902672212571
+        ]
+      },
+      {
+        "swizzle": 2,
+        "long": false,
+        "different_bytes": 0,
+        "seconds": [
+          0.0028354583385710916,
+          0.0028337083446482816
+        ]
+      },
+      {
+        "swizzle": 3,
+        "long": false,
+        "different_bytes": 0,
+        "seconds": [
+          0.002913777658250183,
+          0.0028697500044169524
+        ]
+      },
+      {
+        "swizzle": 4,
+        "long": false,
+        "different_bytes": 0,
+        "seconds": [
+          0.0028643193266664944,
+          0.002912680657270054
+        ]
+      },
+      {
+        "swizzle": 0,
+        "long": true,
+        "different_bytes": 0,
+        "seconds": [
+          0.002728180668782443,
+          0.0025289306649938226
+        ]
+      },
+      {
+        "swizzle": 1,
+        "long": true,
+        "different_bytes": 0,
+        "seconds": [
+          0.0026703750093777976,
+          0.002738486335147172
+        ]
+      },
+      {
+        "swizzle": 2,
+        "long": true,
+        "different_bytes": 0,
+        "seconds": [
+          0.0027481806658518813,
+          0.002668444338875512
+        ]
+      },
+      {
+        "swizzle": 3,
+        "long": true,
+        "different_bytes": 0,
+        "seconds": [
+          0.002823958328614632,
+          0.002880597331871589
+        ]
+      },
+      {
+        "swizzle": 4,
+        "long": true,
+        "different_bytes": 0,
+        "seconds": [
+          0.002959569334052503,
+          0.0028108053375035524
+        ]
+      }
+    ],
+    "baseline_after": [
+      0.0027026250027120113,
+      0.002798750007059425
+    ]
+  },
+  {
+    "shape": [
+      4414,
+      4608,
+      4608
+    ],
+    "baseline": [
+      0.0010842083332439263,
+      0.0010730556678026915
+    ],
+    "variants": [
+      {
+        "swizzle": 0,
+        "long": false,
+        "different_bytes": 0,
+        "seconds": [
+          0.0010340276639908552,
+          0.001021749999684592
+        ]
+      },
+      {
+        "swizzle": 1,
+        "long": false,
+        "different_bytes": 0,
+        "seconds": [
+          0.0010652916583543022,
+          0.001077736009998868
+        ]
+      },
+      {
+        "swizzle": 2,
+        "long": false,
+        "different_bytes": 0,
+        "seconds": [
+          0.001076000005317231,
+          0.0010676666667374473
+        ]
+      },
+      {
+        "swizzle": 3,
+        "long": false,
+        "different_bytes": 0,
+        "seconds": [
+          0.0011176110128872097,
+          0.0011001109960488975
+        ]
+      },
+      {
+        "swizzle": 4,
+        "long": false,
+        "different_bytes": 0,
+        "seconds": [
+          0.0011497916808972757,
+          0.001149777672253549
+        ]
+      },
+      {
+        "swizzle": 0,
+        "long": true,
+        "different_bytes": 0,
+        "seconds": [
+          0.0010195276505934696,
+          0.0010069723357446492
+        ]
+      },
+      {
+        "swizzle": 1,
+        "long": true,
+        "different_bytes": 0,
+        "seconds": [
+          0.0010512636702818174,
+          0.0010480276735809941
+        ]
+      },
+      {
+        "swizzle": 2,
+        "long": true,
+        "different_bytes": 0,
+        "seconds": [
+          0.0011356390120151143,
+          0.0010700833324032526
+        ]
+      },
+      {
+        "swizzle": 3,
+        "long": true,
+        "different_bytes": 0,
+        "seconds": [
+          0.0011144026648253202,
+          0.0011639999963032703
+        ]
+      },
+      {
+        "swizzle": 4,
+        "long": true,
+        "different_bytes": 0,
+        "seconds": [
+          0.0011488750072506566,
+          0.001087152670758466
+        ]
+      }
+    ],
+    "baseline_after": [
+      0.0010912083477402728,
+      0.001073194337853541
+    ]
+  }
+]

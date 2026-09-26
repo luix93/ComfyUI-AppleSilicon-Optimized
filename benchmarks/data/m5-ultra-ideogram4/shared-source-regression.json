@@ -1,0 +1,10 @@
+{
+  "bfloat": {
+    "identical": true,
+    "sha256": "20e5bc8d7780d11da9863463d553536044463bd28b0320bbb261bb759cc5063a"
+  },
+  "half": {
+    "identical": true,
+    "sha256": "ea971973a708584994f179298cf2ae8ae3d435343cdb98df7d9a8535d636217f"
+  }
+}

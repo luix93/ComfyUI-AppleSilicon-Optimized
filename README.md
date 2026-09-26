@@ -15,6 +15,7 @@
 | Z-Image Turbo, 1024×1024 / 8 steps | 7.94 s | **3.44 s** | 56.6% |
 | Flux.2 Klein 9B, text-to-image / 1024×1024 / 4 steps | 5.59 s† | **2.25 s** | 59.6% |
 | Flux.2 Klein 9B, image edit / 1024×1024 / 4 steps | 9.12 s† | **4.66 s** | 48.9% |
+| Ideogram 4, 1024×1024 / 12 steps / dual-model CFG | 43.89 s | **18.23 s** | 58.5% |
 | Krea2 Turbo, 1448×1448 / 8 steps + LoKr | 28.04 s | **13.69 s** | 51.2% |
 | Krea2 Turbo, same workflow without LoKr | 27.92 s | **13.80 s** | 50.6% |
 | Qwen-Image 2.1, 1024×1024 / 25 steps | 29.28 s | **12.59 s** | 57.0% |
@@ -43,6 +44,7 @@ the [40-step image-edit investigation](benchmarks/m5-ultra-qwen21-edit.md),
 the [LTX 2.5 video benchmark](benchmarks/m5-ultra-ltx25.md),
 the [further exact kernels and convolutional VAE comparison](benchmarks/m5-ultra-ltx25-followup.md),
 the [Wan 2.2 original and four-step LoRA results](benchmarks/m5-ultra-wan22.md),
+the [Ideogram 4 benchmark and exact attention changes](benchmarks/m5-ultra-ideogram4.md),
 and [startup settings](#pytorch-214-on-m5-ultra). This table tracks the latest
 validated results; earlier measurements remain below for reference.
 

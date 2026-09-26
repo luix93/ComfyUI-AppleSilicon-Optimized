@@ -1,0 +1,92 @@
+[
+  {
+    "file": "capture-native-profile-attention-3.pt",
+    "shape": [
+      1,
+      18,
+      4414,
+      256
+    ],
+    "mask": null,
+    "variant": "tile32",
+    "exact": true,
+    "max": 0.0,
+    "torch": 0.013035272902925499,
+    "candidate": 0.012737641649437137
+  },
+  {
+    "file": "capture-native-profile-attention-3.pt",
+    "shape": [
+      1,
+      18,
+      4414,
+      256
+    ],
+    "mask": null,
+    "variant": "tile64",
+    "exact": true,
+    "max": 0.0,
+    "torch": 0.013134824999724515,
+    "candidate": 0.012638068752130494
+  },
+  {
+    "file": "capture-native-profile-attention-3.pt",
+    "shape": [
+      1,
+      18,
+      4414,
+      256
+    ],
+    "mask": null,
+    "variant": "tile128",
+    "exact": true,
+    "max": 0.0,
+    "torch": 0.013127304200315848,
+    "candidate": 0.01257029795087874
+  },
+  {
+    "file": "capture-native-profile-attention-3.pt",
+    "shape": [
+      1,
+      18,
+      4414,
+      256
+    ],
+    "mask": null,
+    "variant": "partial1",
+    "exact": true,
+    "max": 0.0,
+    "torch": 0.013031250052154063,
+    "candidate": 0.012903154152445494
+  },
+  {
+    "file": "capture-native-profile-attention-3.pt",
+    "shape": [
+      1,
+      18,
+      4414,
+      256
+    ],
+    "mask": null,
+    "variant": "partial2",
+    "exact": true,
+    "max": 0.0,
+    "torch": 0.013159000000450762,
+    "candidate": 0.012579564601765014
+  },
+  {
+    "file": "capture-native-profile-attention-3.pt",
+    "shape": [
+      1,
+      18,
+      4414,
+      256
+    ],
+    "mask": null,
+    "variant": "partial4",
+    "exact": true,
+    "max": 0.0,
+    "torch": 0.013132187450537458,
+    "candidate": 0.013087335400632583
+  }
+]

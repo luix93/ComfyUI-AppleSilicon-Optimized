@@ -1,0 +1,122 @@
+[
+  {
+    "file": "capture-native-profile-attention-3.pt",
+    "shape": [
+      1,
+      18,
+      4414,
+      256
+    ],
+    "mask": null,
+    "variant": "barrier2",
+    "exact": true,
+    "max": 0.0,
+    "torch": 0.013122387501061894,
+    "candidate": 0.012861958300345578
+  },
+  {
+    "file": "capture-native-profile-attention-3.pt",
+    "shape": [
+      1,
+      18,
+      4414,
+      256
+    ],
+    "mask": null,
+    "variant": "barrier4",
+    "exact": true,
+    "max": 0.0,
+    "torch": 0.013131281250389294,
+    "candidate": 0.01281475625000894
+  },
+  {
+    "file": "capture-native-profile-attention-3.pt",
+    "shape": [
+      1,
+      18,
+      4414,
+      256
+    ],
+    "mask": null,
+    "variant": "barrier8",
+    "exact": true,
+    "max": 0.0,
+    "torch": 0.013114168701577,
+    "candidate": 0.012513527099508794
+  },
+  {
+    "file": "capture-native-profile-attention-3.pt",
+    "shape": [
+      1,
+      18,
+      4414,
+      256
+    ],
+    "mask": null,
+    "variant": "pv2",
+    "exact": true,
+    "max": 0.0,
+    "torch": 0.013017604150809348,
+    "candidate": 0.012529687548521906
+  },
+  {
+    "file": "capture-native-profile-attention-3.pt",
+    "shape": [
+      1,
+      18,
+      4414,
+      256
+    ],
+    "mask": null,
+    "variant": "pv4",
+    "exact": true,
+    "max": 0.0,
+    "torch": 0.013186889549251646,
+    "candidate": 0.012540747900493442
+  },
+  {
+    "file": "capture-native-profile-attention-3.pt",
+    "shape": [
+      1,
+      18,
+      4414,
+      256
+    ],
+    "mask": null,
+    "variant": "pv8",
+    "exact": true,
+    "max": 0.0,
+    "torch": 0.013216412550536915,
+    "candidate": 0.012551004148554055
+  },
+  {
+    "file": "capture-native-profile-attention-3.pt",
+    "shape": [
+      1,
+      18,
+      4414,
+      256
+    ],
+    "mask": null,
+    "variant": "apple8",
+    "exact": false,
+    "max": 2.9619140625,
+    "torch": 0.01338373955222778,
+    "candidate": 0.013978741699247621
+  },
+  {
+    "file": "capture-native-profile-attention-3.pt",
+    "shape": [
+      1,
+      18,
+      4414,
+      256
+    ],
+    "mask": null,
+    "variant": "no_unroll",
+    "exact": true,
+    "max": 0.0,
+    "torch": 0.013129799999296666,
+    "candidate": 0.016541943748597986
+  }
+]

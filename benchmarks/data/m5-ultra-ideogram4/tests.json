@@ -1,0 +1,6 @@
+{
+  "command": "PYTORCH_MPS_FAST_MATH=0 python -m pytest -q tests/test_ideogram4_exact.py tests/test_torch_mpp_qcache.py tests/test_torch_attention.py",
+  "passed": 57,
+  "seconds": 1.5,
+  "failed": 0
+}

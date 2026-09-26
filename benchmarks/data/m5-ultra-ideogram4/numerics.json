@@ -1,0 +1,22 @@
+{
+  "sampling_latents": {
+    "/0/samples": {
+      "new_vs_previous_exact": true,
+      "stock_vs_native_max_error": 6.628741264343262,
+      "stock_vs_native_rmse": 0.4275861978530884
+    },
+    "/1/samples": {
+      "new_vs_previous_exact": true,
+      "stock_vs_native_max_error": 6.628741264343262,
+      "stock_vs_native_rmse": 0.4275861978530884
+    }
+  },
+  "frames": {
+    "": {
+      "new_vs_previous_exact": true,
+      "stock_vs_native_max_error": 1.0,
+      "stock_vs_native_rmse": 0.09081915766000748,
+      "stock_vs_native_psnr": 20.83645060921792
+    }
+  }
+}

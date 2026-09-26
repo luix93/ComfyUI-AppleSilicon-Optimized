@@ -1,0 +1,137 @@
+[
+  {
+    "file": "capture-native-profile-attention-3.pt",
+    "shape": [
+      1,
+      18,
+      4414,
+      256
+    ],
+    "mask": null,
+    "variant": "group1",
+    "exact": true,
+    "max": 0.0,
+    "torch": 0.013104639601078816,
+    "candidate": 0.012578589550685138
+  },
+  {
+    "file": "capture-native-profile-attention-3.pt",
+    "shape": [
+      1,
+      18,
+      4414,
+      256
+    ],
+    "mask": null,
+    "variant": "group2",
+    "exact": true,
+    "max": 0.0,
+    "torch": 0.013205577098415234,
+    "candidate": 0.012413387501146645
+  },
+  {
+    "file": "capture-native-profile-attention-3.pt",
+    "shape": [
+      1,
+      18,
+      4414,
+      256
+    ],
+    "mask": null,
+    "variant": "group4",
+    "exact": true,
+    "max": 0.0,
+    "torch": 0.013294704200234264,
+    "candidate": 0.012402050002128817
+  },
+  {
+    "file": "capture-native-profile-attention-3.pt",
+    "shape": [
+      1,
+      18,
+      4414,
+      256
+    ],
+    "mask": null,
+    "variant": "group8",
+    "exact": true,
+    "max": 0.0,
+    "torch": 0.013210597902070732,
+    "candidate": 0.012408533351845108
+  },
+  {
+    "file": "capture-native-profile-attention-3.pt",
+    "shape": [
+      1,
+      18,
+      4414,
+      256
+    ],
+    "mask": null,
+    "variant": "simd1",
+    "exact": true,
+    "max": 0.0,
+    "torch": 0.013181139552034437,
+    "candidate": 0.012517999997362493
+  },
+  {
+    "file": "capture-native-profile-attention-3.pt",
+    "shape": [
+      1,
+      18,
+      4414,
+      256
+    ],
+    "mask": null,
+    "variant": "simd2",
+    "exact": true,
+    "max": 0.0,
+    "torch": 0.013239758351119235,
+    "candidate": 0.012469714600592851
+  },
+  {
+    "file": "capture-native-profile-attention-3.pt",
+    "shape": [
+      1,
+      18,
+      4414,
+      256
+    ],
+    "mask": null,
+    "variant": "simd4",
+    "exact": true,
+    "max": 0.0,
+    "torch": 0.013209808300598525,
+    "candidate": 0.012577781200525351
+  },
+  {
+    "file": "capture-native-profile-attention-3.pt",
+    "shape": [
+      1,
+      18,
+      4414,
+      256
+    ],
+    "mask": null,
+    "variant": "simd8",
+    "exact": true,
+    "max": 0.0,
+    "torch": 0.01329662709904369,
+    "candidate": 0.012600127051700837
+  },
+  {
+    "file": "capture-native-profile-attention-3.pt",
+    "shape": [
+      1,
+      18,
+      4414,
+      256
+    ],
+    "mask": null,
+    "variant": "qk_loop",
+    "exact": true,
+    "max": 0.0,
+    "torch": 0.013248570798896252,
+    "candidate": 0.008240622948505916
+  }
+]

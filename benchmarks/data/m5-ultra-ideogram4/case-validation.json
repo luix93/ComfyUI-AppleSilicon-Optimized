@@ -1,0 +1,14 @@
+{
+  "seed-check": {
+    "sampling_conditioning": true,
+    "sampling_noise": true,
+    "sampling_latents": true,
+    "frames": true
+  },
+  "prompt-check": {
+    "sampling_conditioning": true,
+    "sampling_noise": true,
+    "sampling_latents": true,
+    "frames": true
+  }
+}

@@ -14,10 +14,12 @@ modulation/norm sandwich the Z-Image sprint already built kernels for:
 The FFN's silu(w1)*w3 gating is already fused: Ideogram imports Lumina's
 FeedForward class, which lumina_attn_fast patches at class level.
 
-qkv/attention/o stay untouched here (attention routing is the router's
-job; the fused qkv+QKNorm+MRoPE kernel needs a D=256 variant — future
-stage). Per-call guards fall back to the original forward; kill switch
-ASFP8_IDEOGRAM_FAST=0.
+The legacy three-tensor RoPE interface uses the dit_ext preparation below.
+Current ComfyUI's matrix interface uses ideogram4_exact on the validated
+M5 Ultra / PyTorch 2.14 build: exact Q/K normalization, split-half RoPE,
+layouts and D=256 attention scheduling. The selected attention interface
+retains routing and overrides. Per-call guards retain the preceding path;
+ASFP8_IDEOGRAM_FAST=0 disables this patch and its exact additions.
 """
 
 import os
@@ -271,6 +273,9 @@ def install():
         print(f"{TAG} ATTRIBUTION TRACE ON (sync timers — wall time inflated).")
     elif hasattr(_kernel, "qkv_norm_rope_sh"):
         IM.Ideogram4Attention.forward = _fast_attn_forward
+    if os.environ.get("ASFP8_IDEO_TRACE") != "1":
+        from . import ideogram4_exact
+        ideogram4_exact.install()
     _installed = True
     print(f"{TAG} Ideogram 4 fused block glue on MPS: RMSNorm+modulate and "
           f"gate+residual via Metal (FFN silu-gating fused via the shared "

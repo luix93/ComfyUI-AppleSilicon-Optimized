@@ -33,7 +33,7 @@ def _hardware():
         return False
 
 
-def _source(dtype='bfloat'):
+def _source(dtype='bfloat', *, head_dim=128, cache_query=True):
     root = Path(torch.__file__).parent / 'include'
     seen = set()
     def expand(name):
@@ -69,12 +69,14 @@ def _source(dtype='bfloat'):
           }
 '''
     assert body.count(before) == body.count(old_load) == 1
-    body = body.replace(before, load + before).replace(
-        '          MPPTile<T, 1, 1, QFrag_t> Qtile;',
-        '          thread auto& Qtile = Qcache[id];').replace(old_load, '')
+    if cache_query:
+        body = body.replace(before, load + before).replace(
+            '          MPPTile<T, 1, 1, QFrag_t> Qtile;',
+            '          thread auto& Qtile = Qcache[id];').replace(old_load, '')
     assert dtype in ('bfloat', 'half')
+    assert head_dim in (128, 256)
     return (prefix + body + '\ninstantiate_kernel("custom_attn", prefill_attention_mpp, '
-            f'{dtype}, 64, 32, 128, 4, 1, false, false, true, {dtype});\n')
+            f'{dtype}, 64, 32, {head_dim}, 4, 1, false, false, true, {dtype});\n')
 
 
 @functools.lru_cache(maxsize=128)
