@@ -1,0 +1,237 @@
+{
+  "1": {
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "YuE2 \u00b7 INT8 checkpoint"
+    },
+    "inputs": {
+      "ckpt_name": "yue2/yue2_3b_int8_convrot.safetensors"
+    }
+  },
+  "2": {
+    "class_type": "LoraLoader",
+    "_meta": {
+      "title": "Instrumental planner \u00b7 CLIP only"
+    },
+    "inputs": {
+      "model": [
+        "1",
+        0
+      ],
+      "clip": [
+        "1",
+        1
+      ],
+      "lora_name": "yue2/ar_lora_inst_v3abc_comfyui.safetensors",
+      "strength_model": 0.0,
+      "strength_clip": 1.0
+    }
+  },
+  "3": {
+    "class_type": "LoraLoaderModelOnly",
+    "_meta": {
+      "title": "Real-audio decoder \u00b7 MODEL only"
+    },
+    "inputs": {
+      "model": [
+        "1",
+        0
+      ],
+      "lora_name": "yue2/nar_lora_joint_v4_comfyui.safetensors",
+      "strength_model": 1.0
+    }
+  },
+  "4": {
+    "class_type": "PrimitiveStringMultiline",
+    "_meta": {
+      "title": "Style \u00b7 genre, instruments, mood, BPM"
+    },
+    "inputs": {
+      "value": "cinematic ambient, piano, analog synthesizer, warm strings, spacious reverb, instrumental, slow build, 80 BPM"
+    }
+  },
+  "5": {
+    "class_type": "PrimitiveStringMultiline",
+    "_meta": {
+      "title": "Instrumental section plan \u00b7 real line breaks"
+    },
+    "inputs": {
+      "value": "[intro]\n[verse]\n[chorus]\n[bridge]\n[chorus]\n[outro]"
+    }
+  },
+  "6": {
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "Shared seed \u00b7 all generation stages"
+    },
+    "inputs": {
+      "value": 21
+    }
+  },
+  "7": {
+    "class_type": "YuE2GenerateABC",
+    "_meta": {
+      "title": "1 \u00b7 Write full score"
+    },
+    "inputs": {
+      "style": [
+        "4",
+        0
+      ],
+      "lyrics": [
+        "5",
+        0
+      ],
+      "seed": [
+        "6",
+        0
+      ],
+      "mode": "full",
+      "max_abc_tokens": 8192,
+      "temperature": 0.7,
+      "top_p": 0.9,
+      "top_k": 30,
+      "repetition_penalty": 1.005,
+      "penalty_window": 100,
+      "clip": [
+        "2",
+        1
+      ]
+    }
+  },
+  "8": {
+    "class_type": "YuE2GenerateMusic",
+    "_meta": {
+      "title": "2 \u00b7 Generate music tokens"
+    },
+    "inputs": {
+      "style": [
+        "4",
+        0
+      ],
+      "lyrics": [
+        "5",
+        0
+      ],
+      "abc": [
+        "7",
+        0
+      ],
+      "seed": [
+        "6",
+        0
+      ],
+      "mode": "full",
+      "max_duration": 120,
+      "temperature": 1,
+      "top_p": 0.95,
+      "top_k": 100,
+      "repetition_penalty": 1.2,
+      "cfg_scale": 1,
+      "clip": [
+        "2",
+        1
+      ]
+    }
+  },
+  "9": {
+    "class_type": "PreviewAny",
+    "_meta": {
+      "title": "Generated ABC score"
+    },
+    "inputs": {
+      "source": [
+        "7",
+        0
+      ]
+    }
+  },
+  "10": {
+    "class_type": "ConditioningZeroOut",
+    "_meta": {
+      "title": "Zero conditioning \u00b7 CFG 1"
+    },
+    "inputs": {
+      "conditioning": [
+        "8",
+        0
+      ]
+    }
+  },
+  "11": {
+    "class_type": "EmptyYuE2LatentAudio",
+    "_meta": {
+      "title": "Use generated duration"
+    },
+    "inputs": {
+      "seconds": [
+        "8",
+        1
+      ],
+      "batch_size": 1
+    }
+  },
+  "12": {
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "3 \u00b7 Acoustic synthesis"
+    },
+    "inputs": {
+      "seed": [
+        "6",
+        0
+      ],
+      "steps": 32,
+      "cfg": 1,
+      "sampler_name": "dpm_2",
+      "scheduler": "sgm_uniform",
+      "denoise": 1,
+      "model": [
+        "3",
+        0
+      ],
+      "positive": [
+        "8",
+        0
+      ],
+      "negative": [
+        "10",
+        0
+      ],
+      "latent_image": [
+        "11",
+        0
+      ]
+    }
+  },
+  "13": {
+    "class_type": "VAEDecodeAudio",
+    "_meta": {
+      "title": "4 \u00b7 Decode stereo audio"
+    },
+    "inputs": {
+      "samples": [
+        "12",
+        0
+      ],
+      "vae": [
+        "1",
+        2
+      ]
+    }
+  },
+  "14": {
+    "class_type": "SaveAudioAdvanced",
+    "_meta": {
+      "title": "Save \u00b7 instrumental FLAC"
+    },
+    "inputs": {
+      "audio": [
+        "13",
+        0
+      ],
+      "filename_prefix": "audio/YuE2_Mothersuperior_Instrumental",
+      "format": "flac"
+    }
+  }
+}

@@ -1,0 +1,405 @@
+{
+  "description": "Locally maintained derivatives. These hashes identify upstream inputs, not current fork contents. Pinned vendor files remain parity oracles.",
+  "upstream": {
+    "motioncache": {
+      "repository": "ComfyUI-MiniMax-H3-MotionCache",
+      "commit": "bc2894102b2486661884371259a27080b0b137bf"
+    },
+    "spectrum_h3": {
+      "repository": "ComfyUI-Spectrum-MiniMax-H3",
+      "commit": "5161f0457bc8c52535212d6783eee73f439e1537"
+    },
+    "veda": {
+      "repository": "https://github.com/veda-sparse/Veda-on-ComfyUI",
+      "commit": "fd59c7277ccc37ebf1a8f6823474b8c2ef2e33a0"
+    }
+  },
+  "derived_files": {
+    "spectrum/replay_spectral_alpha_shadow.py": {
+      "package": "spectrum_h3",
+      "source": "replay_spectral_alpha_shadow.py",
+      "source_sha256": "2a3549877777ec317e805c0db321efc01fce451cef39c5df15f780cfda29e9b4"
+    },
+    "spectrum/trust_probe.py": {
+      "package": "spectrum_h3",
+      "source": "trust_probe.py",
+      "source_sha256": "d1df609764badda6ca238bb454f413296359b983416170fe7dfd3e9e0f9fa9f1"
+    },
+    "spectrum/core_bsa_compat.py": {
+      "package": "spectrum_h3",
+      "source": "core_bsa_compat.py",
+      "source_sha256": "94bf4ecdcee19d1d733c6627a10c1d9af1ca177f19906c0fc2fcafcd5f5a8a02"
+    },
+    "spectrum/bsa_transition_probe_compat.py": {
+      "package": "spectrum_h3",
+      "source": "bsa_transition_probe_compat.py",
+      "source_sha256": "6f998f3ee1f2232aff0f63e314139bee2365a659364747837fa0d37c9ec4911d"
+    },
+    "spectrum/refinement_compat.py": {
+      "package": "spectrum_h3",
+      "source": "refinement_compat.py",
+      "source_sha256": "c1d40cea15c22e04a624b9df40a8d9092969b93e11a2dc99f4f5de765694449f"
+    },
+    "spectrum/forecast.py": {
+      "package": "spectrum_h3",
+      "source": "forecast.py",
+      "source_sha256": "8e5aaa82044cf977f985abd6a2bf800818f130c72f0dcb7e7323b18ab5c0fa9c"
+    },
+    "spectrum/config.py": {
+      "package": "spectrum_h3",
+      "source": "config.py",
+      "source_sha256": "b375b26ecbea1d1aa7c7eb25290ea0d1beebb537268c6591957e621e0601ed18"
+    },
+    "spectrum/core_bsa_forecast_recovery.py": {
+      "package": "spectrum_h3",
+      "source": "core_bsa_forecast_recovery.py",
+      "source_sha256": "487f54021d548ce49ac10496b936008f4f880faff61bceb8d6b9d9f0154e283c"
+    },
+    "spectrum/generic_correction_runtime.py": {
+      "package": "spectrum_h3",
+      "source": "generic_correction_runtime.py",
+      "source_sha256": "b974b831584f005d99ca96c8abd8b79d98a20dbf927246bf7af8c095211c7e4e"
+    },
+    "spectrum/LICENSE": {
+      "package": "spectrum_h3",
+      "source": "LICENSE",
+      "source_sha256": "1971f52704b3eba9020175f2ccf1f55bef2a3179bfb2d09dd49fed7bbbc2437d"
+    },
+    "spectrum/external_patch_visual_reference.py": {
+      "package": "spectrum_h3",
+      "source": "external_patch_visual_reference.py",
+      "source_sha256": "d554da56ddbac1b8fcb25fa030184e78d459c0c581bfceac5f1b89559f4d3fc6"
+    },
+    "spectrum/generic_correction_worker.py": {
+      "package": "spectrum_h3",
+      "source": "generic_correction_worker.py",
+      "source_sha256": "4cc4bac719b2b7e47cfb6f813ce74448e4e9b02165d0732767adfad942701845"
+    },
+    "spectrum/postrun_safety.py": {
+      "package": "spectrum_h3",
+      "source": "postrun_safety.py",
+      "source_sha256": "9340c9a6c1b0cf20f351226f96f2a6dd0aeac773ceebd1e2b375346437a711e9"
+    },
+    "spectrum/bsa_transition_probe_manual.py": {
+      "package": "spectrum_h3",
+      "source": "bsa_transition_probe_manual.py",
+      "source_sha256": "8fe0e35d4805c2140ba99dc4a0c07984a52269723756789d8b16ea25775e9398"
+    },
+    "spectrum/minimax_h3.py": {
+      "package": "spectrum_h3",
+      "source": "minimax_h3.py",
+      "source_sha256": "02e97ab21b899853fa2fb9bcd65e8a2d64efbc681bec17d578559c50f20d16d0"
+    },
+    "spectrum/generic_correction_controller.py": {
+      "package": "spectrum_h3",
+      "source": "generic_correction_controller.py",
+      "source_sha256": "b5671f62da37e5801d96aeb7f6497ef2305646c567b72f0171342c3732f8c1e2"
+    },
+    "spectrum/model_aware.py": {
+      "package": "spectrum_h3",
+      "source": "model_aware.py",
+      "source_sha256": "9463453fe3786935a6c8691c3457976d74708177f4106a910dd4b781f95990f1"
+    },
+    "spectrum/generic_correction_research.py": {
+      "package": "spectrum_h3",
+      "source": "generic_correction_research.py",
+      "source_sha256": "b32dc00353aaf255c91e1359da79e1e2e3c481c68a140ad6ec4c24752681a121"
+    },
+    "spectrum/generic_correction_core.py": {
+      "package": "spectrum_h3",
+      "source": "generic_correction_core.py",
+      "source_sha256": "30e0de1319d03eaceb98da0aa78e17ff8dddde6370f287a9680badcdf8ed5716"
+    },
+    "spectrum/er_sde_offline_replay_safety.py": {
+      "package": "spectrum_h3",
+      "source": "er_sde_offline_replay_safety.py",
+      "source_sha256": "bb5591a6fc61be654164962c60c21bdc987f854548115fe0d2dd2646623292d3"
+    },
+    "spectrum/rollback.py": {
+      "package": "spectrum_h3",
+      "source": "rollback.py",
+      "source_sha256": "60f04164c0c54a337c2e5b27131b931252362ba6ecf3beb24eea0f760291b07c"
+    },
+    "spectrum/replay_calibration.py": {
+      "package": "spectrum_h3",
+      "source": "replay_calibration.py",
+      "source_sha256": "8e8a415d6561d6aad21be9ab21cffdc54e36b8e21fa6fef18c739b0fd55adbf9"
+    },
+    "spectrum/core_bsa_preprocess_compat.py": {
+      "package": "spectrum_h3",
+      "source": "core_bsa_preprocess_compat.py",
+      "source_sha256": "fbfaf645b1369d02b590bc4640a5a75db72801fc699d6878b25da61d729d93be"
+    },
+    "spectrum/runtime.py": {
+      "package": "spectrum_h3",
+      "source": "runtime.py",
+      "source_sha256": "0bd77c4649828209439519eb5f6cd7305ee16a59f3d6d5239858ebd31c4ba7bc"
+    },
+    "spectrum/replay_generic_correction_gate.py": {
+      "package": "spectrum_h3",
+      "source": "replay_generic_correction_gate.py",
+      "source_sha256": "5bbf3c71ec1a7abedef75edcf52e372ad8c7a87d0caf97027105565d712cf597"
+    },
+    "spectrum/source_code_audit.py": {
+      "package": "spectrum_h3",
+      "source": "source_code_audit.py",
+      "source_sha256": "2d7fe202725ebdfb59ccf063fb26207e15a36015a122ef354871d0b69c537769"
+    },
+    "spectrum/experiments.py": {
+      "package": "spectrum_h3",
+      "source": "experiments.py",
+      "source_sha256": "7c29591b74e2a2a97ed331dc024a18da92d327b1d3677ab99831a244da465a17"
+    },
+    "spectrum/core_bsa_loader_compat.py": {
+      "package": "spectrum_h3",
+      "source": "core_bsa_loader_compat.py",
+      "source_sha256": "e1318558eb599f87d5ed6b78dbcfc3b56a904321809709770f6b85c2ffd27add"
+    },
+    "spectrum/external_patch_hardening.py": {
+      "package": "spectrum_h3",
+      "source": "external_patch_hardening.py",
+      "source_sha256": "136169c29df6eae177cfae42d8629a3b46cc9c548540501272336139c51734a3"
+    },
+    "spectrum/replay_calibration_provenance.py": {
+      "package": "spectrum_h3",
+      "source": "replay_calibration_provenance.py",
+      "source_sha256": "54dc9d036f5d4fd3373e2736673f91cae71347c8a5d48351c9aa111af5cc04cd"
+    },
+    "spectrum/bsa_transition_probe.py": {
+      "package": "spectrum_h3",
+      "source": "bsa_transition_probe.py",
+      "source_sha256": "3cbe0938aa80925eacf2319db0aa89de4621db435e4495809cf855a182fe4801"
+    },
+    "spectrum/replay_calibration_validation.py": {
+      "package": "spectrum_h3",
+      "source": "replay_calibration_validation.py",
+      "source_sha256": "6aea41fee0339e8087be4659ef4610eb13a47cddcb6fc454c0a973526ee80bb8"
+    },
+    "spectrum/sampling.py": {
+      "package": "spectrum_h3",
+      "source": "sampling.py",
+      "source_sha256": "48e15822c9d8842104fdb286e6bc199cea5e56ee7a48cf3550a332bf9bbc16c0"
+    },
+    "spectrum/generic_correction.py": {
+      "package": "spectrum_h3",
+      "source": "generic_correction.py",
+      "source_sha256": "7d5fd8213b7339dec70e13fb76e516de26c3b5d5339b4a43a1ab641451c8d111"
+    },
+    "spectrum/generic_correction_evaluator.py": {
+      "package": "spectrum_h3",
+      "source": "generic_correction_evaluator.py",
+      "source_sha256": "11942a1991d71a652ede6482de84a120a198990a2f480576924aeb414c720587"
+    },
+    "spectrum/er_sde_policy.py": {
+      "package": "spectrum_h3",
+      "source": "er_sde_policy.py",
+      "source_sha256": "55e4728d1a09c0df76957b9f79a469b154078d6131587dd42084e2c50ede8af1"
+    },
+    "spectrum/refdelta_interop.py": {
+      "package": "spectrum_h3",
+      "source": "refdelta_interop.py",
+      "source_sha256": "db2cc28a4028ca78dd1a2461210886b58a959e39e09bc9e0c510423ce9c27606"
+    },
+    "spectrum/er_sde_stochastic.py": {
+      "package": "spectrum_h3",
+      "source": "er_sde_stochastic.py",
+      "source_sha256": "9b265193af890986a12a364fddc4c083acce27601bdd5a082d3c3a70b0676006"
+    },
+    "spectrum/COPYRIGHT": {
+      "package": "spectrum_h3",
+      "source": "COPYRIGHT",
+      "source_sha256": "7827ebccf4f840395f915769dbef9b482a898bc53bf54ebadeec25b50e59825f"
+    },
+    "spectrum/core_bsa_diagnostics.py": {
+      "package": "spectrum_h3",
+      "source": "core_bsa_diagnostics.py",
+      "source_sha256": "b6d89f127218d3a55240ff15cd48c15db491de1a81a35ad3348cb1de97c39c3d"
+    },
+    "spectrum/replay_trust_shadow.py": {
+      "package": "spectrum_h3",
+      "source": "replay_trust_shadow.py",
+      "source_sha256": "4f956f9e045c0cd12daba64c03c738171f15e6ebccf995be647bd8a9f7d61cef"
+    },
+    "spectrum/replay_shadow_composition.py": {
+      "package": "spectrum_h3",
+      "source": "replay_shadow_composition.py",
+      "source_sha256": "fb376cc70186a6d2ff6bff2880244cf35d2f209e2c7ffa4987a438b7c5a73cb7"
+    },
+    "spectrum/core_bsa_flow_compat.py": {
+      "package": "spectrum_h3",
+      "source": "core_bsa_flow_compat.py",
+      "source_sha256": "bf8834edbcf485b686659de4d1cbdfef065ea97cc177ba7e8cf7edf7ca80c14a"
+    },
+    "spectrum/generic_correction_calibration.py": {
+      "package": "spectrum_h3",
+      "source": "generic_correction_calibration.py",
+      "source_sha256": "0bcbbde2fdea70afb6f0dd16463687b1ddbc9443ae8ad7f55c8b39d315591253"
+    },
+    "spectrum/replay_spectral_mixture_shadow.py": {
+      "package": "spectrum_h3",
+      "source": "replay_spectral_mixture_shadow.py",
+      "source_sha256": "53a18d20129bbd74e6675675fa18be3f555000a13a306a101eeea7a1468fdaa1"
+    },
+    "spectrum/er_sde_ksampler_contract.py": {
+      "package": "spectrum_h3",
+      "source": "er_sde_ksampler_contract.py",
+      "source_sha256": "9c7cf3311593135a784d3b2f658d5a0f14cc2e436b65e8dad940696a802f0730"
+    },
+    "spectrum/backend_history.py": {
+      "package": "spectrum_h3",
+      "source": "backend_history.py",
+      "source_sha256": "31e5d3e45b26cd1dc9885b030b3ffd6a301699cd4b4da4db9a418fd0ef17caca"
+    },
+    "spectrum/comfy_compiler_compat.py": {
+      "package": "spectrum_h3",
+      "source": "comfy_compiler_compat.py",
+      "source_sha256": "d61918c61adc9354e8dcc1da59112df473a62302b5ac2f66c292e80f80d1a0c4"
+    },
+    "spectrum/generic_correction_topology.py": {
+      "package": "spectrum_h3",
+      "source": "generic_correction_topology.py",
+      "source_sha256": "89c5e6091d81d3e1ac90046647194f50362a8ef1da8c7df96a852a6bb02cd5ff"
+    },
+    "spectrum/external_patch_compat.py": {
+      "package": "spectrum_h3",
+      "source": "external_patch_compat.py",
+      "source_sha256": "076f9af35820d87c57ed7c31b5996bbcf223e606d51da9c272eb7aeaacf7b036"
+    },
+    "spectrum/replay_component_shadow.py": {
+      "package": "spectrum_h3",
+      "source": "replay_component_shadow.py",
+      "source_sha256": "3a2098865f2b0ec8ee15462c4e4c614b46f523a8fa5394b995b88a48f9974ae9"
+    },
+    "spectrum/compat.py": {
+      "package": "spectrum_h3",
+      "source": "__init__.py",
+      "source_sha256": "48bff4800f8f0a64d0354874d1a7951f0a6c2bae23a4126317e347e2fd51850e"
+    },
+    "motion/LICENSE": {
+      "package": "motioncache",
+      "source": "LICENSE",
+      "source_sha256": "165b5ddf9e83f40e2b0cf9246b40463d2d9937ae901985264b93c6c15f40a739"
+    },
+    "motion/runtime.py": {
+      "package": "motioncache",
+      "source": "motion_cache.py",
+      "source_sha256": "1c4b5107a84efba0eb602af38fb4526cae73f15e7b6c13220670c638588ef1a8"
+    },
+    "veda/predictors.py": {
+      "package": "veda",
+      "source": "predictors.py",
+      "source_sha256": "872c3ec3b37c1604a1778082b3aa3f10afc60d61c50fa7776be9d18814dcac01"
+    },
+    "veda/LICENSE": {
+      "package": "veda",
+      "source": "LICENSE",
+      "source_sha256": "6a651fd959d3457a390cf75e4abadc30801c4e5cdad3cb3ccf7ca0a1725a789d"
+    },
+    "veda/comfy_patch.py": {
+      "package": "veda",
+      "source": "comfy_patch.py",
+      "source_sha256": "f364d8dd197a10a407929e24a1f5486b65001b7517fea89b3c0f29d47bcac973"
+    },
+    "veda/hardware.py": {
+      "package": "veda",
+      "source": "hardware.py",
+      "source_sha256": "51e12c4b5b2e116867e84233c2bcf75d01df2ddbd5a5f5f1a88d3779e06a543e"
+    },
+    "veda/settings.py": {
+      "package": "veda",
+      "source": "settings.py",
+      "source_sha256": "00b9086a69a486ca1348dd6d84da82fbc0dd19fd079ff0dd986e8ad98ac5d34f"
+    },
+    "veda/status.py": {
+      "package": "veda",
+      "source": "status.py",
+      "source_sha256": "da3533ebc97b15ec513ee1fcc3db7aad3c627f05d72255eedb5daa93fcbb1cac"
+    },
+    "veda/core/predictor.py": {
+      "package": "veda",
+      "source": "core/predictor.py",
+      "source_sha256": "668efd5e52af86752cb5ecb47044ddc0a7b55f9f0c4720c1c39a0afc1a058d4f"
+    },
+    "veda/core/bundle.py": {
+      "package": "veda",
+      "source": "core/bundle.py",
+      "source_sha256": "d62e6497339996399b64678baf6da8e8f647052bbd33a28773c9660129a99044"
+    },
+    "veda/core/h3_layout.py": {
+      "package": "veda",
+      "source": "core/h3_layout.py",
+      "source_sha256": "e8936edd23ad09b627e12371a8e061ffb68c5c1249a2c4a6b4ec3c1ee37eb360"
+    },
+    "veda/core/engine.py": {
+      "package": "veda",
+      "source": "core/engine.py",
+      "source_sha256": "c65264d964621e7646d050dc8134e3d8639485cbbc708811d8c0ac1fc46f40de"
+    },
+    "veda/core/plans.py": {
+      "package": "veda",
+      "source": "core/plans.py",
+      "source_sha256": "dfe533a21bebedbbc5569d8c83346806be01b0ea2f0e749ffe616c82520f9e10"
+    },
+    "veda/core/reference.py": {
+      "package": "veda",
+      "source": "core/reference.py",
+      "source_sha256": "610bfae2f609103d29669f0fd7d935b555f7317148f9d120e26d65cb8f4ae087"
+    },
+    "veda/core/tiling.py": {
+      "package": "veda",
+      "source": "core/tiling.py",
+      "source_sha256": "8c7be2feede3e4cda1b11849135c71bfdee1b3ab667befa98e0062b1561badda"
+    },
+    "veda/core/selection.py": {
+      "package": "veda",
+      "source": "core/selection.py",
+      "source_sha256": "4a32cbffb50a7af87d321004d63549ae654edd1a8a6f0199d09aaf1b098b2d82"
+    },
+    "veda/backends/mlx_gather.py": {
+      "package": "veda",
+      "source": "backends/mlx_gather.py",
+      "source_sha256": "281c525c1fd92d25aa5f7b9c9e0867cd7f14c62c53f414a2a1ecb9e337023552"
+    },
+    "veda/backends/base.py": {
+      "package": "veda",
+      "source": "backends/base.py",
+      "source_sha256": "6df8df683d12e348dc988a93ee0d834bd7e34fde2af4aa17353142b37db5b2df"
+    },
+    "spectrum/api.py": {
+      "package": "spectrum_h3",
+      "source": "nodes.py",
+      "source_sha256": "9d45b50f93cc1b5ac19760a6e19a07c03aee37c644f886bbf16eec53091bd447"
+    }
+  },
+  "local_files": {
+    "veda/runtime.py": "Extracted from our previously validated minimax_h3_veda.py; explicit AppleVedaEngine and cached resident projection-byte accounting.",
+    "motion/__init__.py": "Internal runtime namespace.",
+    "spectrum/__init__.py": "Internal runtime namespace without upstream node registration.",
+    "veda/__init__.py": "Internal runtime namespace.",
+    "veda/backends/__init__.py": "Explicit Apple backends only; no global registry.",
+    "veda/core/__init__.py": "Internal predictor core namespace."
+  },
+  "changes": {
+    "motion": [
+      "direct model API; no upstream ComfyNode schemas",
+      "lazy ComfyUI imports",
+      "keyword diffusion-model calls",
+      "restore original sampler options if prepare raises",
+      "batch scalar readbacks without altering reductions, scalar arithmetic or reuse thresholds"
+    ],
+    "spectrum": [
+      "direct measured-preset API",
+      "compatibility stack scoped to our runtime classes and initialized when applied",
+      "exclude public nodes and objective-media modules",
+      "isolated worker uses pack-specific namespace"
+    ],
+    "veda": [
+      "explicit Apple backend selection; remove generic resolver/public apply",
+      "retain trained predictor/parsing/tiling/selection arithmetic",
+      "dedicated bounded Apple execution class",
+      "remove generic CUDA allocator/attention loop",
+      "cache projection resident-byte count and reset at cleanup",
+      "log diagnostics through our pack"
+    ]
+  }
+}

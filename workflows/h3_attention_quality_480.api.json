@@ -1,0 +1,222 @@
+{
+  "92": {
+    "inputs": {
+      "filename_prefix": "h3_attention_quality_480",
+      "format": "auto",
+      "format.codec": "auto",
+      "codec": "auto",
+      "video": [
+        "140:130",
+        0
+      ]
+    },
+    "class_type": "SaveVideo",
+    "_meta": {
+      "title": "Save Video"
+    }
+  },
+  "140:119": {
+    "inputs": {
+      "vae_name": "minimax_h3_video_vae_fp16.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE"
+    }
+  },
+  "140:120": {
+    "inputs": {
+      "vae_name": "minimax_h3_audio_vae_fp32.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE"
+    }
+  },
+  "140:121": {
+    "inputs": {
+      "samples": [
+        "140:125",
+        0
+      ],
+      "vae": [
+        "140:120",
+        0
+      ]
+    },
+    "class_type": "VAEDecodeAudio",
+    "_meta": {
+      "title": "VAE Decode Audio"
+    }
+  },
+  "140:122": {
+    "inputs": {
+      "samples": [
+        "140:125",
+        0
+      ],
+      "vae": [
+        "140:119",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "140:123": {
+    "inputs": {
+      "sampler_name": "res_multistep"
+    },
+    "class_type": "KSamplerSelect",
+    "_meta": {
+      "title": "KSamplerSelect"
+    }
+  },
+  "140:124": {
+    "inputs": {
+      "scheduler": "simple",
+      "steps": 20,
+      "denoise": 1.0,
+      "model": [
+        "140:127",
+        0
+      ]
+    },
+    "class_type": "BasicScheduler",
+    "_meta": {
+      "title": "BasicScheduler"
+    }
+  },
+  "140:125": {
+    "inputs": {
+      "noise": [
+        "140:129",
+        0
+      ],
+      "guider": [
+        "140:126",
+        0
+      ],
+      "sampler": [
+        "140:123",
+        0
+      ],
+      "sigmas": [
+        "140:124",
+        0
+      ],
+      "latent_image": [
+        "140:131",
+        1
+      ]
+    },
+    "class_type": "SamplerCustomAdvanced",
+    "_meta": {
+      "title": "SamplerCustomAdvanced"
+    }
+  },
+  "140:126": {
+    "inputs": {
+      "model": [
+        "H3_attention_audit",
+        0
+      ],
+      "conditioning": [
+        "140:131",
+        0
+      ]
+    },
+    "class_type": "BasicGuider",
+    "_meta": {
+      "title": "Basic Guider"
+    }
+  },
+  "140:127": {
+    "inputs": {
+      "unet_name": "Minimax-H3/minimax_h3_fl2va_pruned_int8_convrot.safetensors",
+      "weight_dtype": "default"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "Load Diffusion Model"
+    }
+  },
+  "140:128": {
+    "inputs": {
+      "clip_name": "qwen3vl_32b_minimax_h3_int8_convrot.safetensors",
+      "type": "minimax",
+      "device": "default"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "Load CLIP"
+    }
+  },
+  "140:129": {
+    "inputs": {
+      "noise_seed": 812764035
+    },
+    "class_type": "RandomNoise",
+    "_meta": {
+      "title": "RandomNoise"
+    }
+  },
+  "140:130": {
+    "inputs": {
+      "fps": 24.0,
+      "bit_depth": 8,
+      "color_space": "sRGB",
+      "codec": "none",
+      "images": [
+        "140:122",
+        0
+      ],
+      "audio": [
+        "140:121",
+        0
+      ]
+    },
+    "class_type": "CreateVideo",
+    "_meta": {
+      "title": "Create Video"
+    }
+  },
+  "140:131": {
+    "inputs": {
+      "prompt": "A continuous cinematic shot inside a quiet sunlit study. The camera slowly dollies forward toward a wooden desk, producing a gentle steady push-in with clear natural parallax. On the desk stand a single red ceramic vase and a small brass globe. In the background, a round white wall clock with dark hands hangs above a wooden bookshelf containing upright blue, green and red books. Three distinct rectangular framed landscape photographs hang in a straight horizontal row on the wall. A leafy potted plant stands beside the bookshelf. The square checkerboard floor and all furniture remain rigid and stationary throughout. No people, no object movement, no scene cuts. Natural daylight, realistic fine detail, stable geometry and consistent colors. Quiet room ambience, no music.",
+      "width": 864,
+      "height": 480,
+      "length": 124,
+      "clip": [
+        "140:128",
+        0
+      ],
+      "vae": [
+        "140:119",
+        0
+      ]
+    },
+    "class_type": "MiniMaxH3ImageToVideo",
+    "_meta": {
+      "title": "MiniMax H3 Image to Video"
+    }
+  },
+  "H3_attention_audit": {
+    "class_type": "AppleSiliconH3QuickAcceleration",
+    "inputs": {
+      "model": [
+        "140:127",
+        0
+      ],
+      "cache": "Off",
+      "sparse": "Off",
+      "tokens": "Off",
+      "log_activity": false
+    },
+    "_meta": {
+      "title": "Attention audit \u00b7 change only the attention recipe"
+    }
+  }
+}

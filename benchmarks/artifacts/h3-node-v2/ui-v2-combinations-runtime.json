@@ -1,0 +1,476 @@
+{
+  "torch": "2.14.0",
+  "torch_git": "08187d9e0fba026dc8217405802ab5381dc88d90",
+  "python": "3.13.12 (main, Feb 12 2026, 01:06:02) [Clang 21.1.4 ]",
+  "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+  "torch_num_threads": 12,
+  "node_root": "/Users/luigis/Documents/ChatGPT/ComfyUI-AppleSilicon/diagnostics/h3-recent-methods/base-optimized/custom_nodes/a_optimized",
+  "env": {
+    "PYTORCH_ENABLE_MPS_FALLBACK": "1",
+    "PYTORCH_MPS_HIGH_WATERMARK_RATIO": "0.4",
+    "PYTORCH_MPS_LOW_WATERMARK_RATIO": "0.3",
+    "ASFP8_NATIVE": "1",
+    "ASFP8_AUTOFIX": "0",
+    "ASFP8_DISABLE": "ideogram_fast",
+    "ASFP8_MINIMAX_RELAXED": "0",
+    "ASFP8_ATTN_BACKEND": "pytorch",
+    "ASFP8_FP8_EXT": "1",
+    "ASFP8_FP8_SGEMM": "1",
+    "ASFP8_INT8_EXT": "1",
+    "ASFP8_ATTN_ROUTER": "1",
+    "ASFP8_DIT_EXT": "1",
+    "ASFP8_CONV3D": "1"
+  },
+  "patches": {
+    "torch_mpp_qcache": {},
+    "torch_attention": {},
+    "attn_router_mps": {
+      "_installed": "True",
+      "_na_dead": "False"
+    },
+    "attention_backend": {},
+    "_common": {},
+    "comfykitchen_fp8": {},
+    "linear_fp8": {
+      "_installed": "True"
+    },
+    "linear_fp8_w8a16": {
+      "_installed": "True"
+    },
+    "ops_bias_fp8": {
+      "_installed": "True"
+    },
+    "psutil_vmstat": {},
+    "rmsnorm_mps_large": {
+      "_installed": "True"
+    },
+    "scaled_mm_fp8": {
+      "_installed": "True"
+    },
+    "flash_attn_mtl": {},
+    "stochastic_round_fp8": {
+      "_installed": "True"
+    },
+    "tensor_to_fp8": {
+      "_installed": "True"
+    },
+    "wan_blockswap_mps": {
+      "_installed": "True"
+    },
+    "te_device_mps": {
+      "_installed": "True"
+    },
+    "int_mm_mps": {
+      "_installed": "True"
+    },
+    "int8_linear_mps": {
+      "_installed": "True"
+    },
+    "int8_linear_kernel_mps": {
+      "_installed": "True"
+    },
+    "_mlx_gemma3": {},
+    "_mlx_qwen3vl": {},
+    "mlx_textgen": {
+      "_installed": "False"
+    },
+    "fp8_mps_strided": {
+      "_installed": "True"
+    },
+    "fp8_fill_mps": {
+      "_installed": "True"
+    },
+    "lumina_attn_fast": {
+      "_installed": "True"
+    },
+    "quant_meta_fix": {
+      "_installed": "True"
+    },
+    "int8_embedding": {
+      "_installed": "True"
+    },
+    "rope_fast": {
+      "_installed": "True"
+    },
+    "flux2_glue": {
+      "_installed": "True"
+    },
+    "flux_attn_fast": {
+      "_installed": "True"
+    },
+    "krea2_attn_fast": {
+      "_installed": "True",
+      "_na_dead": "False"
+    },
+    "conv3d_mps": {
+      "_installed": "True"
+    },
+    "ltx_fast": {
+      "_installed": "True"
+    },
+    "ltx25_fast": {
+      "_installed": "True"
+    },
+    "wan_fast": {
+      "_installed": "True"
+    },
+    "wan_vae_fast": {
+      "_installed": "True"
+    },
+    "vae_slice_attn_mps": {
+      "_installed": "True"
+    },
+    "seedvr2_vae_mps": {
+      "_installed": "True"
+    },
+    "seedvr2_fast": {
+      "_installed": "True"
+    },
+    "seedvr2_loader": {
+      "_installed": "True"
+    },
+    "ideogram_fast": {
+      "_installed": "False"
+    },
+    "minimax_fast": {
+      "_installed": "True"
+    },
+    "minimax_relaxed": {
+      "_installed": "False"
+    },
+    "minimax_vae_int8": {},
+    "minimax_vae_fast": {
+      "_installed": "True",
+      "_attention_dead": "False",
+      "_ff_dead": "False"
+    },
+    "minimax_h3cache": {},
+    "minimax_vae_tiling": {
+      "_installed": "False"
+    },
+    "minimax_vae_batch": {
+      "_installed": "False"
+    },
+    "free_mem_mps": {
+      "_installed": "True"
+    },
+    "exec_trace": {
+      "_installed": "False"
+    },
+    "optrace": {
+      "_installed": "False"
+    },
+    "mps_profile": {
+      "_installed": "False"
+    },
+    "sdxl_geglu": {
+      "_installed": "True"
+    },
+    "qwen21_fast": {
+      "_installed": "True"
+    },
+    "minimax_h3_turbo": {},
+    "minimax_h3_structure": {},
+    "minimax_h3_sparse": {},
+    "minimax_h3_unified": {},
+    "super_resolution": {},
+    "h3_latent_upscaler": {},
+    "mfa4_ext": {},
+    "_native_build": {},
+    "loader": {},
+    "fp8s_ext": {},
+    "fp8_ext": {},
+    "int8_ext": {},
+    "dit_ext": {},
+    "krea2_glue": {
+      "_installed": "True"
+    },
+    "krea2_ext": {},
+    "ltx25_vae": {
+      "_installed": "True",
+      "_attention_dead": "False"
+    },
+    "wan_ext": {},
+    "seedvr2_ext": {},
+    "minimax_h3_graph": {},
+    "minimax_vae_ext": {}
+  },
+  "comfy_commit": "b33e2b55cae074eca5aec96283cceac19aa249ba",
+  "torch_path": "/Users/luigis/ComfyUI-Installs/ComfyUI-AppleSilicon-2.14/ComfyUI/.venv/lib/python3.13/site-packages/torch/__init__.py",
+  "node_source_sha256": {
+    "conftest.py": "4367c979ea237ac53ec5ed337b8c01365ed971ca735c0ce0cf775b0ea838ad0a",
+    "__init__.py": "8aa6dbeaccfd88520af8e5f7c23daac016dd3df15d234e11591247757c456284",
+    "prestartup_script.py": "2c4a9dc9c7b2d73205572a242ba4fe1356d9a2a8bf5ae9c6ab9a6d03e741c33d",
+    "tests/test_torch_attention.py": "f64ac161917ad0dfdaf22dcf568ade4f172072f0a8d3adb0fad1810561f17b89",
+    "tests/test_sg_gemm.py": "4e192357116e36d01719f4ce88485bcae0121441ee8844b87d15fac2ca8f22e7",
+    "tests/test_minimax_vae_int8.py": "c298baea85cea7164565d444589321f14f80f4232d41b2955ef15f78b222e191",
+    "tests/test_seedvr2_loader.py": "5fa6c18548876254fc93855ee0a3471a44cde53b6c25e5a9d731541d198ab1ab",
+    "tests/test_wan_fp16.py": "a7f550e320a972aad5f05f2d96cb4bf860e87b93472f7750d4d7b44000d41f04",
+    "tests/test_attention_backend.py": "b5cc6f10683fb191615adf0bc2890cdf33240f5f5cc11598d5a59606c20dcce2",
+    "tests/test_quant_meta_fix.py": "297e2ea1fc86287664ded41414ed280f9e14a58e185f8b3d55a386f0944b1a74",
+    "tests/test_ideogram4_exact.py": "7f809d3c99fa972cf1018ac0dfec518ce6f60c12e76dcadea8b5093e02002de2",
+    "tests/test_minimax_h3_structure.py": "a05909c0090028cecb597ccd88dcba81788ff9bd9972b7957f6ff57c9bf2edea",
+    "tests/conftest.py": "ccb8d27a64b9b21c3a58aa05b7b588c46585fccfdd1daacec3fc4dc3b9c81a41",
+    "tests/test_flux_attn_fast.py": "f7f27380bf54c82e46eebe3389d0aadd89c58a4f6cc33233010359d622544567",
+    "tests/test_seedvr2_vae_mps.py": "9e06e54d3e8eb1122e65759688ebf92e64652e449294242918751dd760ac590f",
+    "tests/test_minimax_vae_batch.py": "aa73e9cef1e3249446b1d2b789cab52eb625d107c394d451e6f84aa2f49b2886",
+    "tests/test_bench_workflows.py": "cb7b203f3cabcc819247ef1a7c431860b177bece51315a96ea9150fcdfd2c1a6",
+    "tests/test_na_gemm.py": "f12b1bbcef1f9e7f9b7ad04dc150f8337c233703fe21a62f94103d9d69dbd4ed",
+    "tests/test_scaled_mm_fp8.py": "de4e032e002544ff869dc42b1e6d9068c629f19070a3ba19ccb21fb03520f420",
+    "tests/test_minimax_vae_qkv.py": "d2432d5eaf3723caffea5004c945c4b19f7b31269a1a4eae364a9bdc12628353",
+    "tests/test_minimax_h3cache.py": "97ef5091841c55e319b75651b0cbed2846474ccf2c86199a4a5a8bfb2b628a9b",
+    "tests/test_hardening.py": "b988847371621d84813fc92471462bddfd48de494755187d1465a2340685254c",
+    "tests/test_fp8_fill_mps.py": "31a0def32fae0a49d179467e03da9ec2ce7a657bc8553037fbc83a3aabb1d6f0",
+    "tests/test_minimax_h3_graph.py": "bf6cfb5f092cee3cb20908036e7fe0a64f37755aaf7dd55701c41a778651aad9",
+    "tests/test_ltx25_fast.py": "405f15af3879acd96c2617fbb916da6351a23e5c77c3551fa9911ae4c5a8314c",
+    "tests/test_h3_latent_upscaler.py": "e550cc1bdebccdac2f9423c63cf496922b4ced5145e57e826f96e4b391524014",
+    "tests/test_qwen21_fast.py": "ad15c7d5d31a262b0f5d4d14f48cddd4aac4e3b160fee9250f19a24b069afcec",
+    "tests/__init__.py": "efe08f2090f9de8d06dcd90161aa58f56a1bc05019f15adc7430fcf8a575a7d3",
+    "tests/test_comfykitchen_fp8.py": "4f24a2a3a6787579bb3bf649ea5b7fcefa385eb020def626362634699d1f0419",
+    "tests/test_minimax_h3_turbo.py": "9ef73e7f00201d07847144e620edf607ecc468fdb6344a27317fb812702f4ccd",
+    "tests/test_native_switch.py": "3441609f6c7cb3b5196831bc76867950daa52c8dadcbdfe3ebb8c87db8c259b4",
+    "tests/test_sdxl_geglu.py": "6f6fc0616b6c3bd788ccfa60924dd3e01e3fbcb38bda386e4f5ca875fc7c345f",
+    "tests/test_linear_fp8.py": "2b6282d8cf6c6fb782c127d2eef8d08ea7a2ab85941d9f41194f296e7e73a3a6",
+    "tests/test_attn_router_mps.py": "6fcd6e7009c2eb6eb58a88b5016b2d6507c10d76711dc241f54ee9d2c300cf89",
+    "tests/test_krea2_glue.py": "97c04a8e46f6f7699ec9b53ddf45674419d92498d711475c7017cea915bd84bc",
+    "tests/test_conv3d_mps.py": "a487c6290107ae8e5114d6f4e25bd3c05d8b3961ea305b5771824de988c91910",
+    "tests/test_mlx_textgen.py": "1bd5a8dc51d384d0152a4579dc3069ff1ce34e693db3ed3d43f4b151fff3b7a9",
+    "tests/test_fp8_mps_strided.py": "a8e358657c7fbb6c8c4835d3a8cb3c34846740d18df37686b6e216dbe9f1918b",
+    "tests/test_linear_fp8_w8a16.py": "d78f06fc82d76a6be4317aeb68add7b8acd834f7ffb00dfb1ac80322c9947ea8",
+    "tests/test_minimax_fast.py": "afa690b4a515d49b386f969bcb02120373a82204353e1025fe6f83e85d4c767f",
+    "tests/test_minimax_vae_fast.py": "fc08a1cf68477ac3f6788e49fae2cb441f88a81bbb53ac5ae3dedf49a6006a65",
+    "tests/test_seedvr2_fast.py": "0239c5f258fce0b70909ab34a1cb0fd7f239bc566173ae4debd3080936b31d5f",
+    "tests/test_flux2_glue.py": "110d792f8bfa888ee2d5adc7bf7b6f60d6cf17d35da2bea081e354363e4b69cc",
+    "tests/test_int8_embedding.py": "a87cb8f13a8384cef326947f5ecc71698cbda282ef40488b58d7af33c4faca86",
+    "tests/test_h3_lora_integration.py": "f97b240f0660ea94a0de88a2b8d8df30a2c1aed927f7293dac26de40543d882f",
+    "tests/test_minimax_h3_unified.py": "6eb2a3249c9a8e07464eebeff1b8ada9ccd9ce5b0b40efd884aaaef8f18898d2",
+    "tests/test_krea2_attn_fast.py": "bcdac5790b58b649780bdff241fbd641707f026d387329f43c9a26fcdb71e59e",
+    "tests/test_compare_av.py": "172c5f6052e7f5f140bbd75c6f2cd3f61c9a5095f5706219d3ef19abf1fc0ad6",
+    "tests/test_minimax_relaxed.py": "243eecf4777ff016c9bc3b29b6b30f75ca1c5062a148aaf4b22fbd03e31b479d",
+    "tests/test_h3_sparse_attachment.py": "0242b31432df774f40b60dfa522e4602a18527a7be67363b156063179c105e21",
+    "tests/test_int8_linear_kernel.py": "0eb20f6900f27e258cf21914065fceaa22d6bc0384958b23bb51116b7180bbe9",
+    "tests/test_minimax_h3_sparse.py": "5eb5e25685073523527b6fc2fb2e096aa60acc900ae130f2e1d91bfbfee7624c",
+    "tests/test_metal_autotune.py": "2f1c59b89da79876b133f7d320d6ecdaf435c7f38460b3ca26decba9a37bee8e",
+    "tests/test_super_resolution.py": "df8a2381d3603de08ceabf08fb41d9f6a5c361bf44c1895cc92d0818964e6214",
+    "tests/test_torch_mpp_qcache.py": "639e32f6e45335e41db9587da6658fd4e554b66f798ee2ee03df8ef0b7993299",
+    "tests/test_flash41_padding.py": "101ee0e22b1b68751add8eee5a653b11050e51c71a708518a9b441d0177188e0",
+    "tests/test_minimax_vae_tiling.py": "cee5ed7319402e965f8d57b444144d71970230ffc97fdaf08b7f3ba7dc0941cf",
+    "_patches/ltx25_fast.metal": "cef4ce23f5a55d3264a2402506841b2416df7962deeaf001036ec1a59fdccbd3",
+    "_patches/na_gemm.py": "81c3c656feb373c91b258e6f85f93c452c72c60d3e3b9b9483ffe1df6d1a11f9",
+    "_patches/vae_slice_attn_mps.py": "dd0f1e31eaf09dd5709ce6b4b8b9d0663b0ed0a9238a8a9d6a4247597aa58b5c",
+    "_patches/metal_autotune.py": "3c7bf2c868248914f3bc3f43f79b0f33615d6b0e9ca158b567fa26c5ed2a11f2",
+    "_patches/ideogram_fast.py": "7200b2099ce1a56a9186761091fef42dd87d5224ae6913bc6d93c0954bc79023",
+    "_patches/krea2_attn_fast.py": "808b3a9cceb82416976c697f6f9d5ab67e52915c1b144ee4a84b14d437f91706",
+    "_patches/super_resolution.py": "c2b2dbf2cc812390c80028067c17c6b90927fe3ca7d78e528e0e6d884ece9493",
+    "_patches/torch_mpp_qcache.py": "b669bcd58e28ba0b32580c9b418d93f26f9525ec849bfea78b2eb6a2fadaac61",
+    "_patches/minimax_relaxed.py": "13db7e45249b25ddd4332cae803576c2571fa64c630cb67f4f116691df0a180e",
+    "_patches/scaled_mm_fp8.py": "914aa6bfe5be8c12bf5d613b7e990e1ccd0e166525752813fb7f92cef9c3fc33",
+    "_patches/minimax_vae_tiling.py": "2842169597c99cdf05b59fd78fc55f81c1fda9f22eac0b11bddcf64cbd663add",
+    "_patches/ops_bias_fp8.py": "1913fe0a977f180306691a7ad6106999098cc3d473a29cabee029fd454c2a502",
+    "_patches/sg_gemm.py": "8db1019aed228c6cc2c40811c2eee3c3facb6b063ac461641e00a0fa162408cf",
+    "_patches/qwen21_fast.py": "8e546825c64e68450677bf097a0c629d5e0ea21565ab89dce0a13abf71dfa227",
+    "_patches/fp8_mps_strided.py": "5e3fff89140c4454d950ce7931dd662f86adda57cf194f54cee8779bce728841",
+    "_patches/wan_blockswap_mps.py": "65497b10d294460d106cc8de91d10bb9571198329acb4ce57862d1103bc672c7",
+    "_patches/qwen21_fast.metal": "4794e7edede773c43e7a156704fd48deadfd04aba102ad5331ef2cf29ff79294",
+    "_patches/tensor_to_fp8.py": "4479301daf702460ace344be56265ee65365b672d4756ef872dde3fbf0874cb3",
+    "_patches/_mlx_qwen3vl.py": "05a1ed0c8359372086b7b2deaf05d10d62aed41928cac5695b2cb05dbc5a5ceb",
+    "_patches/flash_attn_mtl.py": "0ae4d9ac7030ac938d8dc2cfe50ca7c4d4ba1c237da04b769c51619e4982f92b",
+    "_patches/linear_fp8_w8a16.py": "7bda499257e6895d4d34e38de2bf770c754741bf43047413d81d9dcd27abad3f",
+    "_patches/wan_fp16.py": "b30695f1832d29d15c5bfde55dd16508d0ec4646c19c2bca409ad39499f3c066",
+    "_patches/ltx25_vae.py": "6ceec07e3ae9186ace7bb2b89503e3abfc71f66e271b6e015090173c7f8b0bee",
+    "_patches/minimax_fast.py": "c15064606be37bc182875244bdf697ad50cc7b46077b790176df0c95e340ec9e",
+    "_patches/rmsnorm_mps_large.py": "55c996ed29e172998a345d357cdaf8564c6aa4494f6ed84cb96a75f6b6701e10",
+    "_patches/ideogram4_exact.metal": "1afc1b2f42bbc06f7a3d404359ca233b7300b2ea474650b932258b63c3ce3902",
+    "_patches/minimax_vae_fast.py": "575cdf190891e038028fbb626cc2b8900d544d23f565cf146dff9e799f1b2d09",
+    "_patches/free_mem_mps.py": "ea8f3c084be0983efeee17999fea18157490c5dba0a28bc40c9fd60464d07c38",
+    "_patches/krea2_glue.py": "842d8d48492650dc2e975f3e3cdeacf4dde8c9ecdfcb9298ae39dfee7a1d0a50",
+    "_patches/conv3d_mps.py": "38f7995c623487093c3589fac89690c0d470d3ec9fa2fbd49ecff1df448691b9",
+    "_patches/minimax_h3_sparse.py": "c429e900f949d92db32e2110e1ff9727cd6bc64fafcd7625e7bdd539db35dbeb",
+    "_patches/_common.py": "a6ac6332c060f5651a938b468e4d55ad6797f4e8bea47c7754fa3cfb552e3a0a",
+    "_patches/__init__.py": "3cf94f9eaced8bb074e13804f6156027c5e12de773ddc9ef35100bb992e3ab40",
+    "_patches/minimax_h3_unified.py": "fd7301ff69e6cbdc8856d73e5a72965661611a2ce252c865c0ed12f902607dc0",
+    "_patches/optrace.py": "7be255f642902dfa93202dad5a8f49659662ab489c7b80e564fbe77e0cac009e",
+    "_patches/wan_fast.py": "96de68f5715ff24a69c95c8cc622282ae32211611db920f6e09e9e645fbe87b0",
+    "_patches/h3_upscale_network_3d.py": "a201581df9d382ce5f8cad04b3fd5fd2088d9cedcc5fc29c92c3d878803fcc09",
+    "_patches/h3_upscale_network_2d.py": "03bb054106a772103449ec09f4d7120545010471fa2d8cd242632e5244665084",
+    "_patches/int8_embedding.py": "fef7c450ee9a3b6a4d26310119e61010104ee2588f92a1636772ede9428b37da",
+    "_patches/seedvr2_fast.py": "65dcd11ac2de328ddfda29401de59e692aa28ce0eb7cd4fb4cac7e351350813e",
+    "_patches/flux2_glue.py": "3d529ab86869a68ed07a866e27ad98403c666c2804ce3933b2f35920192e95b2",
+    "_patches/attention_backend.py": "3de84465510edd04bb763960e495fbce62f4f55905c681a275c2f8a54915587a",
+    "_patches/minimax_h3_graph.py": "1d1aed3d3d47081e849aa4cd6d7102bf89060748e704881ecf202ec5661c4d2a",
+    "_patches/seedvr2_vae_mps.py": "aa99f0f31e8571a6cf4475cfc32bab9ae47d135ed7bf370556507160d13efed5",
+    "_patches/ltx25_fast.py": "c6b6ed1f93f6fdcefd5fed84dd131403b5d097f486bf9836f7422a1c4b32d092",
+    "_patches/h3_latent_upscaler.py": "231e1638e042156234d8fcb7f08821baa288399a6312eb2518716434a2df8239",
+    "_patches/_mlx_gemma3.py": "0abfbbe3c5b24de76210c525271a02947689d3daa4c074f138438d9a3701b049",
+    "_patches/mps_profile.py": "5ab225a356d7d4addd87405bba5ae96efbfe0251b870b56afa805b9837d6e466",
+    "_patches/minimax_vae_qkv.py": "f37b0dca958b03cae2ec0ef817f9f65206e3fac63aca8efa149316ddebbf7c4c",
+    "_patches/rope_fast.py": "bddccd1a941239d1b8dbfed5a8497dd77da42629f1449c7be948eeacf5b0035c",
+    "_patches/fp8_fill_mps.py": "559d3172b5d20bb313ced78ad34fbcb50ecd15a2b8dde041d6d4d4d2c591c8ee",
+    "_patches/_native_build.py": "5a3b0ef6890b67a8655611f389bfe707123f2fb1afae9f83640710a4e1642355",
+    "_patches/psutil_vmstat.py": "50222002ff1a4d1a6834bd5ef5dbf5480f62577b352d45983b20e982fe2a2444",
+    "_patches/int_mm_mps.py": "ac9412ebb8971903156f85444c7dbc7bad26fa2e0c4fa8b88d88f190034df5ff",
+    "_patches/comfykitchen_fp8.py": "8f24fc4af7f91ac7404b7faf11c5ff74c233ad21cd6840d689780ce86394479d",
+    "_patches/minimax_h3_turbo.py": "774c5bd8f86e76695b3c991ee38797ae99578d3ca82d2afd74fa6cb4bc5c43b1",
+    "_patches/torch_attention.py": "8375d033b8a93db509248517f12ce6566b75e676df1c65d3e4472edad804d87f",
+    "_patches/minimax_vae_batch.py": "47cc6cfbb47f7ec8a0c68771111ead399bbf2ebffc13ea10337a925e08fe95ee",
+    "_patches/linear_fp8.py": "93106212a55a9d687b3998a35f5867eeb532407e91e3475f74f3fb65248b3aac",
+    "_patches/sdxl_geglu.py": "b078fe86f2e9064845d78f2201c91de347d1d96df1701f6621a8681ae7df6679",
+    "_patches/minimax_h3_structure.py": "ced85232b220bd6695c8c809bb8e90841b5ee5174b32c253d81487e100121892",
+    "_patches/ideogram4_exact.py": "43e1b3a1eda85e98a65c0b1738e94f300137f02d02051f08288682af1867483d",
+    "_patches/int8_linear_kernel_mps.py": "c70a7577b6689c3a9dbff20bea54c3e3bb3e83e77905060481e8f3195dcb0776",
+    "_patches/stochastic_round_fp8.py": "e0f2ce61c493927426be3e618b5d68a340493e7e621b82f52e60a2b23c7e2f70",
+    "_patches/quant_meta_fix.py": "a6dac7c24a514c2b2367d50bd1e009dca5c8e28c006162e5afd2592eca4d2e52",
+    "_patches/mlx_textgen.py": "d6232824f081acd339053df1e4f1482c0c2b0aa5b32ee879dd3c34052a8709a9",
+    "_patches/flux_attn_fast.py": "ecaf32c477e2e16e53a747fc07eb547db0d315003258501613edd851ea2ad289",
+    "_patches/minimax_vae_int8.py": "8d8f6ce0126daf5cd9e097de5ab623286e2ed8ba2964c1c21bb2e9a02046e803",
+    "_patches/exec_trace.py": "1d85cd539eaf34c24767688ee82b8bec89cc741f9140b4c1ad07827068445bdc",
+    "_patches/te_device_mps.py": "74a575e1ed01f617f200c39bac0183546403e411d91e873e537602f5ac84678f",
+    "_patches/attn_router_mps.py": "ca514031c9917e62a7eab98c9942c44fba254ebad4df7d97ac3ed1c595c838e9",
+    "_patches/wan_vae_fast.py": "cb84cd7123982dca2b5270849e7d8c5e7c0ecaecef51163934ea01c4263cf2f3",
+    "_patches/seedvr2_loader.py": "df9aef81863812dc4410698878b9fc2b04c52df692d5458a2773006732f5311b",
+    "_patches/ltx_fast.py": "f4259e5e5b82823d580f201aad358e591adbf8fa61b8fa402e21e55cda44cfd8",
+    "_patches/int8_linear_mps.py": "d6c1905dd750b9950584143892fd898d977384fa199ed39da61335ef46653cee",
+    "_patches/minimax_h3cache.py": "c2cdd0f1f40aa6ca6c231eb8064600a9a48eb7f701a5816f8ffee08672532c25",
+    "_patches/h3_sol_mps.py": "372403d24ec05de8d61eabf12cda39264e5cf34d812ed1e3093390a6356064cf",
+    "_patches/lumina_attn_fast.py": "9033412996f19d3e0a587b83eba904db1d8388e5a1724befdd7c00cf773db99f",
+    "dev/bench_fp8_scaled.py": "37f9da7eabaad127b777a804f73c428214b84958524f6e82e6146d80a924b45f",
+    "dev/tournament_gemm.py": "9818c186ee4a5461118c15fd9fbe9df90e51dd72be85a5caafe58493b97126c8",
+    "dev/bench_h3_qkv.py": "f4ed87984fbbf7dd6127d2fe9c954d68d80743f92056e1bce5169d4aaad3c212",
+    "dev/bench_fp8_crossover.py": "2f9dca3eeda7b65d6dd11192938a6b6d34b336ab6f0b76e4add6efcccbb4a1c3",
+    "dev/compare_av.py": "fa4f0a682b94c8b6978b834f1b9a005f753fc20c06ab739d6307df179eb1ea13",
+    "dev/setup_neural_rendering.py": "9793a21bfdced2a1a70cf6bfcaf41ad7fb96b8d6257d0df41b887d94899cd3b9",
+    "dev/bench_h3_mlp.py": "2e89b6104fc2ba34d28fa0cd3c4648b418b21b0dcf0640f7c7a1a853952a408b",
+    "dev/bench_workflows.py": "2d6cdaf99fe8a3c25627cb00b3a9e432fff817cf8a92124cc5b7c914721ee331",
+    "dev/spike_fp8_ext.py": "1211ab3b642b3e0d740320fdebd69aa081d0ca38b90b4f801fae8e1752717ae2",
+    "dev/bench_na_vs_mps.py": "daf8f3607adcbba1604b994e6df676b41225b168e1dabdbf210315903614b9e7",
+    "dev/bench_i8_attn.py": "2dadc8cad862d884191d09d76579d5592ac88a926a1cffc2859fd4c0106ceea1",
+    "dev/tournament_int8.py": "0f610515398d643c06962bb0f2602d7a3173bf4ab2db258a6c49f0585a0f7112",
+    "dev/bench_gemm.py": "a93d4924d8add8cb3b217255a7a5795e6c8504a679fabd5b4ea455335546034a",
+    "dev/bench_scaled_mm_dtype.py": "edd7ec0c83a7ef05a6ff62ee0811bac8652d7c1d383461afef4da8a8c0e0f18d",
+    "dev/spike_fp8_matmul2d.py": "d2e4b76f321fa7ad34ec32f75b43b7afc4e5b035e3b74f84c5d3cc0e4e122f82",
+    "dev/setup_super_resolution.py": "6473ea806c1518b299e6667fec95b91d5e91326ae8b54d9470e1a8c19d419f43",
+    "dev/spike_fused_fp8_gemm.py": "f3e3ad09bde7e249f8189a01278918995086725ca9cf1750d50209f73a64d08b",
+    "dev/fp8_ext/fp8_matmul2d.mm": "4d694918f5dad086450c55ba5805d3de45f0b77d09fd7ca4e121c1f5d526783f",
+    "dev/fp8_ext/loader.py": "ce06a33a4f3f8815a0c9109969a051b91aa19a41a7dc1f7289ad1033e9c4a07b",
+    "_patches/seedvr2_ext/seedvr2_kernels.mm": "7526fd4f86018e16f768eff0293adf6732cc3032de2e442c35c8be34d4a0a51b",
+    "_patches/seedvr2_ext/loader.py": "945721c68c0e8edcdbea1ec0300a10d2ce3a6459e97cd286127d65f88e79df99",
+    "_patches/wan_ext/wan_kernels.mm": "8ddd7748b218eb051b052cf7b5e384e2ee2de88b84846daaec45439545d15d96",
+    "_patches/wan_ext/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "_patches/wan_ext/loader.py": "52e86d2396bdda9a5aa76952774548c90952454018ae33c584a4e7fd1134c5ea",
+    "_patches/_vendor/__init__.py": "c03d1c5bc28d95f2d7090f17d824416bd51e1691a19bb0f1dc92f9e47beddde8",
+    "_patches/fp8_ext/fp8_matmul2d.mm": "0f60265bba5a5c644a7fce38e671222a277614ba8ea46a8bc9c5bf2d4ebcc680",
+    "_patches/fp8_ext/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "_patches/fp8_ext/loader.py": "3829596cf0d166a31ece652db768c79d1a89d90c6adad0276f7ac27a83aca5e0",
+    "_patches/fp8s_ext/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "_patches/fp8s_ext/w8a16_gemm.mm": "fe3a383c693875ee3fa2715e83d7abe63abec8e9af7b11b49709a97649fccc55",
+    "_patches/fp8s_ext/loader.py": "6d665daee892f3cd1494a622cc2703edbe70424fe0cb3ee2e779097ed1a854dc",
+    "_patches/minimax_vae_ext/__init__.py": "02d497beafc3241a3b529b1d435188a68c6d968b7873f46131ac33393466b646",
+    "_patches/minimax_vae_ext/loader.py": "bc645c294c3b5a52ea9ce078dd8edb14feb071d6da96503a077c6652c6fca688",
+    "_patches/minimax_vae_ext/vae_kernels.mm": "755401fc12490acdc794494b054570fd9eb39c6f6e5714fe1f0c270505c84869",
+    "_patches/dit_ext/dit_kernels.mm": "76bdca192869c0e42420ed4d0c379ba08901663f0b37eb0bd8464c4a9f5cff5b",
+    "_patches/dit_ext/__init__.py": "2315e6d676c0f20fbc35eec8f56286e287a9a3997b2d648f6920fc47084e68fd",
+    "_patches/dit_ext/loader.py": "6d1ceb7213adbfbe7eacb90bb81a7fd59cacd56b4bcdd5bfc3762d6243bf9552",
+    "_patches/int8_ext/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "_patches/int8_ext/int8_gemm.mm": "4dfcefc77349d47974d0c54d3b03dca0f1de874f3e9318c627d2edaba3cb6e81",
+    "_patches/int8_ext/loader.py": "c2f736be689fafb5119881a4e70983d708a6ad7427d139295d59a7e3f7b8e9be",
+    "_patches/mfa4_ext/relaxed_loader.py": "815f215884be8ac6079dc8d61a92de67d48bc88d82ffd2b62fcb040bb86413bf",
+    "_patches/mfa4_ext/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "_patches/mfa4_ext/loader.py": "099342ad0e88cdd1fd0600d0ad7c69281b489a1bc1bd1bcfc7af3550a163a2e6",
+    "_patches/mfa4_ext/flash41.mm": "07b60a0b54eeeeadefa60402914ff7f4ee068ae51a4a9db3a60079214bb9e00f",
+    "_patches/krea2_ext/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "_patches/krea2_ext/loader.py": "1f0864c71f9081e50d593720c56eae6e85756d8a963b46e9fa6c083b1ceae39e",
+    "_patches/krea2_ext/krea2_kernels.mm": "b97b2dd87c41836ca0638da48ea018981e238e0fb27e4ae344b76f88870c6029",
+    "_patches/h3_sol_shaders/int8.metal": "cad5f8664073fa199e4e1a4e2122f77fd9509af43474b00c3c6940d21f8f2154",
+    "_patches/sol_ext/sol_attn.mm": "fdf2d782759f837f9ac427784e09d6b1bbb37f83b17f7c682264f1d5c629e82e",
+    "_patches/sol_ext/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "_patches/sol_ext/loader.py": "0f59b3b0f663fb9732e89061bb4ede0316f818d966a6c580dea825e73f03edf5",
+    "_patches/_vendor/spectrum_h3/replay_spectral_alpha_shadow.py": "2a3549877777ec317e805c0db321efc01fce451cef39c5df15f780cfda29e9b4",
+    "_patches/_vendor/spectrum_h3/objective_media.py": "f071ab4c3a16524b70dd7c89db40907f7636f42f7fd3630cb86daf371343c01f",
+    "_patches/_vendor/spectrum_h3/trust_probe.py": "d1df609764badda6ca238bb454f413296359b983416170fe7dfd3e9e0f9fa9f1",
+    "_patches/_vendor/spectrum_h3/core_bsa_compat.py": "94bf4ecdcee19d1d733c6627a10c1d9af1ca177f19906c0fc2fcafcd5f5a8a02",
+    "_patches/_vendor/spectrum_h3/bsa_transition_probe_compat.py": "6f998f3ee1f2232aff0f63e314139bee2365a659364747837fa0d37c9ec4911d",
+    "_patches/_vendor/spectrum_h3/refinement_compat.py": "c1d40cea15c22e04a624b9df40a8d9092969b93e11a2dc99f4f5de765694449f",
+    "_patches/_vendor/spectrum_h3/forecast.py": "8e5aaa82044cf977f985abd6a2bf800818f130c72f0dcb7e7323b18ab5c0fa9c",
+    "_patches/_vendor/spectrum_h3/config.py": "b375b26ecbea1d1aa7c7eb25290ea0d1beebb537268c6591957e621e0601ed18",
+    "_patches/_vendor/spectrum_h3/core_bsa_forecast_recovery.py": "487f54021d548ce49ac10496b936008f4f880faff61bceb8d6b9d9f0154e283c",
+    "_patches/_vendor/spectrum_h3/generic_correction_runtime.py": "b974b831584f005d99ca96c8abd8b79d98a20dbf927246bf7af8c095211c7e4e",
+    "_patches/_vendor/spectrum_h3/external_patch_visual_reference.py": "d554da56ddbac1b8fcb25fa030184e78d459c0c581bfceac5f1b89559f4d3fc6",
+    "_patches/_vendor/spectrum_h3/generic_correction_worker.py": "4cc4bac719b2b7e47cfb6f813ce74448e4e9b02165d0732767adfad942701845",
+    "_patches/_vendor/spectrum_h3/postrun_safety.py": "9340c9a6c1b0cf20f351226f96f2a6dd0aeac773ceebd1e2b375346437a711e9",
+    "_patches/_vendor/spectrum_h3/bsa_transition_probe_manual.py": "8fe0e35d4805c2140ba99dc4a0c07984a52269723756789d8b16ea25775e9398",
+    "_patches/_vendor/spectrum_h3/minimax_h3.py": "02e97ab21b899853fa2fb9bcd65e8a2d64efbc681bec17d578559c50f20d16d0",
+    "_patches/_vendor/spectrum_h3/generic_correction_controller.py": "b5671f62da37e5801d96aeb7f6497ef2305646c567b72f0171342c3732f8c1e2",
+    "_patches/_vendor/spectrum_h3/model_aware.py": "9463453fe3786935a6c8691c3457976d74708177f4106a910dd4b781f95990f1",
+    "_patches/_vendor/spectrum_h3/generic_correction_research.py": "b32dc00353aaf255c91e1359da79e1e2e3c481c68a140ad6ec4c24752681a121",
+    "_patches/_vendor/spectrum_h3/__init__.py": "48bff4800f8f0a64d0354874d1a7951f0a6c2bae23a4126317e347e2fd51850e",
+    "_patches/_vendor/spectrum_h3/generic_correction_core.py": "30e0de1319d03eaceb98da0aa78e17ff8dddde6370f287a9680badcdf8ed5716",
+    "_patches/_vendor/spectrum_h3/er_sde_offline_replay_safety.py": "bb5591a6fc61be654164962c60c21bdc987f854548115fe0d2dd2646623292d3",
+    "_patches/_vendor/spectrum_h3/rollback.py": "60f04164c0c54a337c2e5b27131b931252362ba6ecf3beb24eea0f760291b07c",
+    "_patches/_vendor/spectrum_h3/replay_calibration.py": "8e8a415d6561d6aad21be9ab21cffdc54e36b8e21fa6fef18c739b0fd55adbf9",
+    "_patches/_vendor/spectrum_h3/core_bsa_preprocess_compat.py": "fbfaf645b1369d02b590bc4640a5a75db72801fc699d6878b25da61d729d93be",
+    "_patches/_vendor/spectrum_h3/runtime.py": "0bd77c4649828209439519eb5f6cd7305ee16a59f3d6d5239858ebd31c4ba7bc",
+    "_patches/_vendor/spectrum_h3/objective_media_nodes.py": "761b9887d9c078f50da1efa3f5e5c49e7e1d982423804a1b6763ca9434837d2c",
+    "_patches/_vendor/spectrum_h3/replay_generic_correction_gate.py": "5bbf3c71ec1a7abedef75edcf52e372ad8c7a87d0caf97027105565d712cf597",
+    "_patches/_vendor/spectrum_h3/source_code_audit.py": "2d7fe202725ebdfb59ccf063fb26207e15a36015a122ef354871d0b69c537769",
+    "_patches/_vendor/spectrum_h3/experiments.py": "7c29591b74e2a2a97ed331dc024a18da92d327b1d3677ab99831a244da465a17",
+    "_patches/_vendor/spectrum_h3/core_bsa_loader_compat.py": "e1318558eb599f87d5ed6b78dbcfc3b56a904321809709770f6b85c2ffd27add",
+    "_patches/_vendor/spectrum_h3/external_patch_hardening.py": "136169c29df6eae177cfae42d8629a3b46cc9c548540501272336139c51734a3",
+    "_patches/_vendor/spectrum_h3/replay_calibration_provenance.py": "54dc9d036f5d4fd3373e2736673f91cae71347c8a5d48351c9aa111af5cc04cd",
+    "_patches/_vendor/spectrum_h3/bsa_transition_probe.py": "3cbe0938aa80925eacf2319db0aa89de4621db435e4495809cf855a182fe4801",
+    "_patches/_vendor/spectrum_h3/objective_media_bounded.py": "170001bc7647e151ab3847ec832136e49abdd2e8fdb9fbe818ce19c7bd2d846b",
+    "_patches/_vendor/spectrum_h3/replay_calibration_validation.py": "6aea41fee0339e8087be4659ef4610eb13a47cddcb6fc454c0a973526ee80bb8",
+    "_patches/_vendor/spectrum_h3/sampling.py": "48e15822c9d8842104fdb286e6bc199cea5e56ee7a48cf3550a332bf9bbc16c0",
+    "_patches/_vendor/spectrum_h3/generic_correction.py": "7d5fd8213b7339dec70e13fb76e516de26c3b5d5339b4a43a1ab641451c8d111",
+    "_patches/_vendor/spectrum_h3/generic_correction_evaluator.py": "11942a1991d71a652ede6482de84a120a198990a2f480576924aeb414c720587",
+    "_patches/_vendor/spectrum_h3/er_sde_policy.py": "55e4728d1a09c0df76957b9f79a469b154078d6131587dd42084e2c50ede8af1",
+    "_patches/_vendor/spectrum_h3/refdelta_interop.py": "db2cc28a4028ca78dd1a2461210886b58a959e39e09bc9e0c510423ce9c27606",
+    "_patches/_vendor/spectrum_h3/er_sde_stochastic.py": "9b265193af890986a12a364fddc4c083acce27601bdd5a082d3c3a70b0676006",
+    "_patches/_vendor/spectrum_h3/core_bsa_diagnostics.py": "b6d89f127218d3a55240ff15cd48c15db491de1a81a35ad3348cb1de97c39c3d",
+    "_patches/_vendor/spectrum_h3/replay_trust_shadow.py": "4f956f9e045c0cd12daba64c03c738171f15e6ebccf995be647bd8a9f7d61cef",
+    "_patches/_vendor/spectrum_h3/replay_shadow_composition.py": "fb376cc70186a6d2ff6bff2880244cf35d2f209e2c7ffa4987a438b7c5a73cb7",
+    "_patches/_vendor/spectrum_h3/nodes.py": "9d45b50f93cc1b5ac19760a6e19a07c03aee37c644f886bbf16eec53091bd447",
+    "_patches/_vendor/spectrum_h3/core_bsa_flow_compat.py": "bf8834edbcf485b686659de4d1cbdfef065ea97cc177ba7e8cf7edf7ca80c14a",
+    "_patches/_vendor/spectrum_h3/generic_correction_calibration.py": "0bcbbde2fdea70afb6f0dd16463687b1ddbc9443ae8ad7f55c8b39d315591253",
+    "_patches/_vendor/spectrum_h3/replay_spectral_mixture_shadow.py": "53a18d20129bbd74e6675675fa18be3f555000a13a306a101eeea7a1468fdaa1",
+    "_patches/_vendor/spectrum_h3/er_sde_ksampler_contract.py": "9c7cf3311593135a784d3b2f658d5a0f14cc2e436b65e8dad940696a802f0730",
+    "_patches/_vendor/spectrum_h3/backend_history.py": "31e5d3e45b26cd1dc9885b030b3ffd6a301699cd4b4da4db9a418fd0ef17caca",
+    "_patches/_vendor/spectrum_h3/comfy_compiler_compat.py": "d61918c61adc9354e8dcc1da59112df473a62302b5ac2f66c292e80f80d1a0c4",
+    "_patches/_vendor/spectrum_h3/generic_correction_topology.py": "89c5e6091d81d3e1ac90046647194f50362a8ef1da8c7df96a852a6bb02cd5ff",
+    "_patches/_vendor/spectrum_h3/external_patch_compat.py": "076f9af35820d87c57ed7c31b5996bbcf223e606d51da9c272eb7aeaacf7b036",
+    "_patches/_vendor/spectrum_h3/replay_component_shadow.py": "3a2098865f2b0ec8ee15462c4e4c614b46f523a8fa5394b995b88a48f9974ae9",
+    "_patches/_vendor/motioncache/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "_patches/_vendor/motioncache/motion_cache.py": "1c4b5107a84efba0eb602af38fb4526cae73f15e7b6c13220670c638588ef1a8",
+    "benchmarks/artifacts/seedvr2-video-memory/long-runs.py": "e7e04c3416b54caaa5a8ac6841c0de8172a7d1804277be80fc94f3706f009d17",
+    "benchmarks/artifacts/seedvr2-video-memory/run.py": "7c8a1f498aa1f9277a1fc3fb9317121725f9cc91b1cc29900593204a1f390f73",
+    "benchmarks/artifacts/seedvr2-video-memory/summarize.py": "ee43ae304c6d777471e31c3aebc4dcc51a0def6eb462669ff1687f140ba1570d",
+    "benchmarks/artifacts/seedvr2-video-memory/guard.py": "b2c6d50057adae405fdd7407a62c2d0b1578f6630d347a619598cb513021fa90",
+    "benchmarks/artifacts/seedvr2-video-memory/screens.py": "b933aa8e298a6d6b96a6c1c77eef0ef9885aab88033820b435b0f663d7c8be15",
+    "benchmarks/artifacts/h3-recent-methods/quality_cases.py": "1dda2008c9f087e187a3e8dc0ea1e9ecab3a78820a7c2c2ae7f9d4eb387b62e3",
+    "benchmarks/artifacts/h3-recent-methods/run.py": "23bd233a985e9b8fde9387cc70363e13c0929471e93200da0e65571fc487b4c1",
+    "benchmarks/artifacts/h3-recent-methods/compare_video.py": "c87ecbb3b83a247192cf7a8e3d8caacd84f0a0e514a62226565022d06fbf7161",
+    "benchmarks/artifacts/h3-recent-methods/summarize.py": "82010a79ce0a2a9c525055277f569cb9d6fc8594beb1879f7b01ec9cc3dd72c8",
+    "benchmarks/artifacts/h3-recent-methods/vae_row_bench.py": "56cbc37ab28edccca5a68e5ebc1ced907730561d8c08aa60d5e51bab9c9fc16a",
+    "benchmarks/artifacts/h3-recent-methods/launch.py": "75ea2574ea2eab34a8be1e0c39499171772a93d9a555b2330d8d186765c654f6",
+    "benchmarks/artifacts/h3-recent-methods/video_contacts.py": "41b0b4a1e05994c4008cc4420482c59e794d3b89cb89209aa565a2559969ff47",
+    "benchmarks/artifacts/h3-recent-methods/vae_bench.py": "91db07608d3761d401b64baf97372b4f3c7ba19457148bd1f9218ec1ebcdb04b",
+    "benchmarks/artifacts/h3-recent-methods/guard.py": "74791a0687e3d2e22b8be8dc5071c5e56b2e9cab8af892306c81188de7679ae2",
+    "benchmarks/artifacts/h3-recent-methods/candidate.py": "073053633323e94e0a29c284cd196cee8c766b452a5f722a8a94a17d741e6376",
+    "benchmarks/artifacts/h3-recent-methods/compare.py": "3783cf5f6168a9649ce70492acd1b72a8e861728d43f45bbcf21157f71ae72f8",
+    "benchmarks/artifacts/seedvr2-torch214/screen.py": "5932a7d059d359be0464ee3692371a12592ca7348bf6fbad216d75b65b843fa3",
+    "benchmarks/artifacts/seedvr2-torch214/run.py": "f9d98522da514f0187c6d7c7367838e77e366c189ced7ba95db6cff7ab8b25d1",
+    "benchmarks/artifacts/seedvr2-torch214/check.py": "653bb28891f5f2cb97d3a61828bee75faa46278b346dbd8dbf240d913fdcaa40",
+    "benchmarks/artifacts/seedvr2-torch214/validate.py": "808585aa8cf99f7e57cb0afb923833332110ff7a60449ecb159795fff5dae582",
+    "benchmarks/artifacts/seedvr2-torch214/summary.py": "1f490f70c04502d5b1401332977afad686f8673d93890226994634d12760289b",
+    "benchmarks/artifacts/seedvr2-torch214/guard.py": "ef366d12698cda868279c6c6bb0c31852375bc796a1687471bc1688b10212603",
+    "benchmarks/artifacts/seedvr2-torch214/candidate.py": "a84b699356ad37dc3333c886d6b8e9a472e57dfddf28ac4910db255fdef2a7ba",
+    "benchmarks/artifacts/h3-long-qcache/run.py": "7dffec2a23dca569a97c302ef5d264305f5eaff8df628a426ac9ff4e0bfebab1",
+    "benchmarks/artifacts/h3-long-qcache/micro.py": "787de8f6c48b6db8f7b10633096900d027f3b5775da6e810ef259a2ffa6299fd",
+    "benchmarks/artifacts/h3-long-qcache/check.py": "e41c76a829a215701b367940d8e16a43fd6c27fd619f796babb37b08cd60e20e",
+    "benchmarks/artifacts/h3-long-qcache/summarize.py": "bcd4e62c94b87abcc730adacd9fff04bc32d327e64f538de13c877ab99367b97",
+    "benchmarks/artifacts/h3-long-qcache/launch.py": "75ea2574ea2eab34a8be1e0c39499171772a93d9a555b2330d8d186765c654f6",
+    "benchmarks/artifacts/h3-long-qcache/guard.py": "ef366d12698cda868279c6c6bb0c31852375bc796a1687471bc1688b10212603",
+    "benchmarks/artifacts/h3-long-qcache/candidate.py": "15c6288be71dd1f294264e8f32023699ee9a6fefea10b8bed109db718139d636",
+    "benchmarks/artifacts/h3-long-qcache/bench_node/__init__.py": "f4da6d04e22efff28e753575e1005e65dae2404bd8578c41d7381193e48f8168",
+    "benchmarks/artifacts/h3-recent-methods/bench_node/__init__.py": "a5ffbf6d7eaf4953ecfc88b216486455b9cd642f9ee063cf923a4b63991fef4d"
+  }
+}

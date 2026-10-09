@@ -1,0 +1,73 @@
+All finite FP16 bit patterns preserve bytes under division by one.
+............F....................                                        [100%]
+=================================== FAILURES ===================================
+___________ test_bounded_int8_projection_preserves_row_quantization ____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1429c3890>
+
+    @gpu
+    def test_bounded_int8_projection_preserves_row_quantization(monkeypatch):
+        from _patches import int8_linear_kernel_mps as linear
+        from _patches.int8_ext.loader import module
+        monkeypatch.setattr(linear, '_kernel', module())
+        monkeypatch.setenv('ASFP8_INT8_ACT_CACHE', '0')
+        with torch.inference_mode():
+            torch.manual_seed(845)
+            x=torch.randn(9001,512,dtype=torch.bfloat16).to('mps')
+            weight=torch.randint(-127,128,(512,512),dtype=torch.int8).to('mps')
+            scale=torch.rand(512,device='mps')*.01
+            bias=torch.randn(512,device='mps',dtype=torch.bfloat16)
+>           expected=linear._int8_linear_kernel(x,weight,scale,bias,x.dtype,True,256)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ComfyUI-AppleSilicon-Optimized/tests/test_seedvr2_fast.py:146: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+x = tensor([[-0.5664, -1.9766, -0.4141,  ...,  2.3438,  1.1953, -1.3203],
+        [-1.6562, -1.6484, -0.1543,  ..., -0.067...6],
+        [ 0.7812,  0.2988,  0.2871,  ..., -0.5156, -0.7188,  0.7109]],
+       device='mps:0', dtype=torch.bfloat16)
+weight = tensor([[  20,    8,   43,  ...,  -13,  -21,  -70],
+        [-113,    0,  -45,  ...,  -61, -115,   65],
+        [  94,...  ...,   93,  115,   39],
+        [  75,  -63,  -89,  ..., -118,   74,   11]], device='mps:0',
+       dtype=torch.int8)
+weight_scale = tensor([7.6405e-03, 1.9860e-03, 3.9570e-03, 1.0843e-03, 3.2505e-04, 5.8033e-03,
+        9.2968e-03, 4.6377e-03, 9.2744....6330e-03, 5.8517e-03, 2.3877e-03, 6.9008e-03, 8.7991e-03, 4.8230e-03,
+        4.2806e-04, 3.3838e-03], device='mps:0')
+bias = tensor([ 1.3770e-01,  1.6875e+00, -6.7188e-01,  1.8906e+00,  1.1484e+00,
+        -4.3750e-01, -2.5977e-01,  3.5938e-01...31e-01, -5.8594e-01,  3.5645e-02,  1.5469e+00,
+         7.1094e-01,  4.8828e-01], device='mps:0', dtype=torch.bfloat16)
+out_dtype = torch.bfloat16, convrot = True, convrot_groupsize = 256
+
+    def _int8_linear_kernel(
+        x,
+        weight,
+        weight_scale,
+        bias=None,
+        out_dtype=torch.bfloat16,
+        convrot=False,
+        convrot_groupsize=256,
+    ):
+        """Kernel-backed drop-in for comfy_kitchen eager int8_linear.
+    
+        Semantics match the original exactly (optional convrot activation rotation,
+        per-row int8 activation quant, int8xint8->int32 matmul, chunked rescale by
+        weight_scale*row_scale, optional bias). Only the matmul backend differs (our
+        NT kernel vs torch._int_mm) and the weight is used in its stored [N,K] layout.
+        """
+        if (
+            _kernel is None
+            or x.device.type != "mps"
+            or weight.device.type != "mps"
+            or weight.dtype != torch.int8
+        ):
+>           return _orig_int8_linear(
+                x, weight, weight_scale, bias, out_dtype, convrot, convrot_groupsize
+            )
+E           TypeError: 'NoneType' object is not callable
+
+ComfyUI-AppleSilicon-Optimized/_patches/int8_linear_kernel_mps.py:232: TypeError
+=========================== short test summary info ============================
+FAILED ComfyUI-AppleSilicon-Optimized/tests/test_seedvr2_fast.py::test_bounded_int8_projection_preserves_row_quantization
+1 failed, 32 passed, 3 deselected in 3.89s

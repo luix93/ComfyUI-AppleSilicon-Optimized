@@ -1,0 +1,3836 @@
+[
+  {
+    "run_id": "recent-motion-0-exact",
+    "mode": "exact",
+    "timings": {
+      "sampling_loop": 17.11644650006201,
+      "sampling": 19.222795791924,
+      "audio_decode": 0.3708573749754578,
+      "video_decode": 1.8597701250109822,
+      "create_video": 0.00017270795069634914,
+      "save_video": 0.10938074998557568
+    },
+    "steps": [
+      0.9509548749774694,
+      0.8572408750187606,
+      0.8508145420346409,
+      0.8509090830339119,
+      0.8491175839444622,
+      0.8509900830686092,
+      0.8503292499808595,
+      0.8504689999390393,
+      0.8509551250608638,
+      0.8496190420119092,
+      0.8505865829065442,
+      0.8500548750162125,
+      0.8508947920054197,
+      0.8505692910403013,
+      0.8506644589360803,
+      0.8502882911125198,
+      0.8502396669937298,
+      0.8501286249374971,
+      0.8502602080116048,
+      0.8505328750470653
+    ],
+    "peak_driver_gib": 46.30047607421875,
+    "vae_dtype": "torch.float16",
+    "attention_calls": {},
+    "tensors": {
+      "conditioning": {
+        "/positive/0/minimax_token_tags": {
+          "sha256": "e4bc56cb1b7640ed7fd36580f6e2a0280797353900db536b887c2a0815986162",
+          "shape": [
+            53
+          ],
+          "dtype": "torch.int64",
+          "finite": true
+        },
+        "/positive/0/cross_attn": {
+          "sha256": "34f68a619a7e97674f6fff31e5461241c6123e33b5a7f4fac99ec7c61c60dfd1",
+          "shape": [
+            1,
+            53,
+            5120
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "noise": {
+        "/": {
+          "sha256": "ee802382fa2d1738c1c8bde1312482b2d26c5afa79910ed05505c31d9e239c72",
+          "shape": [
+            1,
+            1,
+            274528
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "latents": {
+        "/0/samples/0": {
+          "sha256": "2442c6b6937ac6837fcbfed64eb7e63b0b770ee1f51ca0156ad31eb919493fb6",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/0/samples/1": {
+          "sha256": "b0c70d02a78e3e07828ebcc5baf314fb8849cbcb6153391c23e071a153d7dcc5",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/0": {
+          "sha256": "1fbdab64e6e992e7e3778008167c1eccf128441f58b9d95c64a0ac243c147485",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/1": {
+          "sha256": "83c8e7f2f313d7e5ad2163e458b514a284ff4cb6b8fd6961105b9f765755e6db",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "audio_decode": {
+        "/0/0/waveform": {
+          "sha256": "967c96a695f7d35bcb5c86645711ce36f37ab0deaab68579d06bc3ed143bdc38",
+          "shape": [
+            1,
+            2,
+            29600
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "frames": {
+        "": {
+          "sha256": "e44cf5719457d284d4a129e5d36bcbaf41223f5511e2b8f0016653a682fd8730",
+          "shape": [
+            22,
+            480,
+            864,
+            3
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      }
+    },
+    "candidate_stats": {
+      "settings": {},
+      "block_0": 20,
+      "block_49": 20
+    },
+    "patch_status": {
+      "torch_mpp_qcache": {
+        "_dead": "False",
+        "_calls": "1000"
+      },
+      "torch_attention": {},
+      "attn_router_mps": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "attention_backend": {},
+      "_common": {},
+      "comfykitchen_fp8": {},
+      "linear_fp8": {
+        "_installed": "True"
+      },
+      "linear_fp8_w8a16": {
+        "_installed": "True"
+      },
+      "ops_bias_fp8": {
+        "_installed": "True"
+      },
+      "psutil_vmstat": {},
+      "rmsnorm_mps_large": {
+        "_installed": "True"
+      },
+      "scaled_mm_fp8": {
+        "_installed": "True"
+      },
+      "flash_attn_mtl": {},
+      "stochastic_round_fp8": {
+        "_installed": "True"
+      },
+      "tensor_to_fp8": {
+        "_installed": "True"
+      },
+      "wan_blockswap_mps": {
+        "_installed": "True"
+      },
+      "te_device_mps": {
+        "_installed": "True"
+      },
+      "int_mm_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_kernel_mps": {
+        "_installed": "True"
+      },
+      "_mlx_gemma3": {},
+      "_mlx_qwen3vl": {},
+      "mlx_textgen": {
+        "_installed": "False"
+      },
+      "fp8_mps_strided": {
+        "_installed": "True"
+      },
+      "fp8_fill_mps": {
+        "_installed": "True"
+      },
+      "lumina_attn_fast": {
+        "_installed": "True"
+      },
+      "quant_meta_fix": {
+        "_installed": "True"
+      },
+      "int8_embedding": {
+        "_installed": "True"
+      },
+      "rope_fast": {
+        "_installed": "True"
+      },
+      "flux2_glue": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "flux_attn_fast": {
+        "_installed": "True"
+      },
+      "krea2_attn_fast": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "conv3d_mps": {
+        "_installed": "True"
+      },
+      "ltx_fast": {
+        "_installed": "True"
+      },
+      "ltx25_fast": {
+        "_installed": "True",
+        "_dead": "False",
+        "_calls": "0"
+      },
+      "wan_fast": {
+        "_installed": "True"
+      },
+      "wan_vae_fast": {
+        "_installed": "True"
+      },
+      "vae_slice_attn_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_vae_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_fast": {
+        "_installed": "True"
+      },
+      "seedvr2_loader": {
+        "_installed": "True"
+      },
+      "ideogram_fast": {
+        "_installed": "False"
+      },
+      "minimax_fast": {
+        "_installed": "True",
+        "_block_dead": "False",
+        "_dead": "False"
+      },
+      "minimax_relaxed": {
+        "_installed": "False"
+      },
+      "minimax_vae_int8": {
+        "_dead": "False"
+      },
+      "minimax_vae_fast": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_ff_dead": "False",
+        "_dense": "False",
+        "_qkv_dead": "False"
+      },
+      "minimax_h3cache": {},
+      "minimax_vae_tiling": {
+        "_installed": "False"
+      },
+      "minimax_vae_batch": {
+        "_installed": "False"
+      },
+      "free_mem_mps": {
+        "_installed": "True"
+      },
+      "exec_trace": {
+        "_installed": "False"
+      },
+      "optrace": {
+        "_installed": "False"
+      },
+      "mps_profile": {
+        "_installed": "False"
+      },
+      "sdxl_geglu": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "qwen21_fast": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "minimax_h3_turbo": {},
+      "minimax_h3_structure": {},
+      "minimax_h3_sparse": {
+        "_dense": "<function _dense at 0x14df1ef20>"
+      },
+      "minimax_h3_unified": {},
+      "super_resolution": {},
+      "h3_latent_upscaler": {},
+      "mfa4_ext": {},
+      "_native_build": {},
+      "loader": {},
+      "fp8s_ext": {},
+      "fp8_ext": {},
+      "int8_ext": {},
+      "dit_ext": {},
+      "krea2_glue": {
+        "_installed": "True"
+      },
+      "krea2_ext": {},
+      "ltx25_vae": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_calls": "0"
+      },
+      "wan_ext": {},
+      "seedvr2_ext": {},
+      "minimax_h3_graph": {},
+      "minimax_vae_ext": {},
+      "ideogram4_exact": {
+        "_installed": "False",
+        "_attention_dead": "False",
+        "_dead": "False",
+        "_calls": "0"
+      }
+    },
+    "e2e": 27.66,
+    "warmup": true,
+    "outputs": {
+      "92": {
+        "images": [
+          {
+            "filename": "recent-motion-0-exact_00001_.mp4",
+            "subfolder": "",
+            "type": "output"
+          }
+        ],
+        "animated": [
+          true
+        ]
+      }
+    }
+  },
+  {
+    "run_id": "recent-motion-1-exact",
+    "mode": "exact",
+    "timings": {
+      "sampling_loop": 17.07905291696079,
+      "sampling": 17.121291832998395,
+      "audio_decode": 0.188247416052036,
+      "video_decode": 1.4914497919380665,
+      "create_video": 7.60830007493496e-05,
+      "save_video": 0.10742408293299377
+    },
+    "steps": [
+      0.9035872920649126,
+      0.852358749951236,
+      0.848388749989681,
+      0.850821917061694,
+      0.853869832935743,
+      0.8501157920109108,
+      0.8505158750340343,
+      0.8504649159731343,
+      0.8505582090001553,
+      0.8503342909971252,
+      0.8502561670029536,
+      0.8503835829906166,
+      0.8506219589617103,
+      0.8514890410006046,
+      0.8547807090217248,
+      0.8517083750339225,
+      0.8505297909723595,
+      0.8561038339976221,
+      0.8517389580374584,
+      0.8495858749374747
+    ],
+    "peak_driver_gib": 52.36688232421875,
+    "vae_dtype": "torch.float16",
+    "attention_calls": {},
+    "tensors": {
+      "conditioning": {
+        "/positive/0/minimax_token_tags": {
+          "sha256": "e4bc56cb1b7640ed7fd36580f6e2a0280797353900db536b887c2a0815986162",
+          "shape": [
+            53
+          ],
+          "dtype": "torch.int64",
+          "finite": true
+        },
+        "/positive/0/cross_attn": {
+          "sha256": "34f68a619a7e97674f6fff31e5461241c6123e33b5a7f4fac99ec7c61c60dfd1",
+          "shape": [
+            1,
+            53,
+            5120
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "noise": {
+        "/": {
+          "sha256": "ee802382fa2d1738c1c8bde1312482b2d26c5afa79910ed05505c31d9e239c72",
+          "shape": [
+            1,
+            1,
+            274528
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "latents": {
+        "/0/samples/0": {
+          "sha256": "2442c6b6937ac6837fcbfed64eb7e63b0b770ee1f51ca0156ad31eb919493fb6",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/0/samples/1": {
+          "sha256": "b0c70d02a78e3e07828ebcc5baf314fb8849cbcb6153391c23e071a153d7dcc5",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/0": {
+          "sha256": "1fbdab64e6e992e7e3778008167c1eccf128441f58b9d95c64a0ac243c147485",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/1": {
+          "sha256": "83c8e7f2f313d7e5ad2163e458b514a284ff4cb6b8fd6961105b9f765755e6db",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "audio_decode": {
+        "/0/0/waveform": {
+          "sha256": "967c96a695f7d35bcb5c86645711ce36f37ab0deaab68579d06bc3ed143bdc38",
+          "shape": [
+            1,
+            2,
+            29600
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "frames": {
+        "": {
+          "sha256": "e44cf5719457d284d4a129e5d36bcbaf41223f5511e2b8f0016653a682fd8730",
+          "shape": [
+            22,
+            480,
+            864,
+            3
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      }
+    },
+    "candidate_stats": {
+      "settings": {},
+      "block_0": 20,
+      "block_49": 20
+    },
+    "patch_status": {
+      "torch_mpp_qcache": {
+        "_dead": "False",
+        "_calls": "2000"
+      },
+      "torch_attention": {},
+      "attn_router_mps": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "attention_backend": {},
+      "_common": {},
+      "comfykitchen_fp8": {},
+      "linear_fp8": {
+        "_installed": "True"
+      },
+      "linear_fp8_w8a16": {
+        "_installed": "True"
+      },
+      "ops_bias_fp8": {
+        "_installed": "True"
+      },
+      "psutil_vmstat": {},
+      "rmsnorm_mps_large": {
+        "_installed": "True"
+      },
+      "scaled_mm_fp8": {
+        "_installed": "True"
+      },
+      "flash_attn_mtl": {},
+      "stochastic_round_fp8": {
+        "_installed": "True"
+      },
+      "tensor_to_fp8": {
+        "_installed": "True"
+      },
+      "wan_blockswap_mps": {
+        "_installed": "True"
+      },
+      "te_device_mps": {
+        "_installed": "True"
+      },
+      "int_mm_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_kernel_mps": {
+        "_installed": "True"
+      },
+      "_mlx_gemma3": {},
+      "_mlx_qwen3vl": {},
+      "mlx_textgen": {
+        "_installed": "False"
+      },
+      "fp8_mps_strided": {
+        "_installed": "True"
+      },
+      "fp8_fill_mps": {
+        "_installed": "True"
+      },
+      "lumina_attn_fast": {
+        "_installed": "True"
+      },
+      "quant_meta_fix": {
+        "_installed": "True"
+      },
+      "int8_embedding": {
+        "_installed": "True"
+      },
+      "rope_fast": {
+        "_installed": "True"
+      },
+      "flux2_glue": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "flux_attn_fast": {
+        "_installed": "True"
+      },
+      "krea2_attn_fast": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "conv3d_mps": {
+        "_installed": "True"
+      },
+      "ltx_fast": {
+        "_installed": "True"
+      },
+      "ltx25_fast": {
+        "_installed": "True",
+        "_dead": "False",
+        "_calls": "0"
+      },
+      "wan_fast": {
+        "_installed": "True"
+      },
+      "wan_vae_fast": {
+        "_installed": "True"
+      },
+      "vae_slice_attn_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_vae_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_fast": {
+        "_installed": "True"
+      },
+      "seedvr2_loader": {
+        "_installed": "True"
+      },
+      "ideogram_fast": {
+        "_installed": "False"
+      },
+      "minimax_fast": {
+        "_installed": "True",
+        "_block_dead": "False",
+        "_dead": "False"
+      },
+      "minimax_relaxed": {
+        "_installed": "False"
+      },
+      "minimax_vae_int8": {
+        "_dead": "False"
+      },
+      "minimax_vae_fast": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_ff_dead": "False",
+        "_dense": "False",
+        "_qkv_dead": "False"
+      },
+      "minimax_h3cache": {},
+      "minimax_vae_tiling": {
+        "_installed": "False"
+      },
+      "minimax_vae_batch": {
+        "_installed": "False"
+      },
+      "free_mem_mps": {
+        "_installed": "True"
+      },
+      "exec_trace": {
+        "_installed": "False"
+      },
+      "optrace": {
+        "_installed": "False"
+      },
+      "mps_profile": {
+        "_installed": "False"
+      },
+      "sdxl_geglu": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "qwen21_fast": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "minimax_h3_turbo": {},
+      "minimax_h3_structure": {},
+      "minimax_h3_sparse": {
+        "_dense": "<function _dense at 0x14df1ef20>"
+      },
+      "minimax_h3_unified": {},
+      "super_resolution": {},
+      "h3_latent_upscaler": {},
+      "mfa4_ext": {},
+      "_native_build": {},
+      "loader": {},
+      "fp8s_ext": {},
+      "fp8_ext": {},
+      "int8_ext": {},
+      "dit_ext": {},
+      "krea2_glue": {
+        "_installed": "True"
+      },
+      "krea2_ext": {},
+      "ltx25_vae": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_calls": "0"
+      },
+      "wan_ext": {},
+      "seedvr2_ext": {},
+      "minimax_h3_graph": {},
+      "minimax_vae_ext": {},
+      "ideogram4_exact": {
+        "_installed": "False",
+        "_attention_dead": "False",
+        "_dead": "False",
+        "_calls": "0"
+      }
+    },
+    "e2e": 18.91,
+    "warmup": false,
+    "outputs": {
+      "92": {
+        "images": [
+          {
+            "filename": "recent-motion-1-exact_00001_.mp4",
+            "subfolder": "",
+            "type": "output"
+          }
+        ],
+        "animated": [
+          true
+        ]
+      }
+    }
+  },
+  {
+    "run_id": "recent-motion-2-ui-spectrum-protected",
+    "mode": "ui-spectrum-protected",
+    "timings": {
+      "sampling_loop": 0.09712929208762944,
+      "sampling": 11.418874790892005,
+      "audio_decode": 0.19363408396020532,
+      "video_decode": 1.49120250006672,
+      "create_video": 7.800001185387373e-05,
+      "save_video": 0.1082532920408994
+    },
+    "steps": [
+      0.9609002079814672,
+      0.8587570840027183,
+      0.8536708750762045,
+      0.8563471660017967,
+      0.005476958933286369,
+      0.8521085410611704,
+      0.005297333933413029,
+      0.854499833076261,
+      0.006325291935354471,
+      0.8530160409864038,
+      0.005232667084783316,
+      0.8527834169799462,
+      0.005140541004948318,
+      0.8539564589736983,
+      0.005146790994331241,
+      0.855259042000398,
+      0.005015167058445513,
+      0.8544600409222767,
+      0.8547945420723408,
+      0.853830499923788,
+      0.004529917030595243,
+      0.004009417025372386,
+      0.004118124954402447,
+      0.00397916603833437,
+      0.006202624994330108,
+      0.003933666972443461,
+      0.006486042053438723,
+      0.004145166021771729,
+      0.006358124897815287,
+      0.004075834061950445,
+      0.006310208002105355,
+      0.0038431669818237424,
+      0.006371833034791052,
+      0.003958999994210899,
+      0.0063582080183550715,
+      0.0039362089009955525,
+      0.006197875016368926,
+      0.003912708023563027,
+      0.0038484169635921717,
+      0.004054833087138832
+    ],
+    "peak_driver_gib": 52.36688232421875,
+    "vae_dtype": "torch.float16",
+    "attention_calls": {},
+    "tensors": {
+      "conditioning": {
+        "/positive/0/minimax_token_tags": {
+          "sha256": "e4bc56cb1b7640ed7fd36580f6e2a0280797353900db536b887c2a0815986162",
+          "shape": [
+            53
+          ],
+          "dtype": "torch.int64",
+          "finite": true
+        },
+        "/positive/0/cross_attn": {
+          "sha256": "34f68a619a7e97674f6fff31e5461241c6123e33b5a7f4fac99ec7c61c60dfd1",
+          "shape": [
+            1,
+            53,
+            5120
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "noise": {
+        "/": {
+          "sha256": "ee802382fa2d1738c1c8bde1312482b2d26c5afa79910ed05505c31d9e239c72",
+          "shape": [
+            1,
+            1,
+            274528
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "latents": {
+        "/0/samples/0": {
+          "sha256": "173b569f35e9d731409c96013a16abba5f971ffd98ec6ca796373c36406cc5b3",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/0/samples/1": {
+          "sha256": "c022e680909b1380b0c5cef0f22a32d1b09b243ffe0de463a267177ddc564104",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/0": {
+          "sha256": "8a94dec2c07054c636d1d65d7f4557c1de15522c9e0663cf2bb778c334848f05",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/1": {
+          "sha256": "3972903d3c7fa6a8f0676d04f3a3d11e5b3309610cbdcfa4c0668fd3a85dbba3",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "audio_decode": {
+        "/0/0/waveform": {
+          "sha256": "1df436ebe10f0428fc4685b461ecb36ce5e98ace64e2c703ec4a38e1a6191c32",
+          "shape": [
+            1,
+            2,
+            29600
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "frames": {
+        "": {
+          "sha256": "9ebf0881bbe28f58744c730a00ed590bc9f46a5b6fe82e64639df419f247b9a9",
+          "shape": [
+            22,
+            480,
+            864,
+            3
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      }
+    },
+    "candidate_stats": {
+      "settings": {
+        "cache_mode": "spectrum_protected",
+        "cache_reuse_threshold": 0.2,
+        "cache_start_percent": 0.15,
+        "cache_end_percent": 0.95,
+        "cache_max_consecutive_skips": 2,
+        "cache_audio_weight": 1.0,
+        "cache_verbose": true,
+        "token_reduction": false,
+        "token_reduction_scale": 1.0,
+        "token_early_evaluations": 10,
+        "token_detail_restore_block": 30,
+        "token_coarse_restore_block": 40,
+        "token_verbose": false,
+        "sparse_attention": false,
+        "sparse_mode": "corrected",
+        "sparse_tau": 1.0,
+        "sparse_start_percent": 0.2,
+        "sparse_end_percent": 0.85,
+        "sparse_dense_leading_blocks": 2,
+        "sparse_min_sequence_tokens": 0,
+        "sparse_verbose": true
+      },
+      "block_0": 13,
+      "block_49": 13
+    },
+    "patch_status": {
+      "torch_mpp_qcache": {
+        "_dead": "False",
+        "_calls": "2650"
+      },
+      "torch_attention": {},
+      "attn_router_mps": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "attention_backend": {},
+      "_common": {},
+      "comfykitchen_fp8": {},
+      "linear_fp8": {
+        "_installed": "True"
+      },
+      "linear_fp8_w8a16": {
+        "_installed": "True"
+      },
+      "ops_bias_fp8": {
+        "_installed": "True"
+      },
+      "psutil_vmstat": {},
+      "rmsnorm_mps_large": {
+        "_installed": "True"
+      },
+      "scaled_mm_fp8": {
+        "_installed": "True"
+      },
+      "flash_attn_mtl": {},
+      "stochastic_round_fp8": {
+        "_installed": "True"
+      },
+      "tensor_to_fp8": {
+        "_installed": "True"
+      },
+      "wan_blockswap_mps": {
+        "_installed": "True"
+      },
+      "te_device_mps": {
+        "_installed": "True"
+      },
+      "int_mm_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_kernel_mps": {
+        "_installed": "True"
+      },
+      "_mlx_gemma3": {},
+      "_mlx_qwen3vl": {},
+      "mlx_textgen": {
+        "_installed": "False"
+      },
+      "fp8_mps_strided": {
+        "_installed": "True"
+      },
+      "fp8_fill_mps": {
+        "_installed": "True"
+      },
+      "lumina_attn_fast": {
+        "_installed": "True"
+      },
+      "quant_meta_fix": {
+        "_installed": "True"
+      },
+      "int8_embedding": {
+        "_installed": "True"
+      },
+      "rope_fast": {
+        "_installed": "True"
+      },
+      "flux2_glue": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "flux_attn_fast": {
+        "_installed": "True"
+      },
+      "krea2_attn_fast": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "conv3d_mps": {
+        "_installed": "True"
+      },
+      "ltx_fast": {
+        "_installed": "True"
+      },
+      "ltx25_fast": {
+        "_installed": "True",
+        "_dead": "False",
+        "_calls": "0"
+      },
+      "wan_fast": {
+        "_installed": "True"
+      },
+      "wan_vae_fast": {
+        "_installed": "True"
+      },
+      "vae_slice_attn_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_vae_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_fast": {
+        "_installed": "True"
+      },
+      "seedvr2_loader": {
+        "_installed": "True"
+      },
+      "ideogram_fast": {
+        "_installed": "False"
+      },
+      "minimax_fast": {
+        "_installed": "True",
+        "_block_dead": "False",
+        "_dead": "False"
+      },
+      "minimax_relaxed": {
+        "_installed": "False"
+      },
+      "minimax_vae_int8": {
+        "_dead": "False"
+      },
+      "minimax_vae_fast": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_ff_dead": "False",
+        "_dense": "False",
+        "_qkv_dead": "False"
+      },
+      "minimax_h3cache": {},
+      "minimax_vae_tiling": {
+        "_installed": "False"
+      },
+      "minimax_vae_batch": {
+        "_installed": "False"
+      },
+      "free_mem_mps": {
+        "_installed": "True"
+      },
+      "exec_trace": {
+        "_installed": "False"
+      },
+      "optrace": {
+        "_installed": "False"
+      },
+      "mps_profile": {
+        "_installed": "False"
+      },
+      "sdxl_geglu": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "qwen21_fast": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "minimax_h3_turbo": {},
+      "minimax_h3_structure": {},
+      "minimax_h3_sparse": {
+        "_dense": "<function _dense at 0x14df1ef20>"
+      },
+      "minimax_h3_unified": {},
+      "super_resolution": {},
+      "h3_latent_upscaler": {},
+      "mfa4_ext": {},
+      "_native_build": {},
+      "loader": {},
+      "fp8s_ext": {},
+      "fp8_ext": {},
+      "int8_ext": {},
+      "dit_ext": {},
+      "krea2_glue": {
+        "_installed": "True"
+      },
+      "krea2_ext": {},
+      "ltx25_vae": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_calls": "0"
+      },
+      "wan_ext": {},
+      "seedvr2_ext": {},
+      "minimax_h3_graph": {},
+      "minimax_vae_ext": {},
+      "ideogram4_exact": {
+        "_installed": "False",
+        "_attention_dead": "False",
+        "_dead": "False",
+        "_calls": "0"
+      }
+    },
+    "e2e": 13.246,
+    "warmup": false,
+    "outputs": {
+      "92": {
+        "images": [
+          {
+            "filename": "recent-motion-2-ui-spectrum-protected_00001_.mp4",
+            "subfolder": "",
+            "type": "output"
+          }
+        ],
+        "animated": [
+          true
+        ]
+      }
+    }
+  },
+  {
+    "run_id": "recent-motion-3-spectrum-safe",
+    "mode": "spectrum-safe",
+    "timings": {
+      "sampling_loop": 0.09712308296002448,
+      "sampling": 11.428799459012225,
+      "audio_decode": 0.1891653750790283,
+      "video_decode": 1.488525417051278,
+      "create_video": 7.641699630767107e-05,
+      "save_video": 0.10650483297649771
+    },
+    "steps": [
+      0.9626188330585137,
+      0.8577299169264734,
+      0.8531228330684826,
+      0.85850595892407,
+      0.0051200001034885645,
+      0.8538487079786137,
+      0.00663374993018806,
+      0.8560858750715852,
+      0.006142999976873398,
+      0.8555929169524461,
+      0.005215791054069996,
+      0.8525231250096112,
+      0.005267041968181729,
+      0.8534409169806167,
+      0.005156915984116495,
+      0.8520681250374764,
+      0.005141375004313886,
+      0.8561844589421526,
+      0.8568371250294149,
+      0.853297125082463,
+      0.004539167042821646,
+      0.004015750018879771,
+      0.0039406249998137355,
+      0.004058915888890624,
+      0.006386459106579423,
+      0.004006249946542084,
+      0.0063693750416859984,
+      0.003963332972489297,
+      0.006177542032673955,
+      0.004074707976542413,
+      0.006350124953314662,
+      0.004045375040732324,
+      0.006316374987363815,
+      0.0038528749719262123,
+      0.006489583058282733,
+      0.003773125004954636,
+      0.006309749907813966,
+      0.004011959070339799,
+      0.004017915925942361,
+      0.003950250102207065
+    ],
+    "peak_driver_gib": 52.36688232421875,
+    "vae_dtype": "torch.float16",
+    "attention_calls": {},
+    "tensors": {
+      "conditioning": {
+        "/positive/0/minimax_token_tags": {
+          "sha256": "e4bc56cb1b7640ed7fd36580f6e2a0280797353900db536b887c2a0815986162",
+          "shape": [
+            53
+          ],
+          "dtype": "torch.int64",
+          "finite": true
+        },
+        "/positive/0/cross_attn": {
+          "sha256": "34f68a619a7e97674f6fff31e5461241c6123e33b5a7f4fac99ec7c61c60dfd1",
+          "shape": [
+            1,
+            53,
+            5120
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "noise": {
+        "/": {
+          "sha256": "ee802382fa2d1738c1c8bde1312482b2d26c5afa79910ed05505c31d9e239c72",
+          "shape": [
+            1,
+            1,
+            274528
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "latents": {
+        "/0/samples/0": {
+          "sha256": "173b569f35e9d731409c96013a16abba5f971ffd98ec6ca796373c36406cc5b3",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/0/samples/1": {
+          "sha256": "c022e680909b1380b0c5cef0f22a32d1b09b243ffe0de463a267177ddc564104",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/0": {
+          "sha256": "8a94dec2c07054c636d1d65d7f4557c1de15522c9e0663cf2bb778c334848f05",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/1": {
+          "sha256": "3972903d3c7fa6a8f0676d04f3a3d11e5b3309610cbdcfa4c0668fd3a85dbba3",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "audio_decode": {
+        "/0/0/waveform": {
+          "sha256": "1df436ebe10f0428fc4685b461ecb36ce5e98ace64e2c703ec4a38e1a6191c32",
+          "shape": [
+            1,
+            2,
+            29600
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "frames": {
+        "": {
+          "sha256": "9ebf0881bbe28f58744c730a00ed590bc9f46a5b6fe82e64639df419f247b9a9",
+          "shape": [
+            22,
+            480,
+            864,
+            3
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      }
+    },
+    "candidate_stats": {
+      "settings": {
+        "enabled": true,
+        "blend_weight": 0.5,
+        "degree": 1,
+        "ridge_lambda": 0.1,
+        "window_size": 2.0,
+        "flex_window": 0.75,
+        "warmup_steps": 4,
+        "tail_actual_steps": 2,
+        "max_history": 8,
+        "debug": true,
+        "history_storage": "vram",
+        "bootstrap_first_forecast": false,
+        "anchor_residual_feedback": false,
+        "selective_rollback_correction": false,
+        "offline_smoothing_replay": true,
+        "audio_blend_weight": 0.0,
+        "offline_archive_storage": "vram",
+        "model_aware_mode": "off",
+        "model_aware_risk_threshold": 0.65,
+        "model_aware_trust_shrinkage": false,
+        "model_aware_replay_generic_correction": false,
+        "generic_correction_mode": "coordinate_rls",
+        "generic_correction_limiter": "hard_clip",
+        "generic_correction_limit": 0.4,
+        "generic_correction_attenuation": "no_attenuation",
+        "sa_pece_forecast_policy": "balanced"
+      },
+      "block_0": 13,
+      "block_49": 13
+    },
+    "patch_status": {
+      "torch_mpp_qcache": {
+        "_dead": "False",
+        "_calls": "3300"
+      },
+      "torch_attention": {},
+      "attn_router_mps": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "attention_backend": {},
+      "_common": {},
+      "comfykitchen_fp8": {},
+      "linear_fp8": {
+        "_installed": "True"
+      },
+      "linear_fp8_w8a16": {
+        "_installed": "True"
+      },
+      "ops_bias_fp8": {
+        "_installed": "True"
+      },
+      "psutil_vmstat": {},
+      "rmsnorm_mps_large": {
+        "_installed": "True"
+      },
+      "scaled_mm_fp8": {
+        "_installed": "True"
+      },
+      "flash_attn_mtl": {},
+      "stochastic_round_fp8": {
+        "_installed": "True"
+      },
+      "tensor_to_fp8": {
+        "_installed": "True"
+      },
+      "wan_blockswap_mps": {
+        "_installed": "True"
+      },
+      "te_device_mps": {
+        "_installed": "True"
+      },
+      "int_mm_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_kernel_mps": {
+        "_installed": "True"
+      },
+      "_mlx_gemma3": {},
+      "_mlx_qwen3vl": {},
+      "mlx_textgen": {
+        "_installed": "False"
+      },
+      "fp8_mps_strided": {
+        "_installed": "True"
+      },
+      "fp8_fill_mps": {
+        "_installed": "True"
+      },
+      "lumina_attn_fast": {
+        "_installed": "True"
+      },
+      "quant_meta_fix": {
+        "_installed": "True"
+      },
+      "int8_embedding": {
+        "_installed": "True"
+      },
+      "rope_fast": {
+        "_installed": "True"
+      },
+      "flux2_glue": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "flux_attn_fast": {
+        "_installed": "True"
+      },
+      "krea2_attn_fast": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "conv3d_mps": {
+        "_installed": "True"
+      },
+      "ltx_fast": {
+        "_installed": "True"
+      },
+      "ltx25_fast": {
+        "_installed": "True",
+        "_dead": "False",
+        "_calls": "0"
+      },
+      "wan_fast": {
+        "_installed": "True"
+      },
+      "wan_vae_fast": {
+        "_installed": "True"
+      },
+      "vae_slice_attn_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_vae_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_fast": {
+        "_installed": "True"
+      },
+      "seedvr2_loader": {
+        "_installed": "True"
+      },
+      "ideogram_fast": {
+        "_installed": "False"
+      },
+      "minimax_fast": {
+        "_installed": "True",
+        "_block_dead": "False",
+        "_dead": "False"
+      },
+      "minimax_relaxed": {
+        "_installed": "False"
+      },
+      "minimax_vae_int8": {
+        "_dead": "False"
+      },
+      "minimax_vae_fast": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_ff_dead": "False",
+        "_dense": "False",
+        "_qkv_dead": "False"
+      },
+      "minimax_h3cache": {},
+      "minimax_vae_tiling": {
+        "_installed": "False"
+      },
+      "minimax_vae_batch": {
+        "_installed": "False"
+      },
+      "free_mem_mps": {
+        "_installed": "True"
+      },
+      "exec_trace": {
+        "_installed": "False"
+      },
+      "optrace": {
+        "_installed": "False"
+      },
+      "mps_profile": {
+        "_installed": "False"
+      },
+      "sdxl_geglu": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "qwen21_fast": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "minimax_h3_turbo": {},
+      "minimax_h3_structure": {},
+      "minimax_h3_sparse": {
+        "_dense": "<function _dense at 0x14df1ef20>"
+      },
+      "minimax_h3_unified": {},
+      "super_resolution": {},
+      "h3_latent_upscaler": {},
+      "mfa4_ext": {},
+      "_native_build": {},
+      "loader": {},
+      "fp8s_ext": {},
+      "fp8_ext": {},
+      "int8_ext": {},
+      "dit_ext": {},
+      "krea2_glue": {
+        "_installed": "True"
+      },
+      "krea2_ext": {},
+      "ltx25_vae": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_calls": "0"
+      },
+      "wan_ext": {},
+      "seedvr2_ext": {},
+      "minimax_h3_graph": {},
+      "minimax_vae_ext": {},
+      "ideogram4_exact": {
+        "_installed": "False",
+        "_attention_dead": "False",
+        "_dead": "False",
+        "_calls": "0"
+      }
+    },
+    "e2e": 13.215,
+    "warmup": false,
+    "outputs": {
+      "92": {
+        "images": [
+          {
+            "filename": "recent-motion-3-spectrum-safe_00001_.mp4",
+            "subfolder": "",
+            "type": "output"
+          }
+        ],
+        "animated": [
+          true
+        ]
+      }
+    }
+  },
+  {
+    "run_id": "recent-motion-4-ui-spectrum-fast",
+    "mode": "ui-spectrum-fast",
+    "timings": {
+      "sampling_loop": 0.09778758301399648,
+      "sampling": 9.672455042018555,
+      "audio_decode": 0.18703712499700487,
+      "video_decode": 1.4863384169293568,
+      "create_video": 7.466599345207214e-05,
+      "save_video": 0.10752616601530463
+    },
+    "steps": [
+      0.9188504170160741,
+      0.007648915983736515,
+      0.8603538749739528,
+      0.005328875035047531,
+      0.8557537499582395,
+      0.005297458963468671,
+      0.8523748330771923,
+      0.005218958016484976,
+      0.8535285840043798,
+      0.0052457909332588315,
+      0.8522595840040594,
+      0.006057541002519429,
+      0.8554040839662775,
+      0.005331958062015474,
+      0.8541566670173779,
+      0.0051912079798057675,
+      0.8528682079631835,
+      0.005204709013924003,
+      0.8517257500207052,
+      0.8531570000341162,
+      0.0044630829943344,
+      0.006166917039081454,
+      0.004025458008982241,
+      0.005890834028832614,
+      0.004159374977461994,
+      0.005828249966725707,
+      0.003941582981497049,
+      0.005756500060670078,
+      0.003978458000347018,
+      0.0057985419407486916,
+      0.003954124986194074,
+      0.006048041977919638,
+      0.003959625028073788,
+      0.005787875037640333,
+      0.0038926659617573023,
+      0.0058575840666890144,
+      0.00393704092130065,
+      0.005876000039279461,
+      0.004056334029883146,
+      0.0039145409828051925
+    ],
+    "peak_driver_gib": 52.36688232421875,
+    "vae_dtype": "torch.float16",
+    "attention_calls": {},
+    "tensors": {
+      "conditioning": {
+        "/positive/0/minimax_token_tags": {
+          "sha256": "e4bc56cb1b7640ed7fd36580f6e2a0280797353900db536b887c2a0815986162",
+          "shape": [
+            53
+          ],
+          "dtype": "torch.int64",
+          "finite": true
+        },
+        "/positive/0/cross_attn": {
+          "sha256": "34f68a619a7e97674f6fff31e5461241c6123e33b5a7f4fac99ec7c61c60dfd1",
+          "shape": [
+            1,
+            53,
+            5120
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "noise": {
+        "/": {
+          "sha256": "ee802382fa2d1738c1c8bde1312482b2d26c5afa79910ed05505c31d9e239c72",
+          "shape": [
+            1,
+            1,
+            274528
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "latents": {
+        "/0/samples/0": {
+          "sha256": "e6c1f5888bdb7e19fde0d47b21bd69951ccd148bcb3486ae2b912ab5314cbe7e",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/0/samples/1": {
+          "sha256": "0af71e2585b5e9ca3ffef08d9006357c103d8f74178eeac79c40b7804805a5e8",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/0": {
+          "sha256": "83fbc964061c428d1e4e522bf8949d206ad84ea4dc7d05cddf27fc8e6a98585e",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/1": {
+          "sha256": "9ac8d7aa6ea09a2b040f2589204c2203f402ab6ad50c6cdbd4254fcf804e131f",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "audio_decode": {
+        "/0/0/waveform": {
+          "sha256": "fb0ddcf752cb3eb4a09da558dfcfb7c6a68ae5c895875bf791b407bf90ec982b",
+          "shape": [
+            1,
+            2,
+            29600
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "frames": {
+        "": {
+          "sha256": "e5e6d8b6d720bc67b2c8dc1fca789473c5098f7afaa641399e69a3f48394fbc9",
+          "shape": [
+            22,
+            480,
+            864,
+            3
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      }
+    },
+    "candidate_stats": {
+      "settings": {
+        "cache_mode": "spectrum_fast",
+        "cache_reuse_threshold": 0.2,
+        "cache_start_percent": 0.15,
+        "cache_end_percent": 0.95,
+        "cache_max_consecutive_skips": 2,
+        "cache_audio_weight": 1.0,
+        "cache_verbose": true,
+        "token_reduction": false,
+        "token_reduction_scale": 1.0,
+        "token_early_evaluations": 10,
+        "token_detail_restore_block": 30,
+        "token_coarse_restore_block": 40,
+        "token_verbose": false,
+        "sparse_attention": false,
+        "sparse_mode": "corrected",
+        "sparse_tau": 1.0,
+        "sparse_start_percent": 0.2,
+        "sparse_end_percent": 0.85,
+        "sparse_dense_leading_blocks": 2,
+        "sparse_min_sequence_tokens": 0,
+        "sparse_verbose": true
+      },
+      "block_0": 11,
+      "block_49": 11
+    },
+    "patch_status": {
+      "torch_mpp_qcache": {
+        "_dead": "False",
+        "_calls": "3850"
+      },
+      "torch_attention": {},
+      "attn_router_mps": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "attention_backend": {},
+      "_common": {},
+      "comfykitchen_fp8": {},
+      "linear_fp8": {
+        "_installed": "True"
+      },
+      "linear_fp8_w8a16": {
+        "_installed": "True"
+      },
+      "ops_bias_fp8": {
+        "_installed": "True"
+      },
+      "psutil_vmstat": {},
+      "rmsnorm_mps_large": {
+        "_installed": "True"
+      },
+      "scaled_mm_fp8": {
+        "_installed": "True"
+      },
+      "flash_attn_mtl": {},
+      "stochastic_round_fp8": {
+        "_installed": "True"
+      },
+      "tensor_to_fp8": {
+        "_installed": "True"
+      },
+      "wan_blockswap_mps": {
+        "_installed": "True"
+      },
+      "te_device_mps": {
+        "_installed": "True"
+      },
+      "int_mm_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_kernel_mps": {
+        "_installed": "True"
+      },
+      "_mlx_gemma3": {},
+      "_mlx_qwen3vl": {},
+      "mlx_textgen": {
+        "_installed": "False"
+      },
+      "fp8_mps_strided": {
+        "_installed": "True"
+      },
+      "fp8_fill_mps": {
+        "_installed": "True"
+      },
+      "lumina_attn_fast": {
+        "_installed": "True"
+      },
+      "quant_meta_fix": {
+        "_installed": "True"
+      },
+      "int8_embedding": {
+        "_installed": "True"
+      },
+      "rope_fast": {
+        "_installed": "True"
+      },
+      "flux2_glue": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "flux_attn_fast": {
+        "_installed": "True"
+      },
+      "krea2_attn_fast": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "conv3d_mps": {
+        "_installed": "True"
+      },
+      "ltx_fast": {
+        "_installed": "True"
+      },
+      "ltx25_fast": {
+        "_installed": "True",
+        "_dead": "False",
+        "_calls": "0"
+      },
+      "wan_fast": {
+        "_installed": "True"
+      },
+      "wan_vae_fast": {
+        "_installed": "True"
+      },
+      "vae_slice_attn_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_vae_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_fast": {
+        "_installed": "True"
+      },
+      "seedvr2_loader": {
+        "_installed": "True"
+      },
+      "ideogram_fast": {
+        "_installed": "False"
+      },
+      "minimax_fast": {
+        "_installed": "True",
+        "_block_dead": "False",
+        "_dead": "False"
+      },
+      "minimax_relaxed": {
+        "_installed": "False"
+      },
+      "minimax_vae_int8": {
+        "_dead": "False"
+      },
+      "minimax_vae_fast": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_ff_dead": "False",
+        "_dense": "False",
+        "_qkv_dead": "False"
+      },
+      "minimax_h3cache": {},
+      "minimax_vae_tiling": {
+        "_installed": "False"
+      },
+      "minimax_vae_batch": {
+        "_installed": "False"
+      },
+      "free_mem_mps": {
+        "_installed": "True"
+      },
+      "exec_trace": {
+        "_installed": "False"
+      },
+      "optrace": {
+        "_installed": "False"
+      },
+      "mps_profile": {
+        "_installed": "False"
+      },
+      "sdxl_geglu": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "qwen21_fast": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "minimax_h3_turbo": {},
+      "minimax_h3_structure": {},
+      "minimax_h3_sparse": {
+        "_dense": "<function _dense at 0x14df1ef20>"
+      },
+      "minimax_h3_unified": {},
+      "super_resolution": {},
+      "h3_latent_upscaler": {},
+      "mfa4_ext": {},
+      "_native_build": {},
+      "loader": {},
+      "fp8s_ext": {},
+      "fp8_ext": {},
+      "int8_ext": {},
+      "dit_ext": {},
+      "krea2_glue": {
+        "_installed": "True"
+      },
+      "krea2_ext": {},
+      "ltx25_vae": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_calls": "0"
+      },
+      "wan_ext": {},
+      "seedvr2_ext": {},
+      "minimax_h3_graph": {},
+      "minimax_vae_ext": {},
+      "ideogram4_exact": {
+        "_installed": "False",
+        "_attention_dead": "False",
+        "_dead": "False",
+        "_calls": "0"
+      }
+    },
+    "e2e": 11.455,
+    "warmup": false,
+    "outputs": {
+      "92": {
+        "images": [
+          {
+            "filename": "recent-motion-4-ui-spectrum-fast_00001_.mp4",
+            "subfolder": "",
+            "type": "output"
+          }
+        ],
+        "animated": [
+          true
+        ]
+      }
+    }
+  },
+  {
+    "run_id": "recent-motion-5-spectrum",
+    "mode": "spectrum",
+    "timings": {
+      "sampling_loop": 0.09816637495532632,
+      "sampling": 9.72791200003121,
+      "audio_decode": 0.1889705409994349,
+      "video_decode": 1.4862259160727262,
+      "create_video": 7.474992889910936e-05,
+      "save_video": 0.10182891599833965
+    },
+    "steps": [
+      0.9590869169915095,
+      0.007144124945625663,
+      0.8538107910426334,
+      0.005800541955977678,
+      0.8554741250118241,
+      0.006836957996711135,
+      0.8642050420166925,
+      0.005250292015261948,
+      0.8524772910168394,
+      0.005080000031739473,
+      0.8548288749298081,
+      0.006237874971702695,
+      0.8530440840404481,
+      0.005270958063192666,
+      0.8555138329975307,
+      0.005256125004962087,
+      0.8534692089306191,
+      0.005212250049225986,
+      0.8526219999184832,
+      0.8567769160727039,
+      0.004503082949668169,
+      0.006097042001783848,
+      0.004159749951213598,
+      0.005985750001855195,
+      0.0038657080149278045,
+      0.006097916979342699,
+      0.0038665831089019775,
+      0.005898207891732454,
+      0.004010292002931237,
+      0.0059296670369803905,
+      0.004011790966615081,
+      0.005894042085856199,
+      0.004032749915495515,
+      0.005871875095181167,
+      0.003748582908883691,
+      0.005995625047944486,
+      0.00391841703094542,
+      0.005975082982331514,
+      0.003967875032685697,
+      0.0038597499951720238
+    ],
+    "peak_driver_gib": 52.36688232421875,
+    "vae_dtype": "torch.float16",
+    "attention_calls": {},
+    "tensors": {
+      "conditioning": {
+        "/positive/0/minimax_token_tags": {
+          "sha256": "e4bc56cb1b7640ed7fd36580f6e2a0280797353900db536b887c2a0815986162",
+          "shape": [
+            53
+          ],
+          "dtype": "torch.int64",
+          "finite": true
+        },
+        "/positive/0/cross_attn": {
+          "sha256": "34f68a619a7e97674f6fff31e5461241c6123e33b5a7f4fac99ec7c61c60dfd1",
+          "shape": [
+            1,
+            53,
+            5120
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "noise": {
+        "/": {
+          "sha256": "ee802382fa2d1738c1c8bde1312482b2d26c5afa79910ed05505c31d9e239c72",
+          "shape": [
+            1,
+            1,
+            274528
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "latents": {
+        "/0/samples/0": {
+          "sha256": "e6c1f5888bdb7e19fde0d47b21bd69951ccd148bcb3486ae2b912ab5314cbe7e",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/0/samples/1": {
+          "sha256": "0af71e2585b5e9ca3ffef08d9006357c103d8f74178eeac79c40b7804805a5e8",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/0": {
+          "sha256": "83fbc964061c428d1e4e522bf8949d206ad84ea4dc7d05cddf27fc8e6a98585e",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/1": {
+          "sha256": "9ac8d7aa6ea09a2b040f2589204c2203f402ab6ad50c6cdbd4254fcf804e131f",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "audio_decode": {
+        "/0/0/waveform": {
+          "sha256": "fb0ddcf752cb3eb4a09da558dfcfb7c6a68ae5c895875bf791b407bf90ec982b",
+          "shape": [
+            1,
+            2,
+            29600
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "frames": {
+        "": {
+          "sha256": "e5e6d8b6d720bc67b2c8dc1fca789473c5098f7afaa641399e69a3f48394fbc9",
+          "shape": [
+            22,
+            480,
+            864,
+            3
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      }
+    },
+    "candidate_stats": {
+      "settings": {
+        "enabled": true,
+        "blend_weight": 0.5,
+        "degree": 1,
+        "ridge_lambda": 0.1,
+        "window_size": 2.0,
+        "flex_window": 0.75,
+        "warmup_steps": 1,
+        "tail_actual_steps": 1,
+        "max_history": 8,
+        "debug": true,
+        "history_storage": "vram",
+        "bootstrap_first_forecast": true,
+        "anchor_residual_feedback": false,
+        "selective_rollback_correction": false,
+        "offline_smoothing_replay": true,
+        "audio_blend_weight": 0.0,
+        "offline_archive_storage": "vram",
+        "model_aware_mode": "off",
+        "model_aware_risk_threshold": 0.65,
+        "model_aware_trust_shrinkage": false,
+        "model_aware_replay_generic_correction": false,
+        "generic_correction_mode": "coordinate_rls",
+        "generic_correction_limiter": "hard_clip",
+        "generic_correction_limit": 0.4,
+        "generic_correction_attenuation": "no_attenuation",
+        "sa_pece_forecast_policy": "balanced"
+      },
+      "block_0": 11,
+      "block_49": 11
+    },
+    "patch_status": {
+      "torch_mpp_qcache": {
+        "_dead": "False",
+        "_calls": "4400"
+      },
+      "torch_attention": {},
+      "attn_router_mps": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "attention_backend": {},
+      "_common": {},
+      "comfykitchen_fp8": {},
+      "linear_fp8": {
+        "_installed": "True"
+      },
+      "linear_fp8_w8a16": {
+        "_installed": "True"
+      },
+      "ops_bias_fp8": {
+        "_installed": "True"
+      },
+      "psutil_vmstat": {},
+      "rmsnorm_mps_large": {
+        "_installed": "True"
+      },
+      "scaled_mm_fp8": {
+        "_installed": "True"
+      },
+      "flash_attn_mtl": {},
+      "stochastic_round_fp8": {
+        "_installed": "True"
+      },
+      "tensor_to_fp8": {
+        "_installed": "True"
+      },
+      "wan_blockswap_mps": {
+        "_installed": "True"
+      },
+      "te_device_mps": {
+        "_installed": "True"
+      },
+      "int_mm_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_kernel_mps": {
+        "_installed": "True"
+      },
+      "_mlx_gemma3": {},
+      "_mlx_qwen3vl": {},
+      "mlx_textgen": {
+        "_installed": "False"
+      },
+      "fp8_mps_strided": {
+        "_installed": "True"
+      },
+      "fp8_fill_mps": {
+        "_installed": "True"
+      },
+      "lumina_attn_fast": {
+        "_installed": "True"
+      },
+      "quant_meta_fix": {
+        "_installed": "True"
+      },
+      "int8_embedding": {
+        "_installed": "True"
+      },
+      "rope_fast": {
+        "_installed": "True"
+      },
+      "flux2_glue": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "flux_attn_fast": {
+        "_installed": "True"
+      },
+      "krea2_attn_fast": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "conv3d_mps": {
+        "_installed": "True"
+      },
+      "ltx_fast": {
+        "_installed": "True"
+      },
+      "ltx25_fast": {
+        "_installed": "True",
+        "_dead": "False",
+        "_calls": "0"
+      },
+      "wan_fast": {
+        "_installed": "True"
+      },
+      "wan_vae_fast": {
+        "_installed": "True"
+      },
+      "vae_slice_attn_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_vae_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_fast": {
+        "_installed": "True"
+      },
+      "seedvr2_loader": {
+        "_installed": "True"
+      },
+      "ideogram_fast": {
+        "_installed": "False"
+      },
+      "minimax_fast": {
+        "_installed": "True",
+        "_block_dead": "False",
+        "_dead": "False"
+      },
+      "minimax_relaxed": {
+        "_installed": "False"
+      },
+      "minimax_vae_int8": {
+        "_dead": "False"
+      },
+      "minimax_vae_fast": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_ff_dead": "False",
+        "_dense": "False",
+        "_qkv_dead": "False"
+      },
+      "minimax_h3cache": {},
+      "minimax_vae_tiling": {
+        "_installed": "False"
+      },
+      "minimax_vae_batch": {
+        "_installed": "False"
+      },
+      "free_mem_mps": {
+        "_installed": "True"
+      },
+      "exec_trace": {
+        "_installed": "False"
+      },
+      "optrace": {
+        "_installed": "False"
+      },
+      "mps_profile": {
+        "_installed": "False"
+      },
+      "sdxl_geglu": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "qwen21_fast": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "minimax_h3_turbo": {},
+      "minimax_h3_structure": {},
+      "minimax_h3_sparse": {
+        "_dense": "<function _dense at 0x14df1ef20>"
+      },
+      "minimax_h3_unified": {},
+      "super_resolution": {},
+      "h3_latent_upscaler": {},
+      "mfa4_ext": {},
+      "_native_build": {},
+      "loader": {},
+      "fp8s_ext": {},
+      "fp8_ext": {},
+      "int8_ext": {},
+      "dit_ext": {},
+      "krea2_glue": {
+        "_installed": "True"
+      },
+      "krea2_ext": {},
+      "ltx25_vae": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_calls": "0"
+      },
+      "wan_ext": {},
+      "seedvr2_ext": {},
+      "minimax_h3_graph": {},
+      "minimax_vae_ext": {},
+      "ideogram4_exact": {
+        "_installed": "False",
+        "_attention_dead": "False",
+        "_dead": "False",
+        "_calls": "0"
+      }
+    },
+    "e2e": 11.507,
+    "warmup": false,
+    "outputs": {
+      "92": {
+        "images": [
+          {
+            "filename": "recent-motion-5-spectrum_00001_.mp4",
+            "subfolder": "",
+            "type": "output"
+          }
+        ],
+        "animated": [
+          true
+        ]
+      }
+    }
+  },
+  {
+    "run_id": "recent-motion-6-ui-motion",
+    "mode": "ui-motion",
+    "timings": {
+      "sampling_loop": 13.75956704095006,
+      "sampling": 13.800321458023973,
+      "audio_decode": 0.19317679200321436,
+      "video_decode": 1.485610416973941,
+      "create_video": 7.499998901039362e-05,
+      "save_video": 0.10669824993237853
+    },
+    "steps": [
+      0.9523651659255847,
+      0.8548163340892643,
+      0.8520591659471393,
+      0.8540004170499742,
+      0.852634499897249,
+      0.8555665420135483,
+      0.8544666250236332,
+      0.8505490829702467,
+      0.8496952500427142,
+      0.0019436669535934925,
+      0.8539443330373615,
+      0.0016872499836608768,
+      0.8508942499756813,
+      0.0016671670600771904,
+      0.8540831250138581,
+      0.001688916003331542,
+      0.8528108339523897,
+      0.8560627499828115,
+      0.8519660000456497,
+      0.856019250000827
+    ],
+    "peak_driver_gib": 52.36688232421875,
+    "vae_dtype": "torch.float16",
+    "attention_calls": {},
+    "tensors": {
+      "conditioning": {
+        "/positive/0/minimax_token_tags": {
+          "sha256": "e4bc56cb1b7640ed7fd36580f6e2a0280797353900db536b887c2a0815986162",
+          "shape": [
+            53
+          ],
+          "dtype": "torch.int64",
+          "finite": true
+        },
+        "/positive/0/cross_attn": {
+          "sha256": "34f68a619a7e97674f6fff31e5461241c6123e33b5a7f4fac99ec7c61c60dfd1",
+          "shape": [
+            1,
+            53,
+            5120
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "noise": {
+        "/": {
+          "sha256": "ee802382fa2d1738c1c8bde1312482b2d26c5afa79910ed05505c31d9e239c72",
+          "shape": [
+            1,
+            1,
+            274528
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "latents": {
+        "/0/samples/0": {
+          "sha256": "1a91a4b8db60ae01eb00d77453effc754143c421e18c7bc85c04319fb4595556",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/0/samples/1": {
+          "sha256": "f1066967b530702c94e7650ab3049f8de46f3d33e04ed3eee824f8ae3103bcb2",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/0": {
+          "sha256": "d0bb108bdc39d7ac5c19dc31881d881a6521a6e5dbcd81b933d6abde6e9723a7",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/1": {
+          "sha256": "255107f5e2df905f01368ccadaa36afe7e3b99d1d4ef1a953ae081c585acbe20",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "audio_decode": {
+        "/0/0/waveform": {
+          "sha256": "1994cfa40fcbbe26ca3f91783d815500fd8c9c3637a222824541a631c318aae0",
+          "shape": [
+            1,
+            2,
+            29600
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "frames": {
+        "": {
+          "sha256": "b422fdbd923efd7a6cab9d9ba06dfa422cb0b0d9a23e1969f55546f7ea75e018",
+          "shape": [
+            22,
+            480,
+            864,
+            3
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      }
+    },
+    "candidate_stats": {
+      "settings": {
+        "cache_mode": "motion_cache",
+        "cache_reuse_threshold": 0.2,
+        "cache_start_percent": 0.15,
+        "cache_end_percent": 0.95,
+        "cache_max_consecutive_skips": 2,
+        "cache_audio_weight": 1.0,
+        "cache_verbose": true,
+        "token_reduction": false,
+        "token_reduction_scale": 1.0,
+        "token_early_evaluations": 10,
+        "token_detail_restore_block": 30,
+        "token_coarse_restore_block": 40,
+        "token_verbose": false,
+        "sparse_attention": false,
+        "sparse_mode": "corrected",
+        "sparse_tau": 1.0,
+        "sparse_start_percent": 0.2,
+        "sparse_end_percent": 0.85,
+        "sparse_dense_leading_blocks": 2,
+        "sparse_min_sequence_tokens": 0,
+        "sparse_verbose": true
+      },
+      "block_0": 16,
+      "block_49": 16
+    },
+    "patch_status": {
+      "torch_mpp_qcache": {
+        "_dead": "False",
+        "_calls": "5200"
+      },
+      "torch_attention": {},
+      "attn_router_mps": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "attention_backend": {},
+      "_common": {},
+      "comfykitchen_fp8": {},
+      "linear_fp8": {
+        "_installed": "True"
+      },
+      "linear_fp8_w8a16": {
+        "_installed": "True"
+      },
+      "ops_bias_fp8": {
+        "_installed": "True"
+      },
+      "psutil_vmstat": {},
+      "rmsnorm_mps_large": {
+        "_installed": "True"
+      },
+      "scaled_mm_fp8": {
+        "_installed": "True"
+      },
+      "flash_attn_mtl": {},
+      "stochastic_round_fp8": {
+        "_installed": "True"
+      },
+      "tensor_to_fp8": {
+        "_installed": "True"
+      },
+      "wan_blockswap_mps": {
+        "_installed": "True"
+      },
+      "te_device_mps": {
+        "_installed": "True"
+      },
+      "int_mm_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_kernel_mps": {
+        "_installed": "True"
+      },
+      "_mlx_gemma3": {},
+      "_mlx_qwen3vl": {},
+      "mlx_textgen": {
+        "_installed": "False"
+      },
+      "fp8_mps_strided": {
+        "_installed": "True"
+      },
+      "fp8_fill_mps": {
+        "_installed": "True"
+      },
+      "lumina_attn_fast": {
+        "_installed": "True"
+      },
+      "quant_meta_fix": {
+        "_installed": "True"
+      },
+      "int8_embedding": {
+        "_installed": "True"
+      },
+      "rope_fast": {
+        "_installed": "True"
+      },
+      "flux2_glue": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "flux_attn_fast": {
+        "_installed": "True"
+      },
+      "krea2_attn_fast": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "conv3d_mps": {
+        "_installed": "True"
+      },
+      "ltx_fast": {
+        "_installed": "True"
+      },
+      "ltx25_fast": {
+        "_installed": "True",
+        "_dead": "False",
+        "_calls": "0"
+      },
+      "wan_fast": {
+        "_installed": "True"
+      },
+      "wan_vae_fast": {
+        "_installed": "True"
+      },
+      "vae_slice_attn_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_vae_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_fast": {
+        "_installed": "True"
+      },
+      "seedvr2_loader": {
+        "_installed": "True"
+      },
+      "ideogram_fast": {
+        "_installed": "False"
+      },
+      "minimax_fast": {
+        "_installed": "True",
+        "_block_dead": "False",
+        "_dead": "False"
+      },
+      "minimax_relaxed": {
+        "_installed": "False"
+      },
+      "minimax_vae_int8": {
+        "_dead": "False"
+      },
+      "minimax_vae_fast": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_ff_dead": "False",
+        "_dense": "False",
+        "_qkv_dead": "False"
+      },
+      "minimax_h3cache": {},
+      "minimax_vae_tiling": {
+        "_installed": "False"
+      },
+      "minimax_vae_batch": {
+        "_installed": "False"
+      },
+      "free_mem_mps": {
+        "_installed": "True"
+      },
+      "exec_trace": {
+        "_installed": "False"
+      },
+      "optrace": {
+        "_installed": "False"
+      },
+      "mps_profile": {
+        "_installed": "False"
+      },
+      "sdxl_geglu": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "qwen21_fast": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "minimax_h3_turbo": {},
+      "minimax_h3_structure": {},
+      "minimax_h3_sparse": {
+        "_dense": "<function _dense at 0x14df1ef20>"
+      },
+      "minimax_h3_unified": {},
+      "super_resolution": {},
+      "h3_latent_upscaler": {},
+      "mfa4_ext": {},
+      "_native_build": {},
+      "loader": {},
+      "fp8s_ext": {},
+      "fp8_ext": {},
+      "int8_ext": {},
+      "dit_ext": {},
+      "krea2_glue": {
+        "_installed": "True"
+      },
+      "krea2_ext": {},
+      "ltx25_vae": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_calls": "0"
+      },
+      "wan_ext": {},
+      "seedvr2_ext": {},
+      "minimax_h3_graph": {},
+      "minimax_vae_ext": {},
+      "ideogram4_exact": {
+        "_installed": "False",
+        "_attention_dead": "False",
+        "_dead": "False",
+        "_calls": "0"
+      }
+    },
+    "e2e": 15.588,
+    "warmup": false,
+    "outputs": {
+      "92": {
+        "images": [
+          {
+            "filename": "recent-motion-6-ui-motion_00001_.mp4",
+            "subfolder": "",
+            "type": "output"
+          }
+        ],
+        "animated": [
+          true
+        ]
+      }
+    }
+  },
+  {
+    "run_id": "recent-motion-7-motion0.15",
+    "mode": "motion0.15",
+    "timings": {
+      "sampling_loop": 13.722048500087112,
+      "sampling": 13.763640791992657,
+      "audio_decode": 0.18932000000495464,
+      "video_decode": 1.4891518329968676,
+      "create_video": 7.299997378140688e-05,
+      "save_video": 0.1076877920422703
+    },
+    "steps": [
+      0.9141126660397276,
+      0.8563994589494541,
+      0.8526660000206903,
+      0.854846875066869,
+      0.8522033329354599,
+      0.8541687080869451,
+      0.8554860838921741,
+      0.856959208031185,
+      0.8519919170066714,
+      0.0018044160678982735,
+      0.8511513749836013,
+      0.0017174999229609966,
+      0.8532636250602081,
+      0.001664208946749568,
+      0.8516430410090834,
+      0.001728084054775536,
+      0.8539048329694197,
+      0.8516533749643713,
+      0.8530085000675172,
+      0.8510819579241797
+    ],
+    "peak_driver_gib": 52.36688232421875,
+    "vae_dtype": "torch.float16",
+    "attention_calls": {},
+    "tensors": {
+      "conditioning": {
+        "/positive/0/minimax_token_tags": {
+          "sha256": "e4bc56cb1b7640ed7fd36580f6e2a0280797353900db536b887c2a0815986162",
+          "shape": [
+            53
+          ],
+          "dtype": "torch.int64",
+          "finite": true
+        },
+        "/positive/0/cross_attn": {
+          "sha256": "34f68a619a7e97674f6fff31e5461241c6123e33b5a7f4fac99ec7c61c60dfd1",
+          "shape": [
+            1,
+            53,
+            5120
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "noise": {
+        "/": {
+          "sha256": "ee802382fa2d1738c1c8bde1312482b2d26c5afa79910ed05505c31d9e239c72",
+          "shape": [
+            1,
+            1,
+            274528
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "latents": {
+        "/0/samples/0": {
+          "sha256": "1a91a4b8db60ae01eb00d77453effc754143c421e18c7bc85c04319fb4595556",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/0/samples/1": {
+          "sha256": "f1066967b530702c94e7650ab3049f8de46f3d33e04ed3eee824f8ae3103bcb2",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/0": {
+          "sha256": "d0bb108bdc39d7ac5c19dc31881d881a6521a6e5dbcd81b933d6abde6e9723a7",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/1": {
+          "sha256": "255107f5e2df905f01368ccadaa36afe7e3b99d1d4ef1a953ae081c585acbe20",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "audio_decode": {
+        "/0/0/waveform": {
+          "sha256": "1994cfa40fcbbe26ca3f91783d815500fd8c9c3637a222824541a631c318aae0",
+          "shape": [
+            1,
+            2,
+            29600
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "frames": {
+        "": {
+          "sha256": "b422fdbd923efd7a6cab9d9ba06dfa422cb0b0d9a23e1969f55546f7ea75e018",
+          "shape": [
+            22,
+            480,
+            864,
+            3
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      }
+    },
+    "candidate_stats": {
+      "settings": {
+        "reuse_threshold": 0.15,
+        "motion_strength": 1.0,
+        "warmup_steps": 4,
+        "max_consecutive_skips": 2,
+        "start_percent": 0.15,
+        "end_percent": 0.95,
+        "subsample_factor": 8,
+        "verbose": true
+      },
+      "block_0": 16,
+      "block_49": 16
+    },
+    "patch_status": {
+      "torch_mpp_qcache": {
+        "_dead": "False",
+        "_calls": "6000"
+      },
+      "torch_attention": {},
+      "attn_router_mps": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "attention_backend": {},
+      "_common": {},
+      "comfykitchen_fp8": {},
+      "linear_fp8": {
+        "_installed": "True"
+      },
+      "linear_fp8_w8a16": {
+        "_installed": "True"
+      },
+      "ops_bias_fp8": {
+        "_installed": "True"
+      },
+      "psutil_vmstat": {},
+      "rmsnorm_mps_large": {
+        "_installed": "True"
+      },
+      "scaled_mm_fp8": {
+        "_installed": "True"
+      },
+      "flash_attn_mtl": {},
+      "stochastic_round_fp8": {
+        "_installed": "True"
+      },
+      "tensor_to_fp8": {
+        "_installed": "True"
+      },
+      "wan_blockswap_mps": {
+        "_installed": "True"
+      },
+      "te_device_mps": {
+        "_installed": "True"
+      },
+      "int_mm_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_kernel_mps": {
+        "_installed": "True"
+      },
+      "_mlx_gemma3": {},
+      "_mlx_qwen3vl": {},
+      "mlx_textgen": {
+        "_installed": "False"
+      },
+      "fp8_mps_strided": {
+        "_installed": "True"
+      },
+      "fp8_fill_mps": {
+        "_installed": "True"
+      },
+      "lumina_attn_fast": {
+        "_installed": "True"
+      },
+      "quant_meta_fix": {
+        "_installed": "True"
+      },
+      "int8_embedding": {
+        "_installed": "True"
+      },
+      "rope_fast": {
+        "_installed": "True"
+      },
+      "flux2_glue": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "flux_attn_fast": {
+        "_installed": "True"
+      },
+      "krea2_attn_fast": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "conv3d_mps": {
+        "_installed": "True"
+      },
+      "ltx_fast": {
+        "_installed": "True"
+      },
+      "ltx25_fast": {
+        "_installed": "True",
+        "_dead": "False",
+        "_calls": "0"
+      },
+      "wan_fast": {
+        "_installed": "True"
+      },
+      "wan_vae_fast": {
+        "_installed": "True"
+      },
+      "vae_slice_attn_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_vae_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_fast": {
+        "_installed": "True"
+      },
+      "seedvr2_loader": {
+        "_installed": "True"
+      },
+      "ideogram_fast": {
+        "_installed": "False"
+      },
+      "minimax_fast": {
+        "_installed": "True",
+        "_block_dead": "False",
+        "_dead": "False"
+      },
+      "minimax_relaxed": {
+        "_installed": "False"
+      },
+      "minimax_vae_int8": {
+        "_dead": "False"
+      },
+      "minimax_vae_fast": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_ff_dead": "False",
+        "_dense": "False",
+        "_qkv_dead": "False"
+      },
+      "minimax_h3cache": {},
+      "minimax_vae_tiling": {
+        "_installed": "False"
+      },
+      "minimax_vae_batch": {
+        "_installed": "False"
+      },
+      "free_mem_mps": {
+        "_installed": "True"
+      },
+      "exec_trace": {
+        "_installed": "False"
+      },
+      "optrace": {
+        "_installed": "False"
+      },
+      "mps_profile": {
+        "_installed": "False"
+      },
+      "sdxl_geglu": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "qwen21_fast": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "minimax_h3_turbo": {},
+      "minimax_h3_structure": {},
+      "minimax_h3_sparse": {
+        "_dense": "<function _dense at 0x14df1ef20>"
+      },
+      "minimax_h3_unified": {},
+      "super_resolution": {},
+      "h3_latent_upscaler": {},
+      "mfa4_ext": {},
+      "_native_build": {},
+      "loader": {},
+      "fp8s_ext": {},
+      "fp8_ext": {},
+      "int8_ext": {},
+      "dit_ext": {},
+      "krea2_glue": {
+        "_installed": "True"
+      },
+      "krea2_ext": {},
+      "ltx25_vae": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_calls": "0"
+      },
+      "wan_ext": {},
+      "seedvr2_ext": {},
+      "minimax_h3_graph": {},
+      "minimax_vae_ext": {},
+      "ideogram4_exact": {
+        "_installed": "False",
+        "_attention_dead": "False",
+        "_dead": "False",
+        "_calls": "0"
+      }
+    },
+    "e2e": 15.552,
+    "warmup": false,
+    "outputs": {
+      "92": {
+        "images": [
+          {
+            "filename": "recent-motion-7-motion0.15_00001_.mp4",
+            "subfolder": "",
+            "type": "output"
+          }
+        ],
+        "animated": [
+          true
+        ]
+      }
+    }
+  },
+  {
+    "run_id": "recent-motion-8-speed3-cal01",
+    "mode": "speed3-cal01",
+    "timings": {
+      "sampling_loop": 11.914352208026685,
+      "sampling": 13.618297250010073,
+      "audio_decode": 0.1885949169518426,
+      "video_decode": 1.4880480830324814,
+      "create_video": 8.045800495892763e-05,
+      "save_video": 0.12034566700458527
+    },
+    "steps": [
+      0.2680448329774663,
+      0.1880743750371039,
+      0.17683399992529303,
+      0.17596958298236132,
+      0.4142118339659646,
+      0.4098456250503659,
+      0.8564360409509391,
+      0.8509115839842707,
+      0.8507145410403609,
+      0.8498168749501929,
+      0.8507482920540497,
+      0.8496467500226572,
+      0.8522535830270499,
+      0.8498449999606237,
+      0.8495007089804858,
+      0.8513292910065502,
+      0.8501465419540182,
+      0.8506407500244677,
+      0.8501356249907985,
+      0.85148312500678
+    ],
+    "peak_driver_gib": 52.37469482421875,
+    "vae_dtype": "torch.float16",
+    "attention_calls": {},
+    "tensors": {
+      "conditioning": {
+        "/positive/0/minimax_token_tags": {
+          "sha256": "e4bc56cb1b7640ed7fd36580f6e2a0280797353900db536b887c2a0815986162",
+          "shape": [
+            53
+          ],
+          "dtype": "torch.int64",
+          "finite": true
+        },
+        "/positive/0/cross_attn": {
+          "sha256": "34f68a619a7e97674f6fff31e5461241c6123e33b5a7f4fac99ec7c61c60dfd1",
+          "shape": [
+            1,
+            53,
+            5120
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "noise": {
+        "/": {
+          "sha256": "3e0eccc236f6c3313f213ef7a38bf73d0cb9d560222a3ae29c45b7c7db2113cb",
+          "shape": [
+            1,
+            1,
+            274528
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "latents": {
+        "/0/samples/0": {
+          "sha256": "5ad39a1cb2130291091841de8cc05d3c7b42853540309e05ecc8a5a8dfbbbdf4",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/0/samples/1": {
+          "sha256": "de61bafe916cdd5192b5932004e4e4c33a8330871d09e818ad35a8d7ce0501c9",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/0": {
+          "sha256": "4ab45ba054082aa4002c87e83ec0b3339f61f9241cd30572c1198480060c48d5",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/1": {
+          "sha256": "16108a0e88a13e00c50b63da6614725124442a9f4a9eea119f8208b17d1d3a12",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "audio_decode": {
+        "/0/0/waveform": {
+          "sha256": "017c4a061ec921cb542e6e8f9378914e280e366b59761cc200283b8aba9a8534",
+          "shape": [
+            1,
+            2,
+            29600
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "frames": {
+        "": {
+          "sha256": "0d7d5a81922a9aa0edbf03ba551b0fd1715cc79b8a91cf0dd79a09d27d6e0a3a",
+          "shape": [
+            22,
+            480,
+            864,
+            3
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      }
+    },
+    "candidate_stats": {
+      "settings": {},
+      "speed_calibration": {
+        "noise_amplitude": 19.025775364207593,
+        "noise_decay_exponent": 0.8798802352565238,
+        "Tolerance (Delta)": 0.01
+      },
+      "block_0": 20,
+      "block_49": 20
+    },
+    "patch_status": {
+      "torch_mpp_qcache": {
+        "_dead": "False",
+        "_calls": "6700"
+      },
+      "torch_attention": {},
+      "attn_router_mps": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "attention_backend": {},
+      "_common": {},
+      "comfykitchen_fp8": {},
+      "linear_fp8": {
+        "_installed": "True"
+      },
+      "linear_fp8_w8a16": {
+        "_installed": "True"
+      },
+      "ops_bias_fp8": {
+        "_installed": "True"
+      },
+      "psutil_vmstat": {},
+      "rmsnorm_mps_large": {
+        "_installed": "True"
+      },
+      "scaled_mm_fp8": {
+        "_installed": "True"
+      },
+      "flash_attn_mtl": {},
+      "stochastic_round_fp8": {
+        "_installed": "True"
+      },
+      "tensor_to_fp8": {
+        "_installed": "True"
+      },
+      "wan_blockswap_mps": {
+        "_installed": "True"
+      },
+      "te_device_mps": {
+        "_installed": "True"
+      },
+      "int_mm_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_kernel_mps": {
+        "_installed": "True"
+      },
+      "_mlx_gemma3": {},
+      "_mlx_qwen3vl": {},
+      "mlx_textgen": {
+        "_installed": "False"
+      },
+      "fp8_mps_strided": {
+        "_installed": "True"
+      },
+      "fp8_fill_mps": {
+        "_installed": "True"
+      },
+      "lumina_attn_fast": {
+        "_installed": "True"
+      },
+      "quant_meta_fix": {
+        "_installed": "True"
+      },
+      "int8_embedding": {
+        "_installed": "True"
+      },
+      "rope_fast": {
+        "_installed": "True"
+      },
+      "flux2_glue": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "flux_attn_fast": {
+        "_installed": "True"
+      },
+      "krea2_attn_fast": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "conv3d_mps": {
+        "_installed": "True"
+      },
+      "ltx_fast": {
+        "_installed": "True"
+      },
+      "ltx25_fast": {
+        "_installed": "True",
+        "_dead": "False",
+        "_calls": "0"
+      },
+      "wan_fast": {
+        "_installed": "True"
+      },
+      "wan_vae_fast": {
+        "_installed": "True"
+      },
+      "vae_slice_attn_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_vae_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_fast": {
+        "_installed": "True"
+      },
+      "seedvr2_loader": {
+        "_installed": "True"
+      },
+      "ideogram_fast": {
+        "_installed": "False"
+      },
+      "minimax_fast": {
+        "_installed": "True",
+        "_block_dead": "False",
+        "_dead": "False"
+      },
+      "minimax_relaxed": {
+        "_installed": "False"
+      },
+      "minimax_vae_int8": {
+        "_dead": "False"
+      },
+      "minimax_vae_fast": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_ff_dead": "False",
+        "_dense": "False",
+        "_qkv_dead": "False"
+      },
+      "minimax_h3cache": {},
+      "minimax_vae_tiling": {
+        "_installed": "False"
+      },
+      "minimax_vae_batch": {
+        "_installed": "False"
+      },
+      "free_mem_mps": {
+        "_installed": "True"
+      },
+      "exec_trace": {
+        "_installed": "False"
+      },
+      "optrace": {
+        "_installed": "False"
+      },
+      "mps_profile": {
+        "_installed": "False"
+      },
+      "sdxl_geglu": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "qwen21_fast": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "minimax_h3_turbo": {},
+      "minimax_h3_structure": {},
+      "minimax_h3_sparse": {
+        "_dense": "<function _dense at 0x14df1ef20>"
+      },
+      "minimax_h3_unified": {},
+      "super_resolution": {},
+      "h3_latent_upscaler": {},
+      "mfa4_ext": {},
+      "_native_build": {},
+      "loader": {},
+      "fp8s_ext": {},
+      "fp8_ext": {},
+      "int8_ext": {},
+      "dit_ext": {},
+      "krea2_glue": {
+        "_installed": "True"
+      },
+      "krea2_ext": {},
+      "ltx25_vae": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_calls": "0"
+      },
+      "wan_ext": {},
+      "seedvr2_ext": {},
+      "minimax_h3_graph": {},
+      "minimax_vae_ext": {},
+      "ideogram4_exact": {
+        "_installed": "False",
+        "_attention_dead": "False",
+        "_dead": "False",
+        "_calls": "0"
+      }
+    },
+    "e2e": 15.417,
+    "warmup": false,
+    "outputs": {
+      "92": {
+        "images": [
+          {
+            "filename": "recent-motion-8-speed3-cal01_00001_.mp4",
+            "subfolder": "",
+            "type": "output"
+          }
+        ],
+        "animated": [
+          true
+        ]
+      }
+    }
+  },
+  {
+    "run_id": "recent-motion-9-exact",
+    "mode": "exact",
+    "timings": {
+      "sampling_loop": 17.089220124995336,
+      "sampling": 17.13807783392258,
+      "audio_decode": 0.1881164580117911,
+      "video_decode": 1.4888642500154674,
+      "create_video": 8.216593414545059e-05,
+      "save_video": 0.10419924999587238
+    },
+    "steps": [
+      0.9241907499963418,
+      0.8557469591032714,
+      0.850759582943283,
+      0.8515532920137048,
+      0.850414999993518,
+      0.8501285830279812,
+      0.8512375829741359,
+      0.8498753750463948,
+      0.8499359169509262,
+      0.8498944999882951,
+      0.8513282079948112,
+      0.8502349170157686,
+      0.8493730829795823,
+      0.8497905000112951,
+      0.8523449170170352,
+      0.8499842500314116,
+      0.8496012919349596,
+      0.8511142909992486,
+      0.850315083982423,
+      0.8506110000889748
+    ],
+    "peak_driver_gib": 52.37469482421875,
+    "vae_dtype": "torch.float16",
+    "attention_calls": {},
+    "tensors": {
+      "conditioning": {
+        "/positive/0/minimax_token_tags": {
+          "sha256": "e4bc56cb1b7640ed7fd36580f6e2a0280797353900db536b887c2a0815986162",
+          "shape": [
+            53
+          ],
+          "dtype": "torch.int64",
+          "finite": true
+        },
+        "/positive/0/cross_attn": {
+          "sha256": "34f68a619a7e97674f6fff31e5461241c6123e33b5a7f4fac99ec7c61c60dfd1",
+          "shape": [
+            1,
+            53,
+            5120
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "noise": {
+        "/": {
+          "sha256": "ee802382fa2d1738c1c8bde1312482b2d26c5afa79910ed05505c31d9e239c72",
+          "shape": [
+            1,
+            1,
+            274528
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "latents": {
+        "/0/samples/0": {
+          "sha256": "2442c6b6937ac6837fcbfed64eb7e63b0b770ee1f51ca0156ad31eb919493fb6",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/0/samples/1": {
+          "sha256": "b0c70d02a78e3e07828ebcc5baf314fb8849cbcb6153391c23e071a153d7dcc5",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/0": {
+          "sha256": "1fbdab64e6e992e7e3778008167c1eccf128441f58b9d95c64a0ac243c147485",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/1": {
+          "sha256": "83c8e7f2f313d7e5ad2163e458b514a284ff4cb6b8fd6961105b9f765755e6db",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "audio_decode": {
+        "/0/0/waveform": {
+          "sha256": "967c96a695f7d35bcb5c86645711ce36f37ab0deaab68579d06bc3ed143bdc38",
+          "shape": [
+            1,
+            2,
+            29600
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "frames": {
+        "": {
+          "sha256": "e44cf5719457d284d4a129e5d36bcbaf41223f5511e2b8f0016653a682fd8730",
+          "shape": [
+            22,
+            480,
+            864,
+            3
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      }
+    },
+    "candidate_stats": {
+      "settings": {},
+      "block_0": 20,
+      "block_49": 20
+    },
+    "patch_status": {
+      "torch_mpp_qcache": {
+        "_dead": "False",
+        "_calls": "7700"
+      },
+      "torch_attention": {},
+      "attn_router_mps": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "attention_backend": {},
+      "_common": {},
+      "comfykitchen_fp8": {},
+      "linear_fp8": {
+        "_installed": "True"
+      },
+      "linear_fp8_w8a16": {
+        "_installed": "True"
+      },
+      "ops_bias_fp8": {
+        "_installed": "True"
+      },
+      "psutil_vmstat": {},
+      "rmsnorm_mps_large": {
+        "_installed": "True"
+      },
+      "scaled_mm_fp8": {
+        "_installed": "True"
+      },
+      "flash_attn_mtl": {},
+      "stochastic_round_fp8": {
+        "_installed": "True"
+      },
+      "tensor_to_fp8": {
+        "_installed": "True"
+      },
+      "wan_blockswap_mps": {
+        "_installed": "True"
+      },
+      "te_device_mps": {
+        "_installed": "True"
+      },
+      "int_mm_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_kernel_mps": {
+        "_installed": "True"
+      },
+      "_mlx_gemma3": {},
+      "_mlx_qwen3vl": {},
+      "mlx_textgen": {
+        "_installed": "False"
+      },
+      "fp8_mps_strided": {
+        "_installed": "True"
+      },
+      "fp8_fill_mps": {
+        "_installed": "True"
+      },
+      "lumina_attn_fast": {
+        "_installed": "True"
+      },
+      "quant_meta_fix": {
+        "_installed": "True"
+      },
+      "int8_embedding": {
+        "_installed": "True"
+      },
+      "rope_fast": {
+        "_installed": "True"
+      },
+      "flux2_glue": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "flux_attn_fast": {
+        "_installed": "True"
+      },
+      "krea2_attn_fast": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "conv3d_mps": {
+        "_installed": "True"
+      },
+      "ltx_fast": {
+        "_installed": "True"
+      },
+      "ltx25_fast": {
+        "_installed": "True",
+        "_dead": "False",
+        "_calls": "0"
+      },
+      "wan_fast": {
+        "_installed": "True"
+      },
+      "wan_vae_fast": {
+        "_installed": "True"
+      },
+      "vae_slice_attn_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_vae_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_fast": {
+        "_installed": "True"
+      },
+      "seedvr2_loader": {
+        "_installed": "True"
+      },
+      "ideogram_fast": {
+        "_installed": "False"
+      },
+      "minimax_fast": {
+        "_installed": "True",
+        "_block_dead": "False",
+        "_dead": "False"
+      },
+      "minimax_relaxed": {
+        "_installed": "False"
+      },
+      "minimax_vae_int8": {
+        "_dead": "False"
+      },
+      "minimax_vae_fast": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_ff_dead": "False",
+        "_dense": "False",
+        "_qkv_dead": "False"
+      },
+      "minimax_h3cache": {},
+      "minimax_vae_tiling": {
+        "_installed": "False"
+      },
+      "minimax_vae_batch": {
+        "_installed": "False"
+      },
+      "free_mem_mps": {
+        "_installed": "True"
+      },
+      "exec_trace": {
+        "_installed": "False"
+      },
+      "optrace": {
+        "_installed": "False"
+      },
+      "mps_profile": {
+        "_installed": "False"
+      },
+      "sdxl_geglu": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "qwen21_fast": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "minimax_h3_turbo": {},
+      "minimax_h3_structure": {},
+      "minimax_h3_sparse": {
+        "_dense": "<function _dense at 0x14df1ef20>"
+      },
+      "minimax_h3_unified": {},
+      "super_resolution": {},
+      "h3_latent_upscaler": {},
+      "mfa4_ext": {},
+      "_native_build": {},
+      "loader": {},
+      "fp8s_ext": {},
+      "fp8_ext": {},
+      "int8_ext": {},
+      "dit_ext": {},
+      "krea2_glue": {
+        "_installed": "True"
+      },
+      "krea2_ext": {},
+      "ltx25_vae": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_calls": "0"
+      },
+      "wan_ext": {},
+      "seedvr2_ext": {},
+      "minimax_h3_graph": {},
+      "minimax_vae_ext": {},
+      "ideogram4_exact": {
+        "_installed": "False",
+        "_attention_dead": "False",
+        "_dead": "False",
+        "_calls": "0"
+      }
+    },
+    "e2e": 18.921,
+    "warmup": false,
+    "outputs": {
+      "92": {
+        "images": [
+          {
+            "filename": "recent-motion-9-exact_00001_.mp4",
+            "subfolder": "",
+            "type": "output"
+          }
+        ],
+        "animated": [
+          true
+        ]
+      }
+    }
+  }
+]

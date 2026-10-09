@@ -17,6 +17,9 @@ import sys
 import time
 import urllib.request
 import uuid
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 
 def submit(base, prompt, client_id):
@@ -183,8 +186,17 @@ def set_easycache(prompt, values):
     return p
 
 
+def _h3_node(model, **settings):
+    from _patches.minimax_h3_unified import AppleSiliconH3Acceleration
+    schema = AppleSiliconH3Acceleration.INPUT_TYPES()["required"]
+    inputs = {name: spec[1]["default"] for name, spec in schema.items() if name != "model"}
+    inputs.update(model=model, cache_mode="disabled", token_reduction=False, sparse_attention=False)
+    inputs.update(settings)
+    return {"class_type": "AppleSiliconH3UnifiedAcceleration", "inputs": inputs}
+
+
 def set_h3cache(
-    prompt, values, audio_weight=1.0, prediction_mode="velocity_hold",
+    prompt, values, audio_weight=1.0, prediction_mode="first_block_cache",
     cached_suffix_blocks=0,
 ):
     """Insert this package's H3Cache node in front of every model consumer."""
@@ -205,21 +217,15 @@ def set_h3cache(
         for key, value in inputs.items():
             if value == [loader_id, 0]:
                 inputs[key] = [cache_id, 0]
-    p[cache_id] = {
-        "inputs": {
-            "model": [loader_id, 0],
-            "reuse_threshold": threshold,
-            "start_percent": start,
-            "end_percent": end,
-            "max_consecutive_skips": int(max_skips),
-            "audio_weight": float(audio_weight),
-            "cached_suffix_blocks": int(cached_suffix_blocks),
-            "prediction_mode": prediction_mode,
-            "verbose": True,
-        },
-        "class_type": "AppleSiliconH3Cache",
-        "_meta": {"title": "H3Cache (benchmark injection)"},
-    }
+    if cached_suffix_blocks or prediction_mode not in (
+            "first_block_cache", "first_block_cache_per_step", "oracle", "block_oracle"):
+        raise ValueError("retired cache experiment; use a supported H3 Acceleration mode")
+    p[cache_id] = _h3_node(
+        [loader_id, 0], cache_mode=prediction_mode, cache_reuse_threshold=threshold,
+        cache_start_percent=start, cache_end_percent=end,
+        cache_max_consecutive_skips=int(max_skips), cache_audio_weight=float(audio_weight),
+        cache_verbose=True)
+
     return p
 
 
@@ -268,37 +274,13 @@ def set_h3_sparse(prompt, values):
         for key, value in inputs.items():
             if value == [source_id, 0]:
                 inputs[key] = [node_id, 0]
-    p[node_id] = {
-        "inputs": {
-            "model": [source_id, 0],
-            "mode": str(mode),
-            "tau": float(tau),
-            "start_percent": float(start),
-            "dense_leading_blocks": int(dense_blocks),
-            "min_sequence_tokens": int(min_seq),
-            "verbose": True,
-        },
-        "class_type": "AppleSiliconH3SparseAttention",
-        "_meta": {"title": "H3 Sparse Attention (benchmark injection)"},
-    }
-    return p
+    if mode not in ("corrected", "dense_reference", "oracle"):
+        raise ValueError("retired sparse experiment; use corrected, dense_reference, or oracle")
+    p[node_id] = _h3_node(
+        [source_id, 0], sparse_attention=True, sparse_mode=str(mode), sparse_tau=float(tau),
+        sparse_start_percent=float(start), sparse_dense_leading_blocks=int(dense_blocks),
+        sparse_min_sequence_tokens=int(min_seq), sparse_verbose=True)
 
-
-def set_h3_preset(prompt, preset):
-    """Insert the combined H3 accelerator node with one preset."""
-    p = copy.deepcopy(prompt)
-    if preset is None:
-        return p
-    loader_id = _single_loader(p)
-    _rewire_through(p, loader_id, "asfp8:h3preset", {
-        "inputs": {
-            "model": [loader_id, 0],
-            "preset": str(preset),
-            "verbose": True,
-        },
-        "class_type": "AppleSiliconH3Acceleration",
-        "_meta": {"title": "H3 Acceleration preset (benchmark injection)"},
-    })
     return p
 
 
@@ -387,17 +369,9 @@ def main():
                     help="inject H3Cache; THRESH=0 records calibration without skipping")
     ap.add_argument("--h3cache-audio-weight", type=float, default=1.0,
                     help="weight of audio change in H3Cache's reuse veto")
-    ap.add_argument("--h3cache-suffix-blocks", type=int, default=0,
-                    help="cache only the final N H3 blocks; 0 caches the full model")
     ap.add_argument("--h3cache-predictor",
-                    choices=("secant_velocity", "velocity_hold",
-                             "output_hold", "residual_carry",
-                             "denoised_hold", "denoised_linear",
-                             "first_block_cache",
-                             "first_block_cache_per_step", "oracle",
-                             "block_oracle", "block_taylor"),
-                    default="velocity_hold",
-                    help="prediction used on an H3Cache hit")
+                    choices=("first_block_cache", "first_block_cache_per_step", "oracle", "block_oracle"),
+                    default="first_block_cache", help="H3 Acceleration cache policy")
     ap.add_argument("--spectrum-h3",
                     choices=("exact", "single", "single-late", "conservative"),
                     help="inject the external Spectrum H3 reference node")
@@ -405,8 +379,6 @@ def main():
                     metavar=("MODE", "TAU", "START", "DENSE_BLOCKS", "MIN_SEQ"),
                     help="inject H3 sparse attention; combines with --easycache "
                          "or --h3cache (applied after the cache node)")
-    ap.add_argument("--h3-preset", choices=("exact", "balanced", "aggressive"),
-                    help="inject the combined H3 accelerator node with one preset")
     ap.add_argument("--seed-offset", type=int, default=0,
                     help="added to the per-run seed bump; use distinct offsets "
                          "across single-run invocations so ComfyUI's execution "
@@ -431,16 +403,14 @@ def main():
             ap.error("--h3cache requires THRESH>=0, 0<=START<=END<=1, and integer MAX_SKIPS>=1")
         if args.h3cache_audio_weight <= 0:
             ap.error("--h3cache-audio-weight must be positive")
-        if not 0 <= args.h3cache_suffix_blocks <= 49:
-            ap.error("--h3cache-suffix-blocks must be between 0 and 49")
     selected_caches = sum(value is not None for value in (
         args.easycache, args.h3cache, args.spectrum_h3))
     if selected_caches > 1:
         ap.error("--easycache, --h3cache, and --spectrum-h3 are mutually exclusive")
     if args.h3_sparse is not None:
         mode, tau, start, dense_blocks, min_seq = args.h3_sparse
-        if mode not in ("corrected", "hard_drop", "dense_reference"):
-            ap.error("--h3-sparse MODE must be corrected, hard_drop, or dense_reference")
+        if mode not in ("corrected", "dense_reference", "oracle"):
+            ap.error("--h3-sparse MODE must be corrected, dense_reference, or oracle")
         try:
             tau_v, start_v = float(tau), float(start)
             dense_v, seq_v = int(dense_blocks), int(min_seq)
@@ -449,15 +419,12 @@ def main():
         if tau_v < 0 or not 0 <= start_v <= 1 or not 0 <= dense_v <= 49 or seq_v < 0:
             ap.error("--h3-sparse requires TAU>=0, 0<=START<=1, 0<=DENSE_BLOCKS<=49, MIN_SEQ>=0")
         args.h3_sparse = (mode, tau_v, start_v, dense_v, seq_v)
-    if args.h3_preset is not None and (args.h3_sparse is not None or selected_caches):
-        ap.error("--h3-preset already selects a cache and sparse configuration; "
-                 "do not combine it with --easycache/--h3cache/--spectrum-h3/--h3-sparse")
 
     with urllib.request.urlopen(f"{args.base}/system_stats") as r:
         stats = json.load(r)
     torch_ver = stats.get("system", {}).get("pytorch_version", "?")
     print(f"server up: torch {torch_ver}", flush=True)
-    if args.h3_sparse is not None or args.h3_preset is not None:
+    if args.h3_sparse is not None:
         # The sparse route needs torch 2.13's MPS stack; refusing here beats
         # discovering it from a node error after a model load.
         parts = str(torch_ver).split(".")
@@ -481,10 +448,9 @@ def main():
         base_prompt = set_easycache(base_prompt, args.easycache)
         base_prompt = set_h3cache(
             base_prompt, args.h3cache, args.h3cache_audio_weight,
-            args.h3cache_predictor, args.h3cache_suffix_blocks)
+            args.h3cache_predictor, 0)
         base_prompt = set_spectrum_h3(base_prompt, args.spectrum_h3)
         base_prompt = set_h3_sparse(base_prompt, args.h3_sparse)
-        base_prompt = set_h3_preset(base_prompt, args.h3_preset)
         times = []
         prompt_ids = []
         artifacts = []

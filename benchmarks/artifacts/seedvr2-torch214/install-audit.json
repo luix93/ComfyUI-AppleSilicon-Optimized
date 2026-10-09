@@ -1,0 +1,22 @@
+{
+  "_patches/seedvr2_fast.py": {
+    "repository": "e1058c60a62b2e746a9b2a789cf8ca75db8f071884ad5a9c903ae6b0fd102682",
+    "installed": "e1058c60a62b2e746a9b2a789cf8ca75db8f071884ad5a9c903ae6b0fd102682"
+  },
+  "_patches/seedvr2_vae_mps.py": {
+    "repository": "9b7e02c6e401beb33223843dc3de44d86a92295fd753f64cb371111618ed2572",
+    "installed": "9b7e02c6e401beb33223843dc3de44d86a92295fd753f64cb371111618ed2572"
+  },
+  "_patches/seedvr2_loader.py": {
+    "repository": "df9aef81863812dc4410698878b9fc2b04c52df692d5458a2773006732f5311b",
+    "installed": "df9aef81863812dc4410698878b9fc2b04c52df692d5458a2773006732f5311b"
+  },
+  "_patches/conv3d_mps.py": {
+    "repository": "38f7995c623487093c3589fac89690c0d470d3ec9fa2fbd49ecff1df448691b9",
+    "installed": "38f7995c623487093c3589fac89690c0d470d3ec9fa2fbd49ecff1df448691b9"
+  },
+  "_patches/seedvr2_ext/seedvr2_kernels.mm": {
+    "repository": "7526fd4f86018e16f768eff0293adf6732cc3032de2e442c35c8be34d4a0a51b",
+    "installed": "7526fd4f86018e16f768eff0293adf6732cc3032de2e442c35c8be34d4a0a51b"
+  }
+}

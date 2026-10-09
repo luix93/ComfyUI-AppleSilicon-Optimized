@@ -1,0 +1,314 @@
+{
+  "fp16-smoke": {
+    "warm_mean_seconds": 0.9174565419671126,
+    "timings": {
+      "resize": 0.005146500014234334,
+      "preprocess": 0.0013003330095671117,
+      "encode": 0.18249570799525827,
+      "sample": 0.29852629196830094,
+      "decode": 0.3983019999577664,
+      "postprocess": 0.00028554198797792196,
+      "save_image": 0.0301269160117954
+    },
+    "state": {
+      "stage": "verification",
+      "max_driver_gib": 22.131591796875,
+      "max_live_gib": 16.106645345687866,
+      "max_rss_gib": 31.651641845703125,
+      "torch_version": "2.14.0",
+      "torch_git": "08187d9e0fba026dc8217405802ab5381dc88d90",
+      "completed": true
+    },
+    "hashes": {
+      "encoded_sha256": "6b65a00eee9ba9058268a91b6405615f63094d39d2bf63f0f596b8efbc57c93f",
+      "sampled_sha256": "d645764d48d73e649c4331a6b2dd63c9899e9aee8ce80e877a7f41c003f6b103",
+      "frames_sha256": "07ed7e701b0cc2014fa9d1df0cc840059d5343513798d1c63c4adc210313a4dd"
+    }
+  },
+  "full-copies": {
+    "warm_mean_seconds": 48.731918417004636,
+    "timings": {
+      "resize": 0.291146937495796,
+      "preprocess": 0.011401313007809222,
+      "encode": 10.316112853994127,
+      "sample": 11.833301313017728,
+      "decode": 24.3299791245081,
+      "postprocess": 0.014016166504006833,
+      "save_image": 1.9320111874840222
+    },
+    "state": {
+      "stage": "verification",
+      "max_driver_gib": 32.955169677734375,
+      "max_live_gib": 9.063615798950195,
+      "max_rss_gib": 6.2640533447265625,
+      "torch_version": "2.14.0",
+      "torch_git": "08187d9e0fba026dc8217405802ab5381dc88d90",
+      "completed": true
+    },
+    "hashes": {
+      "encoded_sha256": "b4ddc3843b6354381408b871e45a64087b8da413fa284a52bb0b3ef50e734d1c",
+      "sampled_sha256": "0dd4a4ac8867da450bfb65397218d2b056d5d957f016e287c7dde83c84d51156",
+      "frames_sha256": "59a20c68d3cb6882459ce574a2c9c050141f0978f3fb80c141011ef0f2adc056"
+    }
+  },
+  "full-final": {
+    "warm_mean_seconds": 49.01058308346546,
+    "timings": {
+      "resize": 0.2895341664843727,
+      "preprocess": 0.010870062484173104,
+      "encode": 10.271548666496528,
+      "sample": 11.923216020979453,
+      "decode": 24.554527708532987,
+      "postprocess": 0.014883228985127062,
+      "save_image": 1.9420427289733198
+    },
+    "state": {
+      "stage": "verification",
+      "max_driver_gib": 32.975189208984375,
+      "max_live_gib": 9.06382942199707,
+      "max_rss_gib": 6.1423187255859375,
+      "torch_version": "2.14.0",
+      "torch_git": "08187d9e0fba026dc8217405802ab5381dc88d90",
+      "completed": true
+    },
+    "hashes": {
+      "encoded_sha256": "b4ddc3843b6354381408b871e45a64087b8da413fa284a52bb0b3ef50e734d1c",
+      "sampled_sha256": "0dd4a4ac8867da450bfb65397218d2b056d5d957f016e287c7dde83c84d51156",
+      "frames_sha256": "59a20c68d3cb6882459ce574a2c9c050141f0978f3fb80c141011ef0f2adc056"
+    }
+  },
+  "full-native": {
+    "warm_mean_seconds": 49.21459597948706,
+    "timings": {
+      "resize": 0.28207575049600564,
+      "preprocess": 0.010924625006737188,
+      "encode": 10.540855792001821,
+      "sample": 11.816648770472966,
+      "decode": 24.62631381250685,
+      "postprocess": 0.015416332986205816,
+      "save_image": 1.9185580000339542
+    },
+    "state": {
+      "stage": "verification",
+      "max_driver_gib": 32.756439208984375,
+      "max_live_gib": 9.064409255981445,
+      "max_rss_gib": 6.3659210205078125,
+      "torch_version": "2.14.0",
+      "torch_git": "08187d9e0fba026dc8217405802ab5381dc88d90",
+      "completed": true
+    },
+    "hashes": {
+      "encoded_sha256": "b4ddc3843b6354381408b871e45a64087b8da413fa284a52bb0b3ef50e734d1c",
+      "sampled_sha256": "0dd4a4ac8867da450bfb65397218d2b056d5d957f016e287c7dde83c84d51156",
+      "frames_sha256": "59a20c68d3cb6882459ce574a2c9c050141f0978f3fb80c141011ef0f2adc056"
+    }
+  },
+  "full-stock": {
+    "warm_mean_seconds": 74.01613183302106,
+    "timings": {
+      "resize": 0.2963824159814976,
+      "preprocess": 0.010910229000728577,
+      "encode": 14.409772146493196,
+      "sample": 21.828127208485967,
+      "decode": 35.5486573750095,
+      "postprocess": 0.010303770512109622,
+      "save_image": 1.9067576244997326
+    },
+    "state": {
+      "stage": "verification",
+      "max_driver_gib": 40.25555419921875,
+      "max_live_gib": 8.783223628997803,
+      "max_rss_gib": 6.2547760009765625,
+      "torch_version": "2.14.0",
+      "torch_git": "08187d9e0fba026dc8217405802ab5381dc88d90",
+      "completed": true
+    },
+    "hashes": {
+      "encoded_sha256": "a27a98ac4274ea5564fe337f613cba6d83723b4f23db23949002eb2f847e01d3",
+      "sampled_sha256": "faeb47535e7730420f6882bb7ededf4d51c393a0e5cfc6726ce0743bfd2facac",
+      "frames_sha256": "6e06bd60d0cc2aaef53151e62f7cb2b99cb81cd2c77aec49214f66c884e2b1dd"
+    }
+  },
+  "medium-candidate": {
+    "warm_mean_seconds": 7.099940020998474,
+    "timings": {
+      "resize": 0.045757729007164016,
+      "preprocess": 0.005034833477111533,
+      "encode": 1.5555887079972308,
+      "sample": 1.5740512294869404,
+      "decode": 3.6272971460130066,
+      "postprocess": 0.0016185624990612268,
+      "save_image": 0.2887585829885211
+    },
+    "state": {
+      "stage": "verification",
+      "max_driver_gib": 19.1290283203125,
+      "max_live_gib": 8.597185611724854,
+      "max_rss_gib": 2.70587158203125,
+      "torch_version": "2.14.0",
+      "torch_git": "08187d9e0fba026dc8217405802ab5381dc88d90",
+      "completed": true
+    },
+    "hashes": {
+      "encoded_sha256": "298d9aa6f23f40ff81db1e386752f412da1b1c769cb4c98c97d3086fc4523d52",
+      "sampled_sha256": "fa1da8401a78a8ea9611e506997586908144d63683522a15dfb2e3388a8330fc",
+      "frames_sha256": "bc600e8b7aa3a12f053faf2b1069acb37a47d8bba096e5189ef32e3b25c9fa17"
+    }
+  },
+  "medium-copies": {
+    "warm_mean_seconds": 7.231624062493211,
+    "timings": {
+      "resize": 0.045968125021317974,
+      "preprocess": 0.005234187468886375,
+      "encode": 1.6337800000037532,
+      "sample": 1.5760239789960906,
+      "decode": 3.6814859794976655,
+      "postprocess": 0.001631333027034998,
+      "save_image": 0.28548187448177487
+    },
+    "state": {
+      "stage": "verification",
+      "max_driver_gib": 16.4239501953125,
+      "max_live_gib": 8.598406314849854,
+      "max_rss_gib": 2.2767181396484375,
+      "torch_version": "2.14.0",
+      "torch_git": "08187d9e0fba026dc8217405802ab5381dc88d90",
+      "completed": true
+    },
+    "hashes": {
+      "encoded_sha256": "298d9aa6f23f40ff81db1e386752f412da1b1c769cb4c98c97d3086fc4523d52",
+      "sampled_sha256": "fa1da8401a78a8ea9611e506997586908144d63683522a15dfb2e3388a8330fc",
+      "frames_sha256": "bc600e8b7aa3a12f053faf2b1069acb37a47d8bba096e5189ef32e3b25c9fa17"
+    }
+  },
+  "medium-mlp16k": {
+    "warm_mean_seconds": 7.23623558296822,
+    "timings": {
+      "resize": 0.047133374522672966,
+      "preprocess": 0.004988020984455943,
+      "encode": 1.5904346875031479,
+      "sample": 1.5718822704802733,
+      "decode": 3.7267271045420785,
+      "postprocess": 0.0016598745132796466,
+      "save_image": 0.29163345851702616
+    },
+    "state": {
+      "stage": "verification",
+      "max_driver_gib": 16.3927001953125,
+      "max_live_gib": 8.596392154693604,
+      "max_rss_gib": 2.2730712890625,
+      "torch_version": "2.14.0",
+      "torch_git": "08187d9e0fba026dc8217405802ab5381dc88d90",
+      "completed": true
+    },
+    "hashes": {
+      "encoded_sha256": "298d9aa6f23f40ff81db1e386752f412da1b1c769cb4c98c97d3086fc4523d52",
+      "sampled_sha256": "fa1da8401a78a8ea9611e506997586908144d63683522a15dfb2e3388a8330fc",
+      "frames_sha256": "bc600e8b7aa3a12f053faf2b1069acb37a47d8bba096e5189ef32e3b25c9fa17"
+    }
+  },
+  "medium-native": {
+    "warm_mean_seconds": 7.2571678334788885,
+    "timings": {
+      "resize": 0.04610960400896147,
+      "preprocess": 0.005230312526691705,
+      "encode": 1.6063711869937833,
+      "sample": 1.588115666527301,
+      "decode": 3.714301999512827,
+      "postprocess": 0.0016687920142430812,
+      "save_image": 0.2936508755083196
+    },
+    "state": {
+      "stage": "verification",
+      "max_driver_gib": 16.3927001953125,
+      "max_live_gib": 8.595903873443604,
+      "max_rss_gib": 2.2744903564453125,
+      "torch_version": "2.14.0",
+      "torch_git": "08187d9e0fba026dc8217405802ab5381dc88d90",
+      "completed": true
+    },
+    "hashes": {
+      "encoded_sha256": "298d9aa6f23f40ff81db1e386752f412da1b1c769cb4c98c97d3086fc4523d52",
+      "sampled_sha256": "fa1da8401a78a8ea9611e506997586908144d63683522a15dfb2e3388a8330fc",
+      "frames_sha256": "bc600e8b7aa3a12f053faf2b1069acb37a47d8bba096e5189ef32e3b25c9fa17"
+    }
+  },
+  "small-base": {
+    "warm_mean_seconds": 1.101072874997044,
+    "timings": {
+      "resize": 0.005536979006137699,
+      "preprocess": 0.0008241875329986215,
+      "encode": 0.24456977099180222,
+      "sample": 0.28041370800929144,
+      "decode": 0.5253866874845698,
+      "postprocess": 0.0003418959677219391,
+      "save_image": 0.043006916501326486
+    },
+    "state": {
+      "stage": "verification",
+      "max_driver_gib": 18.5615234375,
+      "max_live_gib": 8.24664855003357,
+      "max_rss_gib": 2.1205596923828125,
+      "torch_version": "2.14.0",
+      "torch_git": "08187d9e0fba026dc8217405802ab5381dc88d90",
+      "completed": true
+    },
+    "hashes": {
+      "encoded_sha256": "6b65a00eee9ba9058268a91b6405615f63094d39d2bf63f0f596b8efbc57c93f",
+      "sampled_sha256": "f8e2fb098bf615e78fb87eaa73f879d9155f4f202188c9f5b38e583daae767cf",
+      "frames_sha256": "828f53243316a2a6300e974e8ea0096457e847089d346dbd565f73806be5633d"
+    }
+  },
+  "small-native": {
+    "warm_mean_seconds": 0.8401121874921955,
+    "timings": {
+      "resize": 0.005143854505149648,
+      "preprocess": 0.0007541039667557925,
+      "encode": 0.18728268702398054,
+      "sample": 0.2128639170259703,
+      "decode": 0.40246649997425266,
+      "postprocess": 0.0002974579983856529,
+      "save_image": 0.030283791973488405
+    },
+    "state": {
+      "stage": "verification",
+      "max_driver_gib": 15.518310546875,
+      "max_live_gib": 8.521768569946289,
+      "max_rss_gib": 2.351806640625,
+      "torch_version": "2.14.0",
+      "torch_git": "08187d9e0fba026dc8217405802ab5381dc88d90",
+      "completed": true
+    },
+    "hashes": {
+      "encoded_sha256": "6b65a00eee9ba9058268a91b6405615f63094d39d2bf63f0f596b8efbc57c93f",
+      "sampled_sha256": "f8e2fb098bf615e78fb87eaa73f879d9155f4f202188c9f5b38e583daae767cf",
+      "frames_sha256": "828f53243316a2a6300e974e8ea0096457e847089d346dbd565f73806be5633d"
+    }
+  },
+  "small-stock": {
+    "warm_mean_seconds": 2.1946945000090636,
+    "timings": {
+      "resize": 0.005710812489269301,
+      "preprocess": 0.00038583349669352174,
+      "encode": 0.4891621455026325,
+      "sample": 0.9744332084956113,
+      "decode": 0.6928626039880328,
+      "postprocess": 0.00045568746281787753,
+      "save_image": 0.030599187506595626
+    },
+    "state": {
+      "stage": "verification",
+      "max_driver_gib": 16.38751220703125,
+      "max_live_gib": 8.242810726165771,
+      "max_rss_gib": 2.174835205078125,
+      "torch_version": "2.14.0",
+      "torch_git": "08187d9e0fba026dc8217405802ab5381dc88d90",
+      "completed": true
+    },
+    "hashes": {
+      "encoded_sha256": "4e78293919a4a69f5ead0c4c7db443da0a1f7b0516d786c0a89b8c97ee22c998",
+      "sampled_sha256": "2870d379882c5eb910e5fba8ef56817ce41667ed666659539543135c42cc63a2",
+      "frames_sha256": "2f639d76bddf6e28f79a97a3bd63405f61dff4c93c641e1dc9ff15fb54a9a577"
+    }
+  }
+}

@@ -1,0 +1,119 @@
+"""Small, independently selectable H3 recipes backed by the advanced runtime.
+
+Labels describe relative aggressiveness, not a guarantee of output quality.
+Only one temporal cache and one sparse attention implementation are attached.
+"""
+from __future__ import annotations
+
+OFF = "Off"
+CACHE_PRESETS = {
+    OFF: {},
+    "MotionCache · protected": dict(cache_mode="motion_cache", motion_reuse_threshold=0.10,
+        motion_start_percent=0.25, motion_end_percent=0.85, motion_max_consecutive_skips=1),
+    "MotionCache · balanced": dict(cache_mode="motion_cache", motion_reuse_threshold=0.15),
+    "FirstBlockCache · protected": dict(cache_mode="first_block_cache", cache_reuse_threshold=0.10,
+        cache_start_percent=0.25, cache_end_percent=0.85, cache_max_consecutive_skips=1),
+    "FirstBlockCache · fast": dict(cache_mode="first_block_cache", cache_reuse_threshold=0.20),
+    "Spectrum · protected": dict(cache_mode="spectrum_protected"),
+    "Spectrum · fast draft": dict(cache_mode="spectrum_fast"),
+}
+SPARSE_BASE = dict(sparse_attention=True, sparse_mode="corrected", sparse_backend="int8",
+    sparse_dense_leading_blocks=2, sparse_dense_layers="0,1,33,34,35",
+    sparse_min_sequence_tokens=8192, sparse_memory_budget_gib=0.0, sparse_topk_ratio=0.0)
+SPARSE_PRESETS = {
+    OFF: {},
+    "SOL INT8 · conservative": dict(SPARSE_BASE, sparse_tau=0.25,
+        sparse_window_mode="sigma_percent", sparse_start_percent=0.50, sparse_end_percent=0.85),
+    "SOL INT8 · balanced": dict(SPARSE_BASE, sparse_tau=0.50,
+        sparse_window_mode="step_fraction", sparse_start_percent=0.20, sparse_end_percent=0.90),
+    "SOL INT8 · fast": dict(SPARSE_BASE, sparse_tau=1.30,
+        sparse_window_mode="step_fraction", sparse_start_percent=0.20, sparse_end_percent=0.90),
+    "SOL INT8 · top-k wide": dict(SPARSE_BASE, sparse_tau=1.3, sparse_topk_ratio=0.15,
+        sparse_window_mode="step_fraction", sparse_start_percent=0.10, sparse_end_percent=0.95),
+    "SOL INT8 · top-k all-step draft": dict(SPARSE_BASE, sparse_tau=1.3, sparse_topk_ratio=0.10,
+        sparse_window_mode="step_fraction", sparse_start_percent=0.0, sparse_end_percent=1.0,
+        sparse_dense_leading_blocks=0, sparse_dense_layers=""),
+    "Dense INT8 · protected": dict(SPARSE_BASE, sparse_backend="dense_int8",
+        sparse_window_mode="step_fraction", sparse_start_percent=0.20, sparse_end_percent=0.90),
+    "Dense INT8 · full draft": dict(SPARSE_BASE, sparse_backend="dense_int8",
+        sparse_window_mode="step_fraction", sparse_start_percent=0.0, sparse_end_percent=1.0,
+        sparse_dense_leading_blocks=0, sparse_dense_layers=""),
+    "SOL INT8 · hybrid fast": dict(SPARSE_BASE, sparse_backend="int8_hybrid", sparse_tau=1.30,
+        sparse_window_mode="step_fraction", sparse_start_percent=0.20, sparse_end_percent=0.90),
+    "Veda Metal · protected": dict(SPARSE_BASE, sparse_backend="veda_metal",
+        sparse_window_mode="step_fraction", sparse_start_percent=0.20, sparse_end_percent=0.90),
+    "Veda Metal · fast draft": dict(SPARSE_BASE, sparse_backend="veda_metal",
+        sparse_window_mode="step_fraction", sparse_start_percent=0.0, sparse_end_percent=1.0,
+        sparse_dense_leading_blocks=0, sparse_dense_layers=""),
+}
+TOKEN_PRESETS = {
+    OFF: {},
+    "Protected · experimental": dict(token_reduction=True, token_detail_restore_block=8,
+        token_coarse_restore_block=12, token_start_percent=0.20, token_end_percent=0.90),
+    "Balanced · experimental": dict(token_reduction=True, token_detail_restore_block=20,
+        token_coarse_restore_block=30, token_start_percent=0.10, token_end_percent=0.95),
+    "Light · experimental": dict(token_reduction=True, token_detail_restore_block=12,
+        token_coarse_restore_block=20),
+    "Fast · experimental": dict(token_reduction=True, token_detail_restore_block=30,
+        token_coarse_restore_block=40),
+}
+
+
+def resolve_presets(cache, sparse, tokens, log_activity=False):
+    """Resolve complete settings without mutating a recipe or the advanced node."""
+    from .minimax_h3_unified import AppleSiliconH3Acceleration
+    settings = {key: spec[1].get("default", spec[0][0] if isinstance(spec[0], list) else None)
+                for group in AppleSiliconH3Acceleration.INPUT_TYPES().values()
+                for key, spec in group.items() if key != "model"}
+    settings.update(cache_mode="disabled", sparse_attention=False, token_reduction=False,
+        cache_reuse_threshold=0.20, cache_start_percent=0.15, cache_end_percent=0.95,
+        cache_max_consecutive_skips=2, cache_audio_weight=1.0,
+        motion_strength=1.0, motion_warmup_steps=4, motion_max_consecutive_skips=2,
+        motion_start_percent=0.15, motion_end_percent=0.95,
+        spectrum_blend_weight=0.5, token_reduction_scale=1.0, token_early_evaluations=10,
+        token_start_percent=0.0, token_end_percent=1.0, sparse_topk_ratio=0.0,
+        veda_sparsity=90.0, veda_reference_sparsity=0.0, veda_dense_steps="")
+    for label, recipes, mechanism in ((cache, CACHE_PRESETS, "cache"),
+                                      (sparse, SPARSE_PRESETS, "sparse"),
+                                      (tokens, TOKEN_PRESETS, "tokens")):
+        if label not in recipes:
+            raise ValueError(f"Unknown H3 {mechanism} preset: {label!r}")
+        settings.update(recipes[label])
+    settings.update(cache_verbose=bool(log_activity), sparse_verbose=bool(log_activity),
+                    token_verbose=bool(log_activity))
+    return settings
+
+
+class AppleSiliconH3QuickAcceleration:
+    CATEGORY = "Apple Silicon/H3"
+    FUNCTION = "apply"
+    RETURN_TYPES = ("MODEL",)
+    RETURN_NAMES = ("model",)
+    DESCRIPTION = (
+        "Compact H3 acceleration: combine one cache recipe, one attention recipe and optional token reduction. "
+        "Default: MotionCache balanced alone. All enabled recipes approximate inference. "
+        "Protected recipes compute more of the original model; fast draft recipes can substantially change appearance/motion. "
+        "Use the advanced H3 Acceleration node for custom settings. Recipes target 20-step sampling; "
+        "4/6/8-step Turbo quality is not established. Dense INT8 retains all tokens but changes arithmetic; hybrid fast quantizes protected layers only within the sparse window. Veda needs its predictor in models/veda. "
+        "Temporary memory uses Auto, and unrelated nodes/environment options still apply when all three selectors are Off."
+    )
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {"required": {
+            "model": ("MODEL",),
+            "cache": (list(CACHE_PRESETS), {"default": "MotionCache · balanced",
+                "tooltip": "MotionCache: protected 0.10 / one skip, balanced 0.15 / two skips. FirstBlockCache: protected 0.10, fast 0.20. Spectrum: protected first 4 / last 2 actual evaluations, fast first / last 1. Select one; combine with sparse and tokens below."}),
+            "sparse": (list(SPARSE_PRESETS), {"default": OFF,
+                "tooltip": "Dense INT8: protected keeps first 4/last 2 steps and protected layers exact; full quantizes video-query attention in every DiT call, retaining every token. Prefix queries stay exact, but video and audio outputs can change. Hybrid fast adds dense INT8 to protected layers inside the SOL window. SOL INT8: conservative tau 0.25 late sigma window, balanced tau 0.5 and fast tau 1.3 over steps 20–90%. Top-k wide: experimental, background morphing reported where INT8 Fast was stable; 15% video budget over steps 10–95%, protected layers; all-step draft: 10%, all steps/layers. Budgets also retain global/local blocks and pooled tail. Veda: 90% video sparsity, reference attention dense; protected steps/layers or all-step fast draft. Auto memory budget."}),
+            "tokens": (list(TOKEN_PRESETS), {"default": OFF,
+                "tooltip": "Experimental horizontal pairing from block 4. Protected restores 12/8 over steps 20–90%; Balanced restores 30/20 over 10–95%. Light restores before blocks 20/12 in early/later evaluations; Fast before 40/30. Full spatial output is restored, but content/detail may change. Incompatible mask pairs run unreduced with a logged reason."}),
+        }, "optional": {"log_activity": ("BOOLEAN", {"default": False, "tooltip": "Detailed startup, routing and per-step diagnostics. Final work/speedup summaries remain enabled when off."})}}
+
+    def apply(self, model, cache="MotionCache · balanced", sparse=OFF, tokens=OFF, log_activity=False):
+        from .minimax_h3_unified import apply_h3_acceleration
+        return (apply_h3_acceleration(model, **resolve_presets(cache, sparse, tokens, log_activity)),)
+
+
+NODE_CLASS_MAPPINGS = {"AppleSiliconH3QuickAcceleration": AppleSiliconH3QuickAcceleration}
+NODE_DISPLAY_NAME_MAPPINGS = {"AppleSiliconH3QuickAcceleration": "H3 Acceleration · Simple"}

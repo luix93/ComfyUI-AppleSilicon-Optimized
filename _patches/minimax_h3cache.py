@@ -1919,71 +1919,88 @@ def h3cache_sample_wrapper(executor, *args, **kwargs):
         active = template.clone().prepare_timesteps(
             guider.model_patcher.model.model_sampling)
         transformer_options[STATE_KEY] = active
-        logging.info(
-            "%s enabled threshold=%.6g window=%.2f..%.2f max_skips=%d "
-            "audio_weight=%.3g predictor=%s cached_suffix_blocks=%d",
-            TAG, active.reuse_threshold, active.start_percent,
-            active.end_percent, active.max_consecutive_skips,
-            active.audio_weight, active.prediction_mode,
-            active.cached_suffix_blocks,
-        )
+        if active.verbose:
+            logging.info(
+                "%s enabled threshold=%.6g window=%.2f..%.2f max_skips=%d "
+                "audio_weight=%.3g predictor=%s cached_suffix_blocks=%d",
+                TAG, active.reuse_threshold, active.start_percent,
+                active.end_percent, active.max_consecutive_skips,
+                active.audio_weight, active.prediction_mode,
+                active.cached_suffix_blocks,
+            )
         return executor(*args, **kwargs)
     finally:
         if active is not None:
-            evaluations, refreshes, skips = active.totals()
-            logging.info(
-                "%s evaluations=%d refreshed=%d reused=%d",
-                TAG, evaluations, refreshes, skips,
-            )
-            for stream_key, predictor, stats in active.oracle_summaries():
+            from .h3_logging import call_summary, block_summary
+            first_evals, _, first_skips, _ = active.first_block_totals()
+            block_evals, _, block_skips = active.block_taylor_totals()
+            evaluations, _, skips = active.totals()
+            if first_evals:
+                blocks = len(guider.model_patcher.model.diffusion_model.blocks)
+                logging.info("%s", block_summary("FirstBlockCache", first_skips * (blocks - 1), first_evals * blocks))
+            elif block_evals:
+                logging.info("%s", block_summary("Block cache", block_skips, block_evals))
+            elif evaluations:
+                if active.cached_suffix_blocks:
+                    blocks = len(guider.model_patcher.model.diffusion_model.blocks)
+                    logging.info("%s", block_summary("Suffix cache", skips * active.cached_suffix_blocks, evaluations * blocks))
+                else:
+                    logging.info("%s", call_summary("Cache", skips, evaluations))
+            if active.verbose:
+                evaluations, refreshes, skips = active.totals()
                 logging.info(
-                    "%s oracle_summary stream=%r predictor=%s count=%d "
-                    "video_nrmse_mean=%.7g video_nrmse_min=%.7g "
-                    "video_nrmse_max=%.7g video_cosine_min=%.7g "
-                    "audio_nrmse_mean=%.7g audio_nrmse_min=%.7g "
-                    "audio_nrmse_max=%.7g audio_cosine_min=%.7g",
-                    TAG, stream_key, predictor, stats.count,
-                    stats.video_nrmse_sum / stats.count,
-                    stats.video_nrmse_min, stats.video_nrmse_max,
-                    stats.video_cosine_min,
-                    stats.audio_nrmse_sum / stats.count,
-                    stats.audio_nrmse_min, stats.audio_nrmse_max,
-                    stats.audio_cosine_min,
+                    "%s evaluations=%d refreshed=%d reused=%d",
+                    TAG, evaluations, refreshes, skips,
                 )
-            for (
-                stream_key, block_index, predictor, stats
-            ) in active.block_oracle_summaries():
-                logging.info(
-                    "%s block_oracle_summary stream=%r block=%d "
-                    "predictor=%s count=%d "
-                    "video_nrmse_mean=%.7g video_nrmse_min=%.7g "
-                    "video_nrmse_max=%.7g video_cosine_min=%.7g "
-                    "audio_nrmse_mean=%.7g audio_nrmse_min=%.7g "
-                    "audio_nrmse_max=%.7g audio_cosine_min=%.7g",
-                    TAG, stream_key, block_index, predictor, stats.count,
-                    stats.video_nrmse_sum / stats.count,
-                    stats.video_nrmse_min, stats.video_nrmse_max,
-                    stats.video_cosine_min,
-                    stats.audio_nrmse_sum / stats.count,
-                    stats.audio_nrmse_min, stats.audio_nrmse_max,
-                    stats.audio_cosine_min,
-                )
-            block_evaluations, block_refreshes, block_skips = (
-                active.block_taylor_totals())
-            if block_evaluations:
-                logging.info(
-                    "%s block_taylor evaluations=%d refreshed=%d reused=%d",
-                    TAG, block_evaluations, block_refreshes, block_skips,
-                )
-            first_evaluations, first_refreshes, first_skips, first_bytes = (
-                active.first_block_totals())
-            if first_evaluations:
-                logging.info(
-                    "%s first_block_cache evaluations=%d refreshed=%d reused=%d "
-                    "peak_cached_bytes=%d",
-                    TAG, first_evaluations, first_refreshes, first_skips,
-                    first_bytes,
-                )
+                for stream_key, predictor, stats in active.oracle_summaries():
+                    logging.info(
+                        "%s oracle_summary stream=%r predictor=%s count=%d "
+                        "video_nrmse_mean=%.7g video_nrmse_min=%.7g "
+                        "video_nrmse_max=%.7g video_cosine_min=%.7g "
+                        "audio_nrmse_mean=%.7g audio_nrmse_min=%.7g "
+                        "audio_nrmse_max=%.7g audio_cosine_min=%.7g",
+                        TAG, stream_key, predictor, stats.count,
+                        stats.video_nrmse_sum / stats.count,
+                        stats.video_nrmse_min, stats.video_nrmse_max,
+                        stats.video_cosine_min,
+                        stats.audio_nrmse_sum / stats.count,
+                        stats.audio_nrmse_min, stats.audio_nrmse_max,
+                        stats.audio_cosine_min,
+                    )
+                for (
+                    stream_key, block_index, predictor, stats
+                ) in active.block_oracle_summaries():
+                    logging.info(
+                        "%s block_oracle_summary stream=%r block=%d "
+                        "predictor=%s count=%d "
+                        "video_nrmse_mean=%.7g video_nrmse_min=%.7g "
+                        "video_nrmse_max=%.7g video_cosine_min=%.7g "
+                        "audio_nrmse_mean=%.7g audio_nrmse_min=%.7g "
+                        "audio_nrmse_max=%.7g audio_cosine_min=%.7g",
+                        TAG, stream_key, block_index, predictor, stats.count,
+                        stats.video_nrmse_sum / stats.count,
+                        stats.video_nrmse_min, stats.video_nrmse_max,
+                        stats.video_cosine_min,
+                        stats.audio_nrmse_sum / stats.count,
+                        stats.audio_nrmse_min, stats.audio_nrmse_max,
+                        stats.audio_cosine_min,
+                    )
+                block_evaluations, block_refreshes, block_skips = (
+                    active.block_taylor_totals())
+                if block_evaluations:
+                    logging.info(
+                        "%s block_taylor evaluations=%d refreshed=%d reused=%d",
+                        TAG, block_evaluations, block_refreshes, block_skips,
+                    )
+                first_evaluations, first_refreshes, first_skips, first_bytes = (
+                    active.first_block_totals())
+                if first_evaluations:
+                    logging.info(
+                        "%s first_block_cache evaluations=%d refreshed=%d reused=%d "
+                        "peak_cached_bytes=%d",
+                        TAG, first_evaluations, first_refreshes, first_skips,
+                        first_bytes,
+                    )
             active.reset()
         guider.model_options = original_options
 
@@ -2145,97 +2162,3 @@ def apply_h3cache(
                 "dit", "double_block", index,
             )
     return patched
-
-
-class AppleSiliconH3Cache:
-    """Explicit ComfyUI node for the approximate H3 cache."""
-
-    # Kept registered so existing workflows load. New workflows should use
-    # H3 Apple Silicon Acceleration, whose curated cache list omits failed
-    # forecasting experiments while preserving the useful oracle controls.
-    DEPRECATED = True
-    CATEGORY = "Apple Silicon/approximate"
-    DESCRIPTION = (
-        "MiniMax H3 velocity, denoised-estimate, first-block, or "
-        "transformer-suffix cache with separate video/audio change estimation. "
-        "Approximate and opt-in; threshold 0 is exact calibration mode. "
-        "Both first-block modes run block 0 exactly every step and reuse the "
-        "cached residual of blocks 1-49 when it says the state is stable. "
-        "first_block_cache accumulates change between refreshes; "
-        "first_block_cache_per_step uses the Discord-style per-step test. "
-        "oracle scores all raw-output predictors and block_oracle scores "
-        "representative transformer residuals while returning exact outputs; "
-        "block_taylor is the narrow block-0 approximation selected by that "
-        "oracle."
-    )
-    FUNCTION = "patch"
-    RETURN_TYPES = ("MODEL",)
-    RETURN_NAMES = ("model",)
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "model": ("MODEL",),
-                "reuse_threshold": ("FLOAT", {
-                    "default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001,
-                }),
-                "start_percent": ("FLOAT", {
-                    "default": 0.20, "min": 0.0, "max": 1.0, "step": 0.01,
-                }),
-                "end_percent": ("FLOAT", {
-                    "default": 0.85, "min": 0.0, "max": 1.0, "step": 0.01,
-                }),
-                "max_consecutive_skips": ("INT", {
-                    "default": 1, "min": 1, "max": 20, "step": 1,
-                }),
-                "audio_weight": ("FLOAT", {
-                    "default": 1.0, "min": 0.1, "max": 4.0, "step": 0.05,
-                }),
-                "cached_suffix_blocks": ("INT", {
-                    "default": 0, "min": 0, "max": 49, "step": 1,
-                }),
-                "prediction_mode": ([
-                    "secant_velocity", "velocity_hold", "output_hold",
-                    "residual_carry", "denoised_hold", "denoised_linear",
-                    "first_block_cache", "first_block_cache_per_step",
-                    "oracle", "block_oracle", "block_taylor",
-                ], {
-                    "default": "velocity_hold",
-                }),
-                "verbose": ("BOOLEAN", {"default": True}),
-            },
-        }
-
-    def patch(
-        self,
-        model,
-        reuse_threshold,
-        start_percent,
-        end_percent,
-        max_consecutive_skips,
-        audio_weight,
-        cached_suffix_blocks,
-        prediction_mode,
-        verbose,
-    ):
-        return (apply_h3cache(
-            model,
-            reuse_threshold,
-            start_percent,
-            end_percent,
-            max_consecutive_skips,
-            audio_weight,
-            cached_suffix_blocks,
-            prediction_mode,
-            verbose,
-        ),)
-
-
-NODE_CLASS_MAPPINGS = {
-    "AppleSiliconH3Cache": AppleSiliconH3Cache,
-}
-
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "AppleSiliconH3Cache": "H3Cache (Apple Silicon, Experimental)",
-}

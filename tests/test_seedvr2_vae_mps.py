@@ -6,8 +6,9 @@ import pytest
 from _patches import seedvr2_vae_mps as patch
 
 
-def tensor(device):
-    return SimpleNamespace(device=SimpleNamespace(type=device))
+def tensor(device, frames=1):
+    return SimpleNamespace(device=SimpleNamespace(type=device), ndim=5,
+                           shape=(1, 3, frames, 32, 32))
 
 
 def test_tiled_mps_preserves_arguments_results_and_tile_count(monkeypatch):
@@ -84,3 +85,55 @@ def test_disabled_and_repeated_install_return_early(monkeypatch):
     monkeypatch.setenv("ASFP8_SEEDVR2_VAE_SYNC", "1")
     monkeypatch.setattr(patch, "_installed", True)
     patch.install()
+
+
+@pytest.mark.parametrize("device,frames,enabled,expected", [
+    ("mps", 121, "1", 2), ("mps", 1, "1", 0),
+    ("mps", 121, None, 2),
+    ("mps", 121, "0", 0), ("cpu", 121, "1", 0),
+    ("cuda", 121, "1", 0),
+])
+def test_video_blocks_wait_only_in_enabled_mps_video_scope(
+        monkeypatch, device, frames, enabled, expected):
+    waits = []
+    monkeypatch.setattr(patch.torch.mps, "synchronize", lambda: waits.append(1))
+    if enabled is None:
+        monkeypatch.delenv("ASFP8_SEEDVR2_VAE_VIDEO_SYNC", raising=False)
+    else:
+        monkeypatch.setenv("ASFP8_SEEDVR2_VAE_VIDEO_SYNC", enabled)
+    x = tensor(device, frames)
+    # Later blocks can have one latent frame; the outer video scope owns policy.
+    latent = tensor(device, 1)
+    result = object()
+    def original(self, value, *, cache):
+        assert value is latent and cache == {"causal": 7}
+        return result
+    block = patch._wrap_video_block(original)
+    def tiled(value, model):
+        assert block(model, latent, cache={"causal": 7}) is result
+        return block(model, input_tensor=latent, cache={"causal": 7})
+    assert patch._wrap_tiling(tiled)(x, object()) is result
+    assert len(waits) == expected
+    assert not patch._video_tiled.get()
+    assert block(object(), latent, cache={"causal": 7}) is result
+    assert len(waits) == expected
+
+
+def test_video_scope_restores_after_nested_image_and_exception(monkeypatch):
+    waits = []
+    monkeypatch.setattr(patch.torch.mps, "synchronize", lambda: waits.append(1))
+    monkeypatch.setenv("ASFP8_SEEDVR2_VAE_VIDEO_SYNC", "1")
+    block = patch._wrap_video_block(lambda self, x: x)
+    def inner(x, model):
+        assert not patch._video_tiled.get()
+        return block(model, x)
+    def outer(x, model):
+        patch._wrap_tiling(inner)(tensor("mps"), model)
+        assert patch._video_tiled.get()
+        block(model, x)
+        raise RuntimeError("failure")
+    with pytest.raises(RuntimeError, match="failure"):
+        patch._wrap_tiling(outer)(tensor("mps", 121), object())
+    assert waits == [1]
+    assert not patch._video_tiled.get()
+    assert patch._tiled_model.get() is None

@@ -1,0 +1,6 @@
+{
+  "installed_path": "/Users/luigis/ComfyUI-Installs/ComfyUI-AppleSilicon-2.14/ComfyUI/custom_nodes/ComfyUI-AppleSilicon-Optimized/_patches/torch_mpp_qcache.py",
+  "sha256": "b669bcd58e28ba0b32580c9b418d93f26f9525ec849bfea78b2eb6a2fadaac61",
+  "previous_sha256": "343fa8f4c68aa00e6ee8e03be7daa5caf230183e9d98bb8bd7ca7d0fd881be34",
+  "matches_tested_repository": true
+}

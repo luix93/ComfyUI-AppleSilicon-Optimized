@@ -1,0 +1,147 @@
+{
+  "config": {
+    "label": "small-unpatched",
+    "seed": 959948902156062,
+    "model": "int8",
+    "fix": false,
+    "mode": "stock",
+    "stage": "full",
+    "input_size": 320,
+    "repeats": 1,
+    "limit_gib": 24.0,
+    "sample_file": null,
+    "installed": false,
+    "default_fix": false
+  },
+  "state": {
+    "stage": "decode",
+    "max_driver_gib": 25.191253662109375,
+    "max_live_gib": 8.241712093353271,
+    "max_rss_gib": 2.318115234375,
+    "torch_version": "2.14.0",
+    "torch_git": "08187d9e0fba026dc8217405802ab5381dc88d90",
+    "stopped": "memory watchdog"
+  },
+  "records": [],
+  "events": [
+    {
+      "seconds": 0.01133033394580707,
+      "stage": "resize",
+      "driver_gib": 0.00823974609375,
+      "live_gib": 0.0,
+      "rss_gib": 0.5567169189453125
+    },
+    {
+      "seconds": 0.012451374961528927,
+      "stage": "preprocess",
+      "driver_gib": 0.00823974609375,
+      "live_gib": 0.0,
+      "rss_gib": 0.563812255859375
+    },
+    {
+      "seconds": 0.11743587499950081,
+      "stage": "load_vae",
+      "driver_gib": 0.00823974609375,
+      "live_gib": 0.0,
+      "rss_gib": 1.890899658203125
+    },
+    {
+      "seconds": 0.2793907499872148,
+      "stage": "encode",
+      "driver_gib": 4.5497894287109375,
+      "live_gib": 0.4720571041107178,
+      "rss_gib": 1.44122314453125
+    },
+    {
+      "seconds": 0.2843974999850616,
+      "stage": "encode",
+      "driver_gib": 6.0868988037109375,
+      "live_gib": 0.47266530990600586,
+      "rss_gib": 1.4438629150390625
+    },
+    {
+      "seconds": 0.33596324996324256,
+      "stage": "encode",
+      "driver_gib": 7.717559814453125,
+      "live_gib": 0.47159719467163086,
+      "rss_gib": 1.4668121337890625
+    },
+    {
+      "seconds": 0.4117288339766674,
+      "stage": "encode",
+      "driver_gib": 8.518630981445312,
+      "live_gib": 0.47181105613708496,
+      "rss_gib": 1.4888153076171875
+    },
+    {
+      "seconds": 0.4156178339617327,
+      "stage": "encode",
+      "driver_gib": 9.317459106445312,
+      "live_gib": 0.47181105613708496,
+      "rss_gib": 1.48895263671875
+    },
+    {
+      "seconds": 0.4658720839652233,
+      "stage": "encode",
+      "driver_gib": 9.6446533203125,
+      "live_gib": 0.47127699851989746,
+      "rss_gib": 1.5112152099609375
+    },
+    {
+      "seconds": 0.5516451669973321,
+      "stage": "encode",
+      "driver_gib": 9.6446533203125,
+      "live_gib": 0.4668691158294678,
+      "rss_gib": 1.5113525390625
+    },
+    {
+      "seconds": 0.6182678339537233,
+      "stage": "load_model",
+      "driver_gib": 9.6446533203125,
+      "live_gib": 0.4668691158294678,
+      "rss_gib": 1.8327789306640625
+    },
+    {
+      "seconds": 2.818392833985854,
+      "stage": "sample",
+      "driver_gib": 15.96453857421875,
+      "live_gib": 8.22978687286377,
+      "rss_gib": 0.888153076171875
+    },
+    {
+      "seconds": 2.909339833946433,
+      "stage": "decode",
+      "driver_gib": 19.117095947265625,
+      "live_gib": 8.232251167297363,
+      "rss_gib": 0.8896484375
+    },
+    {
+      "seconds": 2.9866811669780873,
+      "stage": "decode",
+      "driver_gib": 21.038970947265625,
+      "live_gib": 8.241712093353271,
+      "rss_gib": 0.8897705078125
+    },
+    {
+      "seconds": 3.046674916986376,
+      "stage": "decode",
+      "driver_gib": 22.3375244140625,
+      "live_gib": 8.240415096282959,
+      "rss_gib": 0.889923095703125
+    },
+    {
+      "seconds": 3.150441083998885,
+      "stage": "decode",
+      "driver_gib": 23.765472412109375,
+      "live_gib": 8.24061393737793,
+      "rss_gib": 0.8901519775390625
+    },
+    {
+      "seconds": 3.216749124985654,
+      "stage": "decode",
+      "driver_gib": 25.191253662109375,
+      "live_gib": 8.24061393737793,
+      "rss_gib": 0.8901824951171875
+    }
+  ]
+}

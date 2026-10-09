@@ -1,0 +1,57 @@
+{
+  "shape": [
+    1,
+    48,
+    65536,
+    128
+  ],
+  "torch": "2.14.0",
+  "estimated_gib": 6.149505615234375,
+  "auto_budget_gib": 32.0,
+  "trials": [
+    {
+      "budget_gib": 8,
+      "seconds": 0.9582078329985961,
+      "byte_identical": true,
+      "driver_gib": 5.75848388671875,
+      "selected_blocks": 5699825,
+      "block_slots": 50331648
+    },
+    {
+      "budget_gib": 8,
+      "seconds": 0.14809666702058166,
+      "byte_identical": true,
+      "driver_gib": 6.50848388671875,
+      "selected_blocks": 5699825,
+      "block_slots": 50331648
+    },
+    {
+      "budget_gib": 0,
+      "seconds": 0.12930145801510662,
+      "byte_identical": true,
+      "driver_gib": 6.50848388671875,
+      "selected_blocks": 5699825,
+      "block_slots": 50331648
+    },
+    {
+      "budget_gib": 0,
+      "seconds": 0.12975487497169524,
+      "byte_identical": true,
+      "driver_gib": 6.50848388671875,
+      "selected_blocks": 5699825,
+      "block_slots": 50331648
+    }
+  ],
+  "four_gib_rejection": "INT8 SOL needs 6.15 GiB temporary memory (65,536 tokens, 48 heads); budget 4.00 GiB (manual 4 GiB), safe headroom 190.16 GiB. Set Sparse attention > Settings > Temporary memory (GiB), 0=Auto. If headroom is limiting, free memory or reduce the sequence.",
+  "output_sha256": "5c4df61b273a56886b6c2882ca39f033776f16b2e8c1088098eb6b2326aae871",
+  "validation_scope": "Direct MPS attention validation, not a complete clip benchmark",
+  "cpu_tests": "82 passed, 35 MPS-only skipped",
+  "mps_tests": "protected-prefix/ragged test passed for Auto, 4 GiB and 16 GiB",
+  "frontend_unit_tests": "13 passed",
+  "memory_guard": {
+    "max_rss_gib": 40,
+    "min_available_gib": 48,
+    "mps_high_watermark_ratio": 0.25,
+    "observed_worker_peak_rss_gib": 1.8129119873046875
+  }
+}

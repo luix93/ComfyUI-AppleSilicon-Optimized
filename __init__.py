@@ -63,21 +63,20 @@ if __spec__ is not None and __spec__.parent:
     # string and relative imports would fail.  Checking __spec__.parent is CPython-
     # guaranteed behaviour (see importlib docs) and avoids inspecting ImportError
     # message strings that are implementation details liable to change.
-    from ._patches import attention_backend, comfykitchen_fp8, linear_fp8, linear_fp8_w8a16, ops_bias_fp8, psutil_vmstat, rmsnorm_mps_large, scaled_mm_fp8, flash_attn_mtl, attn_router_mps, stochastic_round_fp8, tensor_to_fp8, wan_blockswap_mps, te_device_mps, int_mm_mps, int8_linear_mps, int8_linear_kernel_mps, mlx_textgen, fp8_mps_strided, fp8_fill_mps, lumina_attn_fast, quant_meta_fix, int8_embedding, rope_fast, flux_attn_fast, krea2_attn_fast, conv3d_mps, ltx_fast, ltx25_fast, wan_fast, wan_vae_fast, vae_slice_attn_mps, seedvr2_vae_mps, seedvr2_fast, seedvr2_loader, ideogram_fast, minimax_fast, minimax_relaxed, minimax_vae_fast, minimax_h3cache, minimax_vae_tiling, minimax_vae_batch, free_mem_mps, exec_trace, optrace, mps_profile, sdxl_geglu, qwen21_fast
+    from ._patches import attention_backend, comfykitchen_fp8, linear_fp8, linear_fp8_w8a16, ops_bias_fp8, psutil_vmstat, rmsnorm_mps_large, scaled_mm_fp8, flash_attn_mtl, attn_router_mps, stochastic_round_fp8, tensor_to_fp8, wan_blockswap_mps, te_device_mps, int_mm_mps, int8_linear_mps, int8_linear_kernel_mps, mlx_textgen, fp8_mps_strided, fp8_fill_mps, lumina_attn_fast, quant_meta_fix, int8_embedding, rope_fast, flux_attn_fast, krea2_attn_fast, conv3d_mps, ltx_fast, ltx25_fast, wan_fast, wan_vae_fast, vae_slice_attn_mps, seedvr2_vae_mps, seedvr2_fast, seedvr2_loader, ideogram_fast, minimax_fast, minimax_relaxed, minimax_vae_fast, minimax_h3cache, minimax_vae_tiling, minimax_vae_batch, free_mem_mps, exec_trace, optrace, mps_profile, sdxl_geglu, qwen21_fast, yue2_fast
 
-    # The H3 approximate nodes are explicit MODEL nodes, not startup
-    # monkeypatches: nothing here changes a render unless the user wires one in.
-    from ._patches import (
-        minimax_h3_sparse, minimax_h3_accel, minimax_h3_turbo,
-        minimax_h3_structure, minimax_h3_unified,
-    )
-    for _mod in (
-        attention_backend, minimax_h3cache, minimax_h3_sparse,
-        minimax_h3_accel, minimax_h3_turbo, minimax_h3_structure,
-        minimax_h3_unified,
-    ):
+    # Acceleration controls and optional image/video/latent upscalers.
+    # Old visual graphs migrate in web/h3_migration.js.
+    from ._patches import minimax_h3_turbo, minimax_h3_unified, minimax_h3_presets, super_resolution, h3_latent_upscaler
+    for _mod in (attention_backend, minimax_h3_turbo, minimax_h3_unified, minimax_h3_presets, super_resolution, h3_latent_upscaler):
         NODE_CLASS_MAPPINGS.update(_mod.NODE_CLASS_MAPPINGS)
         NODE_DISPLAY_NAME_MAPPINGS.update(_mod.NODE_DISPLAY_NAME_MAPPINGS)
+
+    from . import prompt_studio
+    from server import PromptServer
+    NODE_CLASS_MAPPINGS.update(prompt_studio.NODE_CLASS_MAPPINGS)
+    NODE_DISPLAY_NAME_MAPPINGS.update(prompt_studio.NODE_DISPLAY_NAME_MAPPINGS)
+    prompt_studio.install_routes(PromptServer.instance)
 
     # Identity banner: every subsequent "[AppleSilicon-Optimized/...]" console
     # line comes from this project.
@@ -109,7 +108,7 @@ if __spec__ is not None and __spec__.parent:
 
     # optrace installs LAST (opt-in ASFP8_TRACE_OPS=1) so it sees every matmul the
     # model dispatches, on top of all the seams the other patches wrapped.
-    for _patch in (psutil_vmstat, fp8_mps_strided, fp8_fill_mps, comfykitchen_fp8, scaled_mm_fp8, ops_bias_fp8, stochastic_round_fp8, tensor_to_fp8, wan_blockswap_mps, rmsnorm_mps_large, flash_attn_mtl, attn_router_mps, attention_backend, linear_fp8, linear_fp8_w8a16, te_device_mps, int_mm_mps, int8_linear_mps, int8_linear_kernel_mps, mlx_textgen, lumina_attn_fast, sdxl_geglu, quant_meta_fix, int8_embedding, rope_fast, flux_attn_fast, krea2_attn_fast, conv3d_mps, ltx_fast, ltx25_fast, wan_fast, wan_vae_fast, vae_slice_attn_mps, seedvr2_vae_mps, seedvr2_fast, seedvr2_loader, ideogram_fast, minimax_fast, minimax_relaxed, minimax_vae_fast, minimax_vae_tiling, minimax_vae_batch, free_mem_mps, qwen21_fast, exec_trace, optrace, mps_profile):
+    for _patch in (psutil_vmstat, fp8_mps_strided, fp8_fill_mps, comfykitchen_fp8, scaled_mm_fp8, ops_bias_fp8, stochastic_round_fp8, tensor_to_fp8, wan_blockswap_mps, rmsnorm_mps_large, flash_attn_mtl, attn_router_mps, attention_backend, linear_fp8, linear_fp8_w8a16, te_device_mps, int_mm_mps, int8_linear_mps, int8_linear_kernel_mps, mlx_textgen, lumina_attn_fast, sdxl_geglu, quant_meta_fix, int8_embedding, rope_fast, flux_attn_fast, krea2_attn_fast, conv3d_mps, ltx_fast, ltx25_fast, wan_fast, wan_vae_fast, vae_slice_attn_mps, seedvr2_vae_mps, seedvr2_fast, seedvr2_loader, ideogram_fast, minimax_fast, minimax_relaxed, minimax_vae_fast, minimax_vae_tiling, minimax_vae_batch, free_mem_mps, qwen21_fast, yue2_fast, exec_trace, optrace, mps_profile):
         _short = _patch.__name__.rsplit(".", 1)[-1]
         if (_only and _short not in _only) or _short in _disabled:
             print(f"[AppleSilicon-Optimized] skipping {_short} (ASFP8_ENABLE_ONLY/ASFP8_DISABLE)")

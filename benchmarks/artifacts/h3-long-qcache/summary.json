@@ -1,0 +1,44 @@
+{
+  "frames": 362,
+  "width": 864,
+  "height": 480,
+  "steps": 2,
+  "tokens": 44600,
+  "all_outputs_exact": true,
+  "compared_runs": 6,
+  "modes": {
+    "baseline": {
+      "e2e_seconds": 116.3025,
+      "sampling_seconds": 83.42157154149027,
+      "step_seconds": 41.65594391699415,
+      "step_samples": [
+        41.6919581250404,
+        42.19908145896625,
+        41.43071454198798,
+        41.28466462501092
+      ],
+      "runs": [
+        "h3-15s-two-step-1-baseline",
+        "h3-15s-two-step-4-baseline"
+      ]
+    },
+    "extended": {
+      "e2e_seconds": 106.67150000000001,
+      "sampling_seconds": 73.80942195799435,
+      "step_seconds": 36.84887629149307,
+      "step_samples": [
+        36.75481166597456,
+        36.60249304200988,
+        37.08114525000565,
+        36.94052779197227
+      ],
+      "runs": [
+        "h3-15s-two-step-3-extended",
+        "h3-15s-two-step-5-extended"
+      ]
+    }
+  },
+  "sampling_reduction_percent": 11.539932056466885,
+  "max_sampled_driver_gib": 60.63250732421875,
+  "twenty_step_sampling_saving_estimate": 96.14135251002153
+}

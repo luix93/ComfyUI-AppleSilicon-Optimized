@@ -149,7 +149,7 @@ def test_generic_loader_accepts_arbitrary_rank_and_validates_model_shape(monkeyp
 
 def test_generic_exact_runtime_node_is_registered():
     assert turbo.NODE_CLASS_MAPPINGS["AppleSiliconH3LoRA"] is turbo.AppleSiliconH3LoRA
-    assert "Exact Runtime" in turbo.NODE_DISPLAY_NAME_MAPPINGS["AppleSiliconH3LoRA"]
+    assert set(turbo.NODE_CLASS_MAPPINGS) == {"AppleSiliconH3LoRA"}
 
 
 def test_runtime_adapter_matches_linear_lora_and_reuses_base_output():
@@ -209,3 +209,51 @@ def test_runtime_qkv_adapter_avoids_full_output_and_matches_fused_linear():
                for actual, original in zip(result, (q, k, v)))
     for actual, reference in zip(result, expected):
         torch.testing.assert_close(actual, reference)
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float16, torch.bfloat16])
+def test_stack_preserves_order_strength_and_each_rounded_addition(dtype):
+    torch.manual_seed(73)
+    x = torch.randn(3, 7, dtype=dtype)
+    base = torch.randn(3, 6, dtype=dtype)
+    adapters = []
+    for rank, strength, alpha in [(2, 0.7, 1.0), (3, -0.4, None), (1, 1.2, 0.5)]:
+        adapter = turbo.H3RuntimeLoRA((torch.randn(6, rank, dtype=dtype),
+            torch.randn(rank, 7, dtype=dtype), alpha, None, None, None), fast=True)
+        adapter.multiplier = strength
+        adapters.append(adapter)
+    expected = base.clone()
+    for adapter in adapters:
+        up, down, scale = adapter.linear_parts(x)
+        expected.add_(F.linear(F.linear(x, down), up), alpha=scale)
+    actual = turbo.H3RuntimeLoRAStack(adapters).add_to(base, x)
+    assert torch.equal(actual, expected)
+    assert actual.data_ptr() == base.data_ptr()
+    assert not hasattr(turbo.H3RuntimeLoRAStack(adapters), "linear_parts")
+
+
+def test_empty_disabled_and_zero_weight_entries_are_identity_without_resolving_model():
+    import json
+    assert turbo.parse_lora_entries(json.dumps([
+        {"enabled": False, "lora_name": "missing.safetensors", "strength": 1},
+        {"enabled": True, "lora_name": "missing.safetensors", "strength": 0},
+    ])) == []
+    model = object()
+    assert turbo.apply_h3_lora_stack(model, [], "fast_runtime") is model
+    assert turbo.apply_h3_lora_stack(model, [({}, 0, True)], "fast_runtime") is model
+
+
+@pytest.mark.parametrize("payload", [
+    '{}', 'null', 'broken', '[null]', '[{"enabled":"false"}]',
+    '[{"lora_name":"x","strength":NaN}]', '[{"lora_name":"x","strength":true}]',
+    '[{"lora_name":"x","strength":11}]', '[{"lora_name":"x","validation":"typo"}]',
+])
+def test_malformed_stack_fails_clearly(payload):
+    with pytest.raises(ValueError, match="H3 LoRA"):
+        turbo.parse_lora_entries(payload)
+
+
+def test_selection_preserves_order_duplicate_files_and_per_entry_turbo_validation():
+    assert turbo.parse_lora_entries('[{"lora_name":"a","strength":0.5,"validation":"turbo"},'
+                                   '{"lora_name":"a","strength":-0.2}]') == [
+        ("a", 0.5, True), ("a", -0.2, False)]

@@ -1,0 +1,277 @@
+{
+  "source_commit": "6131c1f62c612a074d6aac8435c26ffa19c00563",
+  "platform": "M5 Ultra 80 GPU, macOS 27, PyTorch 2.14.0",
+  "mps_cpu_fallback": false,
+  "operation_probes": {
+    "pool_cpu": {
+      "ok": true,
+      "finite": true,
+      "shape": [
+        1,
+        24,
+        2,
+        8,
+        8
+      ],
+      "device": "cpu",
+      "seconds": 0.007912041968666017
+    },
+    "pool_mps": {
+      "ok": false,
+      "type": "NotImplementedError",
+      "error": "The operator 'aten::_adaptive_avg_pool3d' is not currently implemented for the MPS device. If you want this op to be considered for addition please comment on https://github.com/pytorch/pytorch/issues/141287 and mention use-case, that resulted in missing op as well as commit hash 08187d9e0fba026dc8217405802ab5381dc88d90. As a temporary fix, you can set the environment variable `PYTORCH_ENABLE_MPS_FALLBACK=1` to use the CPU as a fallback for this op. WARNING: this will be slower than running natively on MPS."
+    },
+    "blur_cpu": {
+      "ok": true,
+      "finite": true,
+      "shape": [
+        1,
+        24,
+        3,
+        20,
+        28
+      ],
+      "device": "cpu",
+      "seconds": 0.000583791988901794
+    },
+    "blur_mps": {
+      "ok": false,
+      "type": "NotImplementedError",
+      "error": "The operator 'aten::_adaptive_avg_pool3d' is not currently implemented for the MPS device. If you want this op to be considered for addition please comment on https://github.com/pytorch/pytorch/issues/141287 and mention use-case, that resulted in missing op as well as commit hash 08187d9e0fba026dc8217405802ab5381dc88d90. As a temporary fix, you can set the environment variable `PYTORCH_ENABLE_MPS_FALLBACK=1` to use the CPU as a fallback for this op. WARNING: this will be slower than running natively on MPS."
+    },
+    "refine_cpu": {
+      "ok": true,
+      "finite": true,
+      "shape": [
+        1,
+        24,
+        2,
+        8,
+        8
+      ],
+      "device": "cpu",
+      "seconds": 0.2853693750221282
+    },
+    "refine_mps": {
+      "ok": true,
+      "finite": true,
+      "shape": [
+        1,
+        24,
+        2,
+        8,
+        8
+      ],
+      "device": "mps:0",
+      "seconds": 0.3034949590219185
+    },
+    "merge_mps": {
+      "ok": true,
+      "finite": true,
+      "shape": [
+        1,
+        24,
+        2,
+        8,
+        8
+      ],
+      "device": "mps:0",
+      "seconds": 0.00594570895191282
+    },
+    "torch": "2.14.0"
+  },
+  "creation": {
+    "torch": "2.14.0",
+    "registered_nodes": 16,
+    "intermediate_device": "cpu",
+    "vae": {
+      "device": "mps",
+      "output_device": "cpu",
+      "dtype": "torch.float16"
+    },
+    "encode": {
+      "seconds": 0.6533371659461409,
+      "device": "cpu",
+      "shape": [
+        1,
+        24,
+        1,
+        20,
+        20
+      ],
+      "finite": true,
+      "tokens": 100,
+      "saved_bytes_equal": true,
+      "apply_refs": 1,
+      "original_conditioning_untouched": true
+    },
+    "training": {
+      "seconds": 0.07219800003804266,
+      "device": "cpu",
+      "shape": [
+        1,
+        24,
+        1,
+        8,
+        8
+      ],
+      "finite": true,
+      "tokens": 16,
+      "saved_bytes_equal": true,
+      "apply_refs": 1,
+      "original_conditioning_untouched": true
+    }
+  },
+  "video_audio": {
+    "video": {
+      "input_frames": 22,
+      "frames_passed_to_vae": [
+        21
+      ],
+      "latent_shape": [
+        1,
+        24,
+        7,
+        20,
+        20
+      ],
+      "tokens": 700,
+      "finite": true,
+      "matches_direct_encode_fp16": false,
+      "max_abs_difference": 5.802734375
+    },
+    "audio": {
+      "finite": true,
+      "shape": [
+        1,
+        32,
+        2,
+        10
+      ],
+      "tokens": 20,
+      "device": "mps",
+      "dtype": "torch.float32"
+    }
+  },
+  "guard": {
+    "peak_rss_gib": 11.477783203125,
+    "seconds": 50.78090508305468,
+    "child_exit": -15
+  },
+  "renders": [
+    {
+      "mode": "native",
+      "e2e_seconds": 5.404,
+      "sampling_seconds": 3.565268624923192,
+      "driver_gib": 52.37078857421875,
+      "finite": true,
+      "matches_native_same_reference": {
+        "noise": true,
+        "latents": true,
+        "frames": true,
+        "audio_decode": true
+      },
+      "stats": {
+        "mode": "native",
+        "reference_tokens": 100,
+        "reference_device": "cpu"
+      }
+    },
+    {
+      "mode": "full",
+      "e2e_seconds": 5.273,
+      "sampling_seconds": 3.5622110420372337,
+      "driver_gib": 52.41069030761719,
+      "finite": true,
+      "matches_native_same_reference": {
+        "noise": true,
+        "latents": true,
+        "frames": true,
+        "audio_decode": true
+      },
+      "stats": {
+        "mode": "full",
+        "reference_tokens": 100,
+        "reference_device": "cpu"
+      }
+    },
+    {
+      "mode": "compressed",
+      "e2e_seconds": 5.456,
+      "sampling_seconds": 3.610151374945417,
+      "driver_gib": 52.36688232421875,
+      "finite": true,
+      "matches_native_same_reference": {
+        "noise": true,
+        "latents": false,
+        "frames": false,
+        "audio_decode": false
+      },
+      "stats": {
+        "mode": "compressed",
+        "reference_tokens": 16,
+        "reference_device": "cpu"
+      }
+    },
+    {
+      "mode": "curve",
+      "e2e_seconds": 5.228,
+      "sampling_seconds": 3.526977791916579,
+      "driver_gib": 52.41069030761719,
+      "finite": true,
+      "matches_native_same_reference": {
+        "noise": true,
+        "latents": false,
+        "frames": false,
+        "audio_decode": false
+      },
+      "stats": {
+        "mode": "curve",
+        "reference_tokens": 100,
+        "reference_device": "cpu",
+        "step_blur_devices": [
+          "cpu",
+          "cpu",
+          "cpu",
+          "cpu"
+        ]
+      }
+    },
+    {
+      "mode": "bridge",
+      "e2e_seconds": 5.394,
+      "sampling_seconds": 3.5596463329857215,
+      "driver_gib": 52.36688232421875,
+      "finite": true,
+      "matches_native_same_reference": {
+        "noise": true,
+        "latents": true,
+        "frames": true,
+        "audio_decode": true
+      },
+      "stats": {
+        "mode": "bridge",
+        "reference_tokens": 100,
+        "reference_device": "cpu"
+      }
+    },
+    {
+      "mode": "native",
+      "e2e_seconds": 5.252,
+      "sampling_seconds": 3.5476290000369772,
+      "driver_gib": 52.41069030761719,
+      "finite": true,
+      "matches_native_same_reference": {
+        "noise": true,
+        "latents": true,
+        "frames": true,
+        "audio_decode": true
+      },
+      "stats": {
+        "mode": "native",
+        "reference_tokens": 100,
+        "reference_device": "cpu"
+      }
+    }
+  ]
+}

@@ -1160,7 +1160,8 @@ def test_legacy_router_is_reachable_only_through_the_environment(monkeypatch):
     assert holder.router == sparse.ROUTER_LEGACY
     assert holder.block_size == 32
     # and no node widget offers it
-    widgets = sparse.AppleSiliconH3SparseAttention.INPUT_TYPES()["required"]
+    from _patches import minimax_h3_unified
+    widgets = minimax_h3_unified.AppleSiliconH3Acceleration.INPUT_TYPES()["required"]
     assert "router" not in widgets
     assert sparse.ROUTER_LEGACY not in str(widgets)
 
@@ -1248,3 +1249,87 @@ def test_density_accumulates_across_differently_shaped_calls(monkeypatch):
     total_selected = 2 * 4 * 2 + 2 * 16 * 12
     total_slots = 2 * 4 * 8 + 2 * 16 * 16
     assert stats.mean_density() == pytest.approx(total_selected / total_slots)
+
+
+def test_int8_configuration_clones_protected_layers_without_run_state():
+    holder = sparse.H3SparseHolder(backend='int8', dense_layers='0,1,33,34,35', tau=.25,
+                                   memory_budget_gib=16.0)
+    holder.block_index = 18
+    clone = holder.clone()
+    assert clone.backend == 'int8'
+    assert clone.dense_layers == frozenset({0,1,33,34,35})
+    assert clone.block_index == 0
+    assert clone.memory_budget_gib == 16.0
+    with pytest.raises(ValueError):
+        sparse.H3SparseHolder(backend='int8', dense_layers='50')
+    with pytest.raises(ValueError):
+        sparse.H3SparseHolder(backend='int8', mode='oracle')
+
+
+@requires_mps
+def test_int8_sol_protected_prefix_and_ragged_output():
+    from _patches import h3_sol_mps
+    if not h3_sol_mps.supported():pytest.skip('M5 tensor operations required')
+    torch.manual_seed(41)
+    # Physical BSHD storage, non-contiguous BHSD view; ragged final block.
+    q,k,v=[torch.randn(1,137,4,128).to(device='mps',dtype=torch.bfloat16).transpose(1,2) for _ in range(3)]
+    with torch.inference_mode():
+        out,counts,total=h3_sol_mps.attention(q,k,v,tau=.25,video_start=65)
+        ref=torch.nn.functional.scaled_dot_product_attention(q[:,:,:128],k,v)
+        assert torch.equal(out[:,:,:128],ref)
+        assert out.shape==q.shape and torch.isfinite(out).all()
+        assert counts.shape==(4,3) and total==36
+        again,*_=h3_sol_mps.attention(q,k,v,tau=.25,video_start=65)
+        assert torch.equal(out,again)
+        for budget in (4.0, 16.0):
+            manual,manual_counts,_=h3_sol_mps.attention(q,k,v,tau=.25,video_start=65,
+                                                      memory_budget_gib=budget)
+            assert torch.equal(out.view(torch.uint8),manual.view(torch.uint8))
+            assert torch.equal(counts,manual_counts)
+        full,*_=h3_sol_mps.attention(q,k,v,tau=.25,video_start=137)
+        assert torch.equal(full,torch.nn.functional.scaled_dot_product_attention(q,k,v))
+
+
+def test_step_fraction_protects_first_four_last_two_and_repeated_evaluations():
+    # Current simple scheduler, float32 H3 shift=12, including terminal zero.
+    t = torch.linspace(1, 0, 21)
+    sigmas = 12 * t / (1 + 11 * t)
+    holder = sparse.H3SparseHolder(start_percent=.2, end_percent=.9,
+                                   window_mode='step_fraction')
+    holder = holder.clone().prepare_timesteps(None, sigmas)
+    selected = []
+    for i, sigma in enumerate(sigmas[:-1]):
+        holder.sigma = float(sigma)
+        first = holder.in_sparse_window()
+        assert holder.in_sparse_window() == first  # repeated CFG branch
+        if first:
+            selected.append(i)
+    assert selected == list(range(4, 18))
+    assert holder.step_range == (4, 18, 20)
+
+
+@pytest.mark.parametrize('start,end,expected', [(0, 1, 4), (.5, .5, 0), (1, 1, 0)])
+def test_step_fraction_full_and_empty_windows(start, end, expected):
+    sigmas = torch.tensor([1., .9, .7, .3, 0.])
+    holder = sparse.H3SparseHolder(start_percent=start, end_percent=end,
+                                   window_mode='step_fraction').prepare_timesteps(None, sigmas)
+    selected = 0
+    for sigma in sigmas[:-1]:
+        holder.sigma = float(sigma)
+        selected += holder.in_sparse_window()
+    assert selected == expected
+
+
+def test_step_fraction_refuses_invalid_schedule():
+    holder = sparse.H3SparseHolder(window_mode='step_fraction')
+    with pytest.raises(ValueError, match='sigma schedule'):
+        holder.prepare_timesteps(None)
+    with pytest.raises(ValueError, match='decreasing'):
+        holder.prepare_timesteps(None, torch.tensor([1., .5, .6, 0.]))
+
+
+def test_step_fraction_rounds_short_schedule_protection_outward():
+    sigmas = torch.tensor([1., .9, .7, .3, 0.])
+    holder = sparse.H3SparseHolder(start_percent=.2, end_percent=.9,
+                                   window_mode='step_fraction').prepare_timesteps(None, sigmas)
+    assert holder.step_range == (1, 3, 4)

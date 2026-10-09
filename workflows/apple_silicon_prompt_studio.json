@@ -1,0 +1,74 @@
+{
+  "last_node_id": 1,
+  "last_link_id": 0,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "AppleSiliconPromptStudio",
+      "pos": [
+        300,
+        120
+      ],
+      "size": [
+        460,
+        600
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "idea",
+          "type": "STRING",
+          "link": null
+        },
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "prompt",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 0
+        },
+        {
+          "name": "negative_prompt",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "AppleSiliconPromptStudio"
+      },
+      "widgets_values": [
+        "use_saved",
+        "{\"version\": 1, \"connection\": \"omlx\", \"profile\": {\"id\": \"image\", \"name\": \"Image \\u00b7 general\", \"kind\": \"image\", \"instructions\": \"Write a clear image prompt: subject, composition, environment, lighting, materials, color and style. Describe visible details. Avoid filler and invented technical settings.\", \"negative\": \"\"}, \"idea\": \"A silver observatory above a sea of clouds at dawn\", \"style\": \"Cinematic realism\", \"detail\": \"balanced\", \"aspect_ratio\": \"16:9\", \"duration\": 5, \"references\": [], \"temperature\": 0.7, \"seed\": -1, \"frame_count\": 4, \"reference_fps\": 24}",
+        "",
+        ""
+      ]
+    }
+  ],
+  "links": [],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ]
+    }
+  },
+  "version": 0.4
+}

@@ -1,0 +1,201 @@
+{
+  "config": {
+    "label": "seed-42-native",
+    "seed": 42,
+    "model": "int8",
+    "fix": true,
+    "mode": "native",
+    "stage": "full",
+    "input_size": 320,
+    "repeats": 1,
+    "limit_gib": 40.0,
+    "sample_file": null,
+    "installed": true,
+    "default_fix": false
+  },
+  "state": {
+    "stage": "verification",
+    "max_driver_gib": 13.510498046875,
+    "max_live_gib": 8.522134780883789,
+    "max_rss_gib": 2.30364990234375,
+    "torch_version": "2.14.0",
+    "torch_git": "08187d9e0fba026dc8217405802ab5381dc88d90",
+    "completed": true
+  },
+  "records": [
+    {
+      "repeat": 0,
+      "timings": {
+        "resize": 0.006572249985765666,
+        "preprocess": 0.0008707920205779374,
+        "load_vae": 0.10604854201665148,
+        "encode": 0.5233802910079248,
+        "load_model": 0.06166604103054851,
+        "sample": 1.3491920829983428,
+        "decode": 0.5079125839984044,
+        "postprocess": 0.0008054170175455511,
+        "save_image": 0.03409737499896437
+      },
+      "total_seconds": 2.592098833003547,
+      "encoded_sha256": "6b65a00eee9ba9058268a91b6405615f63094d39d2bf63f0f596b8efbc57c93f",
+      "sampled_sha256": "6abe5391112e26a482b2eb4c3751d5baf2d950c5c205ccab0a832c3b21233ddf",
+      "frames_sha256": "03420a84451d59ec024f8bd52889f9a76b5a48b82e2b1f5ccbf7e0fbcf73ff90",
+      "frames_finite": true,
+      "output_shape": [
+        1,
+        638,
+        960,
+        4
+      ]
+    }
+  ],
+  "events": [
+    {
+      "seconds": 0.009399708011187613,
+      "stage": "resize",
+      "driver_gib": 0.03948974609375,
+      "live_gib": 0.0,
+      "rss_gib": 0.573944091796875
+    },
+    {
+      "seconds": 0.010407000023405999,
+      "stage": "preprocess",
+      "driver_gib": 0.03948974609375,
+      "live_gib": 0.0,
+      "rss_gib": 0.5810394287109375
+    },
+    {
+      "seconds": 0.11661366699263453,
+      "stage": "load_vae",
+      "driver_gib": 0.03948974609375,
+      "live_gib": 0.0,
+      "rss_gib": 1.90753173828125
+    },
+    {
+      "seconds": 0.3349871670361608,
+      "stage": "encode",
+      "driver_gib": 2.2217254638671875,
+      "live_gib": 0.6563720703125,
+      "rss_gib": 1.4604949951171875
+    },
+    {
+      "seconds": 0.4069620000082068,
+      "stage": "encode",
+      "driver_gib": 3.2217254638671875,
+      "live_gib": 0.6569802761077881,
+      "rss_gib": 1.461395263671875
+    },
+    {
+      "seconds": 0.481581375002861,
+      "stage": "encode",
+      "driver_gib": 3.223541259765625,
+      "live_gib": 0.6559121608734131,
+      "rss_gib": 1.487274169921875
+    },
+    {
+      "seconds": 0.5521374170202762,
+      "stage": "encode",
+      "driver_gib": 3.2395172119140625,
+      "live_gib": 0.6561260223388672,
+      "rss_gib": 1.51092529296875
+    },
+    {
+      "seconds": 0.5806662079994567,
+      "stage": "encode",
+      "driver_gib": 3.2395172119140625,
+      "live_gib": 0.6561260223388672,
+      "rss_gib": 1.51092529296875
+    },
+    {
+      "seconds": 0.6393201670143753,
+      "stage": "encode",
+      "driver_gib": 3.2484130859375,
+      "live_gib": 0.6555919647216797,
+      "rss_gib": 1.5349884033203125
+    },
+    {
+      "seconds": 0.6401010830304585,
+      "stage": "encode",
+      "driver_gib": 3.2484130859375,
+      "live_gib": 0.4674184322357178,
+      "rss_gib": 1.5351104736328125
+    },
+    {
+      "seconds": 0.7019548750249669,
+      "stage": "load_model",
+      "driver_gib": 3.2484130859375,
+      "live_gib": 0.4674184322357178,
+      "rss_gib": 1.8566741943359375
+    },
+    {
+      "seconds": 2.0515327919856645,
+      "stage": "sample",
+      "driver_gib": 9.5775146484375,
+      "live_gib": 8.231915712356567,
+      "rss_gib": 1.6505126953125
+    },
+    {
+      "seconds": 2.204384625016246,
+      "stage": "decode",
+      "driver_gib": 13.361053466796875,
+      "live_gib": 8.51151418685913,
+      "rss_gib": 1.6701507568359375
+    },
+    {
+      "seconds": 2.3088240830111317,
+      "stage": "decode",
+      "driver_gib": 13.361053466796875,
+      "live_gib": 8.522134780883789,
+      "rss_gib": 1.670166015625
+    },
+    {
+      "seconds": 2.3715643750038,
+      "stage": "decode",
+      "driver_gib": 13.36138916015625,
+      "live_gib": 8.520654678344727,
+      "rss_gib": 1.6894989013671875
+    },
+    {
+      "seconds": 2.4413207080215216,
+      "stage": "decode",
+      "driver_gib": 13.459381103515625,
+      "live_gib": 8.520853519439697,
+      "rss_gib": 1.7087249755859375
+    },
+    {
+      "seconds": 2.4984571670065634,
+      "stage": "decode",
+      "driver_gib": 13.459381103515625,
+      "live_gib": 8.520853519439697,
+      "rss_gib": 1.708740234375
+    },
+    {
+      "seconds": 2.558204000000842,
+      "stage": "decode",
+      "driver_gib": 13.510498046875,
+      "live_gib": 8.520357608795166,
+      "rss_gib": 1.728607177734375
+    },
+    {
+      "seconds": 2.5595374170225114,
+      "stage": "decode",
+      "driver_gib": 13.510498046875,
+      "live_gib": 8.231915712356567,
+      "rss_gib": 1.728607177734375
+    },
+    {
+      "seconds": 2.560466625029221,
+      "stage": "postprocess",
+      "driver_gib": 13.510498046875,
+      "live_gib": 8.231915712356567,
+      "rss_gib": 1.728607177734375
+    },
+    {
+      "seconds": 2.594711332989391,
+      "stage": "save_image",
+      "driver_gib": 13.510498046875,
+      "live_gib": 8.231915712356567,
+      "rss_gib": 1.7286224365234375
+    }
+  ]
+}

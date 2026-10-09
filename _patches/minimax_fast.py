@@ -110,6 +110,8 @@ def _owned_attention_inputs(q, k, v):
 
 def _seg_rows(segments, S, device):
     """int32 [S] mapping each packed token to its adaln modulation row."""
+    if any(isinstance(row, torch.Tensor) for _, _, row in segments):
+        return None  # native per-token modulation; keep scalar-only fusions armed
     key = (tuple((int(a), int(b), int(r)) for a, b, r in segments), int(S),
            device.type, getattr(device, "index", None))
     t = _rows_cache.get(key)
@@ -211,8 +213,18 @@ def _install_block_fusion(M):
     global _orig_block
     _orig_block = M.DiTBlock.forward
 
-    def fast_forward(self, x, t_emb, mod_segments, rope_freqs, transformer_options={}):
+    def fast_forward(self, x, t_emb, mod_segments, rope_freqs,
+                     transformer_options={}, attention=None):
         global _block_announced, _block_dead
+        # Current ComfyUI's block-replacement dispatcher always supplies
+        # attention=None. Cache and token-reduction wrappers reach that path
+        # even when they do not replace attention. Honor an actual custom
+        # callable through the upstream implementation instead of dropping it.
+        if attention is not None:
+            transformer_options.pop(_CROSS_BLOCK_KEY, None)
+            return _orig_block(self, x, t_emb, mod_segments, rope_freqs,
+                               transformer_options=transformer_options,
+                               attention=attention)
         # This prefix does not mutate x, so it remains safe to use the original
         # block as a fallback if model/layout eligibility changes.
         try:

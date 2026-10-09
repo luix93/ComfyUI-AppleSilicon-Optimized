@@ -1,0 +1,326 @@
+[
+  {
+    "frames": 22,
+    "batch": 0,
+    "warmup": true,
+    "seconds": 1.9620325419818982,
+    "driver_gib": 7.060272216796875,
+    "shape": [
+      22,
+      480,
+      864,
+      3
+    ],
+    "finite": true,
+    "equal": true,
+    "max_abs": 0.0,
+    "rmse": 0.0,
+    "sha256": "a6eaa320f60577ffab95fd20cbc19c1e6f808f06c966970e41c266db384590f4"
+  },
+  {
+    "frames": 22,
+    "batch": 0,
+    "warmup": false,
+    "seconds": 1.454882749938406,
+    "driver_gib": 7.060272216796875,
+    "shape": [
+      22,
+      480,
+      864,
+      3
+    ],
+    "finite": true,
+    "equal": true,
+    "max_abs": 0.0,
+    "rmse": 0.0,
+    "sha256": "a6eaa320f60577ffab95fd20cbc19c1e6f808f06c966970e41c266db384590f4"
+  },
+  {
+    "frames": 22,
+    "batch": 1,
+    "warmup": false,
+    "seconds": 1.530442374991253,
+    "driver_gib": 7.060272216796875,
+    "shape": [
+      22,
+      480,
+      864,
+      3
+    ],
+    "finite": true,
+    "equal": true,
+    "max_abs": 0.0,
+    "rmse": 0.0,
+    "sha256": "a6eaa320f60577ffab95fd20cbc19c1e6f808f06c966970e41c266db384590f4"
+  },
+  {
+    "frames": 22,
+    "batch": 2,
+    "warmup": false,
+    "seconds": 1.4928736670408398,
+    "driver_gib": 7.0739593505859375,
+    "shape": [
+      22,
+      480,
+      864,
+      3
+    ],
+    "finite": true,
+    "equal": true,
+    "max_abs": 0.0,
+    "rmse": 0.0,
+    "sha256": "a6eaa320f60577ffab95fd20cbc19c1e6f808f06c966970e41c266db384590f4"
+  },
+  {
+    "frames": 22,
+    "batch": 4,
+    "warmup": false,
+    "seconds": 1.4575992079917341,
+    "driver_gib": 7.0739593505859375,
+    "shape": [
+      22,
+      480,
+      864,
+      3
+    ],
+    "finite": true,
+    "equal": true,
+    "max_abs": 0.0,
+    "rmse": 0.0,
+    "sha256": "a6eaa320f60577ffab95fd20cbc19c1e6f808f06c966970e41c266db384590f4"
+  },
+  {
+    "frames": 22,
+    "batch": 8,
+    "warmup": false,
+    "seconds": 1.436248708050698,
+    "driver_gib": 7.108154296875,
+    "shape": [
+      22,
+      480,
+      864,
+      3
+    ],
+    "finite": true,
+    "equal": true,
+    "max_abs": 0.0,
+    "rmse": 0.0,
+    "sha256": "a6eaa320f60577ffab95fd20cbc19c1e6f808f06c966970e41c266db384590f4"
+  },
+  {
+    "frames": 22,
+    "batch": 8,
+    "warmup": false,
+    "seconds": 1.4285794160095975,
+    "driver_gib": 7.108154296875,
+    "shape": [
+      22,
+      480,
+      864,
+      3
+    ],
+    "finite": true,
+    "equal": true,
+    "max_abs": 0.0,
+    "rmse": 0.0,
+    "sha256": "a6eaa320f60577ffab95fd20cbc19c1e6f808f06c966970e41c266db384590f4"
+  },
+  {
+    "frames": 22,
+    "batch": 4,
+    "warmup": false,
+    "seconds": 1.4603309999220073,
+    "driver_gib": 7.108154296875,
+    "shape": [
+      22,
+      480,
+      864,
+      3
+    ],
+    "finite": true,
+    "equal": true,
+    "max_abs": 0.0,
+    "rmse": 0.0,
+    "sha256": "a6eaa320f60577ffab95fd20cbc19c1e6f808f06c966970e41c266db384590f4"
+  },
+  {
+    "frames": 22,
+    "batch": 0,
+    "warmup": false,
+    "seconds": 1.4615298749413341,
+    "driver_gib": 7.108154296875,
+    "shape": [
+      22,
+      480,
+      864,
+      3
+    ],
+    "finite": true,
+    "equal": true,
+    "max_abs": 0.0,
+    "rmse": 0.0,
+    "sha256": "a6eaa320f60577ffab95fd20cbc19c1e6f808f06c966970e41c266db384590f4"
+  },
+  {
+    "frames": 124,
+    "batch": 0,
+    "warmup": true,
+    "seconds": 10.205437583033927,
+    "driver_gib": 7.108154296875,
+    "shape": [
+      124,
+      480,
+      864,
+      3
+    ],
+    "finite": true,
+    "equal": true,
+    "max_abs": 0.0,
+    "rmse": 0.0,
+    "sha256": "5b897949f187d6cf83c555b0be61eaaf044c351a9f91d4f48a9e60281b5de90a"
+  },
+  {
+    "frames": 124,
+    "batch": 0,
+    "warmup": false,
+    "seconds": 10.208533167024143,
+    "driver_gib": 7.108154296875,
+    "shape": [
+      124,
+      480,
+      864,
+      3
+    ],
+    "finite": true,
+    "equal": true,
+    "max_abs": 0.0,
+    "rmse": 0.0,
+    "sha256": "5b897949f187d6cf83c555b0be61eaaf044c351a9f91d4f48a9e60281b5de90a"
+  },
+  {
+    "frames": 124,
+    "batch": 1,
+    "warmup": false,
+    "seconds": 10.704123749979772,
+    "driver_gib": 7.108154296875,
+    "shape": [
+      124,
+      480,
+      864,
+      3
+    ],
+    "finite": true,
+    "equal": true,
+    "max_abs": 0.0,
+    "rmse": 0.0,
+    "sha256": "5b897949f187d6cf83c555b0be61eaaf044c351a9f91d4f48a9e60281b5de90a"
+  },
+  {
+    "frames": 124,
+    "batch": 2,
+    "warmup": false,
+    "seconds": 10.40454504196532,
+    "driver_gib": 7.108154296875,
+    "shape": [
+      124,
+      480,
+      864,
+      3
+    ],
+    "finite": true,
+    "equal": true,
+    "max_abs": 0.0,
+    "rmse": 0.0,
+    "sha256": "5b897949f187d6cf83c555b0be61eaaf044c351a9f91d4f48a9e60281b5de90a"
+  },
+  {
+    "frames": 124,
+    "batch": 4,
+    "warmup": false,
+    "seconds": 10.210921916062944,
+    "driver_gib": 7.108154296875,
+    "shape": [
+      124,
+      480,
+      864,
+      3
+    ],
+    "finite": true,
+    "equal": true,
+    "max_abs": 0.0,
+    "rmse": 0.0,
+    "sha256": "5b897949f187d6cf83c555b0be61eaaf044c351a9f91d4f48a9e60281b5de90a"
+  },
+  {
+    "frames": 124,
+    "batch": 8,
+    "warmup": false,
+    "seconds": 10.049706916906871,
+    "driver_gib": 7.115966796875,
+    "shape": [
+      124,
+      480,
+      864,
+      3
+    ],
+    "finite": true,
+    "equal": true,
+    "max_abs": 0.0,
+    "rmse": 0.0,
+    "sha256": "5b897949f187d6cf83c555b0be61eaaf044c351a9f91d4f48a9e60281b5de90a"
+  },
+  {
+    "frames": 124,
+    "batch": 8,
+    "warmup": false,
+    "seconds": 10.042410749942064,
+    "driver_gib": 7.115966796875,
+    "shape": [
+      124,
+      480,
+      864,
+      3
+    ],
+    "finite": true,
+    "equal": true,
+    "max_abs": 0.0,
+    "rmse": 0.0,
+    "sha256": "5b897949f187d6cf83c555b0be61eaaf044c351a9f91d4f48a9e60281b5de90a"
+  },
+  {
+    "frames": 124,
+    "batch": 4,
+    "warmup": false,
+    "seconds": 10.229301667073742,
+    "driver_gib": 7.115966796875,
+    "shape": [
+      124,
+      480,
+      864,
+      3
+    ],
+    "finite": true,
+    "equal": true,
+    "max_abs": 0.0,
+    "rmse": 0.0,
+    "sha256": "5b897949f187d6cf83c555b0be61eaaf044c351a9f91d4f48a9e60281b5de90a"
+  },
+  {
+    "frames": 124,
+    "batch": 0,
+    "warmup": false,
+    "seconds": 10.235932208015583,
+    "driver_gib": 7.115966796875,
+    "shape": [
+      124,
+      480,
+      864,
+      3
+    ],
+    "finite": true,
+    "equal": true,
+    "max_abs": 0.0,
+    "rmse": 0.0,
+    "sha256": "5b897949f187d6cf83c555b0be61eaaf044c351a9f91d4f48a9e60281b5de90a"
+  }
+]

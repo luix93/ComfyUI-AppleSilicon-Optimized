@@ -1,0 +1,137 @@
+{
+  "config": {
+    "label": "full120-installed",
+    "frames": 120,
+    "video_sync": "production",
+    "seed": 959948902156062,
+    "model": "int8",
+    "fix": true,
+    "mode": "native",
+    "stage": "full",
+    "input_size": 416,
+    "repeats": 2,
+    "limit_gib": 64.0,
+    "sample_file": null,
+    "installed": true,
+    "default_fix": false,
+    "core_video": true,
+    "export_video": true
+  },
+  "state": {
+    "stage": "verification",
+    "max_driver_gib": 36.60572814941406,
+    "max_live_gib": 13.865697860717773,
+    "max_rss_gib": 12.993515014648438,
+    "video_sync": "production",
+    "tile_calls": 0,
+    "conv_calls": 29760,
+    "torch_version": "2.14.0",
+    "torch_git": "08187d9e0fba026dc8217405802ab5381dc88d90",
+    "completed": true
+  },
+  "records": [
+    {
+      "repeat": 0,
+      "timings": {
+        "resize": 1.2249620840302669,
+        "preprocess": 0.08162595797330141,
+        "load_vae": 0.0984227079898119,
+        "encode": 35.82703049998963,
+        "load_model": 0.06553562503540888,
+        "sample": 15.273819540976547,
+        "decode": 86.05402579100337,
+        "postprocess": 5.779101047664881e-05,
+        "save_image": 0.07446733297547325,
+        "export_video": 0.918149542005267
+      },
+      "total_seconds": 139.62614029098768,
+      "encoded_sha256": "bfb5668144d231eb190483e909d2edc8e02693eb76ebae25c88970d765827031",
+      "sampled_sha256": "65b37f282ce776e48aea56bee8ca1373e8ea6459ff8125502563434c2fd005f4",
+      "frames_sha256": "9b2172d5111e6bb99b0f4250788cbdbb08a1e127f728df367f92fd3672daf969",
+      "frames_finite": true,
+      "output_shape": [
+        120,
+        1472,
+        832,
+        3
+      ]
+    },
+    {
+      "repeat": 1,
+      "timings": {
+        "resize": 1.2858789159799926,
+        "preprocess": 0.11024866602383554,
+        "encode": 35.68757129099686,
+        "sample": 14.344729625037871,
+        "decode": 85.97637483396102,
+        "postprocess": 2.9542017728090286e-05,
+        "save_image": 0.07162929099285975,
+        "export_video": 0.926835749996826
+      },
+      "total_seconds": 138.41222058300627,
+      "encoded_sha256": "bfb5668144d231eb190483e909d2edc8e02693eb76ebae25c88970d765827031",
+      "sampled_sha256": "65b37f282ce776e48aea56bee8ca1373e8ea6459ff8125502563434c2fd005f4",
+      "frames_sha256": "9b2172d5111e6bb99b0f4250788cbdbb08a1e127f728df367f92fd3672daf969",
+      "frames_finite": true,
+      "output_shape": [
+        120,
+        1472,
+        832,
+        3
+      ]
+    }
+  ],
+  "memory_probe_count": 41402,
+  "phase_peaks": {
+    "decode": {
+      "driver_gib": 36.60572814941406,
+      "live_gib": 13.865697860717773,
+      "rss_gib": 8.90814208984375
+    },
+    "encode": {
+      "driver_gib": 34.26737976074219,
+      "live_gib": 11.421753406524658,
+      "rss_gib": 12.590591430664062
+    },
+    "export_video": {
+      "driver_gib": 34.21836853027344,
+      "live_gib": 8.236310243606567,
+      "rss_gib": 6.92169189453125
+    },
+    "load_model": {
+      "driver_gib": 13.94793701171875,
+      "live_gib": 0.4674184322357178,
+      "rss_gib": 9.105697631835938
+    },
+    "load_vae": {
+      "driver_gib": 0.03948974609375,
+      "live_gib": 0.0,
+      "rss_gib": 9.35662841796875
+    },
+    "postprocess": {
+      "driver_gib": 34.21836853027344,
+      "live_gib": 8.236310243606567,
+      "rss_gib": 8.90814208984375
+    },
+    "preprocess": {
+      "driver_gib": 34.21055603027344,
+      "live_gib": 8.236310243606567,
+      "rss_gib": 12.412872314453125
+    },
+    "resize": {
+      "driver_gib": 34.21055603027344,
+      "live_gib": 8.236310243606567,
+      "rss_gib": 9.127960205078125
+    },
+    "sample": {
+      "driver_gib": 33.75360107421875,
+      "live_gib": 10.11295461654663,
+      "rss_gib": 7.247222900390625
+    },
+    "save_image": {
+      "driver_gib": 34.21836853027344,
+      "live_gib": 8.236310243606567,
+      "rss_gib": 8.919586181640625
+    }
+  }
+}

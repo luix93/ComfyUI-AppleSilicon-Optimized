@@ -480,6 +480,7 @@ class _RunStats:
     calls: int = 0
     sparse_calls: int = 0
     dense_calls: int = 0
+    quantized_dense_calls: int = 0  # protected layers in the optional hybrid
     routed_calls: int = 0      # calls the router scored (includes dense_reference)
     evaluations: int = 0
     sparse_evaluations: int = 0
@@ -506,6 +507,17 @@ class _RunStats:
         return float(self.selected_blocks.item()) / float(self.total_blocks)
 
 
+def parse_dense_layers(spec: str) -> frozenset[int]:
+    """Explicit zero-based layer indices; kept separate from leading layers."""
+    try:
+        layers = frozenset(int(item.strip()) for item in spec.split(",") if item.strip())
+    except (AttributeError, ValueError) as exc:
+        raise ValueError("Dense layers must be comma-separated indices, e.g. 0,1,33,34,35") from exc
+    if any(index < 0 or index >= H3_BLOCK_COUNT for index in layers):
+        raise ValueError("H3 dense layer indices must be between 0 and 49")
+    return layers
+
+
 class H3SparseHolder:
     """Per-sampling-run configuration and evaluation state."""
 
@@ -520,10 +532,15 @@ class H3SparseHolder:
         block_size: int = BLOCK_SIZE,
         verbose: bool = True,
         temporal_taps: int = TEMPORAL_TAPS,
+        backend: str = "bf16",
+        dense_layers: str = "",
+        window_mode: str = "sigma_percent",
+        memory_budget_gib: float = 0.0,
+        topk_ratio: float = 0.0,
     ):
         if mode not in MODES:
             raise ValueError(f"mode must be one of {MODES}")
-        if tau < 0:
+        if not math.isfinite(tau) or tau < 0:
             raise ValueError("tau must be non-negative")
         if not 0.0 <= start_percent <= end_percent <= 1.0:
             raise ValueError("percents must satisfy 0 <= start <= end <= 1")
@@ -562,6 +579,19 @@ class H3SparseHolder:
         self.block_size = int(block_size)
         self.verbose = bool(verbose)
         self.temporal_taps = int(temporal_taps)
+        if backend not in ("bf16", "int8", "dense_int8", "int8_hybrid"):
+            raise ValueError("H3 attention backend must be bf16, int8, dense_int8 or int8_hybrid")
+        if backend in ("int8", "dense_int8", "int8_hybrid") and (self.router != ROUTER_DIAG64 or mode not in ("corrected", "dense_reference")):
+            raise ValueError("INT8 SOL supports diag64 corrected/dense_reference modes only")
+        self.backend = backend
+        self.dense_layers = parse_dense_layers(dense_layers)
+        if window_mode not in ("sigma_percent", "step_fraction"):
+            raise ValueError("H3 sparse window must be sigma_percent or step_fraction")
+        self.window_mode = window_mode
+        if not math.isfinite(memory_budget_gib) or memory_budget_gib < 0:
+            raise ValueError("SOL temporary memory must be finite and non-negative; 0 means Auto")
+        self.memory_budget_gib = float(memory_budget_gib)
+        self.step_range = None
         self.start_sigma: float | None = None
         self.end_sigma: float | None = None
         # per-evaluation
@@ -569,11 +599,21 @@ class H3SparseHolder:
         self.prefix_rows: int | None = None
         self.target_rows: int | None = None
         self.audio_rows: int | None = None
+        if not math.isfinite(topk_ratio) or not 0 <= topk_ratio < 1:
+            raise ValueError("topk_ratio must be zero or in (0, 1)")
+        # Switching the advanced picker from Top-k to dense leaves the hidden
+        # fraction serialized. Dense retains every key and must ignore it.
+        if backend == "dense_int8":
+            topk_ratio = 0.0
+        if topk_ratio and backend not in ("int8", "int8_hybrid"):
+            raise ValueError("Top-k requires the INT8 SOL backend")
+        self.topk_ratio = float(topk_ratio)
         self.rows_per_frame: int | None = None
         self.sigma: float | None = None
         self.oracle: dict[float, list[tuple[float, float, float]]] = {}
         self.oracle_seen = 0
         self.disabled = False
+        self.hybrid_dense_disabled = False
         self.stats = _RunStats()
 
     def clone(self) -> "H3SparseHolder":
@@ -581,9 +621,21 @@ class H3SparseHolder:
             self.mode, self.tau, self.start_percent, self.end_percent,
             self.dense_leading_blocks, self.min_sequence_tokens,
             self.block_size, self.verbose, self.temporal_taps,
+            self.backend, ",".join(map(str, sorted(self.dense_layers))),
+            self.window_mode, self.memory_budget_gib, self.topk_ratio,
         )
 
-    def prepare_timesteps(self, model_sampling: Any) -> "H3SparseHolder":
+    def prepare_timesteps(self, model_sampling: Any, sigmas=None) -> "H3SparseHolder":
+        if self.window_mode == "step_fraction":
+            # Derive the window from the actual sampler schedule. Fractions of
+            # the model's diffusion time do not reliably select N sampler steps
+            # (and float32 endpoint rounding can shift the window by one step).
+            # Sigma boundaries also keep repeated CFG evaluations at the same
+            # timestep together; a raw model-call counter would not.
+            from .h3_schedule import step_window
+            self.step_range, self.start_sigma, self.end_sigma = step_window(
+                sigmas, self.start_percent, self.end_percent)
+            return self
         self.start_sigma = float(model_sampling.percent_to_sigma(self.start_percent))
         self.end_sigma = float(model_sampling.percent_to_sigma(self.end_percent))
         return self
@@ -623,10 +675,13 @@ class H3SparseHolder:
         else:
             self.stats.dense_evaluations += 1
 
-    def note(self, reason: str) -> None:
-        if reason not in self.stats.reasons:
-            self.stats.reasons.add(reason)
-            if self.verbose:
+    def note(self, reason: str, *, key: str | None = None) -> None:
+        key = reason if key is None else key
+        if key not in self.stats.reasons:
+            self.stats.reasons.add(key)
+            if reason.startswith("kernel_unavailable") and not self.verbose:
+                logging.warning("%s dense fallback: %s", TAG, reason)
+            elif self.verbose:
                 logging.info("%s dense fallback: %s", TAG, reason)
 
     def in_sparse_window(self) -> bool:
@@ -637,6 +692,8 @@ class H3SparseHolder:
         frame-to-frame texture is settled, so approximating there shows up as
         flicker on static content.
         """
+        if self.step_range is not None and self.step_range[0] >= self.step_range[1]:
+            return False
         if self.start_sigma is None or self.end_sigma is None or self.sigma is None:
             return False
         upper = max(self.start_sigma, self.end_sigma)
@@ -650,7 +707,7 @@ class H3SparseHolder:
         # `routed` is the honest "did the router engage" counter: in
         # dense_reference mode every routed call still returns dense, so
         # sparse=0 there is expected rather than a silent no-op.
-        return (f"router={self.router} mode={self.mode} tau={self.tau:.3g} "
+        return (f"router={self.router} backend={self.backend} mode={self.mode} tau={self.tau:.3g} "
                 f"evaluations={stats.evaluations} "
                 f"(sparse={stats.sparse_evaluations} dense={stats.dense_evaluations}) "
                 f"attention_calls={stats.calls} routed={stats.routed_calls} "
@@ -731,16 +788,40 @@ def sparse_attention_override(comfy_fn, q, k, v, heads, **kwargs):
     if reason is None:
         if block_index < holder.dense_leading_blocks:
             reason = "leading_block"
+        elif block_index in holder.dense_layers:
+            reason = "protected_layer"
         elif block_index >= H3_BLOCK_COUNT:
             reason = "unexpected_block_index"
 
     if reason is not None:
         holder.note(reason)
         holder.stats.dense_calls += 1
+        # Hybrid changes only protected-layer attention inside the active
+        # window. Protected sampling steps retain the exact backend. A dense
+        # INT8 failure never disables the independently working SOL route.
+        if (holder.backend == "int8_hybrid" and holder.mode == "corrected" and not holder.hybrid_dense_disabled
+                and reason in ("leading_block", "protected_layer")):
+            try:
+                out, _, _ = _run_dense_int8(holder, q, k, v, kwargs.get("scale"))
+                holder.stats.quantized_dense_calls += 1
+                if kwargs.get("skip_output_reshape", False):
+                    return out.unsqueeze(0)
+                return out.transpose(0, 1).reshape(1, out.shape[1], -1)
+            except _SparseBudgetExceeded as exc:
+                holder.note(f"hybrid_memory_budget ({exc})", key="hybrid_memory_budget")
+            except _SparseUnavailable as exc:
+                holder.hybrid_dense_disabled = True
+                holder.note(f"kernel_unavailable protected-layer INT8 ({exc})")
         return _dense(comfy_fn, q, k, v, heads, kwargs)
 
     try:
         out, selected, total = _run_sparse(holder, q, k, v, kwargs.get("scale"))
+    except _SparseBudgetExceeded as exc:
+        # A larger sequence or temporary pressure must not disable later calls
+        # that fit, such as reduced-token blocks in the same sampling run.
+        holder.note(f"memory_budget ({exc})", key=f"memory_budget:{tuple(q.shape)}")
+        holder.stats.dense_calls += 1
+        return _dense(comfy_fn, q, k, v, heads, kwargs)
     except _SparseUnavailable as exc:
         # Capability problems latch the route off for the whole run rather than
         # paying a failed setup on all 50 blocks of every remaining step.
@@ -784,6 +865,10 @@ sparse_attention_override._asfp8_sparse_override = True
 
 
 class _SparseUnavailable(RuntimeError):
+    pass
+
+
+class _SparseBudgetExceeded(RuntimeError):
     pass
 
 
@@ -951,6 +1036,19 @@ def oracle_block_report(holder) -> list[str]:
     return lines
 
 
+def _run_dense_int8(holder: H3SparseHolder, q, k, v, scale):
+    from . import h3_dense_mps
+    try:
+        out, selected, total = h3_dense_mps.attention(
+            q,k,v,tau=0.0,video_start=_video_row_start(holder,q.shape[2]),
+            scale=scale,memory_budget_gib=holder.memory_budget_gib)
+        return out[0],selected,total
+    except h3_dense_mps.WorkspaceBudgetExceeded as exc:
+        raise _SparseBudgetExceeded(str(exc)) from exc
+    except (RuntimeError,ValueError) as exc:
+        raise _SparseUnavailable(str(exc)[:300]) from exc
+
+
 def _run_sparse(holder: H3SparseHolder, q, k, v, scale):
     """Route on the GPU, then attend under that route.
 
@@ -958,6 +1056,22 @@ def _run_sparse(holder: H3SparseHolder, q, k, v, scale):
     slots). The counts are NEVER read here — the caller accumulates them and one
     synchronization at the end of the run turns them into a density.
     """
+    if holder.backend == "dense_int8":
+        return _run_dense_int8(holder,q,k,v,scale)
+    if holder.backend in ("int8", "int8_hybrid"):
+        from . import h3_sol_mps
+        try:
+            out, selected, total = h3_sol_mps.attention(
+                q, k, v, tau=holder.tau,
+                video_start=_video_row_start(holder, q.shape[2]), scale=scale,
+                memory_budget_gib=holder.memory_budget_gib,
+                topk_ratio=holder.topk_ratio,
+            )
+            return out[0], selected, total
+        except h3_sol_mps.WorkspaceBudgetExceeded as exc:
+            raise _SparseBudgetExceeded(str(exc)) from exc
+        except (RuntimeError, ValueError) as exc:
+            raise _SparseUnavailable(str(exc)[:300]) from exc
     kernel = _kernel()
     if kernel is None:
         raise _SparseUnavailable("sol_ext did not build")
@@ -1018,22 +1132,42 @@ def h3_sparse_sample_wrapper(executor, *args, **kwargs):
         if not isinstance(template, H3SparseHolder):
             return executor(*args, **kwargs)
         active = template.clone().prepare_timesteps(
-            guider.model_patcher.model.model_sampling)
+            guider.model_patcher.model.model_sampling,
+            sigmas=kwargs.get("sigmas", args[3] if len(args) > 3 else None))
         transformer_options[STATE_KEY] = active
         transformer_options["optimized_attention_override"] = sparse_attention_override
-        logging.info(
-            "%s enabled router=%s mode=%s tau=%.3g window=%.2f..%.2f "
-            "dense_leading=%d min_seq=%d block=%d temporal_taps=%d",
-            TAG, active.router, active.mode, active.tau, active.start_percent,
-            active.end_percent, active.dense_leading_blocks,
-            active.min_sequence_tokens, active.block_size, active.temporal_taps,
-        )
+        if active.verbose:
+            if active.step_range is not None:
+                first, stop, count = active.step_range
+                logging.info("%s sampler-step window [%d, %d) of %d (zero-based)",
+                             TAG, first, stop, count)
+            logging.info(
+                "%s enabled router=%s backend=%s mode=%s tau=%.3g window=%.2f..%.2f "
+                "dense_leading=%d min_seq=%d block=%d temporal_taps=%d dense_layers=%s topk_ratio=%.3g",
+                TAG, active.router, active.backend, active.mode, active.tau, active.start_percent,
+                active.end_percent, active.dense_leading_blocks,
+                active.min_sequence_tokens, active.block_size, active.temporal_taps,
+                sorted(active.dense_layers),
+                active.topk_ratio,
+            )
         return executor(*args, **kwargs)
     finally:
         if active is not None:
-            logging.info("%s %s", TAG, active.summary())
-            for line in active.oracle_report():
-                logging.info("%s %s", TAG, line)
+            stats = active.stats
+            if stats.calls and not active.verbose:
+                if active.backend == "dense_int8":
+                    logging.info("MiniMax H3 dense INT8 - %d/%d attention calls quantized (speedup not measured)",stats.sparse_calls,stats.calls)
+                elif active.backend == "int8_hybrid" and stats.sparse_calls:
+                    logging.info("MiniMax H3 SOL hybrid - %.1f%% attention blocks omitted within %d/%d calls, %d protected-layer calls quantized (speedup not measured)",100*(1-stats.mean_density()),stats.sparse_calls,stats.calls,stats.quantized_dense_calls)
+                elif stats.sparse_calls and active.mode != "dense_reference":
+                    logging.info("MiniMax H3 SOL sparse - %.1f%% attention blocks omitted within %d/%d attention calls (speedup not measured)",
+                                 100 * (1 - stats.mean_density()), stats.sparse_calls, stats.calls)
+                else:
+                    logging.info("MiniMax H3 SOL sparse - 0/%d attention calls accelerated (estimated 1.00x speedup)", stats.calls)
+            if active.verbose:
+                logging.info("%s %s", TAG, active.summary())
+                for line in active.oracle_report():
+                    logging.info("%s %s", TAG, line)
             active.stats = _RunStats()
             active.oracle.clear()
         guider.model_options = original_options
@@ -1050,6 +1184,11 @@ def apply_h3_sparse(
     block_size: int = BLOCK_SIZE,
     end_percent: float = 0.85,
     temporal_taps: int = TEMPORAL_TAPS,
+    backend: str = "bf16",
+    dense_layers: str = "",
+    window_mode: str = "sigma_percent",
+    memory_budget_gib: float = 0.0,
+    topk_ratio: float = 0.0,
 ):
     """Attach corrected sparse attention to a cloned MiniMax H3 ModelPatcher.
 
@@ -1064,7 +1203,22 @@ def apply_h3_sparse(
     mps = getattr(torch.backends, "mps", None)
     if mps is None or not mps.is_available():
         raise ValueError("H3 sparse attention requires an MPS (Apple Silicon) device")
-    if _kernel() is None:
+    holder = H3SparseHolder(
+        mode=mode, tau=tau, start_percent=start_percent, end_percent=end_percent,
+        dense_leading_blocks=dense_leading_blocks, min_sequence_tokens=min_sequence_tokens,
+        block_size=block_size, verbose=verbose, temporal_taps=temporal_taps,
+        backend=backend, dense_layers=dense_layers, window_mode=window_mode,
+        memory_budget_gib=memory_budget_gib, topk_ratio=topk_ratio,
+    )
+    if backend in ("int8", "int8_hybrid"):
+        from . import h3_sol_mps
+        if not h3_sol_mps.supported():
+            raise ValueError("H3 INT8 SOL requires an M5 GPU and torch.mps.compile_shader")
+    elif backend == "dense_int8":
+        from . import h3_dense_mps
+        if not h3_dense_mps.supported():
+            raise ValueError("H3 dense INT8 requires an M5 GPU and torch.mps.compile_shader")
+    elif _kernel() is None:
         raise ValueError(
             "H3 sparse attention requires the sol_ext Metal kernel, which did not "
             "build. Install the Metal toolchain (xcrun) and ninja into the ComfyUI "
@@ -1086,17 +1240,7 @@ def apply_h3_sparse(
 
     patched = model.clone()
     transformer_options = patched.model_options.setdefault("transformer_options", {})
-    transformer_options[STATE_KEY] = H3SparseHolder(
-        mode=mode,
-        tau=tau,
-        start_percent=start_percent,
-        end_percent=end_percent,
-        dense_leading_blocks=dense_leading_blocks,
-        min_sequence_tokens=min_sequence_tokens,
-        block_size=block_size,
-        verbose=verbose,
-        temporal_taps=temporal_taps,
-    )
+    transformer_options[STATE_KEY] = holder
     patched.add_wrapper_with_key(
         comfy.patcher_extension.WrappersMP.OUTER_SAMPLE,
         WRAPPER_KEY,
@@ -1108,83 +1252,3 @@ def apply_h3_sparse(
         h3_sparse_diffusion_wrapper,
     )
     return patched
-
-
-class AppleSiliconH3SparseAttention:
-    """Explicit ComfyUI node for corrected Sol-style sparse attention."""
-
-    # Kept registered for saved workflows; the unified H3 node is the canonical
-    # production-facing control surface.
-    DEPRECATED = True
-    CATEGORY = "Apple Silicon/approximate"
-    DESCRIPTION = (
-        "MiniMax H3 block-sparse self-attention on MPS, using NVIDIA's released "
-        "H3 routing policy (diag64): 64-token blocks, an analytic threshold from "
-        "the key centroids' diagonal covariance, a contiguous exact text/audio "
-        "sink, a local +-1 band and two dense leading transformer blocks. A "
-        "Metal 4.1 kernel computes only the selected blocks and folds every "
-        "rejected block back through its centroid with log-length multiplicity. "
-        "Approximate and opt-in; hard_drop, dense_reference and oracle are "
-        "diagnostics, not production modes. Tuned for 20-step workflows."
-    )
-    FUNCTION = "patch"
-    RETURN_TYPES = ("MODEL",)
-    RETURN_NAMES = ("model",)
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "model": ("MODEL",),
-                "mode": (list(MODES), {"default": "corrected"}),
-                "tau": ("FLOAT", {
-                    "default": 1.0, "min": 0.0, "max": 4.0, "step": 0.05,
-                }),
-                # 0.50 protects the first TEN of twenty denoising evaluations.
-                # H3's measured video transform rate is 41x early against 0.33
-                # late, so the early steps are where an approximation shows.
-                "start_percent": ("FLOAT", {
-                    "default": 0.50, "min": 0.0, "max": 1.0, "step": 0.01,
-                }),
-                "dense_leading_blocks": ("INT", {
-                    "default": 2, "min": 0, "max": 49, "step": 1,
-                }),
-                "min_sequence_tokens": ("INT", {
-                    "default": 8192, "min": 0, "max": 131072, "step": 512,
-                }),
-                "verbose": ("BOOLEAN", {"default": True}),
-                # NEW WIDGETS GO AT THE END. ComfyUI maps saved workflow values
-                # positionally, so inserting one mid-list silently shifts every
-                # later value into the wrong slot (min_sequence_tokens=4096
-                # landing in dense_leading_blocks, etc).
-                "end_percent": ("FLOAT", {
-                    "default": 0.85, "min": 0.0, "max": 1.0, "step": 0.01,
-                }),
-                # Present only for saved-workflow compatibility: the diag64
-                # router REFUSES any value but the default for both of these,
-                # rather than silently ignoring them. Removing the widgets would
-                # shift every earlier value into the wrong slot on load.
-                "temporal_taps": ("INT", {
-                    "default": 0, "min": 0, "max": 2, "step": 1,
-                }),
-                "block_size": ([64, 32, 128], {"default": 64}),
-            },
-        }
-
-    def patch(self, model, mode, tau, start_percent, dense_leading_blocks,
-              min_sequence_tokens, verbose, end_percent=0.85, temporal_taps=0,
-              block_size=BLOCK_SIZE):
-        return (apply_h3_sparse(
-            model, mode, tau, start_percent, dense_leading_blocks,
-            min_sequence_tokens, verbose, end_percent=end_percent,
-            temporal_taps=temporal_taps, block_size=int(block_size),
-        ),)
-
-
-NODE_CLASS_MAPPINGS = {
-    "AppleSiliconH3SparseAttention": AppleSiliconH3SparseAttention,
-}
-
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "AppleSiliconH3SparseAttention": "H3 Sparse Attention (Apple Silicon, Experimental)",
-}

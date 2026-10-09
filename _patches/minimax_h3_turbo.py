@@ -10,8 +10,8 @@ bypass path is sharper, but H3 has two call sites which deliberately bypass
 ``Linear.forward`` (``linear_input_act`` for MLP fc2 and our direct INT8 output
 projection).
 
-The strict Turbo node and checkpoint-agnostic standard H3 node share three
-application modes:
+The H3 LoRA node supports ordered adapter stacks, optional strict Turbo
+validation for each entry, and three application modes:
 
 ``fast_runtime``
     Keep every LoRA update in activation space. The INT8 backend applies QKV
@@ -30,14 +30,16 @@ device when the injection is ejected.
 
 from __future__ import annotations
 
+import json
 import logging
+import math
 from typing import Iterable
 
 import torch
 import torch.nn.functional as F
 
 
-TAG = "[AppleSilicon-Optimized/H3Turbo]"
+TAG = "[AppleSilicon-Optimized/H3LoRA]"
 RUNTIME_ATTR = "_asfp8_runtime_lora"
 INJECTION_KEY = "asfp8_h3_turbo"
 MODES = ("fast_runtime", "reference_runtime", "merged")
@@ -272,23 +274,64 @@ class H3RuntimeLoRA:
         self.weights = tuple(moved)
 
 
+class H3RuntimeLoRAStack:
+    """One hook per target; apply each adapter in selection order.
+
+    Do not concatenate ranks or pre-scale B: that changes intermediate rounding.
+    QKV uses scatter + ordered updates + the existing normalization/RoPE pass;
+    the single-adapter fused QKV epilogue remains unchanged.
+    """
+
+    def __init__(self, adapters):
+        self.adapters = tuple(adapters)
+        self.fast = all(adapter.fast for adapter in self.adapters)
+
+    def add_to(self, base_out, x):
+        for adapter in self.adapters:
+            adapter.add_to(base_out, x)
+        return base_out
+
+    def add_bhsd_to(self, base_out, x):
+        batch, heads, seq, dim = x.shape
+        return self.add_to(base_out, x.transpose(1, 2).reshape(batch, seq, heads * dim))
+
+    def add_qkv_to(self, q, k, v, x, heads, head_dim):
+        for adapter in self.adapters:
+            adapter.add_qkv_to(q, k, v, x, heads, head_dim)
+        return q, k, v
+
+    def bypass_forward(self, original_forward, x, *args, **kwargs):
+        return self.add_to(original_forward(x, *args, **kwargs), x)
+
+    def move_to(self, device, dtype=None):
+        for adapter in self.adapters:
+            adapter.move_to(device, dtype)
+
+
 def _is_quantized_int8(module) -> bool:
     weight = getattr(module, "weight", None)
     return (getattr(weight, "_layout_cls", None) == "TensorWiseINT8Layout"
             and not getattr(getattr(weight, "_params", None), "transposed", False))
 
 
-def _runtime_injection(new_model, adapters, key_map, runtime_modules, strength, fast):
+def _runtime_injection(new_model, targets, fast):
+    import comfy.model_management
     import comfy.patcher_extension
     import comfy.utils
     from comfy.weight_adapter.bypass import BypassForwardHook
 
     dm = new_model.model.diffusion_model
     hooks = []
-    for name in sorted(runtime_modules):
+    for name, entries in sorted(targets.items()):
         module = comfy.utils.get_attr(dm, name)
-        adapter = H3RuntimeLoRA(adapters[key_map[name]].weights, fast=fast)
-        hooks.append(BypassForwardHook(module, adapter, multiplier=strength))
+        adapters = []
+        for weights, strength in entries:
+            adapter = H3RuntimeLoRA(weights, fast=fast)
+            adapter.multiplier = strength
+            adapters.append(adapter)
+        adapter = adapters[0] if len(adapters) == 1 else H3RuntimeLoRAStack(adapters)
+        hooks.append(BypassForwardHook(
+            module, adapter, multiplier=entries[0][1] if len(entries) == 1 else 1.0))
 
     def inject(_model_patcher):
         for hook in hooks:
@@ -299,14 +342,22 @@ def _runtime_injection(new_model, adapters, key_map, runtime_modules, strength, 
         injected = []
         try:
             for hook in hooks:
+                injected.append(hook)
+                # ComfyUI moves a single adapter's .weights itself. A stack owns
+                # several tuples, so move those explicitly at injection time.
+                if isinstance(hook.adapter, H3RuntimeLoRAStack):
+                    dtype = getattr(hook.module.weight, "dtype", None)
+                    if dtype not in (torch.float32, torch.float16, torch.bfloat16):
+                        dtype = None
+                    hook.adapter.move_to(comfy.model_management.get_torch_device(), dtype)
                 hook.inject()
                 setattr(hook.module, RUNTIME_ATTR, hook.adapter)
-                injected.append(hook)
         except Exception:
             for hook in reversed(injected):
                 if getattr(hook.module, RUNTIME_ATTR, None) is hook.adapter:
                     delattr(hook.module, RUNTIME_ATTR)
                 hook.eject()
+                hook.adapter.move_to(_model_patcher.offload_device)
             raise
 
     def eject(model_patcher):
@@ -323,103 +374,113 @@ def _runtime_injection(new_model, adapters, key_map, runtime_modules, strength, 
     return len(hooks)
 
 
-def _apply_h3_lora(
-    model, dm, loaded, key_map, modules, strength: float, mode: str,
-    label: str,
-):
+def apply_h3_lora_stack(model, entries, mode):
+    """Entries are (state_dict, strength, strict_turbo); validate before patching."""
+    if mode not in MODES:
+        raise ValueError(f"mode must be one of {MODES}")
+    active = []
+    for lora, strength, strict in entries:
+        if not math.isfinite(strength) or not -10 <= strength <= 10:
+            raise ValueError("H3 LoRA strength must be finite and between -10 and 10")
+        if strength != 0:
+            active.append((lora, strength, strict))
+    if not active:
+        return model
     if INJECTION_KEY in getattr(model, "injections", {}):
-        raise ValueError("an H3 runtime LoRA is already attached to this MODEL")
+        raise ValueError("an H3 runtime LoRA is already attached; add entries to the same H3 LoRA node")
     if mode != "merged" and "bypass_lora" in getattr(model, "injections", {}):
         raise ValueError(
-            "another bypass LoRA is already attached. Runtime H3 LoRA cannot "
-            "safely compose nested bypass hooks at fused H3 call sites; remove "
-            "the other runtime LoRA or use merged mode.")
-
-    new_model = model.clone()
-    if strength == 0:
-        return new_model
-
-    if mode == "merged":
-        applied = new_model.add_patches(loaded, strength)
-        if len(applied) != len(modules):
-            raise ValueError(
-                f"only {len(applied)}/{len(modules)} H3 LoRA weights were patched")
-        logging.info(
-            "%s base=%s merged %d adapters at strength %.3f (lowest runtime "
-            "memory; quantized bases may soften the delta)", TAG,
-            "curve" if getattr(dm, "use_adaln_curves", False) else "native",
-            len(applied), strength)
-        return new_model
+            "another bypass LoRA is already attached. Remove it or use merged mode; "
+            "nested hooks cannot safely compose at fused H3 call sites.")
 
     import comfy.utils
-    quant_fc2 = {
-        name for name in modules
-        if name.endswith(".mlp.fc2")
-        and _is_quantized_int8(comfy.utils.get_attr(dm, name))
-    }
-    if mode == "fast_runtime" and quant_fc2:
-        import comfy.ops
-        if not getattr(comfy.ops.linear_input_act, "_asfp8_wrapped", False):
+    dm = _resolve_h3(model)
+    targets = {}
+    merged_patches = []
+    for lora, strength, strict in active:
+        modules = _module_names(lora, official=strict)
+        if strict and getattr(dm, "use_adaln_curves", False) and modules & ADALN_MODULES:
             raise ValueError(
-                "fast_runtime with an INT8 H3 base requires the Apple Silicon "
-                "INT8 backend (set ASFP8_INT8_EXT=1 and restart ComfyUI). Without "
-                "it, H3's fused fc2 call would bypass the LoRA update.")
+                "this Turbo LoRA has full-width AdaLN targets. Use a released "
+                "208-target ComfyUI adapter with the curve base, or a native H3 base.")
+        loaded, key_map = _load_adapters(model, lora, modules)
+        quant_fc2 = {
+            name for name in modules if name.endswith(".mlp.fc2")
+            and _is_quantized_int8(comfy.utils.get_attr(dm, name))
+        }
+        if mode == "fast_runtime" and quant_fc2:
+            import comfy.ops
+            if not getattr(comfy.ops.linear_input_act, "_asfp8_wrapped", False):
+                raise ValueError(
+                    "fast_runtime with an INT8 H3 base requires the Apple Silicon "
+                    "INT8 backend (set ASFP8_INT8_EXT=1 and restart ComfyUI).")
+        merged = modules if mode == "merged" else (
+            quant_fc2 if mode == "reference_runtime" else set())
+        if merged:
+            merged_patches.append(({
+                key_map[name]: loaded[key_map[name]] for name in merged}, strength))
+        for name in sorted(modules - merged):
+            targets.setdefault(name, []).append((loaded[key_map[name]].weights, strength))
 
-    merged_modules = quant_fc2 if mode == "reference_runtime" else set()
-    runtime_modules = modules - merged_modules
-    runtime_count = _runtime_injection(
-        new_model, loaded, key_map, runtime_modules, strength,
-        fast=(mode == "fast_runtime"))
-    if merged_modules:
-        merged = {key_map[name]: loaded[key_map[name]] for name in merged_modules}
-        applied = new_model.add_patches(merged, strength)
-        if len(applied) != len(merged_modules):
-            raise ValueError("failed to attach all reference-runtime fc2 patches")
-
-    logging.info(
-        "%s base=%s mode=%s strength=%.3f: %d activation-space adapters, "
-        "%d merged fc2 (%s)", TAG,
-        "curve" if getattr(dm, "use_adaln_curves", False) else "native",
-        mode, strength, runtime_count, len(merged_modules), label)
+    new_model = model.clone()
+    for patches, strength in merged_patches:
+        if len(new_model.add_patches(patches, strength)) != len(patches):
+            raise ValueError("failed to attach all H3 LoRA weight patches")
+    if targets:
+        _runtime_injection(new_model, targets, fast=(mode == "fast_runtime"))
+    logging.info("%s %d LoRA(s), mode=%s, %d runtime targets, %d merged updates",
+                 TAG, len(active), mode, len(targets),
+                 sum(len(patches) for patches, _ in merged_patches))
     return new_model
 
 
 def apply_h3_turbo(model, lora, strength: float, mode: str):
-    if mode not in MODES:
-        raise ValueError(f"mode must be one of {MODES}")
-    dm = _resolve_h3(model)
-    modules = _module_names(lora)
-    if getattr(dm, "use_adaln_curves", False) and modules & ADALN_MODULES:
-        raise ValueError(
-            "this Turbo LoRA contains full-width AdaLN adapters, but the "
-            "pruned/curve H3 base uses an 8-dimensional sampled basis. Select "
-            "a released 208-target ComfyUI/pruned adapter or use the full/native "
-            "H3 base.")
-    loaded, key_map = _load_adapters(model, lora, modules)
-    return _apply_h3_lora(
-        model, dm, loaded, key_map, modules, strength, mode, "official Turbo")
+    return apply_h3_lora_stack(model, [(lora, strength, True)], mode)
 
 
 def apply_h3_lora(model, lora, strength: float, mode: str):
-    """Apply any shape-compatible subset of standard linear H3 LoRA targets."""
-    if mode not in MODES:
-        raise ValueError(f"mode must be one of {MODES}")
-    dm = _resolve_h3(model)
-    modules = _module_names(lora, official=False)
-    loaded, key_map = _load_adapters(model, lora, modules)
-    return _apply_h3_lora(
-        model, dm, loaded, key_map, modules, strength, mode, "standard H3")
+    return apply_h3_lora_stack(model, [(lora, strength, False)], mode)
 
 
-class AppleSiliconH3TurboLoRA:
-    CATEGORY = "Apple Silicon/approximate"
+def parse_lora_entries(value):
+    """Shared UI/API payload. Disabled or zero-weight entries never load files."""
+    try:
+        entries = json.loads(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("H3 LoRA selection must be a JSON list") from exc
+    if not isinstance(entries, list):
+        raise ValueError("H3 LoRA selection must be a JSON list")
+    active = []
+    for index, entry in enumerate(entries, 1):
+        if not isinstance(entry, dict) or type(entry.get("enabled", True)) is not bool:
+            raise ValueError(f"H3 LoRA entry {index}: expected an entry with a boolean enabled switch")
+        if not entry.get("enabled", True):
+            continue
+        strength = entry.get("strength", 1.0)
+        if (type(strength) not in (int, float) or not math.isfinite(strength)
+                or not -10 <= strength <= 10):
+            raise ValueError(f"H3 LoRA entry {index}: strength must be finite and between -10 and 10")
+        if strength == 0:
+            continue
+        name = entry.get("lora_name")
+        validation = entry.get("validation", "standard")
+        if not isinstance(name, str) or not name:
+            raise ValueError(f"H3 LoRA entry {index}: choose a LoRA file")
+        if validation not in ("standard", "turbo"):
+            raise ValueError(f"H3 LoRA entry {index}: validation must be standard or turbo")
+        active.append((name, float(strength), validation == "turbo"))
+    return active
+
+
+class AppleSiliconH3LoRA:
+    CATEGORY = "Apple Silicon/H3"
     DESCRIPTION = (
-        "Apply a validated MiniMax H3 Turbo LoRA to native or pruned/curve H3. "
-        "fast_runtime preserves LoRA "
-        "deltas in activation space and cooperates with the fused INT8 backend; "
-        "reference_runtime merges only INT8 fc2 updates for compatibility; "
-        "merged uses the least runtime memory but can soften small deltas on a "
-        "quantized base. This node does not change the sampler or step count."
+        "Apply one or more H3 LoRAs in list order, each with its own enable switch "
+        "and strength. Standard validation accepts compatible linear H3 targets; "
+        "Turbo validation requires the released complete Turbo layout. "
+        "fast_runtime keeps deltas in activation space and cooperates with INT8 "
+        "kernels. reference_runtime merges INT8 FC2; merged patches all weights. "
+        "Does not change the sampler or step count."
     )
     FUNCTION = "apply"
     RETURN_TYPES = ("MODEL",)
@@ -428,50 +489,29 @@ class AppleSiliconH3TurboLoRA:
     @classmethod
     def INPUT_TYPES(cls):
         import folder_paths
+        return {"required": {
+            "model": ("MODEL",),
+            "loras": ("STRING", {
+                "default": "[]", "h3_lora_files": folder_paths.get_filename_list("loras"),
+            }),
+            "mode": (list(MODES), {"default": "fast_runtime"}),
+        }}
 
-        return {
-            "required": {
-                "model": ("MODEL",),
-                "lora_name": (folder_paths.get_filename_list("loras"),),
-                "strength": ("FLOAT", {
-                    "default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01}),
-                "mode": (list(MODES), {"default": "fast_runtime"}),
-            }
-        }
-
-    def apply(self, model, lora_name, strength, mode):
+    def apply(self, model, loras="[]", mode="fast_runtime"):
         import comfy.utils
         import folder_paths
-
-        path = folder_paths.get_full_path_or_raise("loras", lora_name)
-        lora = comfy.utils.load_torch_file(path, safe_load=True)
-        return (apply_h3_turbo(model, lora, strength, mode),)
-
-
-class AppleSiliconH3LoRA(AppleSiliconH3TurboLoRA):
-    CATEGORY = "Apple Silicon/exact"
-    DESCRIPTION = (
-        "Apply any shape-compatible standard linear MiniMax H3 LoRA target "
-        "subset. fast_runtime keeps every delta in activation space and uses "
-        "the exact LoRA-aware INT8 QKV and tiled MLP hot paths when eligible; "
-        "unsupported layouts fail clearly instead of changing model quality."
-    )
-
-    def apply(self, model, lora_name, strength, mode):
-        import comfy.utils
-        import folder_paths
-
-        path = folder_paths.get_full_path_or_raise("loras", lora_name)
-        lora = comfy.utils.load_torch_file(path, safe_load=True)
-        return (apply_h3_lora(model, lora, strength, mode),)
+        selections = parse_lora_entries(loras)
+        # Check against the current registry as well as resolving the path.
+        # JSON/API input must not allow paths outside registered LoRA folders.
+        available = set(folder_paths.get_filename_list("loras"))
+        entries = []
+        for name, strength, strict in selections:
+            if name not in available:
+                raise ValueError(f"H3 LoRA file is not in the LoRA folder: {name}")
+            path = folder_paths.get_full_path_or_raise("loras", name)
+            entries.append((comfy.utils.load_torch_file(path, safe_load=True), strength, strict))
+        return (apply_h3_lora_stack(model, entries, mode),)
 
 
-NODE_CLASS_MAPPINGS = {
-    "AppleSiliconH3TurboLoRA": AppleSiliconH3TurboLoRA,
-    "AppleSiliconH3LoRA": AppleSiliconH3LoRA,
-}
-
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "AppleSiliconH3TurboLoRA": "H3 Turbo LoRA (Apple Silicon)",
-    "AppleSiliconH3LoRA": "H3 LoRA (Apple Silicon, Exact Runtime)",
-}
+NODE_CLASS_MAPPINGS = {"AppleSiliconH3LoRA": AppleSiliconH3LoRA}
+NODE_DISPLAY_NAME_MAPPINGS = {"AppleSiliconH3LoRA": "H3 LoRA (Apple Silicon)"}

@@ -1,0 +1,3836 @@
+[
+  {
+    "run_id": "recent-texture-0-exact",
+    "mode": "exact",
+    "timings": {
+      "sampling_loop": 17.117928124964237,
+      "sampling": 19.220437666983344,
+      "audio_decode": 0.3732395409606397,
+      "video_decode": 1.8493024170165882,
+      "create_video": 0.0001621660776436329,
+      "save_video": 0.0850510000018403
+    },
+    "steps": [
+      0.9555693749571219,
+      0.8544127920176834,
+      0.850298208068125,
+      0.8506982089020312,
+      0.8501942910952494,
+      0.8504829999292269,
+      0.8502384170424193,
+      0.8503590829204768,
+      0.850721292081289,
+      0.8500937499338761,
+      0.8503705420298502,
+      0.8504125829786062,
+      0.8505857500713319,
+      0.8503515420015901,
+      0.8502168329432607,
+      0.850390832987614,
+      0.8505569590488449,
+      0.850440707989037,
+      0.8508867080090567,
+      0.849727708962746
+    ],
+    "peak_driver_gib": 46.30047607421875,
+    "vae_dtype": "torch.float16",
+    "attention_calls": {},
+    "tensors": {
+      "conditioning": {
+        "/positive/0/minimax_token_tags": {
+          "sha256": "98d50d3e4e79e2932964b86f7ec54e360385f10a0b3620de48ffdd82dc751315",
+          "shape": [
+            59
+          ],
+          "dtype": "torch.int64",
+          "finite": true
+        },
+        "/positive/0/cross_attn": {
+          "sha256": "f967a357e33435c32e00a23d9a00f2b92e2d198868cb5166053f336121b106e4",
+          "shape": [
+            1,
+            59,
+            5120
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "noise": {
+        "/": {
+          "sha256": "82201b406400ab59b565bbf34f52f03b608675656557c88c44c3f2a9f103c01f",
+          "shape": [
+            1,
+            1,
+            274528
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "latents": {
+        "/0/samples/0": {
+          "sha256": "2283edc8005598aa2713566d14fd1190773dc4fff8e89209efbf19c35b6a004b",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/0/samples/1": {
+          "sha256": "bc24e48ba725b3b5170856138d169cbd6da9fa7d6f17a08ac30f93a097a542f0",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/0": {
+          "sha256": "9db6ac998bf347dd62d16edacbc5ef585742cf1bc2570e9eb91ee22eb4784397",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/1": {
+          "sha256": "3029077fb3cf70c2018f399b1038853523ddc4070d02a746f27bacc9fbd72711",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "audio_decode": {
+        "/0/0/waveform": {
+          "sha256": "f040c15aba0e521b44982a91c109a51bdecc25b6ff65dcf9919632f9f6b358d9",
+          "shape": [
+            1,
+            2,
+            29600
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "frames": {
+        "": {
+          "sha256": "131f9babd3d0ddf3e531e36a11283aaefd20bb12589e38207df5ef9ca2e5296b",
+          "shape": [
+            22,
+            480,
+            864,
+            3
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      }
+    },
+    "candidate_stats": {
+      "settings": {},
+      "block_0": 20,
+      "block_49": 20
+    },
+    "patch_status": {
+      "torch_mpp_qcache": {
+        "_dead": "False",
+        "_calls": "1000"
+      },
+      "torch_attention": {},
+      "attn_router_mps": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "attention_backend": {},
+      "_common": {},
+      "comfykitchen_fp8": {},
+      "linear_fp8": {
+        "_installed": "True"
+      },
+      "linear_fp8_w8a16": {
+        "_installed": "True"
+      },
+      "ops_bias_fp8": {
+        "_installed": "True"
+      },
+      "psutil_vmstat": {},
+      "rmsnorm_mps_large": {
+        "_installed": "True"
+      },
+      "scaled_mm_fp8": {
+        "_installed": "True"
+      },
+      "flash_attn_mtl": {},
+      "stochastic_round_fp8": {
+        "_installed": "True"
+      },
+      "tensor_to_fp8": {
+        "_installed": "True"
+      },
+      "wan_blockswap_mps": {
+        "_installed": "True"
+      },
+      "te_device_mps": {
+        "_installed": "True"
+      },
+      "int_mm_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_kernel_mps": {
+        "_installed": "True"
+      },
+      "_mlx_gemma3": {},
+      "_mlx_qwen3vl": {},
+      "mlx_textgen": {
+        "_installed": "False"
+      },
+      "fp8_mps_strided": {
+        "_installed": "True"
+      },
+      "fp8_fill_mps": {
+        "_installed": "True"
+      },
+      "lumina_attn_fast": {
+        "_installed": "True"
+      },
+      "quant_meta_fix": {
+        "_installed": "True"
+      },
+      "int8_embedding": {
+        "_installed": "True"
+      },
+      "rope_fast": {
+        "_installed": "True"
+      },
+      "flux2_glue": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "flux_attn_fast": {
+        "_installed": "True"
+      },
+      "krea2_attn_fast": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "conv3d_mps": {
+        "_installed": "True"
+      },
+      "ltx_fast": {
+        "_installed": "True"
+      },
+      "ltx25_fast": {
+        "_installed": "True",
+        "_dead": "False",
+        "_calls": "0"
+      },
+      "wan_fast": {
+        "_installed": "True"
+      },
+      "wan_vae_fast": {
+        "_installed": "True"
+      },
+      "vae_slice_attn_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_vae_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_fast": {
+        "_installed": "True"
+      },
+      "seedvr2_loader": {
+        "_installed": "True"
+      },
+      "ideogram_fast": {
+        "_installed": "False"
+      },
+      "minimax_fast": {
+        "_installed": "True",
+        "_block_dead": "False",
+        "_dead": "False"
+      },
+      "minimax_relaxed": {
+        "_installed": "False"
+      },
+      "minimax_vae_int8": {
+        "_dead": "False"
+      },
+      "minimax_vae_fast": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_ff_dead": "False",
+        "_dense": "False",
+        "_qkv_dead": "False"
+      },
+      "minimax_h3cache": {},
+      "minimax_vae_tiling": {
+        "_installed": "False"
+      },
+      "minimax_vae_batch": {
+        "_installed": "False"
+      },
+      "free_mem_mps": {
+        "_installed": "True"
+      },
+      "exec_trace": {
+        "_installed": "False"
+      },
+      "optrace": {
+        "_installed": "False"
+      },
+      "mps_profile": {
+        "_installed": "False"
+      },
+      "sdxl_geglu": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "qwen21_fast": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "minimax_h3_turbo": {},
+      "minimax_h3_structure": {},
+      "minimax_h3_sparse": {
+        "_dense": "<function _dense at 0x14fb82fc0>"
+      },
+      "minimax_h3_unified": {},
+      "super_resolution": {},
+      "h3_latent_upscaler": {},
+      "mfa4_ext": {},
+      "_native_build": {},
+      "loader": {},
+      "fp8s_ext": {},
+      "fp8_ext": {},
+      "int8_ext": {},
+      "dit_ext": {},
+      "krea2_glue": {
+        "_installed": "True"
+      },
+      "krea2_ext": {},
+      "ltx25_vae": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_calls": "0"
+      },
+      "wan_ext": {},
+      "seedvr2_ext": {},
+      "minimax_h3_graph": {},
+      "minimax_vae_ext": {},
+      "ideogram4_exact": {
+        "_installed": "False",
+        "_attention_dead": "False",
+        "_dead": "False",
+        "_calls": "0"
+      }
+    },
+    "e2e": 27.64,
+    "warmup": true,
+    "outputs": {
+      "92": {
+        "images": [
+          {
+            "filename": "recent-texture-0-exact_00001_.mp4",
+            "subfolder": "",
+            "type": "output"
+          }
+        ],
+        "animated": [
+          true
+        ]
+      }
+    }
+  },
+  {
+    "run_id": "recent-texture-1-exact",
+    "mode": "exact",
+    "timings": {
+      "sampling_loop": 17.12374016700778,
+      "sampling": 17.17155437497422,
+      "audio_decode": 0.1833498750347644,
+      "video_decode": 1.5014465419808403,
+      "create_video": 7.833295967429876e-05,
+      "save_video": 0.08647720795124769
+    },
+    "steps": [
+      0.9553864999907091,
+      0.8563253750326112,
+      0.8518705420428887,
+      0.8501647909870371,
+      0.8508974589640275,
+      0.8497065000701696,
+      0.8532933329697698,
+      0.8503498749341816,
+      0.8504999580327421,
+      0.850121458992362,
+      0.8506404160289094,
+      0.8502204170217738,
+      0.850448124925606,
+      0.8501350830774754,
+      0.8506662920117378,
+      0.8502570419805124,
+      0.8504680829355493,
+      0.850421917042695,
+      0.8503979160450399,
+      0.850607999949716
+    ],
+    "peak_driver_gib": 52.36688232421875,
+    "vae_dtype": "torch.float16",
+    "attention_calls": {},
+    "tensors": {
+      "conditioning": {
+        "/positive/0/minimax_token_tags": {
+          "sha256": "98d50d3e4e79e2932964b86f7ec54e360385f10a0b3620de48ffdd82dc751315",
+          "shape": [
+            59
+          ],
+          "dtype": "torch.int64",
+          "finite": true
+        },
+        "/positive/0/cross_attn": {
+          "sha256": "f967a357e33435c32e00a23d9a00f2b92e2d198868cb5166053f336121b106e4",
+          "shape": [
+            1,
+            59,
+            5120
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "noise": {
+        "/": {
+          "sha256": "82201b406400ab59b565bbf34f52f03b608675656557c88c44c3f2a9f103c01f",
+          "shape": [
+            1,
+            1,
+            274528
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "latents": {
+        "/0/samples/0": {
+          "sha256": "2283edc8005598aa2713566d14fd1190773dc4fff8e89209efbf19c35b6a004b",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/0/samples/1": {
+          "sha256": "bc24e48ba725b3b5170856138d169cbd6da9fa7d6f17a08ac30f93a097a542f0",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/0": {
+          "sha256": "9db6ac998bf347dd62d16edacbc5ef585742cf1bc2570e9eb91ee22eb4784397",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/1": {
+          "sha256": "3029077fb3cf70c2018f399b1038853523ddc4070d02a746f27bacc9fbd72711",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "audio_decode": {
+        "/0/0/waveform": {
+          "sha256": "f040c15aba0e521b44982a91c109a51bdecc25b6ff65dcf9919632f9f6b358d9",
+          "shape": [
+            1,
+            2,
+            29600
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "frames": {
+        "": {
+          "sha256": "131f9babd3d0ddf3e531e36a11283aaefd20bb12589e38207df5ef9ca2e5296b",
+          "shape": [
+            22,
+            480,
+            864,
+            3
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      }
+    },
+    "candidate_stats": {
+      "settings": {},
+      "block_0": 20,
+      "block_49": 20
+    },
+    "patch_status": {
+      "torch_mpp_qcache": {
+        "_dead": "False",
+        "_calls": "2000"
+      },
+      "torch_attention": {},
+      "attn_router_mps": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "attention_backend": {},
+      "_common": {},
+      "comfykitchen_fp8": {},
+      "linear_fp8": {
+        "_installed": "True"
+      },
+      "linear_fp8_w8a16": {
+        "_installed": "True"
+      },
+      "ops_bias_fp8": {
+        "_installed": "True"
+      },
+      "psutil_vmstat": {},
+      "rmsnorm_mps_large": {
+        "_installed": "True"
+      },
+      "scaled_mm_fp8": {
+        "_installed": "True"
+      },
+      "flash_attn_mtl": {},
+      "stochastic_round_fp8": {
+        "_installed": "True"
+      },
+      "tensor_to_fp8": {
+        "_installed": "True"
+      },
+      "wan_blockswap_mps": {
+        "_installed": "True"
+      },
+      "te_device_mps": {
+        "_installed": "True"
+      },
+      "int_mm_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_kernel_mps": {
+        "_installed": "True"
+      },
+      "_mlx_gemma3": {},
+      "_mlx_qwen3vl": {},
+      "mlx_textgen": {
+        "_installed": "False"
+      },
+      "fp8_mps_strided": {
+        "_installed": "True"
+      },
+      "fp8_fill_mps": {
+        "_installed": "True"
+      },
+      "lumina_attn_fast": {
+        "_installed": "True"
+      },
+      "quant_meta_fix": {
+        "_installed": "True"
+      },
+      "int8_embedding": {
+        "_installed": "True"
+      },
+      "rope_fast": {
+        "_installed": "True"
+      },
+      "flux2_glue": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "flux_attn_fast": {
+        "_installed": "True"
+      },
+      "krea2_attn_fast": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "conv3d_mps": {
+        "_installed": "True"
+      },
+      "ltx_fast": {
+        "_installed": "True"
+      },
+      "ltx25_fast": {
+        "_installed": "True",
+        "_dead": "False",
+        "_calls": "0"
+      },
+      "wan_fast": {
+        "_installed": "True"
+      },
+      "wan_vae_fast": {
+        "_installed": "True"
+      },
+      "vae_slice_attn_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_vae_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_fast": {
+        "_installed": "True"
+      },
+      "seedvr2_loader": {
+        "_installed": "True"
+      },
+      "ideogram_fast": {
+        "_installed": "False"
+      },
+      "minimax_fast": {
+        "_installed": "True",
+        "_block_dead": "False",
+        "_dead": "False"
+      },
+      "minimax_relaxed": {
+        "_installed": "False"
+      },
+      "minimax_vae_int8": {
+        "_dead": "False"
+      },
+      "minimax_vae_fast": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_ff_dead": "False",
+        "_dense": "False",
+        "_qkv_dead": "False"
+      },
+      "minimax_h3cache": {},
+      "minimax_vae_tiling": {
+        "_installed": "False"
+      },
+      "minimax_vae_batch": {
+        "_installed": "False"
+      },
+      "free_mem_mps": {
+        "_installed": "True"
+      },
+      "exec_trace": {
+        "_installed": "False"
+      },
+      "optrace": {
+        "_installed": "False"
+      },
+      "mps_profile": {
+        "_installed": "False"
+      },
+      "sdxl_geglu": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "qwen21_fast": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "minimax_h3_turbo": {},
+      "minimax_h3_structure": {},
+      "minimax_h3_sparse": {
+        "_dense": "<function _dense at 0x14fb82fc0>"
+      },
+      "minimax_h3_unified": {},
+      "super_resolution": {},
+      "h3_latent_upscaler": {},
+      "mfa4_ext": {},
+      "_native_build": {},
+      "loader": {},
+      "fp8s_ext": {},
+      "fp8_ext": {},
+      "int8_ext": {},
+      "dit_ext": {},
+      "krea2_glue": {
+        "_installed": "True"
+      },
+      "krea2_ext": {},
+      "ltx25_vae": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_calls": "0"
+      },
+      "wan_ext": {},
+      "seedvr2_ext": {},
+      "minimax_h3_graph": {},
+      "minimax_vae_ext": {},
+      "ideogram4_exact": {
+        "_installed": "False",
+        "_attention_dead": "False",
+        "_dead": "False",
+        "_calls": "0"
+      }
+    },
+    "e2e": 18.944,
+    "warmup": false,
+    "outputs": {
+      "92": {
+        "images": [
+          {
+            "filename": "recent-texture-1-exact_00001_.mp4",
+            "subfolder": "",
+            "type": "output"
+          }
+        ],
+        "animated": [
+          true
+        ]
+      }
+    }
+  },
+  {
+    "run_id": "recent-texture-2-ui-spectrum-protected",
+    "mode": "ui-spectrum-protected",
+    "timings": {
+      "sampling_loop": 0.09848191600758582,
+      "sampling": 11.44859283301048,
+      "audio_decode": 0.18498391599860042,
+      "video_decode": 1.5066823340021074,
+      "create_video": 7.662491407245398e-05,
+      "save_video": 0.09060341597069055
+    },
+    "steps": [
+      0.973056917078793,
+      0.8598112909821793,
+      0.8611185420304537,
+      0.860251999925822,
+      0.005700708017684519,
+      0.8519486669683829,
+      0.005225083092227578,
+      0.8516704170033336,
+      0.006385624990798533,
+      0.8542494579451159,
+      0.005227916990406811,
+      0.8507238749880344,
+      0.005252042086794972,
+      0.8557322080014274,
+      0.005314291920512915,
+      0.8516774580348283,
+      0.005234207957983017,
+      0.8548229170264676,
+      0.8577729579992592,
+      0.8533377499552444,
+      0.004947875044308603,
+      0.004132207948714495,
+      0.004035875084809959,
+      0.00398475001566112,
+      0.006537416949868202,
+      0.004016999970190227,
+      0.00632425001822412,
+      0.004421874997206032,
+      0.0062999160727486014,
+      0.0043133338913321495,
+      0.0063448750879615545,
+      0.003914332948625088,
+      0.006398958037607372,
+      0.0040372919756919146,
+      0.0062538329511880875,
+      0.00391379208303988,
+      0.006345874979160726,
+      0.004066332941874862,
+      0.0038322920445352793,
+      0.003891124972142279
+    ],
+    "peak_driver_gib": 52.36688232421875,
+    "vae_dtype": "torch.float16",
+    "attention_calls": {},
+    "tensors": {
+      "conditioning": {
+        "/positive/0/minimax_token_tags": {
+          "sha256": "98d50d3e4e79e2932964b86f7ec54e360385f10a0b3620de48ffdd82dc751315",
+          "shape": [
+            59
+          ],
+          "dtype": "torch.int64",
+          "finite": true
+        },
+        "/positive/0/cross_attn": {
+          "sha256": "f967a357e33435c32e00a23d9a00f2b92e2d198868cb5166053f336121b106e4",
+          "shape": [
+            1,
+            59,
+            5120
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "noise": {
+        "/": {
+          "sha256": "82201b406400ab59b565bbf34f52f03b608675656557c88c44c3f2a9f103c01f",
+          "shape": [
+            1,
+            1,
+            274528
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "latents": {
+        "/0/samples/0": {
+          "sha256": "492c1c0cdcf96f08a140933e498aa9c9553b39a3ed39b59d2823593ada211c1c",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/0/samples/1": {
+          "sha256": "e05f4d3b038c17338cb066e2446ddb4f73d2ae926d3137908d52c55f7aa96697",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/0": {
+          "sha256": "76e0270433a6aa629945d9fc8c413d45ba50324388400c79d629f677c5a5dcb1",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/1": {
+          "sha256": "9c281c59eca82c472ffee170665d451a27a9c84ecc59debe854c11988e8812c4",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "audio_decode": {
+        "/0/0/waveform": {
+          "sha256": "c3a1cfabe04cd0ee07191b8cd1712b8818c2e200c1e88d5813758b57a1dde1e3",
+          "shape": [
+            1,
+            2,
+            29600
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "frames": {
+        "": {
+          "sha256": "7ab9e965e5927285b37a103e149a479610afe3c9a7ce4402ed063d42839ea69f",
+          "shape": [
+            22,
+            480,
+            864,
+            3
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      }
+    },
+    "candidate_stats": {
+      "settings": {
+        "cache_mode": "spectrum_protected",
+        "cache_reuse_threshold": 0.2,
+        "cache_start_percent": 0.15,
+        "cache_end_percent": 0.95,
+        "cache_max_consecutive_skips": 2,
+        "cache_audio_weight": 1.0,
+        "cache_verbose": true,
+        "token_reduction": false,
+        "token_reduction_scale": 1.0,
+        "token_early_evaluations": 10,
+        "token_detail_restore_block": 30,
+        "token_coarse_restore_block": 40,
+        "token_verbose": false,
+        "sparse_attention": false,
+        "sparse_mode": "corrected",
+        "sparse_tau": 1.0,
+        "sparse_start_percent": 0.2,
+        "sparse_end_percent": 0.85,
+        "sparse_dense_leading_blocks": 2,
+        "sparse_min_sequence_tokens": 0,
+        "sparse_verbose": true
+      },
+      "block_0": 13,
+      "block_49": 13
+    },
+    "patch_status": {
+      "torch_mpp_qcache": {
+        "_dead": "False",
+        "_calls": "2650"
+      },
+      "torch_attention": {},
+      "attn_router_mps": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "attention_backend": {},
+      "_common": {},
+      "comfykitchen_fp8": {},
+      "linear_fp8": {
+        "_installed": "True"
+      },
+      "linear_fp8_w8a16": {
+        "_installed": "True"
+      },
+      "ops_bias_fp8": {
+        "_installed": "True"
+      },
+      "psutil_vmstat": {},
+      "rmsnorm_mps_large": {
+        "_installed": "True"
+      },
+      "scaled_mm_fp8": {
+        "_installed": "True"
+      },
+      "flash_attn_mtl": {},
+      "stochastic_round_fp8": {
+        "_installed": "True"
+      },
+      "tensor_to_fp8": {
+        "_installed": "True"
+      },
+      "wan_blockswap_mps": {
+        "_installed": "True"
+      },
+      "te_device_mps": {
+        "_installed": "True"
+      },
+      "int_mm_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_kernel_mps": {
+        "_installed": "True"
+      },
+      "_mlx_gemma3": {},
+      "_mlx_qwen3vl": {},
+      "mlx_textgen": {
+        "_installed": "False"
+      },
+      "fp8_mps_strided": {
+        "_installed": "True"
+      },
+      "fp8_fill_mps": {
+        "_installed": "True"
+      },
+      "lumina_attn_fast": {
+        "_installed": "True"
+      },
+      "quant_meta_fix": {
+        "_installed": "True"
+      },
+      "int8_embedding": {
+        "_installed": "True"
+      },
+      "rope_fast": {
+        "_installed": "True"
+      },
+      "flux2_glue": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "flux_attn_fast": {
+        "_installed": "True"
+      },
+      "krea2_attn_fast": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "conv3d_mps": {
+        "_installed": "True"
+      },
+      "ltx_fast": {
+        "_installed": "True"
+      },
+      "ltx25_fast": {
+        "_installed": "True",
+        "_dead": "False",
+        "_calls": "0"
+      },
+      "wan_fast": {
+        "_installed": "True"
+      },
+      "wan_vae_fast": {
+        "_installed": "True"
+      },
+      "vae_slice_attn_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_vae_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_fast": {
+        "_installed": "True"
+      },
+      "seedvr2_loader": {
+        "_installed": "True"
+      },
+      "ideogram_fast": {
+        "_installed": "False"
+      },
+      "minimax_fast": {
+        "_installed": "True",
+        "_block_dead": "False",
+        "_dead": "False"
+      },
+      "minimax_relaxed": {
+        "_installed": "False"
+      },
+      "minimax_vae_int8": {
+        "_dead": "False"
+      },
+      "minimax_vae_fast": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_ff_dead": "False",
+        "_dense": "False",
+        "_qkv_dead": "False"
+      },
+      "minimax_h3cache": {},
+      "minimax_vae_tiling": {
+        "_installed": "False"
+      },
+      "minimax_vae_batch": {
+        "_installed": "False"
+      },
+      "free_mem_mps": {
+        "_installed": "True"
+      },
+      "exec_trace": {
+        "_installed": "False"
+      },
+      "optrace": {
+        "_installed": "False"
+      },
+      "mps_profile": {
+        "_installed": "False"
+      },
+      "sdxl_geglu": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "qwen21_fast": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "minimax_h3_turbo": {},
+      "minimax_h3_structure": {},
+      "minimax_h3_sparse": {
+        "_dense": "<function _dense at 0x14fb82fc0>"
+      },
+      "minimax_h3_unified": {},
+      "super_resolution": {},
+      "h3_latent_upscaler": {},
+      "mfa4_ext": {},
+      "_native_build": {},
+      "loader": {},
+      "fp8s_ext": {},
+      "fp8_ext": {},
+      "int8_ext": {},
+      "dit_ext": {},
+      "krea2_glue": {
+        "_installed": "True"
+      },
+      "krea2_ext": {},
+      "ltx25_vae": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_calls": "0"
+      },
+      "wan_ext": {},
+      "seedvr2_ext": {},
+      "minimax_h3_graph": {},
+      "minimax_vae_ext": {},
+      "ideogram4_exact": {
+        "_installed": "False",
+        "_attention_dead": "False",
+        "_dead": "False",
+        "_calls": "0"
+      }
+    },
+    "e2e": 13.266,
+    "warmup": false,
+    "outputs": {
+      "92": {
+        "images": [
+          {
+            "filename": "recent-texture-2-ui-spectrum-protected_00001_.mp4",
+            "subfolder": "",
+            "type": "output"
+          }
+        ],
+        "animated": [
+          true
+        ]
+      }
+    }
+  },
+  {
+    "run_id": "recent-texture-3-spectrum-safe",
+    "mode": "spectrum-safe",
+    "timings": {
+      "sampling_loop": 0.09734945790842175,
+      "sampling": 11.412640249938704,
+      "audio_decode": 0.1836622089613229,
+      "video_decode": 1.4973990409635007,
+      "create_video": 7.854204159229994e-05,
+      "save_video": 0.08266379206907004
+    },
+    "steps": [
+      0.9418117500608787,
+      0.8623453750042245,
+      0.8580810829298571,
+      0.8562478340463713,
+      0.005344707984477282,
+      0.855616083019413,
+      0.006246541975997388,
+      0.8503779170569032,
+      0.005241291015408933,
+      0.8554302499396726,
+      0.005150333978235722,
+      0.8549337079748511,
+      0.005315750022418797,
+      0.8525032079778612,
+      0.005110667087137699,
+      0.8516900829272345,
+      0.005349209066480398,
+      0.855196624994278,
+      0.8555077499477193,
+      0.855039415997453,
+      0.004652499919757247,
+      0.0042327080154791474,
+      0.00397262501064688,
+      0.003953916952013969,
+      0.006509916041977704,
+      0.004001167020760477,
+      0.006363541935570538,
+      0.00408629106823355,
+      0.0062744589522480965,
+      0.00398979103192687,
+      0.006157041992992163,
+      0.0040619580540806055,
+      0.006172708934172988,
+      0.0038987910374999046,
+      0.006350875017233193,
+      0.003951916936784983,
+      0.006283833063207567,
+      0.004125542007386684,
+      0.0038650420028716326,
+      0.003982499940320849
+    ],
+    "peak_driver_gib": 52.36688232421875,
+    "vae_dtype": "torch.float16",
+    "attention_calls": {},
+    "tensors": {
+      "conditioning": {
+        "/positive/0/minimax_token_tags": {
+          "sha256": "98d50d3e4e79e2932964b86f7ec54e360385f10a0b3620de48ffdd82dc751315",
+          "shape": [
+            59
+          ],
+          "dtype": "torch.int64",
+          "finite": true
+        },
+        "/positive/0/cross_attn": {
+          "sha256": "f967a357e33435c32e00a23d9a00f2b92e2d198868cb5166053f336121b106e4",
+          "shape": [
+            1,
+            59,
+            5120
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "noise": {
+        "/": {
+          "sha256": "82201b406400ab59b565bbf34f52f03b608675656557c88c44c3f2a9f103c01f",
+          "shape": [
+            1,
+            1,
+            274528
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "latents": {
+        "/0/samples/0": {
+          "sha256": "492c1c0cdcf96f08a140933e498aa9c9553b39a3ed39b59d2823593ada211c1c",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/0/samples/1": {
+          "sha256": "e05f4d3b038c17338cb066e2446ddb4f73d2ae926d3137908d52c55f7aa96697",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/0": {
+          "sha256": "76e0270433a6aa629945d9fc8c413d45ba50324388400c79d629f677c5a5dcb1",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/1": {
+          "sha256": "9c281c59eca82c472ffee170665d451a27a9c84ecc59debe854c11988e8812c4",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "audio_decode": {
+        "/0/0/waveform": {
+          "sha256": "c3a1cfabe04cd0ee07191b8cd1712b8818c2e200c1e88d5813758b57a1dde1e3",
+          "shape": [
+            1,
+            2,
+            29600
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "frames": {
+        "": {
+          "sha256": "7ab9e965e5927285b37a103e149a479610afe3c9a7ce4402ed063d42839ea69f",
+          "shape": [
+            22,
+            480,
+            864,
+            3
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      }
+    },
+    "candidate_stats": {
+      "settings": {
+        "enabled": true,
+        "blend_weight": 0.5,
+        "degree": 1,
+        "ridge_lambda": 0.1,
+        "window_size": 2.0,
+        "flex_window": 0.75,
+        "warmup_steps": 4,
+        "tail_actual_steps": 2,
+        "max_history": 8,
+        "debug": true,
+        "history_storage": "vram",
+        "bootstrap_first_forecast": false,
+        "anchor_residual_feedback": false,
+        "selective_rollback_correction": false,
+        "offline_smoothing_replay": true,
+        "audio_blend_weight": 0.0,
+        "offline_archive_storage": "vram",
+        "model_aware_mode": "off",
+        "model_aware_risk_threshold": 0.65,
+        "model_aware_trust_shrinkage": false,
+        "model_aware_replay_generic_correction": false,
+        "generic_correction_mode": "coordinate_rls",
+        "generic_correction_limiter": "hard_clip",
+        "generic_correction_limit": 0.4,
+        "generic_correction_attenuation": "no_attenuation",
+        "sa_pece_forecast_policy": "balanced"
+      },
+      "block_0": 13,
+      "block_49": 13
+    },
+    "patch_status": {
+      "torch_mpp_qcache": {
+        "_dead": "False",
+        "_calls": "3300"
+      },
+      "torch_attention": {},
+      "attn_router_mps": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "attention_backend": {},
+      "_common": {},
+      "comfykitchen_fp8": {},
+      "linear_fp8": {
+        "_installed": "True"
+      },
+      "linear_fp8_w8a16": {
+        "_installed": "True"
+      },
+      "ops_bias_fp8": {
+        "_installed": "True"
+      },
+      "psutil_vmstat": {},
+      "rmsnorm_mps_large": {
+        "_installed": "True"
+      },
+      "scaled_mm_fp8": {
+        "_installed": "True"
+      },
+      "flash_attn_mtl": {},
+      "stochastic_round_fp8": {
+        "_installed": "True"
+      },
+      "tensor_to_fp8": {
+        "_installed": "True"
+      },
+      "wan_blockswap_mps": {
+        "_installed": "True"
+      },
+      "te_device_mps": {
+        "_installed": "True"
+      },
+      "int_mm_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_kernel_mps": {
+        "_installed": "True"
+      },
+      "_mlx_gemma3": {},
+      "_mlx_qwen3vl": {},
+      "mlx_textgen": {
+        "_installed": "False"
+      },
+      "fp8_mps_strided": {
+        "_installed": "True"
+      },
+      "fp8_fill_mps": {
+        "_installed": "True"
+      },
+      "lumina_attn_fast": {
+        "_installed": "True"
+      },
+      "quant_meta_fix": {
+        "_installed": "True"
+      },
+      "int8_embedding": {
+        "_installed": "True"
+      },
+      "rope_fast": {
+        "_installed": "True"
+      },
+      "flux2_glue": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "flux_attn_fast": {
+        "_installed": "True"
+      },
+      "krea2_attn_fast": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "conv3d_mps": {
+        "_installed": "True"
+      },
+      "ltx_fast": {
+        "_installed": "True"
+      },
+      "ltx25_fast": {
+        "_installed": "True",
+        "_dead": "False",
+        "_calls": "0"
+      },
+      "wan_fast": {
+        "_installed": "True"
+      },
+      "wan_vae_fast": {
+        "_installed": "True"
+      },
+      "vae_slice_attn_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_vae_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_fast": {
+        "_installed": "True"
+      },
+      "seedvr2_loader": {
+        "_installed": "True"
+      },
+      "ideogram_fast": {
+        "_installed": "False"
+      },
+      "minimax_fast": {
+        "_installed": "True",
+        "_block_dead": "False",
+        "_dead": "False"
+      },
+      "minimax_relaxed": {
+        "_installed": "False"
+      },
+      "minimax_vae_int8": {
+        "_dead": "False"
+      },
+      "minimax_vae_fast": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_ff_dead": "False",
+        "_dense": "False",
+        "_qkv_dead": "False"
+      },
+      "minimax_h3cache": {},
+      "minimax_vae_tiling": {
+        "_installed": "False"
+      },
+      "minimax_vae_batch": {
+        "_installed": "False"
+      },
+      "free_mem_mps": {
+        "_installed": "True"
+      },
+      "exec_trace": {
+        "_installed": "False"
+      },
+      "optrace": {
+        "_installed": "False"
+      },
+      "mps_profile": {
+        "_installed": "False"
+      },
+      "sdxl_geglu": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "qwen21_fast": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "minimax_h3_turbo": {},
+      "minimax_h3_structure": {},
+      "minimax_h3_sparse": {
+        "_dense": "<function _dense at 0x14fb82fc0>"
+      },
+      "minimax_h3_unified": {},
+      "super_resolution": {},
+      "h3_latent_upscaler": {},
+      "mfa4_ext": {},
+      "_native_build": {},
+      "loader": {},
+      "fp8s_ext": {},
+      "fp8_ext": {},
+      "int8_ext": {},
+      "dit_ext": {},
+      "krea2_glue": {
+        "_installed": "True"
+      },
+      "krea2_ext": {},
+      "ltx25_vae": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_calls": "0"
+      },
+      "wan_ext": {},
+      "seedvr2_ext": {},
+      "minimax_h3_graph": {},
+      "minimax_vae_ext": {},
+      "ideogram4_exact": {
+        "_installed": "False",
+        "_attention_dead": "False",
+        "_dead": "False",
+        "_calls": "0"
+      }
+    },
+    "e2e": 13.178,
+    "warmup": false,
+    "outputs": {
+      "92": {
+        "images": [
+          {
+            "filename": "recent-texture-3-spectrum-safe_00001_.mp4",
+            "subfolder": "",
+            "type": "output"
+          }
+        ],
+        "animated": [
+          true
+        ]
+      }
+    }
+  },
+  {
+    "run_id": "recent-texture-4-ui-spectrum-fast",
+    "mode": "ui-spectrum-fast",
+    "timings": {
+      "sampling_loop": 0.10389883304014802,
+      "sampling": 9.698306874954142,
+      "audio_decode": 0.18561483302619308,
+      "video_decode": 1.5048527079634368,
+      "create_video": 7.925007957965136e-05,
+      "save_video": 0.0832506250590086
+    },
+    "steps": [
+      0.9155565419932827,
+      0.007684165961109102,
+      0.859820417012088,
+      0.005210916977375746,
+      0.8565027080476284,
+      0.005218124948441982,
+      0.8541315000038594,
+      0.005185375106520951,
+      0.852699541952461,
+      0.005094583029858768,
+      0.85226012498606,
+      0.006332249962724745,
+      0.854533875011839,
+      0.005190083058550954,
+      0.8536240418907255,
+      0.00526983302552253,
+      0.8548155840253457,
+      0.0052614579908549786,
+      0.8542119580088183,
+      0.8624050000216812,
+      0.00485862500499934,
+      0.0067567500518634915,
+      0.004513832973316312,
+      0.006415000068955123,
+      0.004357833997346461,
+      0.006288832984864712,
+      0.004309791955165565,
+      0.006416290998458862,
+      0.004247750039212406,
+      0.006430584006011486,
+      0.004297874984331429,
+      0.006154916016384959,
+      0.004086708999238908,
+      0.006116415956057608,
+      0.004035750054754317,
+      0.006176708964630961,
+      0.004145666025578976,
+      0.0060464589623734355,
+      0.003889207961037755,
+      0.003840708057396114
+    ],
+    "peak_driver_gib": 52.36688232421875,
+    "vae_dtype": "torch.float16",
+    "attention_calls": {},
+    "tensors": {
+      "conditioning": {
+        "/positive/0/minimax_token_tags": {
+          "sha256": "98d50d3e4e79e2932964b86f7ec54e360385f10a0b3620de48ffdd82dc751315",
+          "shape": [
+            59
+          ],
+          "dtype": "torch.int64",
+          "finite": true
+        },
+        "/positive/0/cross_attn": {
+          "sha256": "f967a357e33435c32e00a23d9a00f2b92e2d198868cb5166053f336121b106e4",
+          "shape": [
+            1,
+            59,
+            5120
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "noise": {
+        "/": {
+          "sha256": "82201b406400ab59b565bbf34f52f03b608675656557c88c44c3f2a9f103c01f",
+          "shape": [
+            1,
+            1,
+            274528
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "latents": {
+        "/0/samples/0": {
+          "sha256": "ba9a43f464886a5eb6ad4d5ef0dd4717cc53951e7b90b9236ebd599ebc697271",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/0/samples/1": {
+          "sha256": "808e5a1f68711efbd17184510134c06a17e84b02225120f3c9baf8a22ee12fd8",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/0": {
+          "sha256": "cefee54114d806640bfa98173d569df49c57f2da0a4960f294dd0998701412c5",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/1": {
+          "sha256": "736d5f05004e140dac1fe7ede83c864507931ddc90da5f197c1309e78cfb9377",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "audio_decode": {
+        "/0/0/waveform": {
+          "sha256": "d2e3b66eb09be19405f5aca1a4c8731d17c14c5e3414355291a578e4285f7845",
+          "shape": [
+            1,
+            2,
+            29600
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "frames": {
+        "": {
+          "sha256": "e25b2c258682342b0e5ee7c42aba02b70977b374a3a8c9ecc0bc9398efe0e8fa",
+          "shape": [
+            22,
+            480,
+            864,
+            3
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      }
+    },
+    "candidate_stats": {
+      "settings": {
+        "cache_mode": "spectrum_fast",
+        "cache_reuse_threshold": 0.2,
+        "cache_start_percent": 0.15,
+        "cache_end_percent": 0.95,
+        "cache_max_consecutive_skips": 2,
+        "cache_audio_weight": 1.0,
+        "cache_verbose": true,
+        "token_reduction": false,
+        "token_reduction_scale": 1.0,
+        "token_early_evaluations": 10,
+        "token_detail_restore_block": 30,
+        "token_coarse_restore_block": 40,
+        "token_verbose": false,
+        "sparse_attention": false,
+        "sparse_mode": "corrected",
+        "sparse_tau": 1.0,
+        "sparse_start_percent": 0.2,
+        "sparse_end_percent": 0.85,
+        "sparse_dense_leading_blocks": 2,
+        "sparse_min_sequence_tokens": 0,
+        "sparse_verbose": true
+      },
+      "block_0": 11,
+      "block_49": 11
+    },
+    "patch_status": {
+      "torch_mpp_qcache": {
+        "_dead": "False",
+        "_calls": "3850"
+      },
+      "torch_attention": {},
+      "attn_router_mps": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "attention_backend": {},
+      "_common": {},
+      "comfykitchen_fp8": {},
+      "linear_fp8": {
+        "_installed": "True"
+      },
+      "linear_fp8_w8a16": {
+        "_installed": "True"
+      },
+      "ops_bias_fp8": {
+        "_installed": "True"
+      },
+      "psutil_vmstat": {},
+      "rmsnorm_mps_large": {
+        "_installed": "True"
+      },
+      "scaled_mm_fp8": {
+        "_installed": "True"
+      },
+      "flash_attn_mtl": {},
+      "stochastic_round_fp8": {
+        "_installed": "True"
+      },
+      "tensor_to_fp8": {
+        "_installed": "True"
+      },
+      "wan_blockswap_mps": {
+        "_installed": "True"
+      },
+      "te_device_mps": {
+        "_installed": "True"
+      },
+      "int_mm_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_kernel_mps": {
+        "_installed": "True"
+      },
+      "_mlx_gemma3": {},
+      "_mlx_qwen3vl": {},
+      "mlx_textgen": {
+        "_installed": "False"
+      },
+      "fp8_mps_strided": {
+        "_installed": "True"
+      },
+      "fp8_fill_mps": {
+        "_installed": "True"
+      },
+      "lumina_attn_fast": {
+        "_installed": "True"
+      },
+      "quant_meta_fix": {
+        "_installed": "True"
+      },
+      "int8_embedding": {
+        "_installed": "True"
+      },
+      "rope_fast": {
+        "_installed": "True"
+      },
+      "flux2_glue": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "flux_attn_fast": {
+        "_installed": "True"
+      },
+      "krea2_attn_fast": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "conv3d_mps": {
+        "_installed": "True"
+      },
+      "ltx_fast": {
+        "_installed": "True"
+      },
+      "ltx25_fast": {
+        "_installed": "True",
+        "_dead": "False",
+        "_calls": "0"
+      },
+      "wan_fast": {
+        "_installed": "True"
+      },
+      "wan_vae_fast": {
+        "_installed": "True"
+      },
+      "vae_slice_attn_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_vae_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_fast": {
+        "_installed": "True"
+      },
+      "seedvr2_loader": {
+        "_installed": "True"
+      },
+      "ideogram_fast": {
+        "_installed": "False"
+      },
+      "minimax_fast": {
+        "_installed": "True",
+        "_block_dead": "False",
+        "_dead": "False"
+      },
+      "minimax_relaxed": {
+        "_installed": "False"
+      },
+      "minimax_vae_int8": {
+        "_dead": "False"
+      },
+      "minimax_vae_fast": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_ff_dead": "False",
+        "_dense": "False",
+        "_qkv_dead": "False"
+      },
+      "minimax_h3cache": {},
+      "minimax_vae_tiling": {
+        "_installed": "False"
+      },
+      "minimax_vae_batch": {
+        "_installed": "False"
+      },
+      "free_mem_mps": {
+        "_installed": "True"
+      },
+      "exec_trace": {
+        "_installed": "False"
+      },
+      "optrace": {
+        "_installed": "False"
+      },
+      "mps_profile": {
+        "_installed": "False"
+      },
+      "sdxl_geglu": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "qwen21_fast": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "minimax_h3_turbo": {},
+      "minimax_h3_structure": {},
+      "minimax_h3_sparse": {
+        "_dense": "<function _dense at 0x14fb82fc0>"
+      },
+      "minimax_h3_unified": {},
+      "super_resolution": {},
+      "h3_latent_upscaler": {},
+      "mfa4_ext": {},
+      "_native_build": {},
+      "loader": {},
+      "fp8s_ext": {},
+      "fp8_ext": {},
+      "int8_ext": {},
+      "dit_ext": {},
+      "krea2_glue": {
+        "_installed": "True"
+      },
+      "krea2_ext": {},
+      "ltx25_vae": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_calls": "0"
+      },
+      "wan_ext": {},
+      "seedvr2_ext": {},
+      "minimax_h3_graph": {},
+      "minimax_vae_ext": {},
+      "ideogram4_exact": {
+        "_installed": "False",
+        "_attention_dead": "False",
+        "_dead": "False",
+        "_calls": "0"
+      }
+    },
+    "e2e": 11.474,
+    "warmup": false,
+    "outputs": {
+      "92": {
+        "images": [
+          {
+            "filename": "recent-texture-4-ui-spectrum-fast_00001_.mp4",
+            "subfolder": "",
+            "type": "output"
+          }
+        ],
+        "animated": [
+          true
+        ]
+      }
+    }
+  },
+  {
+    "run_id": "recent-texture-5-spectrum",
+    "mode": "spectrum",
+    "timings": {
+      "sampling_loop": 0.09837720799259841,
+      "sampling": 9.736650749924593,
+      "audio_decode": 0.18151866702828556,
+      "video_decode": 1.5036193339619786,
+      "create_video": 7.483293302357197e-05,
+      "save_video": 0.08345004089642316
+    },
+    "steps": [
+      0.9645612920867279,
+      0.00730533292517066,
+      0.8554590420098975,
+      0.005334957968443632,
+      0.8536833330290392,
+      0.005209458991885185,
+      0.8552097500069067,
+      0.005358707974664867,
+      0.8579655000939965,
+      0.006389041896909475,
+      0.85420783306472,
+      0.005198874976485968,
+      0.8548205000115559,
+      0.005156083032488823,
+      0.8574327499372885,
+      0.005151792080141604,
+      0.8566719999071211,
+      0.004999667056836188,
+      0.8529153330018744,
+      0.8529285000404343,
+      0.004639332997612655,
+      0.006110667018219829,
+      0.003996207960881293,
+      0.005926959100179374,
+      0.004087540903128684,
+      0.0058781669940799475,
+      0.003901667078025639,
+      0.005908290972001851,
+      0.00399316695984453,
+      0.005844250088557601,
+      0.0038795419968664646,
+      0.006003624992445111,
+      0.003996207960881293,
+      0.006001082947477698,
+      0.0040235420456156135,
+      0.0059362080646678805,
+      0.0037804999155923724,
+      0.005943584023043513,
+      0.004082915955223143,
+      0.00396141700912267
+    ],
+    "peak_driver_gib": 52.36688232421875,
+    "vae_dtype": "torch.float16",
+    "attention_calls": {},
+    "tensors": {
+      "conditioning": {
+        "/positive/0/minimax_token_tags": {
+          "sha256": "98d50d3e4e79e2932964b86f7ec54e360385f10a0b3620de48ffdd82dc751315",
+          "shape": [
+            59
+          ],
+          "dtype": "torch.int64",
+          "finite": true
+        },
+        "/positive/0/cross_attn": {
+          "sha256": "f967a357e33435c32e00a23d9a00f2b92e2d198868cb5166053f336121b106e4",
+          "shape": [
+            1,
+            59,
+            5120
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "noise": {
+        "/": {
+          "sha256": "82201b406400ab59b565bbf34f52f03b608675656557c88c44c3f2a9f103c01f",
+          "shape": [
+            1,
+            1,
+            274528
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "latents": {
+        "/0/samples/0": {
+          "sha256": "ba9a43f464886a5eb6ad4d5ef0dd4717cc53951e7b90b9236ebd599ebc697271",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/0/samples/1": {
+          "sha256": "808e5a1f68711efbd17184510134c06a17e84b02225120f3c9baf8a22ee12fd8",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/0": {
+          "sha256": "cefee54114d806640bfa98173d569df49c57f2da0a4960f294dd0998701412c5",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/1": {
+          "sha256": "736d5f05004e140dac1fe7ede83c864507931ddc90da5f197c1309e78cfb9377",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "audio_decode": {
+        "/0/0/waveform": {
+          "sha256": "d2e3b66eb09be19405f5aca1a4c8731d17c14c5e3414355291a578e4285f7845",
+          "shape": [
+            1,
+            2,
+            29600
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "frames": {
+        "": {
+          "sha256": "e25b2c258682342b0e5ee7c42aba02b70977b374a3a8c9ecc0bc9398efe0e8fa",
+          "shape": [
+            22,
+            480,
+            864,
+            3
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      }
+    },
+    "candidate_stats": {
+      "settings": {
+        "enabled": true,
+        "blend_weight": 0.5,
+        "degree": 1,
+        "ridge_lambda": 0.1,
+        "window_size": 2.0,
+        "flex_window": 0.75,
+        "warmup_steps": 1,
+        "tail_actual_steps": 1,
+        "max_history": 8,
+        "debug": true,
+        "history_storage": "vram",
+        "bootstrap_first_forecast": true,
+        "anchor_residual_feedback": false,
+        "selective_rollback_correction": false,
+        "offline_smoothing_replay": true,
+        "audio_blend_weight": 0.0,
+        "offline_archive_storage": "vram",
+        "model_aware_mode": "off",
+        "model_aware_risk_threshold": 0.65,
+        "model_aware_trust_shrinkage": false,
+        "model_aware_replay_generic_correction": false,
+        "generic_correction_mode": "coordinate_rls",
+        "generic_correction_limiter": "hard_clip",
+        "generic_correction_limit": 0.4,
+        "generic_correction_attenuation": "no_attenuation",
+        "sa_pece_forecast_policy": "balanced"
+      },
+      "block_0": 11,
+      "block_49": 11
+    },
+    "patch_status": {
+      "torch_mpp_qcache": {
+        "_dead": "False",
+        "_calls": "4400"
+      },
+      "torch_attention": {},
+      "attn_router_mps": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "attention_backend": {},
+      "_common": {},
+      "comfykitchen_fp8": {},
+      "linear_fp8": {
+        "_installed": "True"
+      },
+      "linear_fp8_w8a16": {
+        "_installed": "True"
+      },
+      "ops_bias_fp8": {
+        "_installed": "True"
+      },
+      "psutil_vmstat": {},
+      "rmsnorm_mps_large": {
+        "_installed": "True"
+      },
+      "scaled_mm_fp8": {
+        "_installed": "True"
+      },
+      "flash_attn_mtl": {},
+      "stochastic_round_fp8": {
+        "_installed": "True"
+      },
+      "tensor_to_fp8": {
+        "_installed": "True"
+      },
+      "wan_blockswap_mps": {
+        "_installed": "True"
+      },
+      "te_device_mps": {
+        "_installed": "True"
+      },
+      "int_mm_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_kernel_mps": {
+        "_installed": "True"
+      },
+      "_mlx_gemma3": {},
+      "_mlx_qwen3vl": {},
+      "mlx_textgen": {
+        "_installed": "False"
+      },
+      "fp8_mps_strided": {
+        "_installed": "True"
+      },
+      "fp8_fill_mps": {
+        "_installed": "True"
+      },
+      "lumina_attn_fast": {
+        "_installed": "True"
+      },
+      "quant_meta_fix": {
+        "_installed": "True"
+      },
+      "int8_embedding": {
+        "_installed": "True"
+      },
+      "rope_fast": {
+        "_installed": "True"
+      },
+      "flux2_glue": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "flux_attn_fast": {
+        "_installed": "True"
+      },
+      "krea2_attn_fast": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "conv3d_mps": {
+        "_installed": "True"
+      },
+      "ltx_fast": {
+        "_installed": "True"
+      },
+      "ltx25_fast": {
+        "_installed": "True",
+        "_dead": "False",
+        "_calls": "0"
+      },
+      "wan_fast": {
+        "_installed": "True"
+      },
+      "wan_vae_fast": {
+        "_installed": "True"
+      },
+      "vae_slice_attn_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_vae_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_fast": {
+        "_installed": "True"
+      },
+      "seedvr2_loader": {
+        "_installed": "True"
+      },
+      "ideogram_fast": {
+        "_installed": "False"
+      },
+      "minimax_fast": {
+        "_installed": "True",
+        "_block_dead": "False",
+        "_dead": "False"
+      },
+      "minimax_relaxed": {
+        "_installed": "False"
+      },
+      "minimax_vae_int8": {
+        "_dead": "False"
+      },
+      "minimax_vae_fast": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_ff_dead": "False",
+        "_dense": "False",
+        "_qkv_dead": "False"
+      },
+      "minimax_h3cache": {},
+      "minimax_vae_tiling": {
+        "_installed": "False"
+      },
+      "minimax_vae_batch": {
+        "_installed": "False"
+      },
+      "free_mem_mps": {
+        "_installed": "True"
+      },
+      "exec_trace": {
+        "_installed": "False"
+      },
+      "optrace": {
+        "_installed": "False"
+      },
+      "mps_profile": {
+        "_installed": "False"
+      },
+      "sdxl_geglu": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "qwen21_fast": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "minimax_h3_turbo": {},
+      "minimax_h3_structure": {},
+      "minimax_h3_sparse": {
+        "_dense": "<function _dense at 0x14fb82fc0>"
+      },
+      "minimax_h3_unified": {},
+      "super_resolution": {},
+      "h3_latent_upscaler": {},
+      "mfa4_ext": {},
+      "_native_build": {},
+      "loader": {},
+      "fp8s_ext": {},
+      "fp8_ext": {},
+      "int8_ext": {},
+      "dit_ext": {},
+      "krea2_glue": {
+        "_installed": "True"
+      },
+      "krea2_ext": {},
+      "ltx25_vae": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_calls": "0"
+      },
+      "wan_ext": {},
+      "seedvr2_ext": {},
+      "minimax_h3_graph": {},
+      "minimax_vae_ext": {},
+      "ideogram4_exact": {
+        "_installed": "False",
+        "_attention_dead": "False",
+        "_dead": "False",
+        "_calls": "0"
+      }
+    },
+    "e2e": 11.508,
+    "warmup": false,
+    "outputs": {
+      "92": {
+        "images": [
+          {
+            "filename": "recent-texture-5-spectrum_00001_.mp4",
+            "subfolder": "",
+            "type": "output"
+          }
+        ],
+        "animated": [
+          true
+        ]
+      }
+    }
+  },
+  {
+    "run_id": "recent-texture-6-ui-motion",
+    "mode": "ui-motion",
+    "timings": {
+      "sampling_loop": 11.221424708026461,
+      "sampling": 11.267931208014488,
+      "audio_decode": 0.18811870797071606,
+      "video_decode": 1.513414583983831,
+      "create_video": 0.00010241696145385504,
+      "save_video": 0.08593658404424787
+    },
+    "steps": [
+      0.958151041995734,
+      0.8570715830428526,
+      0.8514499580487609,
+      0.8561100419610739,
+      0.855295457993634,
+      0.8544230000115931,
+      0.853083458961919,
+      0.855381999979727,
+      0.0018892911029979587,
+      0.8521799999289215,
+      0.001739625004120171,
+      0.8546671670628712,
+      0.0017146669561043382,
+      0.0014063329435884953,
+      0.8547319170320407,
+      0.001749749993905425,
+      0.0013738330453634262,
+      0.8545957499882206,
+      0.001768082962371409,
+      0.8520670420257375
+    ],
+    "peak_driver_gib": 52.36688232421875,
+    "vae_dtype": "torch.float16",
+    "attention_calls": {},
+    "tensors": {
+      "conditioning": {
+        "/positive/0/minimax_token_tags": {
+          "sha256": "98d50d3e4e79e2932964b86f7ec54e360385f10a0b3620de48ffdd82dc751315",
+          "shape": [
+            59
+          ],
+          "dtype": "torch.int64",
+          "finite": true
+        },
+        "/positive/0/cross_attn": {
+          "sha256": "f967a357e33435c32e00a23d9a00f2b92e2d198868cb5166053f336121b106e4",
+          "shape": [
+            1,
+            59,
+            5120
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "noise": {
+        "/": {
+          "sha256": "82201b406400ab59b565bbf34f52f03b608675656557c88c44c3f2a9f103c01f",
+          "shape": [
+            1,
+            1,
+            274528
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "latents": {
+        "/0/samples/0": {
+          "sha256": "2ddeb38710cab5ee9a99404feba2b36aed4868a2b5e71ad9bab02fbe8798bb2f",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/0/samples/1": {
+          "sha256": "dfb65db7d2d1a87ac4bca18a70bb1117e252dec26ac8d8c649146d915a7bfcd5",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/0": {
+          "sha256": "ff32cb3b089e7885e0c6891b25d870fee027805df22bbfe76a7ab93277f96d3f",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/1": {
+          "sha256": "0039f370f83461e8c46d09dda1517d5186c016b102e7ea9eab63e504a431931a",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "audio_decode": {
+        "/0/0/waveform": {
+          "sha256": "f9d64157e3e1b55e50727da3bae01c29ce1a5fc79c7b15ef10709b0aad9a7f8a",
+          "shape": [
+            1,
+            2,
+            29600
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "frames": {
+        "": {
+          "sha256": "6fcb5b9aa9ae9a08d40c5a0ab0b4b109cb45b8ad26ed41186e09af967f676120",
+          "shape": [
+            22,
+            480,
+            864,
+            3
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      }
+    },
+    "candidate_stats": {
+      "settings": {
+        "cache_mode": "motion_cache",
+        "cache_reuse_threshold": 0.2,
+        "cache_start_percent": 0.15,
+        "cache_end_percent": 0.95,
+        "cache_max_consecutive_skips": 2,
+        "cache_audio_weight": 1.0,
+        "cache_verbose": true,
+        "token_reduction": false,
+        "token_reduction_scale": 1.0,
+        "token_early_evaluations": 10,
+        "token_detail_restore_block": 30,
+        "token_coarse_restore_block": 40,
+        "token_verbose": false,
+        "sparse_attention": false,
+        "sparse_mode": "corrected",
+        "sparse_tau": 1.0,
+        "sparse_start_percent": 0.2,
+        "sparse_end_percent": 0.85,
+        "sparse_dense_leading_blocks": 2,
+        "sparse_min_sequence_tokens": 0,
+        "sparse_verbose": true
+      },
+      "block_0": 13,
+      "block_49": 13
+    },
+    "patch_status": {
+      "torch_mpp_qcache": {
+        "_dead": "False",
+        "_calls": "5050"
+      },
+      "torch_attention": {},
+      "attn_router_mps": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "attention_backend": {},
+      "_common": {},
+      "comfykitchen_fp8": {},
+      "linear_fp8": {
+        "_installed": "True"
+      },
+      "linear_fp8_w8a16": {
+        "_installed": "True"
+      },
+      "ops_bias_fp8": {
+        "_installed": "True"
+      },
+      "psutil_vmstat": {},
+      "rmsnorm_mps_large": {
+        "_installed": "True"
+      },
+      "scaled_mm_fp8": {
+        "_installed": "True"
+      },
+      "flash_attn_mtl": {},
+      "stochastic_round_fp8": {
+        "_installed": "True"
+      },
+      "tensor_to_fp8": {
+        "_installed": "True"
+      },
+      "wan_blockswap_mps": {
+        "_installed": "True"
+      },
+      "te_device_mps": {
+        "_installed": "True"
+      },
+      "int_mm_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_kernel_mps": {
+        "_installed": "True"
+      },
+      "_mlx_gemma3": {},
+      "_mlx_qwen3vl": {},
+      "mlx_textgen": {
+        "_installed": "False"
+      },
+      "fp8_mps_strided": {
+        "_installed": "True"
+      },
+      "fp8_fill_mps": {
+        "_installed": "True"
+      },
+      "lumina_attn_fast": {
+        "_installed": "True"
+      },
+      "quant_meta_fix": {
+        "_installed": "True"
+      },
+      "int8_embedding": {
+        "_installed": "True"
+      },
+      "rope_fast": {
+        "_installed": "True"
+      },
+      "flux2_glue": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "flux_attn_fast": {
+        "_installed": "True"
+      },
+      "krea2_attn_fast": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "conv3d_mps": {
+        "_installed": "True"
+      },
+      "ltx_fast": {
+        "_installed": "True"
+      },
+      "ltx25_fast": {
+        "_installed": "True",
+        "_dead": "False",
+        "_calls": "0"
+      },
+      "wan_fast": {
+        "_installed": "True"
+      },
+      "wan_vae_fast": {
+        "_installed": "True"
+      },
+      "vae_slice_attn_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_vae_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_fast": {
+        "_installed": "True"
+      },
+      "seedvr2_loader": {
+        "_installed": "True"
+      },
+      "ideogram_fast": {
+        "_installed": "False"
+      },
+      "minimax_fast": {
+        "_installed": "True",
+        "_block_dead": "False",
+        "_dead": "False"
+      },
+      "minimax_relaxed": {
+        "_installed": "False"
+      },
+      "minimax_vae_int8": {
+        "_dead": "False"
+      },
+      "minimax_vae_fast": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_ff_dead": "False",
+        "_dense": "False",
+        "_qkv_dead": "False"
+      },
+      "minimax_h3cache": {},
+      "minimax_vae_tiling": {
+        "_installed": "False"
+      },
+      "minimax_vae_batch": {
+        "_installed": "False"
+      },
+      "free_mem_mps": {
+        "_installed": "True"
+      },
+      "exec_trace": {
+        "_installed": "False"
+      },
+      "optrace": {
+        "_installed": "False"
+      },
+      "mps_profile": {
+        "_installed": "False"
+      },
+      "sdxl_geglu": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "qwen21_fast": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "minimax_h3_turbo": {},
+      "minimax_h3_structure": {},
+      "minimax_h3_sparse": {
+        "_dense": "<function _dense at 0x14fb82fc0>"
+      },
+      "minimax_h3_unified": {},
+      "super_resolution": {},
+      "h3_latent_upscaler": {},
+      "mfa4_ext": {},
+      "_native_build": {},
+      "loader": {},
+      "fp8s_ext": {},
+      "fp8_ext": {},
+      "int8_ext": {},
+      "dit_ext": {},
+      "krea2_glue": {
+        "_installed": "True"
+      },
+      "krea2_ext": {},
+      "ltx25_vae": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_calls": "0"
+      },
+      "wan_ext": {},
+      "seedvr2_ext": {},
+      "minimax_h3_graph": {},
+      "minimax_vae_ext": {},
+      "ideogram4_exact": {
+        "_installed": "False",
+        "_attention_dead": "False",
+        "_dead": "False",
+        "_calls": "0"
+      }
+    },
+    "e2e": 13.058,
+    "warmup": false,
+    "outputs": {
+      "92": {
+        "images": [
+          {
+            "filename": "recent-texture-6-ui-motion_00001_.mp4",
+            "subfolder": "",
+            "type": "output"
+          }
+        ],
+        "animated": [
+          true
+        ]
+      }
+    }
+  },
+  {
+    "run_id": "recent-texture-7-motion0.15",
+    "mode": "motion0.15",
+    "timings": {
+      "sampling_loop": 11.209507917053998,
+      "sampling": 11.25558550003916,
+      "audio_decode": 0.18196279101539403,
+      "video_decode": 1.502170915948227,
+      "create_video": 7.449998520314693e-05,
+      "save_video": 0.08149912499357015
+    },
+    "steps": [
+      0.9503066249890253,
+      0.8554231249727309,
+      0.8559526670724154,
+      0.8519197920104489,
+      0.8532876659883186,
+      0.8554638340137899,
+      0.8514353329082951,
+      0.8567075420869514,
+      0.0017235829727724195,
+      0.8528047919971868,
+      0.0016710410127416253,
+      0.8534300000173971,
+      0.0016525419196113944,
+      0.0013882080093026161,
+      0.8550935420207679,
+      0.0017782499780878425,
+      0.0014189580688253045,
+      0.8512555420165882,
+      0.0016275829402729869,
+      0.8545598749769852
+    ],
+    "peak_driver_gib": 52.36688232421875,
+    "vae_dtype": "torch.float16",
+    "attention_calls": {},
+    "tensors": {
+      "conditioning": {
+        "/positive/0/minimax_token_tags": {
+          "sha256": "98d50d3e4e79e2932964b86f7ec54e360385f10a0b3620de48ffdd82dc751315",
+          "shape": [
+            59
+          ],
+          "dtype": "torch.int64",
+          "finite": true
+        },
+        "/positive/0/cross_attn": {
+          "sha256": "f967a357e33435c32e00a23d9a00f2b92e2d198868cb5166053f336121b106e4",
+          "shape": [
+            1,
+            59,
+            5120
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "noise": {
+        "/": {
+          "sha256": "82201b406400ab59b565bbf34f52f03b608675656557c88c44c3f2a9f103c01f",
+          "shape": [
+            1,
+            1,
+            274528
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "latents": {
+        "/0/samples/0": {
+          "sha256": "2ddeb38710cab5ee9a99404feba2b36aed4868a2b5e71ad9bab02fbe8798bb2f",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/0/samples/1": {
+          "sha256": "dfb65db7d2d1a87ac4bca18a70bb1117e252dec26ac8d8c649146d915a7bfcd5",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/0": {
+          "sha256": "ff32cb3b089e7885e0c6891b25d870fee027805df22bbfe76a7ab93277f96d3f",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/1": {
+          "sha256": "0039f370f83461e8c46d09dda1517d5186c016b102e7ea9eab63e504a431931a",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "audio_decode": {
+        "/0/0/waveform": {
+          "sha256": "f9d64157e3e1b55e50727da3bae01c29ce1a5fc79c7b15ef10709b0aad9a7f8a",
+          "shape": [
+            1,
+            2,
+            29600
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "frames": {
+        "": {
+          "sha256": "6fcb5b9aa9ae9a08d40c5a0ab0b4b109cb45b8ad26ed41186e09af967f676120",
+          "shape": [
+            22,
+            480,
+            864,
+            3
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      }
+    },
+    "candidate_stats": {
+      "settings": {
+        "reuse_threshold": 0.15,
+        "motion_strength": 1.0,
+        "warmup_steps": 4,
+        "max_consecutive_skips": 2,
+        "start_percent": 0.15,
+        "end_percent": 0.95,
+        "subsample_factor": 8,
+        "verbose": true
+      },
+      "block_0": 13,
+      "block_49": 13
+    },
+    "patch_status": {
+      "torch_mpp_qcache": {
+        "_dead": "False",
+        "_calls": "5700"
+      },
+      "torch_attention": {},
+      "attn_router_mps": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "attention_backend": {},
+      "_common": {},
+      "comfykitchen_fp8": {},
+      "linear_fp8": {
+        "_installed": "True"
+      },
+      "linear_fp8_w8a16": {
+        "_installed": "True"
+      },
+      "ops_bias_fp8": {
+        "_installed": "True"
+      },
+      "psutil_vmstat": {},
+      "rmsnorm_mps_large": {
+        "_installed": "True"
+      },
+      "scaled_mm_fp8": {
+        "_installed": "True"
+      },
+      "flash_attn_mtl": {},
+      "stochastic_round_fp8": {
+        "_installed": "True"
+      },
+      "tensor_to_fp8": {
+        "_installed": "True"
+      },
+      "wan_blockswap_mps": {
+        "_installed": "True"
+      },
+      "te_device_mps": {
+        "_installed": "True"
+      },
+      "int_mm_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_kernel_mps": {
+        "_installed": "True"
+      },
+      "_mlx_gemma3": {},
+      "_mlx_qwen3vl": {},
+      "mlx_textgen": {
+        "_installed": "False"
+      },
+      "fp8_mps_strided": {
+        "_installed": "True"
+      },
+      "fp8_fill_mps": {
+        "_installed": "True"
+      },
+      "lumina_attn_fast": {
+        "_installed": "True"
+      },
+      "quant_meta_fix": {
+        "_installed": "True"
+      },
+      "int8_embedding": {
+        "_installed": "True"
+      },
+      "rope_fast": {
+        "_installed": "True"
+      },
+      "flux2_glue": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "flux_attn_fast": {
+        "_installed": "True"
+      },
+      "krea2_attn_fast": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "conv3d_mps": {
+        "_installed": "True"
+      },
+      "ltx_fast": {
+        "_installed": "True"
+      },
+      "ltx25_fast": {
+        "_installed": "True",
+        "_dead": "False",
+        "_calls": "0"
+      },
+      "wan_fast": {
+        "_installed": "True"
+      },
+      "wan_vae_fast": {
+        "_installed": "True"
+      },
+      "vae_slice_attn_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_vae_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_fast": {
+        "_installed": "True"
+      },
+      "seedvr2_loader": {
+        "_installed": "True"
+      },
+      "ideogram_fast": {
+        "_installed": "False"
+      },
+      "minimax_fast": {
+        "_installed": "True",
+        "_block_dead": "False",
+        "_dead": "False"
+      },
+      "minimax_relaxed": {
+        "_installed": "False"
+      },
+      "minimax_vae_int8": {
+        "_dead": "False"
+      },
+      "minimax_vae_fast": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_ff_dead": "False",
+        "_dense": "False",
+        "_qkv_dead": "False"
+      },
+      "minimax_h3cache": {},
+      "minimax_vae_tiling": {
+        "_installed": "False"
+      },
+      "minimax_vae_batch": {
+        "_installed": "False"
+      },
+      "free_mem_mps": {
+        "_installed": "True"
+      },
+      "exec_trace": {
+        "_installed": "False"
+      },
+      "optrace": {
+        "_installed": "False"
+      },
+      "mps_profile": {
+        "_installed": "False"
+      },
+      "sdxl_geglu": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "qwen21_fast": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "minimax_h3_turbo": {},
+      "minimax_h3_structure": {},
+      "minimax_h3_sparse": {
+        "_dense": "<function _dense at 0x14fb82fc0>"
+      },
+      "minimax_h3_unified": {},
+      "super_resolution": {},
+      "h3_latent_upscaler": {},
+      "mfa4_ext": {},
+      "_native_build": {},
+      "loader": {},
+      "fp8s_ext": {},
+      "fp8_ext": {},
+      "int8_ext": {},
+      "dit_ext": {},
+      "krea2_glue": {
+        "_installed": "True"
+      },
+      "krea2_ext": {},
+      "ltx25_vae": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_calls": "0"
+      },
+      "wan_ext": {},
+      "seedvr2_ext": {},
+      "minimax_h3_graph": {},
+      "minimax_vae_ext": {},
+      "ideogram4_exact": {
+        "_installed": "False",
+        "_attention_dead": "False",
+        "_dead": "False",
+        "_calls": "0"
+      }
+    },
+    "e2e": 13.023,
+    "warmup": false,
+    "outputs": {
+      "92": {
+        "images": [
+          {
+            "filename": "recent-texture-7-motion0.15_00001_.mp4",
+            "subfolder": "",
+            "type": "output"
+          }
+        ],
+        "animated": [
+          true
+        ]
+      }
+    }
+  },
+  {
+    "run_id": "recent-texture-8-speed3-cal01",
+    "mode": "speed3-cal01",
+    "timings": {
+      "sampling_loop": 11.920107499929145,
+      "sampling": 13.6345554580912,
+      "audio_decode": 0.18501462507992983,
+      "video_decode": 1.5004036660538986,
+      "create_video": 7.508299313485622e-05,
+      "save_video": 0.08635745802894235
+    },
+    "steps": [
+      0.26900095806922764,
+      0.18551112490240484,
+      0.17558650008868426,
+      0.1819846669677645,
+      0.4145270420704037,
+      0.4093454999383539,
+      0.8527402919717133,
+      0.8498770409496501,
+      0.8516555840615183,
+      0.8524236249504611,
+      0.8494308330118656,
+      0.8575474170502275,
+      0.8543604579754174,
+      0.8492436669766903,
+      0.8499161250656471,
+      0.850592999951914,
+      0.8504406249849126,
+      0.8504300409695134,
+      0.8500687500927597,
+      0.8505906249629334
+    ],
+    "peak_driver_gib": 52.37469482421875,
+    "vae_dtype": "torch.float16",
+    "attention_calls": {},
+    "tensors": {
+      "conditioning": {
+        "/positive/0/minimax_token_tags": {
+          "sha256": "98d50d3e4e79e2932964b86f7ec54e360385f10a0b3620de48ffdd82dc751315",
+          "shape": [
+            59
+          ],
+          "dtype": "torch.int64",
+          "finite": true
+        },
+        "/positive/0/cross_attn": {
+          "sha256": "f967a357e33435c32e00a23d9a00f2b92e2d198868cb5166053f336121b106e4",
+          "shape": [
+            1,
+            59,
+            5120
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "noise": {
+        "/": {
+          "sha256": "c0b0d3424ff45eb42b3bcbef94ad2996e7c438c1ea32a8b978a676e306b45a7f",
+          "shape": [
+            1,
+            1,
+            274528
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "latents": {
+        "/0/samples/0": {
+          "sha256": "26db0833afbf46b72ae87105da7145d0d99457a9d6db74bea5aea4960f678c06",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/0/samples/1": {
+          "sha256": "273eb447993df2a0952d10111eafeaf93b8245780e2656c8d75f56daf847ab19",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/0": {
+          "sha256": "3b6d272f4e74554140486bf9316b120b84cd1d35039f72c162b7027c527121f0",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/1": {
+          "sha256": "0e6209b6cf14452ba3d313a4577d76b0a233cf789297d6c435f07d40aa6f298b",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "audio_decode": {
+        "/0/0/waveform": {
+          "sha256": "c0df2f44b82b2850c8f68d2f4d8ed74e492b56eaf6179292b855f2e723cf2304",
+          "shape": [
+            1,
+            2,
+            29600
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "frames": {
+        "": {
+          "sha256": "f67f52bc53721c16ba64d716405f37a454bd335437615d4479a0e0b2a220e3c9",
+          "shape": [
+            22,
+            480,
+            864,
+            3
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      }
+    },
+    "candidate_stats": {
+      "settings": {},
+      "speed_calibration": {
+        "noise_amplitude": 19.025775364207593,
+        "noise_decay_exponent": 0.8798802352565238,
+        "Tolerance (Delta)": 0.01
+      },
+      "block_0": 20,
+      "block_49": 20
+    },
+    "patch_status": {
+      "torch_mpp_qcache": {
+        "_dead": "False",
+        "_calls": "6400"
+      },
+      "torch_attention": {},
+      "attn_router_mps": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "attention_backend": {},
+      "_common": {},
+      "comfykitchen_fp8": {},
+      "linear_fp8": {
+        "_installed": "True"
+      },
+      "linear_fp8_w8a16": {
+        "_installed": "True"
+      },
+      "ops_bias_fp8": {
+        "_installed": "True"
+      },
+      "psutil_vmstat": {},
+      "rmsnorm_mps_large": {
+        "_installed": "True"
+      },
+      "scaled_mm_fp8": {
+        "_installed": "True"
+      },
+      "flash_attn_mtl": {},
+      "stochastic_round_fp8": {
+        "_installed": "True"
+      },
+      "tensor_to_fp8": {
+        "_installed": "True"
+      },
+      "wan_blockswap_mps": {
+        "_installed": "True"
+      },
+      "te_device_mps": {
+        "_installed": "True"
+      },
+      "int_mm_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_kernel_mps": {
+        "_installed": "True"
+      },
+      "_mlx_gemma3": {},
+      "_mlx_qwen3vl": {},
+      "mlx_textgen": {
+        "_installed": "False"
+      },
+      "fp8_mps_strided": {
+        "_installed": "True"
+      },
+      "fp8_fill_mps": {
+        "_installed": "True"
+      },
+      "lumina_attn_fast": {
+        "_installed": "True"
+      },
+      "quant_meta_fix": {
+        "_installed": "True"
+      },
+      "int8_embedding": {
+        "_installed": "True"
+      },
+      "rope_fast": {
+        "_installed": "True"
+      },
+      "flux2_glue": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "flux_attn_fast": {
+        "_installed": "True"
+      },
+      "krea2_attn_fast": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "conv3d_mps": {
+        "_installed": "True"
+      },
+      "ltx_fast": {
+        "_installed": "True"
+      },
+      "ltx25_fast": {
+        "_installed": "True",
+        "_dead": "False",
+        "_calls": "0"
+      },
+      "wan_fast": {
+        "_installed": "True"
+      },
+      "wan_vae_fast": {
+        "_installed": "True"
+      },
+      "vae_slice_attn_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_vae_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_fast": {
+        "_installed": "True"
+      },
+      "seedvr2_loader": {
+        "_installed": "True"
+      },
+      "ideogram_fast": {
+        "_installed": "False"
+      },
+      "minimax_fast": {
+        "_installed": "True",
+        "_block_dead": "False",
+        "_dead": "False"
+      },
+      "minimax_relaxed": {
+        "_installed": "False"
+      },
+      "minimax_vae_int8": {
+        "_dead": "False"
+      },
+      "minimax_vae_fast": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_ff_dead": "False",
+        "_dense": "False",
+        "_qkv_dead": "False"
+      },
+      "minimax_h3cache": {},
+      "minimax_vae_tiling": {
+        "_installed": "False"
+      },
+      "minimax_vae_batch": {
+        "_installed": "False"
+      },
+      "free_mem_mps": {
+        "_installed": "True"
+      },
+      "exec_trace": {
+        "_installed": "False"
+      },
+      "optrace": {
+        "_installed": "False"
+      },
+      "mps_profile": {
+        "_installed": "False"
+      },
+      "sdxl_geglu": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "qwen21_fast": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "minimax_h3_turbo": {},
+      "minimax_h3_structure": {},
+      "minimax_h3_sparse": {
+        "_dense": "<function _dense at 0x14fb82fc0>"
+      },
+      "minimax_h3_unified": {},
+      "super_resolution": {},
+      "h3_latent_upscaler": {},
+      "mfa4_ext": {},
+      "_native_build": {},
+      "loader": {},
+      "fp8s_ext": {},
+      "fp8_ext": {},
+      "int8_ext": {},
+      "dit_ext": {},
+      "krea2_glue": {
+        "_installed": "True"
+      },
+      "krea2_ext": {},
+      "ltx25_vae": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_calls": "0"
+      },
+      "wan_ext": {},
+      "seedvr2_ext": {},
+      "minimax_h3_graph": {},
+      "minimax_vae_ext": {},
+      "ideogram4_exact": {
+        "_installed": "False",
+        "_attention_dead": "False",
+        "_dead": "False",
+        "_calls": "0"
+      }
+    },
+    "e2e": 15.408,
+    "warmup": false,
+    "outputs": {
+      "92": {
+        "images": [
+          {
+            "filename": "recent-texture-8-speed3-cal01_00001_.mp4",
+            "subfolder": "",
+            "type": "output"
+          }
+        ],
+        "animated": [
+          true
+        ]
+      }
+    }
+  },
+  {
+    "run_id": "recent-texture-9-exact",
+    "mode": "exact",
+    "timings": {
+      "sampling_loop": 17.09180566703435,
+      "sampling": 17.135772709036246,
+      "audio_decode": 0.18413233407773077,
+      "video_decode": 1.503461749991402,
+      "create_video": 7.462501525878906e-05,
+      "save_video": 0.08239079103805125
+    },
+    "steps": [
+      0.9086864170385525,
+      0.8580469579901546,
+      0.8510414169868454,
+      0.8502600829815492,
+      0.8537535420618951,
+      0.8609804169973359,
+      0.853266041027382,
+      0.8508237499045208,
+      0.8494619170669466,
+      0.851136791985482,
+      0.8509927080012858,
+      0.8499355829553679,
+      0.8504313339944929,
+      0.8511547080706805,
+      0.8487661249237135,
+      0.8508373330114409,
+      0.8500843340298161,
+      0.8506944159744307,
+      0.8498903340660036,
+      0.8506947909481823
+    ],
+    "peak_driver_gib": 52.36688232421875,
+    "vae_dtype": "torch.float16",
+    "attention_calls": {},
+    "tensors": {
+      "conditioning": {
+        "/positive/0/minimax_token_tags": {
+          "sha256": "98d50d3e4e79e2932964b86f7ec54e360385f10a0b3620de48ffdd82dc751315",
+          "shape": [
+            59
+          ],
+          "dtype": "torch.int64",
+          "finite": true
+        },
+        "/positive/0/cross_attn": {
+          "sha256": "f967a357e33435c32e00a23d9a00f2b92e2d198868cb5166053f336121b106e4",
+          "shape": [
+            1,
+            59,
+            5120
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "noise": {
+        "/": {
+          "sha256": "82201b406400ab59b565bbf34f52f03b608675656557c88c44c3f2a9f103c01f",
+          "shape": [
+            1,
+            1,
+            274528
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "latents": {
+        "/0/samples/0": {
+          "sha256": "2283edc8005598aa2713566d14fd1190773dc4fff8e89209efbf19c35b6a004b",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/0/samples/1": {
+          "sha256": "bc24e48ba725b3b5170856138d169cbd6da9fa7d6f17a08ac30f93a097a542f0",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/0": {
+          "sha256": "9db6ac998bf347dd62d16edacbc5ef585742cf1bc2570e9eb91ee22eb4784397",
+          "shape": [
+            1,
+            24,
+            7,
+            30,
+            54
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        },
+        "/1/samples/1": {
+          "sha256": "3029077fb3cf70c2018f399b1038853523ddc4070d02a746f27bacc9fbd72711",
+          "shape": [
+            1,
+            32,
+            2,
+            37
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "audio_decode": {
+        "/0/0/waveform": {
+          "sha256": "f040c15aba0e521b44982a91c109a51bdecc25b6ff65dcf9919632f9f6b358d9",
+          "shape": [
+            1,
+            2,
+            29600
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      },
+      "frames": {
+        "": {
+          "sha256": "131f9babd3d0ddf3e531e36a11283aaefd20bb12589e38207df5ef9ca2e5296b",
+          "shape": [
+            22,
+            480,
+            864,
+            3
+          ],
+          "dtype": "torch.float32",
+          "finite": true
+        }
+      }
+    },
+    "candidate_stats": {
+      "settings": {},
+      "block_0": 20,
+      "block_49": 20
+    },
+    "patch_status": {
+      "torch_mpp_qcache": {
+        "_dead": "False",
+        "_calls": "7400"
+      },
+      "torch_attention": {},
+      "attn_router_mps": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "attention_backend": {},
+      "_common": {},
+      "comfykitchen_fp8": {},
+      "linear_fp8": {
+        "_installed": "True"
+      },
+      "linear_fp8_w8a16": {
+        "_installed": "True"
+      },
+      "ops_bias_fp8": {
+        "_installed": "True"
+      },
+      "psutil_vmstat": {},
+      "rmsnorm_mps_large": {
+        "_installed": "True"
+      },
+      "scaled_mm_fp8": {
+        "_installed": "True"
+      },
+      "flash_attn_mtl": {},
+      "stochastic_round_fp8": {
+        "_installed": "True"
+      },
+      "tensor_to_fp8": {
+        "_installed": "True"
+      },
+      "wan_blockswap_mps": {
+        "_installed": "True"
+      },
+      "te_device_mps": {
+        "_installed": "True"
+      },
+      "int_mm_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_mps": {
+        "_installed": "True"
+      },
+      "int8_linear_kernel_mps": {
+        "_installed": "True"
+      },
+      "_mlx_gemma3": {},
+      "_mlx_qwen3vl": {},
+      "mlx_textgen": {
+        "_installed": "False"
+      },
+      "fp8_mps_strided": {
+        "_installed": "True"
+      },
+      "fp8_fill_mps": {
+        "_installed": "True"
+      },
+      "lumina_attn_fast": {
+        "_installed": "True"
+      },
+      "quant_meta_fix": {
+        "_installed": "True"
+      },
+      "int8_embedding": {
+        "_installed": "True"
+      },
+      "rope_fast": {
+        "_installed": "True"
+      },
+      "flux2_glue": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "flux_attn_fast": {
+        "_installed": "True"
+      },
+      "krea2_attn_fast": {
+        "_installed": "True",
+        "_na_dead": "False"
+      },
+      "conv3d_mps": {
+        "_installed": "True"
+      },
+      "ltx_fast": {
+        "_installed": "True"
+      },
+      "ltx25_fast": {
+        "_installed": "True",
+        "_dead": "False",
+        "_calls": "0"
+      },
+      "wan_fast": {
+        "_installed": "True"
+      },
+      "wan_vae_fast": {
+        "_installed": "True"
+      },
+      "vae_slice_attn_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_vae_mps": {
+        "_installed": "True"
+      },
+      "seedvr2_fast": {
+        "_installed": "True"
+      },
+      "seedvr2_loader": {
+        "_installed": "True"
+      },
+      "ideogram_fast": {
+        "_installed": "False"
+      },
+      "minimax_fast": {
+        "_installed": "True",
+        "_block_dead": "False",
+        "_dead": "False"
+      },
+      "minimax_relaxed": {
+        "_installed": "False"
+      },
+      "minimax_vae_int8": {
+        "_dead": "False"
+      },
+      "minimax_vae_fast": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_ff_dead": "False",
+        "_dense": "False",
+        "_qkv_dead": "False"
+      },
+      "minimax_h3cache": {},
+      "minimax_vae_tiling": {
+        "_installed": "False"
+      },
+      "minimax_vae_batch": {
+        "_installed": "False"
+      },
+      "free_mem_mps": {
+        "_installed": "True"
+      },
+      "exec_trace": {
+        "_installed": "False"
+      },
+      "optrace": {
+        "_installed": "False"
+      },
+      "mps_profile": {
+        "_installed": "False"
+      },
+      "sdxl_geglu": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "qwen21_fast": {
+        "_installed": "True",
+        "_dead": "False"
+      },
+      "minimax_h3_turbo": {},
+      "minimax_h3_structure": {},
+      "minimax_h3_sparse": {
+        "_dense": "<function _dense at 0x14fb82fc0>"
+      },
+      "minimax_h3_unified": {},
+      "super_resolution": {},
+      "h3_latent_upscaler": {},
+      "mfa4_ext": {},
+      "_native_build": {},
+      "loader": {},
+      "fp8s_ext": {},
+      "fp8_ext": {},
+      "int8_ext": {},
+      "dit_ext": {},
+      "krea2_glue": {
+        "_installed": "True"
+      },
+      "krea2_ext": {},
+      "ltx25_vae": {
+        "_installed": "True",
+        "_attention_dead": "False",
+        "_calls": "0"
+      },
+      "wan_ext": {},
+      "seedvr2_ext": {},
+      "minimax_h3_graph": {},
+      "minimax_vae_ext": {},
+      "ideogram4_exact": {
+        "_installed": "False",
+        "_attention_dead": "False",
+        "_dead": "False",
+        "_calls": "0"
+      }
+    },
+    "e2e": 18.908,
+    "warmup": false,
+    "outputs": {
+      "92": {
+        "images": [
+          {
+            "filename": "recent-texture-9-exact_00001_.mp4",
+            "subfolder": "",
+            "type": "output"
+          }
+        ],
+        "animated": [
+          true
+        ]
+      }
+    }
+  }
+]

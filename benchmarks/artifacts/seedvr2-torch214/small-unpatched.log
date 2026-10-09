@@ -1,0 +1,48 @@
+/Users/luigis/ComfyUI-Installs/ComfyUI-AppleSilicon-2.14/ComfyUI/.venv/lib/python3.13/site-packages/torch/jit/_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+STAGE resize 0.006342582986690104 {"driver_gib": 0.00823974609375, "live_gib": 0.0, "rss_gib": 0.5567169189453125}
+STAGE preprocess 0.0009645420359447598 {"driver_gib": 0.00823974609375, "live_gib": 0.0, "rss_gib": 0.563812255859375}
+STAGE load_vae 0.10473145899595693 {"driver_gib": 0.00823974609375, "live_gib": 0.0, "rss_gib": 1.890899658203125}
+STAGE encode 0.43398020800668746 {"driver_gib": 9.6446533203125, "live_gib": 0.4668691158294678, "rss_gib": 1.5113525390625}
+STAGE load_model 0.06640487496042624 {"driver_gib": 9.6446533203125, "live_gib": 0.4668691158294678, "rss_gib": 1.8327789306640625}
+  0%|          | 0/1 [00:00<?, ?it/s]100%|██████████| 1/1 [00:00<00:00,  1.00it/s]100%|██████████| 1/1 [00:00<00:00,  1.00it/s]
+STAGE sample 2.199696791009046 {"driver_gib": 15.96453857421875, "live_gib": 8.22978687286377, "rss_gib": 0.888153076171875}
+Traceback (most recent call last):
+  File "/Users/luigis/Documents/ChatGPT/ComfyUI-AppleSilicon/diagnostics/seedvr2-torch214/run.py", line 204, in <module>
+    decoded,timings['decode']=measured('decode',lambda:nodes.VAEDecodeTiled().decode(vae,sampled,512,128,4096,8)[0])
+                              ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/luigis/Documents/ChatGPT/ComfyUI-AppleSilicon/diagnostics/seedvr2-torch214/run.py", line 134, in measured
+    out=fn()
+  File "/Users/luigis/Documents/ChatGPT/ComfyUI-AppleSilicon/diagnostics/seedvr2-torch214/run.py", line 204, in <lambda>
+    decoded,timings['decode']=measured('decode',lambda:nodes.VAEDecodeTiled().decode(vae,sampled,512,128,4096,8)[0])
+                                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/luigis/ComfyUI-Installs/ComfyUI-AppleSilicon-2.14/ComfyUI/nodes.py", line 375, in decode
+    images = vae.decode_tiled(latent, tile_x=tile_size // compression, tile_y=tile_size // compression, overlap=overlap // compression, tile_t=temporal_size, overlap_t=temporal_overlap)
+  File "/Users/luigis/ComfyUI-Installs/ComfyUI-AppleSilicon-2.14/ComfyUI/comfy/sd.py", line 1375, in decode_tiled
+    output = self._decode_tiled_owned(samples, **self._owned_tiled_args(tile_x, tile_y, overlap, tile_t, overlap_t))
+  File "/Users/luigis/ComfyUI-Installs/ComfyUI-AppleSilicon-2.14/ComfyUI/comfy/sd.py", line 1193, in _decode_tiled_owned
+    out = self.first_stage_model.decode_tiled(samples.to(self.vae_dtype).to(self.device), **kwargs)
+  File "/Users/luigis/ComfyUI-Installs/ComfyUI-AppleSilicon-2.14/ComfyUI/comfy/ldm/seedvr/vae.py", line 1546, in decode_tiled
+    return self.decode(z, seedvr2_tiling=seedvr2_tiling)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/luigis/ComfyUI-Installs/ComfyUI-AppleSilicon-2.14/ComfyUI/comfy/ldm/seedvr/vae.py", line 1518, in decode
+    x = tiled_vae(latent, self, **decode_seedvr2_args, encode=False)
+  File "/Users/luigis/Documents/ChatGPT/ComfyUI-AppleSilicon/diagnostics/seedvr2-torch214/run.py", line 77, in tiled
+    try:return original_tiled(x,model,*args,**kwargs)
+               ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/luigis/ComfyUI-Installs/ComfyUI-AppleSilicon-2.14/ComfyUI/comfy/ldm/seedvr/vae.py", line 163, in tiled_vae
+    for _, y_idx, y_end, x_idx, x_end, tile_out in ordered_tile_outputs:
+                                                   ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/luigis/ComfyUI-Installs/ComfyUI-AppleSilicon-2.14/ComfyUI/comfy/ldm/seedvr/vae.py", line 159, in <genexpr>
+    run_tile(tile_index, tile_range)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/luigis/ComfyUI-Installs/ComfyUI-AppleSilicon-2.14/ComfyUI/comfy/ldm/seedvr/vae.py", line 155, in run_tile
+    tile_out = run_temporal_chunks(tile_x)
+  File "/Users/luigis/ComfyUI-Installs/ComfyUI-AppleSilicon-2.14/ComfyUI/comfy/ldm/seedvr/vae.py", line 120, in run_temporal_chunks
+    out = model.decode_(t_chunk)
+  File "/Users/luigis/Documents/ChatGPT/ComfyUI-AppleSilicon/diagnostics/seedvr2-torch214/run.py", line 170, in call
+    snapshot()
+    ~~~~~~~~^^
+  File "/Users/luigis/Documents/ChatGPT/ComfyUI-AppleSilicon/diagnostics/seedvr2-torch214/run.py", line 128, in snapshot
+    raise RuntimeError('diagnostic memory threshold exceeded')
+RuntimeError: diagnostic memory threshold exceeded

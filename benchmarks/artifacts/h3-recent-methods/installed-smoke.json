@@ -1,0 +1,14 @@
+{
+  "cache_modes": [
+    "disabled",
+    "first_block_cache",
+    "first_block_cache_per_step",
+    "oracle",
+    "block_oracle",
+    "spectrum_protected",
+    "spectrum_fast",
+    "motion_cache"
+  ],
+  "spectrum": true,
+  "speed": true
+}

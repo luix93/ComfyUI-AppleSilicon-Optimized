@@ -1,0 +1,26 @@
+{
+  "last_node_id": 1,
+  "last_link_id": 0,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "AppleSiliconH3QuickAcceleration",
+      "pos": [100, 100],
+      "size": [390, 160],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [{"name": "model", "type": "MODEL", "link": null}],
+      "outputs": [{"name": "model", "type": "MODEL", "links": null, "slot_index": 0}],
+      "properties": {"Node name for S&R": "AppleSiliconH3QuickAcceleration"},
+      "widgets_values": ["MotionCache · balanced", "Off", "Off", false],
+      "color": "#303c50",
+      "bgcolor": "#202835"
+    }
+  ],
+  "links": [],
+  "groups": [],
+  "config": {},
+  "extra": {},
+  "version": 0.4
+}

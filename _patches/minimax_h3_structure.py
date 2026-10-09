@@ -17,7 +17,9 @@ workflow JSON can load; its active-layer setting can no longer omit blocks.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from collections import Counter
+import copy
 import logging
 from typing import Any, Hashable
 
@@ -91,30 +93,87 @@ def _pool_rope(rope: torch.Tensor, video_start: int, frames: int,
     return torch.cat((prefix, reduced), dim=1).contiguous()
 
 
+class IncompatibleMask(ValueError):
+    """Horizontal partners have different modulation, so must stay separate."""
+
+
 def _reduced_segments(segments, video_start: int, full_rows: int,
-                      reduced_rows: int):
+                      reduced_rows: int, width: int | None = None):
     if not isinstance(segments, (list, tuple)) or not segments:
         raise ValueError("missing H3 modulation segments")
-    result = []
+    prefix, video = [], []
     cursor = 0
-    found_video = False
     for segment in segments:
         if not isinstance(segment, (list, tuple)) or len(segment) != 3:
             raise ValueError("invalid H3 modulation segment")
-        a, b, row = map(int, segment)
-        if a != cursor or b < a:
+        a, b, row = segment
+        a, b = int(a), int(b)
+        if a != cursor or b < a or b > full_rows:
             raise ValueError("H3 modulation segments do not tile the sequence")
-        if a == video_start and b == full_rows:
-            result.append((a, video_start + reduced_rows, row))
-            cursor = full_rows
-            found_video = True
+        if isinstance(row, torch.Tensor):
+            if row.ndim != 1 or row.numel() != b - a or row.dtype != torch.long:
+                raise ValueError("invalid per-token H3 modulation rows")
         else:
-            if b > video_start:
-                raise ValueError("target video must be the final modulation segment")
-            result.append((a, b, row))
-            cursor = b
-    if cursor != full_rows or not found_video:
+            row = int(row)
+        if b <= video_start:
+            prefix.append((a, b, row))
+        elif a >= video_start:
+            video.append((a, b, row))
+        else:
+            raise ValueError("H3 modulation segment crosses the target-video boundary")
+        cursor = b
+    if cursor != full_rows or not video or video[0][0] != video_start:
         raise ValueError("could not identify H3's final target-video segment")
+    # Preserve the old unmasked path exactly, including its scalar mod row.
+    if len(video) == 1 and not isinstance(video[0][2], torch.Tensor):
+        return prefix + [(video_start, video_start + reduced_rows, video[0][2])]
+    if width is None or width < 2:
+        raise ValueError("masked H3 reduction needs the video row width")
+    tags = torch.empty(full_rows - video_start, dtype=torch.long)
+    device = None
+    for a, b, row in video:
+        if isinstance(row, torch.Tensor):
+            device = row.device
+            row = row.detach().cpu()
+        tags[a - video_start:b - video_start] = row
+    grid = tags.reshape(-1, width)
+    pairs = width // 2
+    left, right = grid[:, :pairs * 2:2], grid[:, 1:pairs * 2:2]
+    if not torch.equal(left, right):
+        raise IncompatibleMask("horizontal mask partners have different timesteps")
+    reduced = left
+    if width % 2:
+        reduced = torch.cat((reduced, grid[:, -1:]), dim=1)
+    reduced = reduced.flatten()
+    if reduced.numel() != reduced_rows:
+        raise ValueError("masked H3 modulation has the wrong reduced row count")
+    row = int(reduced[0]) if torch.equal(reduced, reduced[:1].expand_as(reduced)) else reduced.to(device=device)
+    return prefix + [(video_start, video_start + reduced_rows, row)]
+
+
+def _reduced_layout(layout, video_start, frames, height, width):
+    """A private packed-layout view; never mutate conditioning's shared layout."""
+    if layout is None:
+        return None
+    if layout.seq_len != video_start + frames * height * width:
+        raise ValueError("H3 packed layout does not match token-reduction geometry")
+    result = copy.copy(layout)
+    reduced_width = (width + 1) // 2
+    result.seq_len = video_start + frames * height * reduced_width
+    result.segments = [(a, result.seq_len if kind == "video" else b, kind)
+                       for a, b, kind in layout.segments]
+    text, t, h, _, audio = layout.signature
+    result.signature = (text, t, h, reduced_width * 2, audio)
+    result.position_ids = torch.cat((layout.position_ids[:video_start],
+        _pool_video(layout.position_ids[video_start:], frames, height, width)))
+    # Embedding positions are not used again inside the reduced span, but keep
+    # the view coherent for attention hooks which consume these fields.
+    if hasattr(layout, "img_pos"):
+        prefix = layout.img_pos < video_start
+        result.img_pos = torch.cat((layout.img_pos[prefix],
+            torch.arange(video_start, result.seq_len, device=layout.img_pos.device)))
+        result.img_update = torch.cat((layout.img_update[prefix],
+            torch.ones(result.seq_len - video_start, dtype=torch.bool, device=layout.img_update.device)))
     return result
 
 
@@ -132,6 +191,10 @@ class _ReductionState:
     reduced_segments: Any
     restore_block: int
     sparse_metadata: tuple[Any, ...] | None = None
+    sparse_holder: Any = None
+    options: dict | None = None
+    full_layout: Any = None
+    reduced_layout: Any = None
 
 
 @dataclass
@@ -142,22 +205,50 @@ class H3StructureHolder:
     detail_restore_block: int
     coarse_restore_block: int
     verbose: bool = False
+    start_percent: float = 0.0
+    end_percent: float = 1.0
+    step_range: tuple[int, int, int] | None = None
+    start_sigma: float | None = None
+    end_sigma: float | None = None
+    eligible_evaluation: bool = True
     evaluations: int = 0
     current_geometry: tuple[int, int, int, int] | None = None
     current_stream: Hashable | None = None
     reduction: _ReductionState | None = None
+    reduced_evaluations: int = 0
+    bypasses: Counter = field(default_factory=Counter)
+    layout_cache: dict = field(default_factory=dict)
+    last_row_counts: tuple[int, int] | None = None
 
     def clone(self):
         return H3StructureHolder(
             self.reduction_scale, self.early_evaluations,
             self.begin_block, self.detail_restore_block,
-            self.coarse_restore_block, self.verbose)
+            self.coarse_restore_block, self.verbose,
+            start_percent=self.start_percent, end_percent=self.end_percent)
+
+    def prepare_timesteps(self, sigmas):
+        # Existing recipes keep their original all-evaluation path: no new
+        # sigma copies or GPU synchronizations unless protection is requested.
+        if self.start_percent != 0.0 or self.end_percent != 1.0:
+            from .h3_schedule import step_window
+            self.step_range, self.start_sigma, self.end_sigma = step_window(
+                sigmas, self.start_percent, self.end_percent)
+        return self
 
     def begin_evaluation(self, video, audio, transformer_options):
         self.evaluations += 1
         self.current_stream = _stream_key(transformer_options)
         self.reduction = None
         self.current_geometry = None
+        self.eligible_evaluation = True
+        if self.step_range is not None:
+            sigma = transformer_options.get("sigmas")
+            if isinstance(sigma, torch.Tensor) and sigma.numel():
+                sigma = float(sigma.detach().reshape(-1)[0].item())
+            self.eligible_evaluation = (isinstance(sigma, (int, float))
+                and self.step_range[0] < self.step_range[1]
+                and self.end_sigma <= sigma <= self.start_sigma)
         if (isinstance(video, torch.Tensor) and video.dim() == 5
                 and isinstance(audio, torch.Tensor) and audio.dim() >= 3):
             frames = int(video.shape[-3])
@@ -167,7 +258,18 @@ class H3StructureHolder:
             if min(frames, height, width, audio_rows) > 0:
                 self.current_geometry = (frames, height, width, audio_rows)
 
+    def _restore_metadata(self):
+        state = self.reduction
+        if state is None:
+            return
+        if state.options is not None and state.full_layout is not None:
+            state.options["minimax_h3_layout"] = state.full_layout
+        if state.sparse_holder is not None and state.sparse_metadata is not None:
+            (state.sparse_holder.target_rows, state.sparse_holder.audio_rows,
+             state.sparse_holder.rows_per_frame) = state.sparse_metadata
+
     def end_evaluation(self):
+        self._restore_metadata()
         self.reduction = None
         self.current_geometry = None
         self.current_stream = None
@@ -185,7 +287,8 @@ class H3StructureHolder:
             return False
 
     def enter_reduction(self, args):
-        if self.reduction is not None or self.current_geometry is None:
+        if (self.reduction is not None or self.current_geometry is None
+                or not self.eligible_evaluation):
             return args
         transformer_options = args.get("transformer_options", {})
         if self._fbc_skip_active(transformer_options):
@@ -200,6 +303,25 @@ class H3StructureHolder:
         video_start = hidden.shape[0] - video_rows
         if video_start <= audio_rows or width < 2:
             return args
+        # Validate masks before allocating the large pooled/backup tensors.
+        try:
+            reduced_segments = _reduced_segments(
+                segments, video_start, hidden.shape[0], frames * height * ((width + 1) // 2), width)
+        except IncompatibleMask as error:
+            reason = str(error)
+            self.bypasses[reason] += 1
+            if self.bypasses[reason] == 1:
+                logging.warning("%s token reduction bypassed: %s; using full tokens", TAG, reason)
+            return args
+        full_layout = transformer_options.get("minimax_h3_layout")
+        layout_key = (id(full_layout), video_start, frames, height, width)
+        cached = self.layout_cache.get(layout_key)
+        if cached is None or cached[0] is not full_layout:
+            if len(self.layout_cache) >= 4:
+                self.layout_cache.clear()
+            cached = (full_layout, _reduced_layout(full_layout, video_start, frames, height, width))
+            self.layout_cache[layout_key] = cached
+        reduced_layout = cached[1]
         video = hidden[video_start:]
         pooled_video = _pool_video(video, frames, height, width)
         reduced_rows = pooled_video.shape[0]
@@ -210,8 +332,6 @@ class H3StructureHolder:
         reduced[video_start:].copy_(pooled_video)
         reduced_rope = _pool_rope(
             rope, video_start, frames, height, width)
-        reduced_segments = _reduced_segments(
-            segments, video_start, hidden.shape[0], reduced_rows)
         restore = (self.coarse_restore_block
                    if self.evaluations <= self.early_evaluations
                    else self.detail_restore_block)
@@ -221,7 +341,12 @@ class H3StructureHolder:
             video_start=video_start, frames=frames, height=height, width=width,
             full_rope=rope, full_segments=segments,
             reduced_rope=reduced_rope, reduced_segments=reduced_segments,
-            restore_block=restore)
+            restore_block=restore, options=transformer_options,
+            full_layout=full_layout, reduced_layout=reduced_layout)
+        self.reduced_evaluations += 1
+        self.last_row_counts = (hidden.shape[0], reduced.shape[0])
+        if reduced_layout is not None:
+            transformer_options["minimax_h3_layout"] = reduced_layout
 
         # Sparse attention derives its sink from target-row counts. Replace the
         # full-grid counts while reduced, then restore them at expansion.
@@ -230,6 +355,7 @@ class H3StructureHolder:
             sparse = transformer_options.get(minimax_h3_sparse.STATE_KEY)
             if isinstance(sparse, minimax_h3_sparse.H3SparseHolder):
                 state = self.reduction
+                state.sparse_holder = sparse
                 state.sparse_metadata = (
                     sparse.target_rows, sparse.audio_rows, sparse.rows_per_frame)
                 sparse.target_rows = audio_rows + reduced_rows
@@ -284,16 +410,7 @@ class H3StructureHolder:
         local["img"] = full
         local["rope_freqs"] = state.full_rope
         local["mod_segments"] = state.full_segments
-        transformer_options = args.get("transformer_options", {})
-        if state.sparse_metadata is not None:
-            try:
-                from . import minimax_h3_sparse
-                sparse = transformer_options.get(minimax_h3_sparse.STATE_KEY)
-                if isinstance(sparse, minimax_h3_sparse.H3SparseHolder):
-                    (sparse.target_rows, sparse.audio_rows,
-                     sparse.rows_per_frame) = state.sparse_metadata
-            except Exception:
-                pass
+        self._restore_metadata()
         self.reduction = None
         return local
 
@@ -345,16 +462,26 @@ def structure_sample_wrapper(executor, *args, **kwargs):
         template = options.get(STATE_KEY)
         if not isinstance(template, H3StructureHolder):
             return executor(*args, **kwargs)
-        active = template.clone()
+        active = template.clone().prepare_timesteps(
+            kwargs.get("sigmas", args[3] if len(args) > 3 else None))
         options[STATE_KEY] = active
-        logging.info(
-            "%s enabled scale=%.3g early_evaluations=%d restore_blocks=%d/%d",
-            TAG, active.reduction_scale, active.early_evaluations,
-            active.coarse_restore_block, active.detail_restore_block)
+        if active.verbose:
+            logging.info(
+                "%s enabled scale=%.3g early_evaluations=%d restore_blocks=%d/%d",
+                TAG, active.reduction_scale, active.early_evaluations,
+                active.coarse_restore_block, active.detail_restore_block)
         return executor(*args, **kwargs)
     finally:
         if active is not None:
-            logging.info("%s evaluations=%d", TAG, active.evaluations)
+            if active.verbose:
+                logging.info("%s evaluations=%d reduced=%d rows=%s bypasses=%s", TAG,
+                             active.evaluations, active.reduced_evaluations,
+                             active.last_row_counts, dict(active.bypasses))
+            if active.evaluations:
+                rows = active.last_row_counts
+                detail = f"; last token count {rows[0]} → {rows[1]} in reduced blocks" if rows else ""
+                logging.info("MiniMax H3 Token reduction - reduced %d/%d model evaluations%s (speedup not measured)",
+                             active.reduced_evaluations, active.evaluations, detail)
             active.end_evaluation()
         guider.model_options = original_options
 
@@ -397,7 +524,7 @@ def _make_block_wrapper(index, block, previous):
 
 def apply_h3_token_reduction(model, reduction_scale, early_evaluations,
                              detail_restore_block, coarse_restore_block,
-                             verbose):
+                             verbose, start_percent=0.0, end_percent=1.0):
     """Attach only the supported H3 target-video token reduction."""
     import comfy.patcher_extension
 
@@ -409,6 +536,8 @@ def apply_h3_token_reduction(model, reduction_scale, early_evaluations,
         raise ValueError("reduction_scale must be in [0, 2]")
     if int(early_evaluations) < 1:
         raise ValueError("early_evaluations must be at least 1")
+    if not 0 <= start_percent <= end_percent <= 1:
+        raise ValueError("token step fractions must satisfy 0 <= start <= end <= 1")
     begin = 4
     detail = int(detail_restore_block)
     coarse = int(coarse_restore_block)
@@ -420,7 +549,8 @@ def apply_h3_token_reduction(model, reduction_scale, early_evaluations,
         raise ValueError("H3 structural acceleration is already attached")
     options[STATE_KEY] = H3StructureHolder(
         float(reduction_scale), int(early_evaluations), begin, detail,
-        coarse, bool(verbose))
+        coarse, bool(verbose), start_percent=float(start_percent),
+        end_percent=float(end_percent))
     patched.add_wrapper_with_key(
         comfy.patcher_extension.WrappersMP.OUTER_SAMPLE,
         WRAPPER_KEY, structure_sample_wrapper)
@@ -460,59 +590,3 @@ def apply_h3_structure(model, token_reduction, active_layers,
     return apply_h3_token_reduction(
         model, reduction_scale, early_evaluations, detail_restore_block,
         coarse_restore_block, verbose)
-
-
-class AppleSiliconH3StructuralAcceleration:
-    # Kept registered so old graphs load. The unified H3 node exposes only the
-    # validated token-reduction mechanism.
-    DEPRECATED = True
-    CATEGORY = "Apple Silicon/approximate"
-    DESCRIPTION = (
-        "Legacy loader for h3.c-style horizontal target-video token reduction. "
-        "Layer thinning has been removed because real H3 renders damaged "
-        "audio; saved active_layers values below 50 are ignored when token "
-        "reduction is enabled. Use H3 Apple Silicon Acceleration for new "
-        "workflows."
-    )
-    FUNCTION = "apply"
-    RETURN_TYPES = ("MODEL",)
-    RETURN_NAMES = ("model",)
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {"required": {
-            "model": ("MODEL",),
-            "token_reduction": ("BOOLEAN", {"default": True}),
-            "active_layers": ("INT", {
-                "default": 50, "min": 40, "max": 50, "step": 1}),
-            "reduction_scale": ("FLOAT", {
-                "default": 1.0, "min": 0.0, "max": 2.0, "step": 0.05}),
-            "calibration_evaluations": ("INT", {
-                "default": 1, "min": 1, "max": 4, "step": 1}),
-            "early_evaluations": ("INT", {
-                "default": 10, "min": 1, "max": 20, "step": 1}),
-            "detail_restore_block": ("INT", {
-                "default": 30, "min": 8, "max": 44, "step": 1}),
-            "coarse_restore_block": ("INT", {
-                "default": 40, "min": 12, "max": 48, "step": 1}),
-            "verbose": ("BOOLEAN", {"default": False}),
-        }}
-
-    def apply(self, model, token_reduction, active_layers, reduction_scale,
-              calibration_evaluations, early_evaluations,
-              detail_restore_block, coarse_restore_block, verbose):
-        return (apply_h3_structure(
-            model, token_reduction, active_layers, reduction_scale,
-            calibration_evaluations, early_evaluations,
-            detail_restore_block, coarse_restore_block, verbose),)
-
-
-NODE_CLASS_MAPPINGS = {
-    "AppleSiliconH3StructuralAcceleration":
-        AppleSiliconH3StructuralAcceleration,
-}
-
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "AppleSiliconH3StructuralAcceleration":
-        "H3 Structural Acceleration (Apple Silicon)",
-}

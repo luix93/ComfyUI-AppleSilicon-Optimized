@@ -879,8 +879,9 @@ def test_first_block_rejects_suffix_blocks():
 
 
 def test_node_exposes_both_first_block_policies_and_five_skips():
-    required = cache.AppleSiliconH3Cache.INPUT_TYPES()["required"]
-    modes = required["prediction_mode"][0]
+    from _patches import minimax_h3_unified
+    required = minimax_h3_unified.AppleSiliconH3Acceleration.INPUT_TYPES()["required"]
+    modes = required["cache_mode"][0]
     assert cache.FIRST_BLOCK_CACHE_MODE in modes
     assert cache.FIRST_BLOCK_CACHE_PER_STEP_MODE in modes
-    assert required["max_consecutive_skips"][1]["max"] >= 5
+    assert required["cache_max_consecutive_skips"][1]["max"] >= 5

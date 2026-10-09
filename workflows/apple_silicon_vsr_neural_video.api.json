@@ -1,0 +1,40 @@
+{
+  "1": {
+    "class_type": "LoadVideo",
+    "inputs": {
+      "file": "video/MiniMax_H3_00024_.mp4 [output]"
+    }
+  },
+  "2": {
+    "class_type": "AppleSiliconSuperResolutionVideo",
+    "inputs": {
+      "video": [
+        "1",
+        0
+      ],
+      "model_name": "vsr.safetensors",
+      "memory_limit_gb": 32.0,
+      "neural_model": "NeuralRendering.dlssmodel",
+      "nr_profile": "natural",
+      "nr_intensity": 1.0,
+      "nr_detail": 1.0,
+      "nr_colour": 1.0,
+      "nr_processing_scale": 2,
+      "codec": "hevc",
+      "nr_temporal": true
+    }
+  },
+  "3": {
+    "class_type": "SaveVideo",
+    "inputs": {
+      "video": [
+        "2",
+        0
+      ],
+      "filename_prefix": "video/AppleSilicon_VSR_NR",
+      "format": "auto",
+      "format.codec": "auto",
+      "codec": "auto"
+    }
+  }
+}

@@ -162,3 +162,20 @@ def test_gather_preserves_strided_rows_and_virtual_concatenation(kernel):
         assert_bytes(kernel.gather_rows(a,b,ix),torch.cat((a,b))[ix])
         ix=torch.randperm(519,device='mps')
         assert_bytes(kernel.gather_rows(a,a,ix),a[ix])
+
+
+@gpu
+@pytest.mark.parametrize('scale', [1.0, 2.5])
+def test_resnet_unit_scale_preserves_half_bytes(monkeypatch, scale):
+    from comfy.ldm.seedvr.vae import MemoryState
+    monkeypatch.setattr(fast, '_kernel', object())
+    monkeypatch.setattr(fast, '_silu_conv', lambda conv, x, *args: x)
+    block = SimpleNamespace(time_emb_proj=None, nonlinearity=torch.nn.SiLU(),
+        conv1=None, conv2=None, norm1=None, norm2=None, conv_shortcut=None,
+        output_scale_factor=scale)
+    with torch.inference_mode():
+        bits = torch.arange(65536, dtype=torch.int32).to(torch.int16).view(torch.float16)
+        x = bits[torch.isfinite(bits)].reshape(1, 1, 1, 1, -1).to('mps')
+        expected = (x + x) / scale
+        actual = fast._resnet(block, x, None, MemoryState.DISABLED)
+        assert_bytes(actual, expected)

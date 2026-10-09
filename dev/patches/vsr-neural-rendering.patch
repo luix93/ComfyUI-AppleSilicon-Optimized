@@ -1,0 +1,129 @@
+diff --git a/Sources/DLSSMedia/MediaOptions.swift b/Sources/DLSSMedia/MediaOptions.swift
+index 189e865..c9edfa1 100644
+--- a/Sources/DLSSMedia/MediaOptions.swift
++++ b/Sources/DLSSMedia/MediaOptions.swift
+@@ -21,6 +21,7 @@ public struct MediaProcessingOptions: Equatable, Sendable {
+   public var superResolutionWeights: URL?
+   public var dlssSuperResolutionModel: URL?
+   public var order: MediaEffectOrder = .renderingThenGeneration
++  public var vsrBeforeRendering = false
+   public var temporal = true
+   public var motion: MediaMotion = .automatic
+   public var sceneCutThreshold: Float = 0.3
+@@ -54,6 +55,10 @@ public struct MediaProcessingOptions: Equatable, Sendable {
+     guard superResolutionWeights == nil || dlssSuperResolutionModel == nil else {
+       throw MLXMediaError("Choose one upscaler: DLSS SR or RTX VSR")
+     }
++    guard !vsrBeforeRendering || (superResolutionWeights != nil && renderingModel != nil
++      && frameGenerationWeights == nil && dlssSuperResolutionModel == nil) else {
++      throw MLXMediaError("VSR-first requires VSR and neural rendering, without frame generation or DLSS SR")
++    }
+     guard processingScale.isFinite, (1...4).contains(processingScale),
+       detailStrength.isFinite, (0...8).contains(detailStrength),
+       colourStrength.isFinite, (0...4).contains(colourStrength),
+diff --git a/Sources/DLSSMedia/NativeMediaProcessor.swift b/Sources/DLSSMedia/NativeMediaProcessor.swift
+index 0e0d436..31da323 100644
+--- a/Sources/DLSSMedia/NativeMediaProcessor.swift
++++ b/Sources/DLSSMedia/NativeMediaProcessor.swift
+@@ -25,15 +25,18 @@ public actor NativeMediaProcessor {
+     let start = ContinuousClock.now
+     let io = try NativeImageIO()
+     let source = try await io.read(input)
+-    let renderer = try makeRenderer(width: source.width, height: source.height, options: options)
+-    try Task.checkCancellation()
++    let upscaler = try options.superResolutionWeights.map { try MLXNativeSuperResolver(weightsURL: $0) }
+     var rendered = source
++    if options.vsrBeforeRendering, let upscaler {
++      rendered = try await upscaler.upscale(rendered)
++    }
++    let renderer = try makeRenderer(width: rendered.width, height: rendered.height, options: options)
++    try Task.checkCancellation()
+     if let renderer {
+-      rendered = try await renderer.renderVideoFrame(source, motion: nil,
++      rendered = try await renderer.renderVideoFrame(rendered, motion: nil,
+         context: .init(streamID: 1, frameIndex: 0), processingScale: options.processingScale, temporal: false)
+     }
+-    if let weights = options.superResolutionWeights {
+-      let upscaler = try MLXNativeSuperResolver(weightsURL: weights)
++    if !options.vsrBeforeRendering, let upscaler {
+       rendered = try await upscaler.upscale(rendered)
+     }
+     try Task.checkCancellation()
+@@ -62,7 +65,8 @@ public actor NativeMediaProcessor {
+     timing.decodingSeconds = seconds(since: started)
+     let setupStarted = ContinuousClock.now
+     let width = first.rgb.width, height = first.rgb.height
+-    let renderer = try makeRenderer(width: width, height: height, options: options)
++    let renderScale = options.vsrBeforeRendering ? 2 : 1
++    let renderer = try makeRenderer(width: width * renderScale, height: height * renderScale, options: options)
+     let generator = try options.frameGenerationWeights.map { try MLXNativeFrameGenerator(weightsURL: $0,
+       precision: options.precision == .float16 ? .float16 : .float32) }
+     let upscaler = try options.superResolutionWeights.map { try MLXNativeSuperResolver(weightsURL: $0) }
+@@ -70,7 +74,7 @@ public actor NativeMediaProcessor {
+     let srFlow = options.temporal && dlss != nil
+       ? try NativeOpticalFlow(width: width, height: height, mode: options.motion) : nil
+     let flow = options.temporal && renderer != nil
+-      ? try NativeOpticalFlow(width: width, height: height, mode: options.motion) : nil
++      ? try NativeOpticalFlow(width: width * renderScale, height: height * renderScale, mode: options.motion) : nil
+     let factor = generator == nil ? 1 : options.frameGenerationFactor
+     let timeScale = options.slowMotion ? factor : 1
+     let audio = options.includeAudio
+@@ -111,7 +115,7 @@ public actor NativeMediaProcessor {
+ 
+     func render(_ source: MLXVideoFrame, prepared: MLXVideoMotion?? = nil, scheduled: Bool = false,
+                 isolation: isolated (any Actor)? = #isolation) async throws -> MLXVideoFrame {
+-      guard let renderer else { return source }
++      guard let renderer, !options.vsrBeforeRendering else { return source }
+       let motion: MLXVideoMotion?
+       if let prepared {
+         motion = prepared
+@@ -170,6 +174,18 @@ public actor NativeMediaProcessor {
+         frame = try await upscaler.upscale(frame)
+         timing.superResolutionSeconds = (timing.superResolutionSeconds ?? 0) + seconds(since: upscalingStarted)
+       }
++      if options.vsrBeforeRendering, let renderer {
++        let motionStarted = ContinuousClock.now
++        let motion = try await flow?.prepare(frame, index: outputFrames,
++          sceneCutThreshold: options.sceneCutThreshold)
++        if flow != nil { timing.motionSeconds += seconds(since: motionStarted) }
++        if motion?.reset == true { resets += 1 }
++        let renderingStarted = ContinuousClock.now
++        frame = try await renderer.renderVideoFrame(frame, motion: motion,
++          context: NeuralRenderFrameContext(streamID: 1, frameIndex: UInt64(outputFrames)),
++          processingScale: options.processingScale, temporal: options.temporal)
++        timing.renderingSeconds += seconds(since: renderingStarted)
++      }
+       let time = CMTimeMultiply(sourceTime - first.time, multiplier: Int32(timeScale))
+       let encodingStarted = ContinuousClock.now
+       try await writer.append(frame, at: time)
+@@ -179,7 +195,8 @@ public actor NativeMediaProcessor {
+ 
+     do {
+       var current: NativeDecodedFrame? = first
+-      let overlap = Self.overlapMotionEnabled && options.order != .generationThenRendering && flow != nil && renderer != nil
++      let overlap = Self.overlapMotionEnabled && !options.vsrBeforeRendering
++        && options.order != .generationThenRendering && flow != nil && renderer != nil
+       let threshold = options.sceneCutThreshold
+       // Motion for `current`, started while the previous frame rendered.
+       // The rendered frame waiting to be encoded while the next one renders.
+diff --git a/Sources/mlxdlss/ProcessMediaCommand.swift b/Sources/mlxdlss/ProcessMediaCommand.swift
+index 890782c..48e799a 100644
+--- a/Sources/mlxdlss/ProcessMediaCommand.swift
++++ b/Sources/mlxdlss/ProcessMediaCommand.swift
+@@ -35,7 +35,7 @@ enum ProcessMediaCommand {
+       throw CLIError.usage("process-\(video ? "video" : "image") requires INPUT --output PATH and effect weights")
+     }
+     let common = ["--output", "--model", "--profile", "--precision", "--intensity",
+-      "--processing-scale", "--detail-strength", "--colour-strength", "--detail-radius", "--vsr-weights"]
++      "--processing-scale", "--detail-strength", "--colour-strength", "--detail-radius", "--vsr-weights", "--vsr-first"]
+     let videoOptions = ["--framegen-weights", "--sr-model", "--order", "--factor", "--temporal", "--motion",
+       "--scene-cut-threshold", "--slow-motion", "--audio", "--codec", "--bitrate", "--start-frame", "--frames"]
+     let known = common + (video ? videoOptions : [])
+@@ -86,6 +86,7 @@ enum ProcessMediaCommand {
+     options.intensity = try float("--intensity", 1)
+     options.sceneCutThreshold = try float("--scene-cut-threshold", 0.3)
+     options.temporal = try boolean("--temporal", true)
++    options.vsrBeforeRendering = try boolean("--vsr-first", false)
+     options.slowMotion = try boolean("--slow-motion", false)
+     options.includeAudio = try boolean("--audio", true)
+     options.frameGenerationFactor = try integer("--factor", 2)

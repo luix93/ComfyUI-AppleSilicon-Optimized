@@ -1,0 +1,511 @@
+{
+  "config": {
+    "label": "small-stock",
+    "fix": true,
+    "mode": "stock",
+    "stage": "full",
+    "input_size": 320,
+    "repeats": 3,
+    "limit_gib": 40.0,
+    "sample_file": null,
+    "installed": false,
+    "default_fix": false
+  },
+  "state": {
+    "stage": "verification",
+    "max_driver_gib": 16.38751220703125,
+    "max_live_gib": 8.242810726165771,
+    "max_rss_gib": 2.174835205078125,
+    "torch_version": "2.14.0",
+    "torch_git": "08187d9e0fba026dc8217405802ab5381dc88d90",
+    "completed": true
+  },
+  "records": [
+    {
+      "repeat": 0,
+      "timings": {
+        "resize": 0.0064033750095404685,
+        "preprocess": 0.0009279589867219329,
+        "load_vae": 0.10438116698060185,
+        "encode": 0.7859602500102483,
+        "load_model": 0.06285170797491446,
+        "sample": 2.6494591670343652,
+        "decode": 0.8108503749826923,
+        "postprocess": 0.0007695000385865569,
+        "save_image": 0.03126962500391528
+      },
+      "total_seconds": 4.454619208001532,
+      "encoded_sha256": "4e78293919a4a69f5ead0c4c7db443da0a1f7b0516d786c0a89b8c97ee22c998",
+      "sampled_sha256": "2870d379882c5eb910e5fba8ef56817ce41667ed666659539543135c42cc63a2",
+      "frames_sha256": "2f639d76bddf6e28f79a97a3bd63405f61dff4c93c641e1dc9ff15fb54a9a577",
+      "frames_finite": true,
+      "output_shape": [
+        1,
+        638,
+        960,
+        4
+      ]
+    },
+    {
+      "repeat": 1,
+      "timings": {
+        "resize": 0.005903207988012582,
+        "preprocess": 0.0003564590006135404,
+        "encode": 0.5045917080133222,
+        "sample": 0.9788516670232639,
+        "decode": 0.6893895409884863,
+        "postprocess": 0.0007048749830573797,
+        "save_image": 0.031034666986670345
+      },
+      "total_seconds": 2.2119356250041164,
+      "encoded_sha256": "4e78293919a4a69f5ead0c4c7db443da0a1f7b0516d786c0a89b8c97ee22c998",
+      "sampled_sha256": "2870d379882c5eb910e5fba8ef56817ce41667ed666659539543135c42cc63a2",
+      "frames_sha256": "2f639d76bddf6e28f79a97a3bd63405f61dff4c93c641e1dc9ff15fb54a9a577",
+      "frames_finite": true,
+      "output_shape": [
+        1,
+        638,
+        960,
+        4
+      ]
+    },
+    {
+      "repeat": 2,
+      "timings": {
+        "resize": 0.0055184169905260205,
+        "preprocess": 0.00041520799277350307,
+        "encode": 0.47373258299194276,
+        "sample": 0.9700147499679588,
+        "decode": 0.6963356669875793,
+        "postprocess": 0.00020649994257837534,
+        "save_image": 0.030163708026520908
+      },
+      "total_seconds": 2.177453375014011,
+      "encoded_sha256": "4e78293919a4a69f5ead0c4c7db443da0a1f7b0516d786c0a89b8c97ee22c998",
+      "sampled_sha256": "2870d379882c5eb910e5fba8ef56817ce41667ed666659539543135c42cc63a2",
+      "frames_sha256": "2f639d76bddf6e28f79a97a3bd63405f61dff4c93c641e1dc9ff15fb54a9a577",
+      "frames_finite": true,
+      "output_shape": [
+        1,
+        638,
+        960,
+        4
+      ]
+    }
+  ],
+  "events": [
+    {
+      "seconds": 0.01171104097738862,
+      "stage": "resize",
+      "driver_gib": 0.00823974609375,
+      "live_gib": 0.0,
+      "rss_gib": 0.558013916015625
+    },
+    {
+      "seconds": 0.01278791599906981,
+      "stage": "preprocess",
+      "driver_gib": 0.00823974609375,
+      "live_gib": 0.0,
+      "rss_gib": 0.5651092529296875
+    },
+    {
+      "seconds": 0.1173307909630239,
+      "stage": "load_vae",
+      "driver_gib": 0.00823974609375,
+      "live_gib": 0.0,
+      "rss_gib": 1.8915863037109375
+    },
+    {
+      "seconds": 0.5693352499511093,
+      "stage": "encode",
+      "driver_gib": 3.5497894287109375,
+      "live_gib": 0.4720571041107178,
+      "rss_gib": 1.441192626953125
+    },
+    {
+      "seconds": 0.6409377079689875,
+      "stage": "encode",
+      "driver_gib": 4.5576019287109375,
+      "live_gib": 0.47266530990600586,
+      "rss_gib": 1.4430389404296875
+    },
+    {
+      "seconds": 0.7141629999969155,
+      "stage": "encode",
+      "driver_gib": 4.559356689453125,
+      "live_gib": 0.47159719467163086,
+      "rss_gib": 1.4654693603515625
+    },
+    {
+      "seconds": 0.7829297499847598,
+      "stage": "encode",
+      "driver_gib": 4.5889434814453125,
+      "live_gib": 0.47181105613708496,
+      "rss_gib": 1.48712158203125
+    },
+    {
+      "seconds": 0.813881624955684,
+      "stage": "encode",
+      "driver_gib": 4.5889434814453125,
+      "live_gib": 0.47181105613708496,
+      "rss_gib": 1.4871673583984375
+    },
+    {
+      "seconds": 0.9026543749496341,
+      "stage": "encode",
+      "driver_gib": 4.5977783203125,
+      "live_gib": 0.47127699851989746,
+      "rss_gib": 1.5092926025390625
+    },
+    {
+      "seconds": 0.903394291002769,
+      "stage": "encode",
+      "driver_gib": 4.5977783203125,
+      "live_gib": 0.4668691158294678,
+      "rss_gib": 1.5093994140625
+    },
+    {
+      "seconds": 0.9664252909715287,
+      "stage": "load_model",
+      "driver_gib": 4.5977783203125,
+      "live_gib": 0.4668691158294678,
+      "rss_gib": 1.8308563232421875
+    },
+    {
+      "seconds": 3.6163261249894276,
+      "stage": "sample",
+      "driver_gib": 11.94891357421875,
+      "live_gib": 8.23009204864502,
+      "rss_gib": 0.8915252685546875
+    },
+    {
+      "seconds": 3.9468747909995727,
+      "stage": "decode",
+      "driver_gib": 16.347564697265625,
+      "live_gib": 8.232556343078613,
+      "rss_gib": 0.8923187255859375
+    },
+    {
+      "seconds": 4.097056082973722,
+      "stage": "decode",
+      "driver_gib": 16.347564697265625,
+      "live_gib": 8.242810726165771,
+      "rss_gib": 0.8923187255859375
+    },
+    {
+      "seconds": 4.186222415999509,
+      "stage": "decode",
+      "driver_gib": 16.3492431640625,
+      "live_gib": 8.241513729095459,
+      "rss_gib": 0.892364501953125
+    },
+    {
+      "seconds": 4.281468375003897,
+      "stage": "decode",
+      "driver_gib": 16.378753662109375,
+      "live_gib": 8.24171257019043,
+      "rss_gib": 0.892578125
+    },
+    {
+      "seconds": 4.354612290975638,
+      "stage": "decode",
+      "driver_gib": 16.378753662109375,
+      "live_gib": 8.24171257019043,
+      "rss_gib": 0.892578125
+    },
+    {
+      "seconds": 4.425237749994267,
+      "stage": "decode",
+      "driver_gib": 16.38751220703125,
+      "live_gib": 8.241216659545898,
+      "rss_gib": 0.892822265625
+    },
+    {
+      "seconds": 4.427407999988645,
+      "stage": "decode",
+      "driver_gib": 16.38751220703125,
+      "live_gib": 8.23009204864502,
+      "rss_gib": 0.899688720703125
+    },
+    {
+      "seconds": 4.428306290996261,
+      "stage": "postprocess",
+      "driver_gib": 16.38751220703125,
+      "live_gib": 8.23009204864502,
+      "rss_gib": 0.908843994140625
+    },
+    {
+      "seconds": 4.459740457998123,
+      "stage": "save_image",
+      "driver_gib": 16.38751220703125,
+      "live_gib": 8.23009204864502,
+      "rss_gib": 0.929412841796875
+    },
+    {
+      "seconds": 4.474208874977194,
+      "stage": "resize",
+      "driver_gib": 16.38751220703125,
+      "live_gib": 8.23009204864502,
+      "rss_gib": 0.955322265625
+    },
+    {
+      "seconds": 4.474688374961261,
+      "stage": "preprocess",
+      "driver_gib": 16.38751220703125,
+      "live_gib": 8.23009204864502,
+      "rss_gib": 0.955322265625
+    },
+    {
+      "seconds": 4.685384374985006,
+      "stage": "encode",
+      "driver_gib": 15.374984741210938,
+      "live_gib": 8.23570728302002,
+      "rss_gib": 0.7679443359375
+    },
+    {
+      "seconds": 4.745422082953155,
+      "stage": "encode",
+      "driver_gib": 15.374984741210938,
+      "live_gib": 8.236315488815308,
+      "rss_gib": 0.7679443359375
+    },
+    {
+      "seconds": 4.816925166000146,
+      "stage": "encode",
+      "driver_gib": 15.376739501953125,
+      "live_gib": 8.235247373580933,
+      "rss_gib": 0.7679901123046875
+    },
+    {
+      "seconds": 4.885024499963038,
+      "stage": "encode",
+      "driver_gib": 15.378982543945312,
+      "live_gib": 8.235461235046387,
+      "rss_gib": 0.76800537109375
+    },
+    {
+      "seconds": 4.915809832978994,
+      "stage": "encode",
+      "driver_gib": 15.378982543945312,
+      "live_gib": 8.235461235046387,
+      "rss_gib": 0.76800537109375
+    },
+    {
+      "seconds": 4.9788382499828,
+      "stage": "encode",
+      "driver_gib": 15.3878173828125,
+      "live_gib": 8.2349271774292,
+      "rss_gib": 0.7685089111328125
+    },
+    {
+      "seconds": 4.979355624993332,
+      "stage": "encode",
+      "driver_gib": 15.3878173828125,
+      "live_gib": 8.23009204864502,
+      "rss_gib": 0.7685089111328125
+    },
+    {
+      "seconds": 5.958566207962576,
+      "stage": "sample",
+      "driver_gib": 14.38641357421875,
+      "live_gib": 8.23009204864502,
+      "rss_gib": 0.7689361572265625
+    },
+    {
+      "seconds": 6.1917992499656975,
+      "stage": "decode",
+      "driver_gib": 16.374908447265625,
+      "live_gib": 8.232251167297363,
+      "rss_gib": 0.768951416015625
+    },
+    {
+      "seconds": 6.3416459579602815,
+      "stage": "decode",
+      "driver_gib": 16.374908447265625,
+      "live_gib": 8.242505550384521,
+      "rss_gib": 0.768951416015625
+    },
+    {
+      "seconds": 6.423101124993991,
+      "stage": "decode",
+      "driver_gib": 16.3765869140625,
+      "live_gib": 8.241513729095459,
+      "rss_gib": 0.7689666748046875
+    },
+    {
+      "seconds": 6.5118764999788254,
+      "stage": "decode",
+      "driver_gib": 16.378753662109375,
+      "live_gib": 8.24171257019043,
+      "rss_gib": 0.76898193359375
+    },
+    {
+      "seconds": 6.585553540964611,
+      "stage": "decode",
+      "driver_gib": 16.378753662109375,
+      "live_gib": 8.24171257019043,
+      "rss_gib": 0.76898193359375
+    },
+    {
+      "seconds": 6.647264249972068,
+      "stage": "decode",
+      "driver_gib": 16.38751220703125,
+      "live_gib": 8.241216659545898,
+      "rss_gib": 0.769012451171875
+    },
+    {
+      "seconds": 6.648039374966174,
+      "stage": "decode",
+      "driver_gib": 16.38751220703125,
+      "live_gib": 8.23009204864502,
+      "rss_gib": 0.769012451171875
+    },
+    {
+      "seconds": 6.648875290993601,
+      "stage": "postprocess",
+      "driver_gib": 16.38751220703125,
+      "live_gib": 8.23009204864502,
+      "rss_gib": 0.778167724609375
+    },
+    {
+      "seconds": 6.680074832984246,
+      "stage": "save_image",
+      "driver_gib": 16.38751220703125,
+      "live_gib": 8.23009204864502,
+      "rss_gib": 0.7873077392578125
+    },
+    {
+      "seconds": 6.693142499949317,
+      "stage": "resize",
+      "driver_gib": 16.38751220703125,
+      "live_gib": 8.23009204864502,
+      "rss_gib": 0.8039093017578125
+    },
+    {
+      "seconds": 6.693695790949278,
+      "stage": "preprocess",
+      "driver_gib": 16.38751220703125,
+      "live_gib": 8.23009204864502,
+      "rss_gib": 0.8039093017578125
+    },
+    {
+      "seconds": 6.882674040971324,
+      "stage": "encode",
+      "driver_gib": 15.374984741210938,
+      "live_gib": 8.23570728302002,
+      "rss_gib": 0.8039093017578125
+    },
+    {
+      "seconds": 6.94287833297858,
+      "stage": "encode",
+      "driver_gib": 15.374984741210938,
+      "live_gib": 8.236315488815308,
+      "rss_gib": 0.8039093017578125
+    },
+    {
+      "seconds": 7.010626165952999,
+      "stage": "encode",
+      "driver_gib": 15.376739501953125,
+      "live_gib": 8.235247373580933,
+      "rss_gib": 0.8039093017578125
+    },
+    {
+      "seconds": 7.074917624995578,
+      "stage": "encode",
+      "driver_gib": 15.378982543945312,
+      "live_gib": 8.235461235046387,
+      "rss_gib": 0.803924560546875
+    },
+    {
+      "seconds": 7.105449499969836,
+      "stage": "encode",
+      "driver_gib": 15.378982543945312,
+      "live_gib": 8.235461235046387,
+      "rss_gib": 0.803924560546875
+    },
+    {
+      "seconds": 7.166999124980066,
+      "stage": "encode",
+      "driver_gib": 15.3878173828125,
+      "live_gib": 8.2349271774292,
+      "rss_gib": 0.8040008544921875
+    },
+    {
+      "seconds": 7.167510374973062,
+      "stage": "encode",
+      "driver_gib": 15.3878173828125,
+      "live_gib": 8.23009204864502,
+      "rss_gib": 0.8040008544921875
+    },
+    {
+      "seconds": 8.137849249993451,
+      "stage": "sample",
+      "driver_gib": 14.38641357421875,
+      "live_gib": 8.23009204864502,
+      "rss_gib": 0.8042144775390625
+    },
+    {
+      "seconds": 8.37690254097106,
+      "stage": "decode",
+      "driver_gib": 16.374908447265625,
+      "live_gib": 8.232251167297363,
+      "rss_gib": 0.8042144775390625
+    },
+    {
+      "seconds": 8.527212624961976,
+      "stage": "decode",
+      "driver_gib": 16.374908447265625,
+      "live_gib": 8.242505550384521,
+      "rss_gib": 0.8042144775390625
+    },
+    {
+      "seconds": 8.604824957961682,
+      "stage": "decode",
+      "driver_gib": 16.3765869140625,
+      "live_gib": 8.241513729095459,
+      "rss_gib": 0.804229736328125
+    },
+    {
+      "seconds": 8.695680665958207,
+      "stage": "decode",
+      "driver_gib": 16.378753662109375,
+      "live_gib": 8.24171257019043,
+      "rss_gib": 0.804229736328125
+    },
+    {
+      "seconds": 8.768910290964413,
+      "stage": "decode",
+      "driver_gib": 16.378753662109375,
+      "live_gib": 8.24171257019043,
+      "rss_gib": 0.804229736328125
+    },
+    {
+      "seconds": 8.833501207991503,
+      "stage": "decode",
+      "driver_gib": 16.38751220703125,
+      "live_gib": 8.241216659545898,
+      "rss_gib": 0.8042449951171875
+    },
+    {
+      "seconds": 8.834267415979411,
+      "stage": "decode",
+      "driver_gib": 16.38751220703125,
+      "live_gib": 8.23009204864502,
+      "rss_gib": 0.8042449951171875
+    },
+    {
+      "seconds": 8.834599750000052,
+      "stage": "postprocess",
+      "driver_gib": 16.38751220703125,
+      "live_gib": 8.23009204864502,
+      "rss_gib": 0.8042449951171875
+    },
+    {
+      "seconds": 8.864916833001189,
+      "stage": "save_image",
+      "driver_gib": 16.38751220703125,
+      "live_gib": 8.23009204864502,
+      "rss_gib": 0.8042449951171875
+    }
+  ]
+}

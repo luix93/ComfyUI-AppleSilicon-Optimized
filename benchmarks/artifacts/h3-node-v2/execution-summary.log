@@ -1,0 +1,19 @@
+BENCH SAMPLE ui-v2-combinations-0-exact {'sampling_loop': 2.5209997090278193, 'sampling': 10.283471041009761}
+100%|██████████| 20/20 [00:17<00:00,  1.17it/s]BENCH SAMPLE ui-v2-combinations-1-exact {'sampling_loop': 17.135137291974388, 'sampling': 17.18255529203452}
+BENCH SAMPLE ui-v2-combinations-2-motion-upstream {'sampling_loop': 13.768730917014182, 'sampling': 13.845898917061277}
+BENCH SAMPLE ui-v2-combinations-3-motion-bundled {'sampling_loop': 13.778268082998693, 'sampling': 13.832812207983807}
+[INFO] [AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8 mode=corrected tau=0.5 evaluations=16 (sparse=11 dense=5) attention_calls=800 routed=495 sparse=495 dense=305 effective_density=44.6%
+BENCH SAMPLE ui-v2-combinations-4-motion-sol {'sampling_loop': 14.266250625019893, 'sampling': 14.321376916021109}
+BENCH SAMPLE ui-v2-combinations-5-motion-token {'sampling_loop': 10.864473458030261, 'sampling': 10.918879708042368}
+[INFO] [AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8 mode=corrected tau=0.5 evaluations=17 (sparse=12 dense=5) attention_calls=850 routed=540 sparse=540 dense=310 effective_density=47.5%
+BENCH SAMPLE ui-v2-combinations-6-motion-all {'sampling_loop': 11.501457958016545, 'sampling': 11.558225332992151}
+BENCH SAMPLE ui-v2-combinations-7-spectrum-upstream {'sampling_loop': 0.10572537500411272, 'sampling': 11.449982332997024}
+BENCH SAMPLE ui-v2-combinations-8-spectrum-bundled {'sampling_loop': 0.09999224997591227, 'sampling': 11.4802740419982}
+[INFO] [AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8 mode=corrected tau=0.5 evaluations=13 (sparse=7 dense=6) attention_calls=650 routed=315 sparse=315 dense=335 effective_density=44.6%
+[INFO] [AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8 mode=corrected tau=0.5 evaluations=0 (sparse=0 dense=0) attention_calls=0 routed=0 sparse=0 dense=0 effective_density=0.0%
+BENCH SAMPLE ui-v2-combinations-9-spectrum-sol {'sampling_loop': 0.09838479198515415, 'sampling': 11.283835666952655}
+BENCH SAMPLE ui-v2-combinations-10-spectrum-token {'sampling_loop': 0.1129110420588404, 'sampling': 8.334982542088255}
+[INFO] [AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8 mode=corrected tau=0.5 evaluations=13 (sparse=7 dense=6) attention_calls=650 routed=315 sparse=315 dense=335 effective_density=48.5%
+[INFO] [AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8 mode=corrected tau=0.5 evaluations=0 (sparse=0 dense=0) attention_calls=0 routed=0 sparse=0 dense=0 effective_density=0.0%
+BENCH SAMPLE ui-v2-combinations-11-spectrum-all {'sampling_loop': 0.10005087498575449, 'sampling': 8.32483341707848}
+100%|██████████| 20/20 [00:17<00:00,  1.17it/s]BENCH SAMPLE ui-v2-combinations-12-exact {'sampling_loop': 17.13334766693879, 'sampling': 17.18612704204861}

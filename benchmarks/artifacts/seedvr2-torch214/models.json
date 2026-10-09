@@ -1,0 +1,14 @@
+[
+  {
+    "path": "/Volumes/OWC NVMe/comfyui/models/diffusion_models/SeedVR2/seedvr2_7b_int8_convrot.safetensors",
+    "bytes": 8334897976,
+    "header_sha256": "06af0a10e3b36d2279bc80882dbe2f69f73f477098234b30f20aec8247f0cfd4",
+    "metadata": null
+  },
+  {
+    "path": "/Volumes/OWC NVMe/comfyui/models/vae/seedvr2_ema_vae_fp16.safetensors",
+    "bytes": 501324814,
+    "header_sha256": "d620dc95c2ea7f6d93d32e5ea41463f951b259af200916e1de864f81a29a29bd",
+    "metadata": null
+  }
+]

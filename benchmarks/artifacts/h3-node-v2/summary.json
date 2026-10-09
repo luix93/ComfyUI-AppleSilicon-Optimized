@@ -1,0 +1,120 @@
+{
+  "parity": {
+    "motion": {
+      "noise": true,
+      "latents": true,
+      "frames": true,
+      "audio_decode": true
+    },
+    "spectrum": {
+      "noise": true,
+      "latents": true,
+      "frames": true,
+      "audio_decode": true
+    },
+    "exact_before_after": {
+      "noise": true,
+      "latents": true,
+      "frames": true,
+      "audio_decode": true
+    }
+  },
+  "guard": {
+    "peak_rss_gib": 11.22601318359375,
+    "seconds": 242.4284526250558,
+    "child_exit": -15
+  },
+  "runs": [
+    {
+      "mode": "exact",
+      "warmup": true,
+      "e2e": 20.796,
+      "sampling": 10.283471041009761,
+      "finite": true
+    },
+    {
+      "mode": "exact",
+      "warmup": false,
+      "e2e": 18.998,
+      "sampling": 17.18255529203452,
+      "finite": true
+    },
+    {
+      "mode": "motion-upstream",
+      "warmup": false,
+      "e2e": 15.682,
+      "sampling": 13.845898917061277,
+      "finite": true
+    },
+    {
+      "mode": "motion-bundled",
+      "warmup": false,
+      "e2e": 15.638,
+      "sampling": 13.832812207983807,
+      "finite": true
+    },
+    {
+      "mode": "motion-sol",
+      "warmup": false,
+      "e2e": 16.162,
+      "sampling": 14.321376916021109,
+      "finite": true
+    },
+    {
+      "mode": "motion-token",
+      "warmup": false,
+      "e2e": 12.73,
+      "sampling": 10.918879708042368,
+      "finite": true
+    },
+    {
+      "mode": "motion-all",
+      "warmup": false,
+      "e2e": 13.376,
+      "sampling": 11.558225332992151,
+      "finite": true
+    },
+    {
+      "mode": "spectrum-upstream",
+      "warmup": false,
+      "e2e": 13.31,
+      "sampling": 11.449982332997024,
+      "finite": true
+    },
+    {
+      "mode": "spectrum-bundled",
+      "warmup": false,
+      "e2e": 13.422,
+      "sampling": 11.4802740419982,
+      "finite": true
+    },
+    {
+      "mode": "spectrum-sol",
+      "warmup": false,
+      "e2e": 13.088,
+      "sampling": 11.283835666952655,
+      "finite": true
+    },
+    {
+      "mode": "spectrum-token",
+      "warmup": false,
+      "e2e": 10.171,
+      "sampling": 8.334982542088255,
+      "finite": true
+    },
+    {
+      "mode": "spectrum-all",
+      "warmup": false,
+      "e2e": 10.143,
+      "sampling": 8.32483341707848,
+      "finite": true
+    },
+    {
+      "mode": "exact",
+      "warmup": false,
+      "e2e": 19.034,
+      "sampling": 17.18612704204861,
+      "finite": true
+    }
+  ]
+}

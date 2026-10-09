@@ -1,22 +1,13 @@
-"""Batched MiniMax H3 video-VAE tile decode (opt-in ASFP8_MINIMAX_VAE_DECODE_BATCH).
+"""Optional MiniMax H3 VAE tile batching (ASFP8_MINIMAX_VAE_DECODE_BATCH).
 
-`tiled_decode` walks the spatial tile grid and calls the decoder once per tile:
-at 864x480 that is 15 sequential decoder invocations per temporal chunk with the
-reference 64-pixel overlap (8 with overlap=32), each on a 256x256 tile. Every
-tile in the grid is exactly the same size — `split_tiles` returns `[tile_size]*N`
-— so they can be stacked on the batch dimension and decoded together, which is
-the difference between fifteen small launches that leave the GPU idle and a few
-large ones that fill it.
+Current ComfyUI already batches tile rows. We only change the row batch size,
+retaining core's current overlap blending and streamed output. Older cores
+without the row API use the original whole-grid adapter below.
 
-This is NOT an approximation. The decoder is batch-independent (CausalConv3d,
-per-sample GroupNorm, and an attention that already carries its own batch
-dimension), so batching changes only how the work is scheduled. Tile order and
-the blending pass are untouched.
-
-Off by default: batching multiplies the decoder's peak activation memory by the
-batch size, and the useful value depends on the machine and the resolution.
-Set the variable to the number of tiles to decode at once (1 = original
-behaviour).
+Tile coordinates and blend arithmetic are preserved. Batch shapes may change
+backend arithmetic, so byte equality is validated on measured configurations,
+not assumed for every device and dtype. This flag remains off by default;
+larger batches increase decoder activation memory and need not be faster.
 """
 
 from __future__ import annotations
@@ -107,6 +98,16 @@ def batched_tiled_decode(self, z, batch: int):
     return canvas
 
 
+def batched_tile_row(self, z_row, x_idx, x_len, batch: int):
+    """Feed current core's blend loop without replacing its corner semantics."""
+    for start in range(0, len(x_idx), batch):
+        parts = [
+            z_row[..., pos // self.vae_ratio:(pos + length) // self.vae_ratio]
+            for pos, length in zip(x_idx[start:start + batch], x_len[start:start + batch])
+        ]
+        yield from self._decode_pixels(torch.cat(parts, dim=0)).chunk(len(parts), dim=0)
+
+
 def install():
     global _installed
     if _installed:
@@ -126,6 +127,19 @@ def install():
         return
 
     cls = minimax_vae.MiniMaxH3VideoVAE
+    if hasattr(cls, "_decode_tile_row"):
+        original_row = cls._decode_tile_row
+        if not getattr(original_row, "_asfp8_batched", False):
+            def row(self, z_row, x_idx, x_len):
+                yield from batched_tile_row(self, z_row, x_idx, x_len, batch)
+            row._asfp8_batched = True
+            row._asfp8_original = original_row
+            cls._decode_tile_row = row
+        _installed = True
+        print(f"{TAG} current core tile-row batching set to {batch}; "
+              "native overlap blending retained (experimental scheduling).")
+        return
+
     original = cls.tiled_decode
     if getattr(original, "_asfp8_batched", False):
         _installed = True

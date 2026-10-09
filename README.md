@@ -4,7 +4,7 @@
 
 ## Latest results — M5 Ultra (80 GPU cores)
 
-**Updated 2026-09-26 · 256 GB unified memory · macOS 27.0 · PyTorch 2.14.0**
+**README updated 2026-10-09 · measurements through October 8 · 256 GB unified memory · macOS 27.0 · PyTorch 2.14.0**
 
 <!-- Canonical current benchmark table: update the date, measurements and linked
      report together after validated runs. Keep earlier results below as history. -->
@@ -25,15 +25,218 @@
 | LTX 2.5, convolutional VAE / same clip and original tiling | 51.71 s | **32.34 s** | 37.5% |
 | Wan 2.2 I2V 14B×2, 512×512 / 81 frames / 20 steps / CFG 3.5 | 423.62 s | **302.65 s** | 28.6% |
 | Wan 2.2 I2V 14B×2, same clip / 4-step LoRAs / CFG 1 | 45.76 s | **32.36 s** | 29.3% |
+| SeedVR2 7B INT8, 2400×1600 → 7200×4800 / 1 step | 74.02 s‡ | **49.01 s** | 33.8% |
+| YuE2 3B INT8, controlled 8 s / 128 ABC tokens / 32 steps | 124.05 s§ | **5.60 s** | 95.5% |
 
 Warm end-to-end averages, including sampling, VAE decode and file export;
-model loading and unchanged text/reference encoding are cached. Both configurations use **PyTorch
+model loading and unchanged text/reference encoding are cached, except YuE2,
+which regenerates score/music tokens and conditioning on every run. Both configurations use **PyTorch
 2.14 attention** and matching workflows, prompts and seeds. **Stock** has this
 custom node absent; **optimized** enables its native kernels and exact fusions.
 The optional relaxed H3 preset is **off**. H3 sampling averages **6.58 s/step**.
 
+**YuE2 · full-song results:** the saved `audio_yue2_text2music.json` now
+produces the same **83.2-second song in 33.48 seconds** on this M5 Ultra.
+The latest paired warm test improves **47.95 → 33.48 s**, **30.2% less time**,
+against the preceding exact GPU implementation. These are complete workflow
+times, regenerating score/music tokens, conditioning, sampling, decode and FLAC.
+
+| YuE2 matched GPU workflow | Before | After | Less total time |
+|---|---:|---:|---:|
+| Full saved graph, October 7 first exact pass | 354.18 s | 48.46 s | 86.3% |
+| Same full graph, October 8 paired RoPE follow-up | 47.95 s | **33.48 s** | **30.2%** |
+| Mothersuperior AR + real-audio v4 NAR adapters, 20 s cap | 30.95 s | **21.18 s** | **31.6%** |
+
+The historical first pass and latest follow-up are separate experiments; the
+full-song rows compare GPU implementations, **not a measured stock CPU song**.
+Both accepted passes preserve the earlier GPU output bytes. Phase-local reuse
+of dequantized/cast weights removes repeated ConvRot/casts; vocabulary slicing
+keeps the permitted logits and full CPU sampling/RNG vector. Scoped acoustic
+query reuse removes repeated loads and an output-layout pass. Fused single-token
+Q/K RoPE preserves native FP32 intermediate rounding and reuses the frequency
+matrix across the 28 layers. Original matrix math, PyTorch autoregressive
+attention, CPU RNG and sampling remain. Score/music tokens, conditioning, latents,
+waveform and **saved FLAC bytes** match. The original **120 s maximum** and
+8192-token score allowance remain; this seed ends naturally at **83.2 s**.
+Peak measured MPS driver memory: **13.67 GiB**. Enabled by default on the validated
+M5 Ultra / PyTorch 2.14 build; `ASFP8_YUE2_ROPE=0` disables just the new route.
+[Latest paired benchmarks and screened candidates](benchmarks/m5-ultra-yue2-followup.md).
+The [October 7 first pass](benchmarks/m5-ultra-yue2.md) took the preceding GPU
+stack from **354.18 to 48.46 s**; those earlier measurements remain documented.
+For instrumental music, a [Mothersuperior two-LoRA workflow](docs/yue2-mothersuperior.md)
+is available with the AR planner in CLIP and the real-audio NAR adapter in MODEL.
+The native loaders work with our INT8 checkpoint; paired 20-second checks now
+improve **30.95 → 21.18 s**, with all adapter weights loaded and identical audio bytes.
+
+**Optional H3 attention update · October 8:** matched 20-step / 124-frame
+(5.17 s) tests now include a camera push-in with rigid background objects,
+at both 864×480 and 1344×768. These are comparisons with **our exact optimized
+stack**, not new vanilla baselines; cache, token reduction and relaxed VAE are off.
+
+| H3 attention mode | 864×480 E2E | 1344×768 E2E | Less time vs exact optimized |
+|---|---:|---:|---:|
+| Exact optimized reference | 143.20 s | 587.48 s | — |
+| Previous SOL INT8 Fast | 114.40 s | 378.92 s | 20.1% / 35.5% |
+| SOL INT8 Fast, new layout | **113.74 s** | **372.87 s** | 20.6% / 36.5% |
+| New SOL INT8 Hybrid Fast | **113.04 s** | **365.41 s** | 21.1% / 37.8% |
+| New Dense INT8 Protected | 137.86 s | 493.25 s | 3.7% / 16.0% |
+| New Dense INT8 Full Draft | 133.58 s | 443.89 s | 6.7% / 24.4% |
+
+Each new mode repeats at both sizes. The SOL layout refinement preserves the
+previous SOL's complete output bytes; an alternating same-server 480p test
+measured **114.78 → 113.67 s**, a small 1.11 s gain. SOL remains non-bit-exact
+relative to native attention. Hybrid adds about **13.5 s** over previous Fast
+at the larger size, with changed fine detail. Dense Protected retains the
+reference composition more closely in this study but is slower than Fast;
+**Dense Full Draft changed window placement and picture count** at the larger
+size. All new modes are optional, and defaults remain unchanged.
+Every attention preset received a temporal audit. No gross abrupt background
+replacement was reproduced in this scene; **Top-k Wide still retains its
+user-reported morphing warning**. These tests do not establish quality for every
+prompt, Turbo, RefMod or combined accelerator configuration.
+[Full timings, numerical errors, all-preset visual comparisons and rejected experiments](benchmarks/m5-ultra-h3-kitchen-attention.md).
+
+**Also included in this update:** [Prompt Studio](docs/prompt-studio.md) sends
+connected references with the brief, offers a single Generate on queue toggle,
+and caches discovered models for the canvas model picker. [H3 controls](docs/h3-acceleration.md)
+include the Simple recipe node, independent cache/attention/token controls,
+pack-owned MotionCache/Spectrum/Veda runtimes and configurable attention memory.
+[H3 LoRA](docs/h3-acceleration.md) combines ordinary and Turbo adapters in an
+ordered list with per-entry enable/weight controls. [SeedVR2's video safeguard](benchmarks/m5-ultra-seedvr2-video-memory.md)
+retains the saved 7B model and full context, completing the tested 5/10-second
+upscales without the prior accumulation of temporary memory. Workflows,
+benchmark evidence and bundled-source licenses ship alongside the runtime.
+
+**Optional H3 SOL/token update · October 7:** two new native Metal top-k
+presets reduce complete 20-step / 124-frame inference on this **M5 Ultra 80 GPU**:
+
+| H3 optional mode | 864×480 E2E | 1344×768 E2E | Less time vs exact optimized |
+|---|---:|---:|---:|
+| Exact optimized reference | 140.85 s | 569.58 s | — |
+| Previous SOL14 | 113.16 s | 375.32 s | 19.7% / 34.1% |
+| New Top-k Wide | **106.55 s** | **332.14 s** | 24.3% / 41.7% |
+| New All-step Draft | **93.79 s** | **247.46 s** | 33.4% / 56.6% |
+
+Wide/Draft each repeat twice at both sizes. **The sparse modes are non-bit-exact**;
+Wide changes geometry/detail and Draft changes composition more substantially.
+**Quality feedback · October 7:** Top-k Wide morphed the background in a user
+test where **SOL INT8 Fast** remained stable. Wide remains experimental; use
+Fast for that workflow. The sampled benchmark frames did not establish temporal
+stability across clips.
+Global/local blocks and the pooled tail remain. New token **Protected / Balanced**
+recipes add dense step protection; individually they measured
+**134.93 / 114.42 s** at 864×480 (single full runs,
+with repeated short checks). Existing defaults, tau SOL, Veda and Light/Fast
+remain available. These are optional comparisons against exact optimized,
+not new stock baselines; Turbo quality and arbitrary combinations are not qualified.
+[Settings, complete timings, numerical errors and generated comparisons](benchmarks/m5-ultra-h3-sol-topk.md).
+
+**H3 runtime ownership · October 5:** MotionCache, Spectrum and Veda now use
+locally maintained internal runtimes with direct APIs for our combined node.
+The existing presets and algorithms are retained; upstream node wrappers and
+unused media-analysis tools are removed from execution. Pinned sources remain
+parity references, with original attribution and licenses preserved.
+[Runtime details](docs/h3-acceleration.md#internal-runtime-ownership)
+· [Byte parity and matched timings](benchmarks/m5-ultra-h3-owned-runtime.md).
+
+**New optional Veda attention · October 5:** matched 864×480 / 124-frame /
+20-step H3 tests on this M5 Ultra average **144.72 s Exact → 122.42 s Veda
+protected (15.4% less)** or **108.46 s Veda fast (25.1% less)**. Both are
+repeated warm complete-clip measurements against the current exact optimized
+stack. Eight-step Turbo: **70.37 s Exact → 55.88 s Veda fast (20.6% less)**.
+**Veda fast + MotionCache: 84.37 s (41.7% less)**, two full repeats;
+cache reuse compounds the approximation.
+The native Metal route fuses tile conversion/statistics and avoids upstream
+MLX's expanded K/V copies. The fast mode changed color, geometry and motion
+substantially; protected retained this reference more closely. Existing
+defaults and exact/SOL/cache routes remain available. The two optional Veda
+starting points live in the existing H3 acceleration node and require the
+released predictor in `models/veda`. Short sequences stay dense by default.
+[Results, errors and generated comparisons](benchmarks/m5-ultra-h3-veda.md)
+· [Setup and controls](docs/h3-acceleration.md#veda-learned-sparse-attention-optional).
+The stock/optimized table above retains its previously published measurements; these
+are additional optional-mode comparisons, not a fresh stock baseline.
+
+**New H3 methods · September 29:** on the same 864×480 / 124-frame / 20-step
+workflow, today’s exact optimized reference averages **142.95 s**. Optional
+**Spectrum fast: 84.13 s (41.1% less time)**; **Spectrum protected: 97.31 s
+(31.9% less)**; **MotionCache: 103.53 s (27.6% less)**; calibrated **SPEED:
+110.66 s (22.6% less)**. Each is a repeated warm full-clip measurement. All
+are non-bit-exact. Fast Spectrum changes composition; protected Spectrum and
+MotionCache retain this reference more closely. Spectrum fast is only about
+4.2% faster than the earlier 87.83 s FirstBlockCache preset below, not another
+41% improvement on top of it. The existing H3 node now offers optional
+Spectrum/MotionCache implementations bundled in the node, with independent
+SOL and token-reduction switches; exact remains available.
+[Updated controls and bundling details](docs/h3-acceleration.md). [Results, visual comparisons, new-method survey and workflows](benchmarks/m5-ultra-h3-recent-methods.md).
+
+**Optional H3 acceleration update:** against a matched **144.80 s** warmed exact reference,
+14-step INT8 SOL averages **115.23 s**; SOL14 tau 0.5 plus limited FirstBlockCache
+averages **98.44 s (32.0% less time)**; FirstBlockCache 0.20 alone
+averages **87.83 s (39.3% less)**. The latter two are repeated full-clip
+measurements. The all-three combination measured **79.08 s once**, with substantially larger
+composition changes. All are **non-bit-exact, independently selectable** and preserve the
+exact option. Cache/token execution on current ComfyUI is fixed; the new step-based window
+protects exactly the first four and final two of 20 steps. [Results, controls and visual tradeoffs](benchmarks/m5-ultra-h3-sol-aggressive.md).
+The [previous conservative seven-step SOL results](benchmarks/m5-ultra-h3-sol-hybrid.md) remain available.
+
+**H3 Latent Upscale · Apple Silicon:** a new MPS node supports the learned
+2D/3D checkpoint formats and preserves nested H3 audio. The tested **3D FP16**
+checkpoint upscales **864×480 → 1728×960** latents in **0.43 s for one second**
+or **1.85 s for five seconds with full context**, excluding VAE decode.
+The port matches upstream FP16 output bytes under the same temporal settings.
+FP16 is recommended; the same checkpoint takes **0.44 / 1.69 s** in BF16 / FP32
+compute on the one-second test. [Setup, precision and memory controls](docs/h3-latent-upscaler.md).
+
+**15-second H3 update:** extending the exact query-cache limit reduces sampling
+from **41.66 to 36.85 s/step** (11.5%) at 864×480 / 362 frames. This is an
+alternating **two-step** comparison against the previous optimized stack,
+not a new 20-step total. Latents, video and audio are byte-identical.
+[Long-clip test and token-limit fix](benchmarks/m5-ultra-h3-long-qcache.md).
+
+**SeedVR2 video memory fix:** the saved **7B INT8**, 2× upscale to **832×1472**
+now completes **5 s / 120 frames in 138.41 s** and **10 s / 240 frames in
+278.60 s** warm, including video/audio export. Maximum sampled Metal memory
+was **36.61 / 47.53 GiB**. Previously, the five-second encode crossed our
+48 GiB safety cutoff before its first spatial tile finished. The new waits
+inside video tiles are enabled by default; **Split Latent remains off**.
+The short before/after test preserves output bytes, and both long clips repeat
+identically. These are memory-fix results, not new full-length stock baselines.
+[Video memory investigation and results](benchmarks/m5-ultra-seedvr2-video-memory.md).
+
+**Optional Apple Silicon Super Resolution:** new IMAGE and streamed VIDEO nodes
+run the MLX-DLSS VSR **2× / 8-bit SDR** model. A **2400×1600 → 4800×3200** image
+takes **2.22 s** for the complete warm node call, with **2.40 GiB** peak active
+MLX memory. The 416×736 → 832×1472 H3 video source takes **1.88 s for five seconds**
+and **3.11 s for ten seconds**, including preparation and HEVC/audio export,
+with **0.61 GiB** peak active MLX memory. This is a separate, frame-independent upscaler with different quality
+and scale from SeedVR2; it is not another row in the stock/optimized diffusion
+comparison. [Setup, limits and validation](docs/super-resolution.md).
+
+**Optional VSR → DLSS neural rendering:** the same nodes now support detail
+enhancement after upscaling, while keeping the final 2× dimensions. On this
+**M5 Ultra 80 GPU**, a **1024² → 2048²** image takes **0.71 s VSR-only**, **1.40 s
+with NR at internal scale 1**, or **3.07 s with NR at internal scale 2**. The
+five-second H3 source above takes **44.11 s** with temporal NR at internal scale 2,
+using **3.09 GiB** peak active MLX memory. These are complete warm node timings;
+NR is an optional appearance-changing stage, disabled in existing workflows.
+[Settings and example workflows](docs/super-resolution.md#optional-neural-rendering-vsr-first-detail-second)
+· [Measurements](benchmarks/data/m5-ultra-vsr-neural-rendering.json).
+
 † Klein's checkpoint omits its INT8 format metadata. Its stock baseline uses
 only the existing metadata repair needed to load it, with acceleration absent.
+
+‡ SeedVR2 stock retains only the tiled-VAE synchronization safeguard against
+temporary-memory accumulation. Its timing includes recomputing input encoding
+on every run. The new exact VAE cleanup saves only about 0.2 s over our
+previous optimized stack; the main gains were already implemented.
+
+§ YuE2 stock uses ComfyUI's default CPU FP32 encoder; optimized uses the existing
+MPS BF16 encoder plus the new exact patches. The controlled short screen truncates
+the score at 128 tokens and generates 8 s of music, rerunning all stages. It is
+not the full saved song or a quality example. Stock CPU and GPU arithmetic differ;
+the new patches are bit-exact against the preceding GPU stack. No full stock CPU
+song timing is claimed.
 
 The complete stock and optimized stacks are **not bit-exact to each other**;
 new exact fusions are validated against the otherwise unchanged optimized
@@ -45,6 +248,7 @@ the [LTX 2.5 video benchmark](benchmarks/m5-ultra-ltx25.md),
 the [further exact kernels and convolutional VAE comparison](benchmarks/m5-ultra-ltx25-followup.md),
 the [Wan 2.2 original and four-step LoRA results](benchmarks/m5-ultra-wan22.md),
 the [Ideogram 4 benchmark and exact attention changes](benchmarks/m5-ultra-ideogram4.md),
+the [SeedVR2 2.14 retest and memory checks](benchmarks/m5-ultra-seedvr2-torch214.md),
 and [startup settings](#pytorch-214-on-m5-ultra). This table tracks the latest
 validated results; earlier measurements remain below for reference.
 
@@ -129,7 +333,9 @@ intermediate rounding before multiplication.
 
 On the validated M5 Ultra / 2.14.0 build, dense BF16 D=128 attention also
 keeps query tiles in registers across the key loop. This retains PyTorch's
-arithmetic and reduction order. `ASFP8_MPP_QCACHE=0` restores the unmodified
+arithmetic and reduction order. H3's BF16 56-head geometry is validated through
+**65,536 tokens**, covering the 44,600-token 15-second reference clip; other
+families retain their 32,768-token limit. `ASFP8_MPP_QCACHE=0` restores the unmodified
 PyTorch kernel. The specialization checks both the Torch build and installed
 header hash, and falls back on unsupported inputs or initialization failure.
 
@@ -606,8 +812,7 @@ For MiniMax H3, that one switch also activates the eligible native subpaths
 behind the INT8 and DiT extensions: direct QKV emission, Q/K RMSNorm + RoPE,
 the FC1/SwiGLU/FC2 bridge, cross-block glue, allocation-lifetime releases, and
 the guarded final-layer graph rewrite. There is no second H3 master switch.
-An adapter is never selected automatically: apply it with `H3 LoRA (Apple
-Silicon, Exact Runtime)` or `H3 Turbo LoRA (Apple Silicon)` in `fast_runtime`
+An adapter is never selected automatically: apply it with `H3 LoRA (Apple Silicon)` in `fast_runtime`
 mode, after which the exact LoRA-aware QKV/MLP routes engage per eligible
 layer. Cache, token reduction, sparse attention, reduced VAE overlap, and VAE
 tile batching remain explicit workflow/experiment choices because they either
@@ -924,13 +1129,20 @@ mirrors eager rounding op-for-op (exact-or-1-ulp) and falls back per call:
   the INT_MAX error as retryable. Numerically free — the query rows are merely
   divided into more calls and each still sees the full key length.
 - **SeedVR2 VAE tile scheduling (#36, `ASFP8_SEEDVR2_VAE_SYNC`)**: waits for
-  MPS completion between spatial encoder/decoder tiles. On the tested M5 Ultra
+  MPS completion between spatial encoder/decoder tiles and between residual
+  blocks inside video tiles. On the tested M5 Ultra
   setup, the original tile loop grows Metal temporary allocations even while
   live tensor memory stays flat; the same growth occurs without this custom
   node. Waiting lets buffers be reused across tiles. This changes scheduling
   only, preserving precision, arithmetic and tile overlap. It is enabled by
   default on MPS, independent of native/relaxed kernel flags; set
   `ASFP8_SEEDVR2_VAE_SYNC=0` before startup to restore the original scheduling.
+  Video tiles contain many internal temporal slices, so spatial-only waits
+  are insufficient: the saved five-second video crossed a protected 48 GiB
+  cutoff during encoding with only 3.36 GiB of live tensors. The new video
+  waits preserve causal caches and output bytes; **Split Latent can stay off**.
+  `ASFP8_SEEDVR2_VAE_VIDEO_SYNC=0` restores spatial-only waits for diagnostics.
+  See the [video memory investigation](benchmarks/m5-ultra-seedvr2-video-memory.md).
   Non-tiled SeedVR2 calls, other VAEs, CPU and CUDA retain their original calls.
   The **2400×1600 → 7200×4800** INT8 7B image workflow completed in **80.15 s
   first run / 73.41 s warm**, including PNG writing, with **40.26 GiB** maximum
@@ -941,6 +1153,7 @@ mirrors eager rounding op-for-op (exact-or-1-ulp) and falls back per call:
   The [SeedVR2 acceleration audit](benchmarks/m5-ultra-seedvr2-acceleration.md)
   records the original INT8/convolution coverage. The subsequent exact stack
   below supersedes its preliminary optimization status.
+- **SeedVR2 PyTorch 2.14 retest:** **74.02 s stock + memory safeguard → 49.01 s optimized** at 2400×1600 → 7200×4800. Unit-scale VAE residuals avoid a redundant division; output bytes match the preceding optimized stack. See the [current retest](benchmarks/m5-ultra-seedvr2-torch214.md). The following measurements are historical PyTorch 2.13 results.
 - **SeedVR2 exact kernels and bounded attention (#37)**: with
   `ASFP8_NATIVE=1`, cache convolution weight layouts only during each tiled VAE
   call, fuse FP16 SiLU with causal padding/channel packing, fuse BF16
@@ -1108,71 +1321,177 @@ Three tiers, stated per patch:
 Patch #30 (memory accounting) changes *scheduling*, not numerics — outputs are
 identical, only fewer reloads.
 
-Everything ships with parity tests against the eager path. The latest full
-suite in the dedicated `ComfyUI-torch213-latest` environment reports **397
-passed, 19 skipped** on PyTorch 2.13.0. The Metal harnesses include a dirty-pool
+**October 9 publication check:** the current CPU regression suite passes
+**934 tests**, with **441 GPU tests deliberately skipped**, and all **23 frontend
+tests pass**. This check leaves the user's GPU/inference session untouched;
+complete GPU parity, memory and workflow timing evidence is retained in the
+individual benchmark reports. No new performance measurements were made for
+this documentation/publishing pass.
+
+Everything ships with parity tests against its stated reference path. The
+historical full suite in the dedicated `ComfyUI-torch213-latest` environment
+reported **397 passed, 19 skipped** on PyTorch 2.13.0. The Metal harnesses include a dirty-pool
 test that poisons the MPS allocator with NaN pages before checking ragged
 attention shapes, because parity on fresh, zeroed allocations structurally
 cannot catch out-of-bounds reads.
+
+## Prompt Studio
+
+**Apple Silicon Prompt Studio** generates editable prompts for image, video and
+audio workflows through **oMLX, LM Studio, Ollama or an OpenAI-compatible server**.
+It outputs `prompt` and `negative_prompt` as `STRING` values. The compact node
+opens a workspace with creative controls, editable target-model profiles,
+image/video-frame/audio references, a searchable prompt library with favorites,
+and JSON backup/restore. Classic nodes and Nodes 2.0 are supported.
+
+Start with **Open Studio → Connections**, save your endpoint, discover models,
+then select your LLM. The canvas node now has a **model picker**, using the
+saved per-connection discovery list, and one **Generate on queue** toggle.
+With it off, workflows reuse the editable saved text; with it on, each execution
+requests a fresh prompt. The Generate button sends the brief together with
+connected image/video/audio inputs automatically, running only the required
+upstream nodes. References require a compatible LLM/server. Endpoint setup stays
+in Open Studio; you can switch models directly on the node.
+API keys stay in a separate private server file, outside workflows and backups.
+
+[Setup and reference support](docs/prompt-studio.md) ·
+[Example workflow](workflows/apple_silicon_prompt_studio.json)
 
 ## MiniMax H3 workflow nodes and approximate modes
 
 These are separate from the native fast paths above. They are **off until a
 workflow node is connected**, change the result, and should be A/B tested with
-the same seed. New workflows should use the single `H3 Apple Silicon
-Acceleration` `MODEL → MODEL` node. The former H3Cache, Structural
-Acceleration, and Sparse Attention nodes remain registered as deprecated
-loaders so saved workflows do not lose nodes.
+the same seed. For a compact interface, use `H3 Acceleration · Simple`;
+`H3 Apple Silicon Acceleration` retains all custom settings. Both are
+`MODEL → MODEL` nodes, sharing the same acceleration runtime.
+
+| Node | Purpose |
+|---|---|
+| Attention Backend (Apple Silicon) | Select the model's attention backend. |
+| H3 Acceleration · Simple | Three independent recipe selectors: temporal cache, attention acceleration and token reduction, including optional SOL, dense INT8 and hybrid attention recipes. |
+| H3 Apple Silicon Acceleration | Advanced cache, token reduction and sparse attention settings. |
+| H3 LoRA (Apple Silicon) | Ordered LoRA list, including Turbo, with per-entry enable, weight and validation. |
+
+Two optional [Super Resolution nodes](docs/super-resolution.md) additionally handle
+IMAGE and VIDEO upscaling. They are separate from these model controls.
+
+The standalone Cache, Structural and Sparse nodes, the nonfunctional preset
+wrapper, and the separate Turbo loader have been removed. Opening a saved
+visual workflow automatically migrates supported settings; disabled groups
+stay disabled. Old single-LoRA entries become a one-entry list, and Turbo
+entries retain strict validation. Failed research modes and linked legacy
+widget inputs require manual replacement and produce a warning rather than
+silently changing the calculation. API JSON prompts using retired node IDs
+must be updated to the nodes above. Native startup patches, relaxed-mode flags
+and the Free RAM button are unchanged.
 
 The implementation boundary matters when combining them:
 
 | Mechanism | Implemented as | FirstBlockCache | Spectrum | H3 sparse attention |
 |---|---|---|---|---|
 | Exact H3 QKV/block/lifetime fusions | startup backend + Metal kernels | yes; cross-block-only fusion disables itself | yes; same boundary rule | yes |
-| H3 Turbo LoRA | workflow `MODEL → MODEL` node | mechanically yes; few hits remain at 4–8 steps | mechanically yes, not calibrated for Turbo dynamics | mechanically yes; errors compound |
-| H3 token reduction | unified workflow `MODEL → MODEL` node | yes; the unified node fixes the internal order | yes **only when the unified node is applied after Spectrum** | yes; reduced-sequence metadata is synchronized |
+| H3 LoRA with a Turbo adapter | workflow `MODEL → MODEL` node | mechanically yes; few hits remain at 4–8 steps | mechanically yes, not calibrated for Turbo dynamics | mechanically yes; errors compound |
+| H3 token reduction | unified workflow `MODEL → MODEL` node | yes; the unified node fixes the internal order | yes; the unified node applies Spectrum before token reduction | yes; reduced-sequence metadata is synchronized |
 | FirstBlockCache | unified workflow `MODEL → MODEL` node | — | choose one block predictor, do not stack | yes |
 
 “Mechanically yes” means the hooks do not erase each other; it is not a quality
-claim. The unified defaults reproduce the supplied three-node chain. For a
-quality diagnosis, disable groups and add them back one at a time. The exact
+claim. Newly placed unified nodes use MotionCache alone, the closest content
+preservation in our recent 20-step tests. For a quality diagnosis, select Exact
+and add mechanisms back one at a time. The exact
 backend remains useful under every node, although a block-replacement node
 necessarily removes the opportunity for the exact cross-block AdaLN carry at
 that boundary.
 
-- **H3 Apple Silicon Acceleration (canonical node).** The controls are grouped
-  in execution order—cache, token reduction, sparse attention—and settings for
-  a disabled group collapse in the ComfyUI frontend. Adding the node enables
-  all three approximate groups by default. The values reproduce the supplied
-  experimental workflow; they are starting points for matched A/B testing,
-  **not a quality-calibrated recommendation**:
+- **H3 Acceleration · Simple.** A small native-widget node for Nodes 2.0 and
+  the classic canvas. Choose **Temporal cache**, **Attention acceleration**, and
+  **Token reduction** independently. The existing cache, SOL, Veda and token
+  recipes remain, alongside Dense INT8 Protected / Full Draft and SOL Hybrid Fast. Defaults are
+  **MotionCache · balanced**, sparse **Off**, tokens **Off**. **Detailed logs** defaults off; each active mechanism prints
+  a compact final work/speedup summary. Set all three selectors to Off for pass-through.
+  Connect one of the Simple/advanced nodes between the H3 model/LoRA loader
+  and the guider; use the advanced node for predictor selection, memory tuning,
+  or custom numerical settings. [Recipes and usage](docs/h3-acceleration.md#simple-node)
+  · [Node template](workflows/h3_acceleration_simple.json)
+  · [Token compatibility and benchmark checks](benchmarks/m5-ultra-h3-presets.md).
+  On the authored five-second 864×480, 20-step check, complete execution was
+  **141.7 s** with tokens off, **123.8 s** with Light, and **94.7 s** with Fast.
+  The token presets change composition/identity and remain experimental and off
+  by default; these figures compare against the exact optimized stack, using
+  a different prompt from the primary stock/optimized table above.
 
-  | Group | Default | Initial values |
-  |---|---|---|
-  | Cache | `first_block_cache` | threshold `0.20`, window `0.15–0.95`, maximum `2` consecutive skips, audio veto weight `1.0` |
-  | Token reduction | enabled | update scale `1.0`, first `10` evaluations restore at block `40`, later evaluations restore at block `30` |
-  | Sparse attention | enabled | `corrected`, tau `1.0`, window `0.20–0.85`, first `2` blocks dense, minimum sequence `0` |
+- **H3 Apple Silicon Acceleration (advanced node).** Newly placed nodes show
+  a compact panel compatible with **Nodes 2.0** and the classic canvas.
+  **Starting point** applies a recipe. **Temporal cache**, **Attention acceleration**,
+  and **Token reduction** have separate cards and collapsible Settings, without
+  blank hidden rows. Saved workflows retain their numerical settings; manually
+  tuned or combined values display **Custom combination**.
 
-  Cache can instead select `first_block_cache_per_step`, or the non-skipping
-  `oracle` and `block_oracle` diagnostics. Failed full-model forecasting, suffix caching,
-  block Taylor, and sparse hard-drop are intentionally absent from the canonical
-  menu. Sparse block size `64` and temporal taps `0` are fixed properties of the
-  route-verified `diag64` implementation, not decorative controls. Layer thinning is also
-  absent: real H3 renders showed broken audio whenever layers were omitted.
+  INT8 SOL's [temporary-memory ceiling](docs/h3-acceleration.md#temporary-memory)
+  is configurable under **Attention acceleration → Settings → Temporary memory (GiB)**.
+  `0` means Auto (up to **32 GiB on a 256 GiB Mac**, subject to available memory);
+  positive values set a manual ceiling. This replaces the hardcoded 4 GiB limit.
+  Budget fallbacks report the required memory and no longer disable SOL for the
+  rest of the sampling run.
 
-- **H3 Turbo LoRA.** `H3 Turbo LoRA (Apple Silicon)` is this package's strict
-  loader for the released 208-target ComfyUI MiniMax H3 Turbo adapters (50 × 4
-  DiT targets plus 2 × 4 token-refiner targets). It accepts the standard
-  `diffusion_model.` key prefix, validates every A/B pair and target shape, and
-  works with both the native and pruned/curve H3 bases because these adapters do
-  not target the 51 collapsed AdaLN projections. A hypothetical full-width
-  AdaLN adapter remains native-base-only. Use the current ComfyUI H3 workflow,
-  stock Euler sampler, `simple`
-  scheduler, strength `1.0`, and 4–8 steps. Four steps is the maximum-speed
-  setting; 6–8 is the safer quality range for fast motion. Against a 20-step
-  base workflow those counts remove 80%, 70%, or 60% of denoiser evaluations,
-  respectively, before LoRA overhead; an MPS end-to-end number has not yet been
-  measured here.
+  **MotionCache · recommended** is the new-node default: threshold `0.15`,
+  four warmup evaluations, window `0.15–0.95`, maximum two consecutive skips,
+  motion strength `1`, subsample factor `8`. Token reduction and sparse
+  attention are **off**. This was the closest content preservation among our
+  recent tests, not an exact-output guarantee. MotionCache and Spectrum are
+  **included**; neither requires another installation or node in the graph.
+  Select **Exact · no approximation** to disable this node's approximations
+  while keeping the exact startup kernels. Other nodes/environment settings
+  still apply.
+
+  Other one-click recipes are **Spectrum · protected**, **Spectrum · fast
+  draft**, **FirstBlockCache · 0.20**, **SOL attention · 14 steps**, and
+  **SOL + FirstBlockCache**. Each writes the measured recipe, including the
+  SOL INT8 backend, protected layers, step-fraction schedule and token guard;
+  the hybrid uses its own lower cache threshold and one-skip limit. These are
+  20-step, non-Turbo measurements. See [controls and bundled-source licenses](docs/h3-acceleration.md)
+  and [timing/quality comparisons](benchmarks/m5-ultra-h3-recent-methods.md).
+
+  Choose **one cache method**, then independently enable SOL and/or token
+  reduction, including with MotionCache or Spectrum. These cache predictors
+  are alternatives to each other. Token reduction remains experimental;
+  combinations need their own quality check. Non-skipping `oracle`/`block_oracle`
+  diagnostics and the per-step cache policy remain available. Sparse block size
+  `64` and temporal taps `0` remain fixed; layer thinning stays unavailable because
+  it damaged H3 audio. [UI and combination validation](benchmarks/m5-ultra-h3-node-v2.md).
+
+  Bundled Spectrum is GPL-3.0-or-later; the combined distribution uses that
+  license, preserving existing MIT notices. [Attribution and licenses](THIRD_PARTY_NOTICES.md).
+
+- **Optional dense and hybrid attention.** Dense INT8 Protected keeps the first
+  four and final two of 20 steps plus layers 0, 1, 33, 34, 35 exact. Full Draft
+  quantizes video-query attention in every layer/step while retaining all key
+  tokens. Packed prefix queries stay exact in both, but later video changes can
+  affect audio too. Hybrid retains the protected step window, uses SOL Fast in
+  ordinary layers and dense INT8 in protected layers inside the active window.
+  These are independently selectable starting points, with existing memory
+  safeguards and native fallback. Full Draft can change scene composition;
+  Hybrid's additional benefit is modest. [Complete timings and temporal audit](benchmarks/m5-ultra-h3-kitchen-attention.md).
+
+- **H3 LoRA (including Turbo).** Click **Add LoRA** for each adapter. Every
+  entry has an enable switch, file selector, signed weight, and `standard` or
+  `turbo` validation. Remove entries individually; an empty or all-disabled list
+  passes the model through. Disabled and zero-weight entries do not load their
+  files. Enabled adapters are applied in list order, including when their
+  targets overlap. Use one list instead of chaining runtime LoRA nodes.
+
+  `standard` accepts any nonempty, shape-compatible subset of H3 QKV,
+  attention-output, FC1, FC2 and AdaLN targets, encoded as linear
+  `lora_A`/`lora_B` pairs with optional alpha. `turbo` additionally requires the
+  complete released 208-target Turbo layout (50 × 4 DiT targets plus 2 × 4
+  token-refiner targets). Both accept the `diffusion_model.` prefix. The
+  released adapters work on native and pruned/curve bases; full-width AdaLN
+  Turbo adapters require the native base. DoRA/LoHa/LoKr/mid/reshape formats
+  are rejected clearly by this loader.
+
+  For Turbo, choose its file and `turbo` validation. The node changes neither
+  sampler nor steps: keep the adapter's intended settings (our Turbo workflow
+  uses Euler/simple, weight 1.0 and 4–8 steps). Turbo and style adapters can
+  share the list; combining them still requires visual assessment.
 
   The three modes make the quantized-base trade explicit:
 
@@ -1193,29 +1512,36 @@ that boundary.
   Turbo alone before adding a cache:
   cache setup and forced refreshes consume a much larger fraction of the run.
 
-  `H3 LoRA (Apple Silicon, Exact Runtime)` is the checkpoint-agnostic companion
-  node. It accepts any nonempty subset of H3 QKV, attention-output, FC1, FC2,
-  and shape-compatible AdaLN targets encoded as standard `lora_A`/`lora_B`
-  linear pairs, with arbitrary rank, alpha, and strength. It is not specialized
-  to a particular LoRA file. One runtime LoRA may own a target at a time;
-  stacked runtime adapters and DoRA/LoHa/LoKr/mid/reshape formats should use
-  ComfyUI's ordinary loader, which makes these specialized routes decline and
-  preserves the normal correct path, or use merged mode where appropriate.
+  Single-adapter behavior retains the existing fast kernels. Multiple adapters
+  share one reversible ModelPatcher hook per target and add their deltas in
+  order, without concatenating ranks or pre-scaling weights. INT8 base GEMMs,
+  FC2 activation handling and attention-output acceleration remain available.
+  On overlapping targets, stacks use QKV scatter plus the existing normalization
+  pass and decline the tiled MLP bridge: screening found BF16 rounding changes
+  from tiled LoRA GEMMs. This avoids promising an exact fusion where it failed
+  comparison. More runtime adapters cost compute and memory; this consolidation
+  is not a new speedup or a claim of bit equality with merged-weight LoRAs.
 
-- **Rejected cache experiments (deprecated research node).** The earlier
+  API input example (`loras` is a JSON string; `mode` defaults to `fast_runtime`):
+
+  ```json
+  [{"enabled":true,"lora_name":"turbo.safetensors","strength":1.0,"validation":"turbo"},
+   {"enabled":false,"lora_name":"style.safetensors","strength":0.6,"validation":"standard"}]
+  ```
+
+- **Rejected cache experiments (internal research only).** The earlier
   full-model cache learned separate video and audio input-to-output change rates
   from exact evaluations. On a full-model hit it reused H3's previous video
   velocity and analytically corrected the audio velocity for H3's distinct
   shifted sigma schedule; either modality could veto a visually stable hit. A
   learned scalar secant predictor and the earlier residual/output-hold
-  predictors remain selectable for controlled comparison. Sampler-facing
-  denoised holding and first-order denoised extrapolation are also available as
-  research controls. `cached_suffix_blocks` can instead recompute the model
+  predictors remain in the internal research implementation. Sampler-facing
+  denoised holding and first-order denoised extrapolation are also internal
+  research functions. `cached_suffix_blocks` can instead recompute the model
   prefix exactly and reuse only a short transformer tail.
   The first/last sampling regions were protected, consecutive hits were bounded,
-  and state was isolated to one sampling run. The deprecated standalone node
-  retains these failed forecasting and suffix modes only for old workflow
-  loading; they are not offered by the canonical node.
+  and state was isolated to one sampling run. The standalone research node has been removed; these failed forecasting
+  and suffix modes are not offered by the canonical node.
 
   No nonzero full-model forecasting preset is recommended. In the matched
   1-second/20-step case, one full-model residual-carry hit reached 0.938 video
@@ -1252,11 +1578,17 @@ that boundary.
   calibration matrix.
 - **H3 token reduction.** The Structural Acceleration section of the unified
   node exposes the implemented [h3.c](https://github.com/antirez/h3.c)-derived
-  target-video token reduction:
+  target-video token reduction. The Simple node adds **Light** and **Fast**
+  recipes; the old 40/30-block policy is Fast. Masked video now retains
+  per-token modulation, and differing mask partners use unreduced tokens with
+  a logged reason. SOL and Veda packed metadata is reduced/restored together,
+  including on interruption. See the [validation report](benchmarks/m5-ultra-h3-presets.md).
 
   - `token_reduction` runs blocks 0–3 at full sequence length, horizontally
     pairs only the target-video tokens, and leaves text, conditioning,
-    references, and audio exact. During the first ten evaluations it restores
+    reference, and audio token counts unchanged. Their outputs can still change
+    through interaction with the reduced video stream. During the first ten
+    evaluations it restores
     the full sequence before block 40; later it restores before block 30. Each
     restored token is its original full-resolution value plus its pair's learned
     update, scaled by `reduction_scale`.
@@ -1276,9 +1608,9 @@ that boundary.
   legacy thinning-only configuration fails with an explicit error instead of
   silently producing bad audio.
 
-  Apply Spectrum first and the unified node second so the coordinator can
-  compose the existing Spectrum block wrappers. FirstBlockCache and token
-  reduction are ordered correctly inside the unified node. Sparse attention is
+  Select Spectrum inside the unified node to apply forecasting before token
+  reduction automatically. MotionCache and FirstBlockCache use the same
+  controlled ordering. Sparse attention is
   kept logically aligned, but stacking all three approximations compounds
   spatial and temporal error and must be A/B tested. With Turbo's 4–8 steps,
   test the LoRA alone before adding cache or structural approximation.
@@ -1433,12 +1765,6 @@ that boundary.
   materializes a dense token mask first and tries to allocate 112 GiB at
   S=16384/H=56. Do not extrapolate PyTorch's headline 12.3x sparse-SDPA figure
   to this workload; it came from a 0.8%-density sliding-window case.
-- **H3 Acceleration (preset node).** `H3 Acceleration (Apple Silicon)` wraps
-  the above behind `exact` / `balanced` / `aggressive`. `exact` is the default
-  and adds no approximation. `balanced` and `aggressive` currently **refuse to
-  run**: their constants are placeholders until the calibration matrix fills
-  them in, and shipping unvalidated numbers behind a friendly name is worse
-  than an error message. Use the low-level nodes until then.
 - **Spectrum hidden-feature forecasting (external reference).** The native H3
   [Spectrum adaptation](https://github.com/xmarre/ComfyUI-Spectrum-MiniMax-H3)
   was tested independently rather than vendored. Its forced-actual wrapper
@@ -1487,21 +1813,16 @@ that boundary.
   above 320 are rejected because the observed attention/memory cost and tile
   artifacts made them unsuitable as a supported path.
 
-`dev/bench_workflows.py` can inject EasyCache or H3Cache and pin duration, step
-count, and megapixels without modifying the source workflow. For H3Cache,
-`--h3cache 0 0.20 0.85 1` is the exact-compute calibration configuration;
-`--h3cache-audio-weight 1.0` controls the audio reuse veto.
-`--h3cache-predictor velocity_hold` selects the H3-aware full-model predictor,
-`--h3cache-predictor denoised_hold` or `denoised_linear` selects the
-sampler-facing research controls, `--h3cache-predictor first_block_cache`
-selects the cumulative block-0 detector, and `--h3cache-predictor
-first_block_cache_per_step` selects the Discord-style per-step detector.
-`--h3cache-suffix-blocks 5` changes compatible full-model modes to a five-block
-tail; it must remain `0` for either first-block mode.
-`--h3-sparse corrected 1.0 0.20 2 8192` injects the sparse attention node and
-composes with either cache flag (it is applied after the cache node, matching
-the preset order); `--h3-preset exact|balanced|aggressive` injects the combined
-node instead. Sparse runs are refused unless the server reports torch 2.13+.
+`dev/bench_workflows.py` can inject EasyCache or the unified H3 Acceleration
+node and pin duration, steps and megapixels without changing the source
+workflow. `--h3cache 0 0.20 0.85 1` runs cache calibration without skipping;
+`--h3cache-audio-weight 1.0` sets the audio reuse veto. The predictor defaults
+to `first_block_cache`; `--h3cache-predictor first_block_cache_per_step` selects
+the per-step detector, while `oracle` and `block_oracle` provide diagnostics.
+`--h3-sparse corrected 1.0 0.20 2 8192` enables sparse attention after the cache.
+Only the requested groups are enabled by benchmark injection. Retired
+forecasting/suffix modes and uncalibrated preset flags have been removed.
+Sparse runs require a server reporting torch 2.13+.
 Its JSONL record includes prompt IDs and generated artifact paths so matched
 runs can be passed to `dev/compare_av.py`. The comparison reports decoded
 bit-exactness, per-frame Gaussian-window SSIM, spatial and temporal-delta PSNR,
@@ -1519,11 +1840,15 @@ alone—by accident.
 | `ASFP8_INT8_EXT` | off | int8 W8A8 kernel + fused epilogue (M5+) |
 | `ASFP8_ATTN_ROUTER` | off | per-call attention routing (flash41 / bmm / sub-quad) |
 | `ASFP8_ATTN_BACKEND` | unset | `pytorch` selects the tested PyTorch 2.14 MPS attention route; unset retains the existing router |
-| `ASFP8_MPP_QCACHE` | on | exact query-load hoisting under the PyTorch attention route; guarded to validated M5 Ultra / 2.14.0 build, headers and shapes; `0` restores the unmodified PyTorch kernel |
+| `ASFP8_MPP_QCACHE` | on | exact query-load hoisting under the PyTorch attention route; guarded to validated M5 Ultra / 2.14.0 build, headers and shapes; H3 supports up to 65,536 tokens, other families up to 32,768; `0` restores the unmodified PyTorch kernel |
 | `ASFP8_ATTN_NA` | 1 | production independent-simdgroup flash41 kernel; `0` restores the older cooperative kernel |
 | `ASFP8_DIT_EXT` | off | DiT block-fusion kernels (all families) |
 | `ASFP8_INT8_EMBEDDING` | on | preserve already-dequantized INT8 embedding weights across CPU/MPS casts; compatibility repair independent of native kernels |
 | `ASFP8_QWEN21_FAST` | on (under DIT_EXT) | exact Qwen-Image 2.1 fusions on the validated M5 Ultra / PyTorch 2.14.0 build; `0` retains the encoder fix and generic native paths |
+| `ASFP8_SOL_LAYOUT` | `head_major` | optional SOL physical layout; `legacy` selects the prior wrapper/shaders for diagnosis. New layout preserves prior SOL output bytes, not exact-native attention bytes; restart after changing it |
+| `ASFP8_YUE2_FAST` | on | exact phase-local cast-weight reuse, guarded vocabulary projection and single-token BF16 RoPE for the MPS YuE2 encoder; scoped acoustic attention under the existing PyTorch query-cache route; `0` restores the preceding YuE2 paths |
+| `ASFP8_YUE2_WEIGHT_CACHE` / `ASFP8_YUE2_VOCAB_HEAD` / `ASFP8_YUE2_ATTN` / `ASFP8_YUE2_ROPE` | on | independent YuE2 switches; exact against the existing GPU stack |
+| `ASFP8_YUE2_CACHE_GIB` / `ASFP8_YUE2_VERBOSE` | 8 / off | temporary weight-cache cap (also limited by device memory/headroom) / optional phase counters; cache size 0 disables storage |
 | `ASFP8_QWEN21_ROPE` / `ASFP8_QWEN21_MODULATE` / `ASFP8_QWEN21_RESIDUAL` | on (under QWEN21_FAST) | independent switches for Q/K RMSNorm + RoPE, modulation, and gated residual fusions |
 | `ASFP8_SDXL_GEGLU` | on (under DIT_EXT) | exact FP16 GELU + multiplication fusion for SDXL on PyTorch 2.14 MPS; `0` restores eager GEGLU |
 | `ASFP8_CONV3D` | off | conv3d → sliced conv2d + Wan VAE fast path |
@@ -1562,7 +1887,8 @@ alone—by accident.
 | `ASFP8_WAN_VAE_CHUNK` | 16 | Wan VAE frames per causal pass (even, 2–32; lower caps decode memory peak) |
 | `ASFP8_FREE_MEM` | on | MPS free-memory accounting fix (patch #30) |
 | `ASFP8_VAE_SLICE_FIX` | on | VAE slice_attention INT_MAX cap (patch #31) |
-| `ASFP8_SEEDVR2_VAE_SYNC` | on | wait between SeedVR2 VAE spatial tiles on MPS to bound temporary allocations; scheduling-only, independent of native/relaxed flags |
+| `ASFP8_SEEDVR2_VAE_SYNC` | on | wait between SeedVR2 VAE spatial tiles and video residual blocks on MPS to bound temporary allocations; scheduling-only, independent of native/relaxed flags |
+| `ASFP8_SEEDVR2_VAE_VIDEO_SYNC` | on | include residual-block waits inside SeedVR2 video tiles; setting 0 restores the previous spatial-only schedule and its video memory growth |
 | `ASFP8_SEEDVR2_LOADER` | on | supply official missing conditioning for raw original SeedVR2 7B checkpoints on macOS; existing conditioning and weights are preserved |
 | `ASFP8_SEEDVR2_FAST` | on | SeedVR2 exact performance additions; native sampling/SiLU kernels require `ASFP8_DIT_EXT=1` (implied by `ASFP8_NATIVE=1`); `0` at startup retains the memory/error safeguards |
 | `ASFP8_SEEDVR2_ATTN_FIX` | on | pack MPS attention windows into bounded buffers to avoid oversized-backing-storage `INT_MAX` failures; independent of the native kernel flag |
@@ -1723,4 +2049,7 @@ A few load-bearing lessons encoded in this repo, for future work:
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+The combined distribution, including bundled Spectrum, uses
+[GPL-3.0-or-later](LICENSE-BUNDLED). Original project code retains its
+[MIT notices](LICENSE). See [third-party attribution](THIRD_PARTY_NOTICES.md)
+for the licenses and provenance of bundled components.

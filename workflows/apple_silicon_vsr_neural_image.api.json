@@ -1,0 +1,35 @@
+{
+  "1": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "applesilicon-nr-demo-1024.png"
+    }
+  },
+  "2": {
+    "class_type": "AppleSiliconSuperResolution",
+    "inputs": {
+      "image": [
+        "1",
+        0
+      ],
+      "model_name": "vsr.safetensors",
+      "memory_limit_gb": 32.0,
+      "neural_model": "NeuralRendering.dlssmodel",
+      "nr_profile": "natural",
+      "nr_intensity": 1.0,
+      "nr_detail": 1.0,
+      "nr_colour": 1.0,
+      "nr_processing_scale": 2
+    }
+  },
+  "3": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "2",
+        0
+      ],
+      "filename_prefix": "AppleSilicon_VSR_NR"
+    }
+  }
+}

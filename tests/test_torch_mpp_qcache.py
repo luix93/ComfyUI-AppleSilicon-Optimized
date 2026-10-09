@@ -80,3 +80,32 @@ def test_qwen_edit_layout_and_optouts(monkeypatch, keys):
             monkeypatch.setenv(flag, '0')
             assert patch.maybe_attention(q,k,v,output_bshd=True) is None
             monkeypatch.setenv(flag, '1')
+
+
+@pytest.mark.skipif(not _available(), reason='requires validated M5 Ultra / PyTorch 2.14')
+@pytest.mark.parametrize('seq', [32769, 44600, 65536])
+def test_h3_long_interleaved_attention_bytes(monkeypatch, seq):
+    monkeypatch.setenv('ASFP8_ATTN_BACKEND', 'pytorch')
+    monkeypatch.setenv('ASFP8_MPP_QCACHE', '1')
+    with torch.inference_mode():
+        torch.manual_seed(seq)
+        storage = torch.randn(1, seq + 1, 3, 56, 128,
+                              device='mps', dtype=torch.bfloat16)
+        q, k, v = [storage[:, 1:, i].transpose(1, 2) for i in range(3)]
+        expected = F.scaled_dot_product_attention(q, k, v)
+        actual = patch.maybe_attention(q, k, v)
+        assert actual is not None and not patch._dead
+        assert torch.equal(actual.cpu().contiguous().view(torch.uint8),
+                           expected.cpu().contiguous().view(torch.uint8))
+
+
+@pytest.mark.skipif(not _available(), reason='requires validated M5 Ultra / PyTorch 2.14')
+def test_extended_limit_is_h3_only(monkeypatch):
+    monkeypatch.setenv('ASFP8_ATTN_BACKEND', 'pytorch')
+    monkeypatch.setenv('ASFP8_MPP_QCACHE', '1')
+    with torch.inference_mode():
+        small = torch.zeros(1, 1, 1, 128, device='mps', dtype=torch.bfloat16)
+        for heads, seq, expected in [(56, 65536, True), (56, 65537, False),
+                                     (30, 32768, True), (30, 32769, False)]:
+            q = small.expand(1, heads, seq, 128)
+            assert patch._supports(q, q, q, {}) == expected

@@ -1,0 +1,37 @@
+{
+  "baseline_commit": "0414f9ef06503fd855d4db866770457e6f4e370c",
+  "installed_seedvr2_fast_sha256": "65dcd11ac2de328ddfda29401de59e692aa28ce0eb7cd4fb4cac7e351350813e",
+  "candidate_overrides": {
+    "medium-candidate": {
+      "SEED_CANDIDATE": "1",
+      "ASFP8_SEEDVR2_ATTN_BATCH": "16",
+      "SEED_SYNC_EVERY": "4"
+    },
+    "medium-copies": {
+      "SEED_CANDIDATE": "1",
+      "ASFP8_SEEDVR2_ATTN_BATCH": "16",
+      "SEED_RESIDUAL": "1"
+    },
+    "full-copies": {
+      "SEED_CANDIDATE": "1",
+      "ASFP8_SEEDVR2_ATTN_BATCH": "16",
+      "SEED_RESIDUAL": "1"
+    },
+    "medium-mlp16k": {
+      "SEED_MLP_CHUNK": "16384"
+    }
+  },
+  "full_final": "Production residual cleanup only; no candidate overrides.",
+  "verification": "All full-final and full-copies tensor hashes equal full-native; both extra seeds match native-base; installed runtime matches repository.",
+  "unprotected_probe": {
+    "label": "small-unpatched",
+    "env": {
+      "SEED_UNSAFE_SMALL": "1"
+    },
+    "input_width": 320,
+    "driver_gib_at_abort": 25.191253662109375,
+    "sampled_limit_gib": 24,
+    "stage": "decode",
+    "expected_controlled_stop": true
+  }
+}

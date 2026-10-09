@@ -63,7 +63,7 @@ class _FakeVAE:
             merged[..., :, :overlap] = a * (1 - weight) + b[..., :, :overlap] * weight
         return merged
 
-    # the reference implementation, verbatim
+    # Legacy core tiling contract; modern core uses already blended neighbours.
     def tiled_decode(self, z):
         height, width = z.shape[-2] * self.vae_ratio, z.shape[-1] * self.vae_ratio
         y_idx, y_len, y_overlap = self.split_tiles(height)
@@ -171,3 +171,32 @@ def test_install_is_a_noop_without_the_variable(monkeypatch):
     batch_patch._installed = False
     batch_patch.install()
     assert batch_patch._installed is False
+
+
+@pytest.mark.parametrize("samples,batch", [(1, 2), (2, 4), (2, 8)])
+def test_current_row_keeps_sample_groups_and_partial_last_batch(samples, batch):
+    vae = _FakeVAE()
+    z = _latent(256, 864).repeat(samples, 1, 1, 1, 1)
+    z[-1] += 0.3
+    idx, lengths, _ = vae.split_tiles(864)
+    expected = [vae._decode_pixels(z[..., p // vae.vae_ratio:(p + n) // vae.vae_ratio])
+                for p, n in zip(idx, lengths)]
+    actual = list(batch_patch.batched_tile_row(vae, z, idx, lengths, batch))
+    assert len(actual) == len(expected)
+    assert all(torch.equal(a, b) for a, b in zip(actual, expected))
+
+
+def test_current_core_install_preserves_native_blending(monkeypatch):
+    import sys
+    import types
+    class Current:
+        tiled_decode = object()
+        _decode_tile_row = lambda *_: None
+    tiled = Current.tiled_decode
+    vae_module = types.SimpleNamespace(MiniMaxH3VideoVAE=Current)
+    monkeypatch.setitem(sys.modules, "comfy.ldm.minimax", types.SimpleNamespace(vae=vae_module))
+    monkeypatch.setenv("ASFP8_MINIMAX_VAE_DECODE_BATCH", "8")
+    monkeypatch.setattr(batch_patch, "_installed", False)
+    batch_patch.install()
+    assert Current.tiled_decode is tiled
+    assert Current._decode_tile_row._asfp8_batched

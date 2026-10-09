@@ -1,0 +1,105 @@
+{
+  "config": {
+    "label": "full120-block",
+    "frames": 120,
+    "video_sync": "block",
+    "seed": 959948902156062,
+    "model": "int8",
+    "fix": true,
+    "mode": "native",
+    "stage": "full",
+    "input_size": 416,
+    "repeats": 1,
+    "limit_gib": 64.0,
+    "sample_file": null,
+    "installed": false,
+    "default_fix": false
+  },
+  "state": {
+    "stage": "verification",
+    "max_driver_gib": 37.49830627441406,
+    "max_live_gib": 13.867612838745117,
+    "max_rss_gib": 10.318099975585938,
+    "video_sync": "block",
+    "tile_calls": 0,
+    "conv_calls": 14880,
+    "torch_version": "2.14.0",
+    "torch_git": "08187d9e0fba026dc8217405802ab5381dc88d90",
+    "completed": true
+  },
+  "records": [
+    {
+      "repeat": 0,
+      "timings": {
+        "resize": 1.2154805840109475,
+        "preprocess": 0.08564445900265127,
+        "load_vae": 0.09454254095908254,
+        "encode": 35.714919541962445,
+        "load_model": 0.06783404195448384,
+        "sample": 15.26339849998476,
+        "decode": 85.62073562497972,
+        "postprocess": 5.5750017054378986e-05,
+        "save_image": 0.0742459999746643
+      },
+      "total_seconds": 138.1448268329841,
+      "encoded_sha256": "8d65dfdb0badf851da7e949a258bfbc36a7d738061e6713dda1e536b331b771b",
+      "sampled_sha256": "5e74e4311baa69718e7bb249c681031b83fe0e4684bf80d2fe31d079217b1cb2",
+      "frames_sha256": "33fc7e605ceb6754f75e39238c4af9f44013da9ac0829b264ee3e4270fb0c268",
+      "frames_finite": true,
+      "output_shape": [
+        120,
+        1472,
+        832,
+        3
+      ]
+    }
+  ],
+  "memory_probe_count": 20665,
+  "phase_peaks": {
+    "decode": {
+      "driver_gib": 37.49830627441406,
+      "live_gib": 13.867612838745117,
+      "rss_gib": 6.7543792724609375
+    },
+    "encode": {
+      "driver_gib": 13.29754638671875,
+      "live_gib": 3.6538190841674805,
+      "rss_gib": 8.664642333984375
+    },
+    "load_model": {
+      "driver_gib": 13.29559326171875,
+      "live_gib": 0.4674184322357178,
+      "rss_gib": 6.8027191162109375
+    },
+    "load_vae": {
+      "driver_gib": 0.03948974609375,
+      "live_gib": 0.0,
+      "rss_gib": 9.3594970703125
+    },
+    "postprocess": {
+      "driver_gib": 35.13829040527344,
+      "live_gib": 8.236554384231567,
+      "rss_gib": 6.7543792724609375
+    },
+    "preprocess": {
+      "driver_gib": 0.03948974609375,
+      "live_gib": 0.0,
+      "rss_gib": 8.55975341796875
+    },
+    "resize": {
+      "driver_gib": 0.03948974609375,
+      "live_gib": 0.0,
+      "rss_gib": 3.631927490234375
+    },
+    "sample": {
+      "driver_gib": 33.19696044921875,
+      "live_gib": 7.7630934715271,
+      "rss_gib": 5.0909423828125
+    },
+    "save_image": {
+      "driver_gib": 35.13829040527344,
+      "live_gib": 8.236554384231567,
+      "rss_gib": 6.754852294921875
+    }
+  }
+}

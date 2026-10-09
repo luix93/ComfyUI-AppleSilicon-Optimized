@@ -118,6 +118,15 @@ def _wan(q, k):
             and os.environ.get('PYTORCH_MPS_FAST_MATH', '0') == '0')
 
 
+def _yue2(q, k):
+    from . import yue2_fast
+    return (yue2_fast._acoustic_scope.get()
+            and yue2_fast._enabled('ATTN')
+            and q.shape[1] == 16 and k.shape[1] == 8
+            and 2048 <= q.shape[2] <= 4096
+            and q.shape[2] <= k.shape[2] <= 8192)
+
+
 def _supports(q, k, v, kwargs):
     if (_dead or os.environ.get('ASFP8_MPP_QCACHE', '1') != '1'
             or os.environ.get('ASFP8_ATTN_BACKEND') != 'pytorch'
@@ -129,13 +138,16 @@ def _supports(q, k, v, kwargs):
            or t.ndim != 4 for t in (q, k, v)):
         return False
     wan = _wan(q, k)
+    # H3 long clips are validated through 65,536 tokens; other families keep
+    # their existing limit. Kernel arithmetic and tile geometry are unchanged.
+    max_tokens = 65536 if q.shape[1] == k.shape[1] == 56 else 32768
     dtype = torch.float16 if wan else torch.bfloat16
     if (any(t.dtype != dtype
             or t.ndim != 4 or t.stride(-1) != 1 for t in (q, k, v))
             or (q.shape[0] != 1 and not wan) or q.shape[-1] != 128
-            or not 2048 <= q.shape[2] <= 32768 or k.shape != v.shape
+            or not 2048 <= q.shape[2] <= max_tokens or k.shape != v.shape
             or k.shape[0] != q.shape[0] or k.shape[-1] != q.shape[-1]
-            or not (wan or _qwen_edit(q, k) or _ltx25(q, k) or (
+            or not (wan or _qwen_edit(q, k) or _ltx25(q, k) or _yue2(q, k) or (
                 k.shape[2:] == q.shape[2:]
                 and (q.shape[1], k.shape[1]) in ((30, 30), (48, 12), (56, 56))))
             # Batch/head pointers use int64 strides. Only the in-tile row
@@ -169,7 +181,7 @@ def maybe_attention(q, k, v, *, output_bshd=False, **kwargs):
                 print('[AppleSilicon-Optimized/mpp_qcache] exact PyTorch 2.14 query-load hoisting enabled.')
             library = _library
         scale = kwargs.get('scale')
-        output_bshd = output_bshd and (wan or _qwen_edit(q, k) or _ltx25(q, k))
+        output_bshd = output_bshd and (wan or _qwen_edit(q, k) or _ltx25(q, k) or _yue2(q, k))
         params = _parameters(tuple(q.shape), tuple(k.shape), q.stride(), k.stride(), v.stride(),
                              128**-.5 if scale is None else float(scale), output_bshd)
         if output_bshd:

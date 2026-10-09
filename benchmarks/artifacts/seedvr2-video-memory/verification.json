@@ -1,0 +1,101 @@
+{
+  "short_before_after_bytes_equal": true,
+  "short_export_files_equal": true,
+  "clips": {
+    "120": {
+      "repeat_tensor_bytes_equal": true,
+      "repeat_export_files_equal": true,
+      "videos": [
+        {
+          "path": "/Users/luigis/Documents/ChatGPT/ComfyUI-AppleSilicon/diagnostics/seedvr2-video/full120-installed-0.mp4",
+          "sha256": "b6e2b9d6a3d80ce8059c67e39f91971573d0c19d6d487c0a9da9954c19418007",
+          "streams": [
+            {
+              "kind": "video",
+              "frames": 120,
+              "duration": 5.0,
+              "codec": "h264"
+            },
+            {
+              "kind": "audio",
+              "frames": 158,
+              "duration": 5.0,
+              "codec": "aac"
+            }
+          ]
+        },
+        {
+          "path": "/Users/luigis/Documents/ChatGPT/ComfyUI-AppleSilicon/diagnostics/seedvr2-video/full120-installed-1.mp4",
+          "sha256": "b6e2b9d6a3d80ce8059c67e39f91971573d0c19d6d487c0a9da9954c19418007",
+          "streams": [
+            {
+              "kind": "video",
+              "frames": 120,
+              "duration": 5.0,
+              "codec": "h264"
+            },
+            {
+              "kind": "audio",
+              "frames": 158,
+              "duration": 5.0,
+              "codec": "aac"
+            }
+          ]
+        }
+      ],
+      "cold_seconds": 139.62614029098768,
+      "warm_seconds": 138.41222058300627,
+      "max_driver_gib": 36.60572814941406
+    },
+    "240": {
+      "repeat_tensor_bytes_equal": true,
+      "repeat_export_files_equal": true,
+      "videos": [
+        {
+          "path": "/Users/luigis/Documents/ChatGPT/ComfyUI-AppleSilicon/diagnostics/seedvr2-video/full240-installed-0.mp4",
+          "sha256": "06fe4bc5c1ef6a5974986bd55ce2c019b267466c17db6fbd97b7b812c4dd77ca",
+          "streams": [
+            {
+              "kind": "video",
+              "frames": 240,
+              "duration": 10.0,
+              "codec": "h264"
+            },
+            {
+              "kind": "audio",
+              "frames": 314,
+              "duration": 10.0,
+              "codec": "aac"
+            }
+          ]
+        },
+        {
+          "path": "/Users/luigis/Documents/ChatGPT/ComfyUI-AppleSilicon/diagnostics/seedvr2-video/full240-installed-1.mp4",
+          "sha256": "06fe4bc5c1ef6a5974986bd55ce2c019b267466c17db6fbd97b7b812c4dd77ca",
+          "streams": [
+            {
+              "kind": "video",
+              "frames": 240,
+              "duration": 10.0,
+              "codec": "h264"
+            },
+            {
+              "kind": "audio",
+              "frames": 314,
+              "duration": 10.0,
+              "codec": "aac"
+            }
+          ]
+        }
+      ],
+      "cold_seconds": 279.2708873330266,
+      "warm_seconds": 278.5988337500021,
+      "max_driver_gib": 47.52760314941406
+    }
+  },
+  "image": {
+    "previous_bytes_preserved": true,
+    "warm_seconds": 48.76468466594815,
+    "max_driver_gib": 32.756439208984375
+  }
+}

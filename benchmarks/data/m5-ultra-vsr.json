@@ -1,0 +1,75 @@
+{
+  "date": "2026-09-28",
+  "hardware": "M5 Ultra, 80 GPU cores, 256 GB unified memory",
+  "os": "macOS 27",
+  "runtime": "Swift MLX-DLSS 0ca2deab092fe6f3e331bf4f616271dbc64521d0; MLX 0.31.1",
+  "model": "rtx-vsr-1.8.2-highbitrate-low-2x",
+  "image": {
+    "input": [
+      2400,
+      1600
+    ],
+    "output": [
+      4800,
+      3200
+    ],
+    "node_seconds": [
+      2.2274090420105495,
+      2.2247845419915393
+    ],
+    "peak_active_mlx_bytes": 2581894556,
+    "repeat_byte_equal": true,
+    "small_reference_byte_equal": true
+  },
+  "video": [
+    {
+      "source": "MiniMax_H3_00024_.mp4",
+      "input": [
+        416,
+        736
+      ],
+      "output": [
+        832,
+        1472
+      ],
+      "fps": 24,
+      "duration_seconds": 5,
+      "frames": 120,
+      "codec": "hevc",
+      "audio_preserved": true,
+      "node_seconds": [
+        1.7977353750029579,
+        1.90192204201594,
+        1.8490858330042101
+      ],
+      "warm_mean_seconds": 1.875503937510075,
+      "peak_active_mlx_bytes": 649486846
+    },
+    {
+      "source": "MiniMax_H3_00024_.mp4",
+      "input": [
+        416,
+        736
+      ],
+      "output": [
+        832,
+        1472
+      ],
+      "fps": 24,
+      "duration_seconds": 10,
+      "frames": 240,
+      "codec": "hevc",
+      "audio_preserved": true,
+      "node_seconds": [
+        3.0223806670401245,
+        3.4523516669869423,
+        2.7721562499646097
+      ],
+      "warm_mean_seconds": 3.112253958475776,
+      "peak_active_mlx_bytes": 649414910
+    }
+  ],
+  "unit_tests_passed": 12,
+  "memory_watchdog": "512 MiB limit: clean worker exit 3 with expected diagnostic",
+  "quality_limitations": "8-bit SDR, frame independent; no NVIDIA byte parity or SeedVR2 quality equivalence claimed."
+}

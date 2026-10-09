@@ -166,7 +166,9 @@ def _resnet(self, input_tensor, temb, memory_state=None, memory_cache=None):
     if self.conv_shortcut is not None:
         input_tensor = self.conv_shortcut(input_tensor, memory_state=memory_state,
                                            memory_cache=memory_cache)
-    return (input_tensor + hidden) / self.output_scale_factor
+    residual = input_tensor + hidden
+    # SeedVR2's image VAE uses unit scaling: avoid a redundant full-tensor pass.
+    return residual if self.output_scale_factor == 1.0 else residual / self.output_scale_factor
 
 
 def _batch_size():

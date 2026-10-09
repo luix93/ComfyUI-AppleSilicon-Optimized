@@ -1,0 +1,8 @@
+{
+  "_patches/minimax_h3_unified.py": "f37aaac437163b7f6bb0895511735b48bb0a3dd60591d8963fda03ddcd548252",
+  "_patches/minimax_vae_batch.py": "47cc6cfbb47f7ec8a0c68771111ead399bbf2ebffc13ea10337a925e08fe95ee",
+  "web/h3_acceleration.js": "531693dd24c71f08ab9db9dfc3a587c37d971edbe8009d43de486d6a4d605c1e",
+  "ComfyUI-Spectrum-MiniMax-H3": "5161f0457bc8c52535212d6783eee73f439e1537",
+  "ComfyUI-MiniMax-H3-SPEED": "3ca5471e30508beb41a47589d7d58ac25bec0c80",
+  "ComfyUI-MiniMax-H3-MotionCache": "bc2894102b2486661884371259a27080b0b137bf"
+}

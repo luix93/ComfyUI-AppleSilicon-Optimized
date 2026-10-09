@@ -1,0 +1,58 @@
+{
+  "date": "2026-09-28",
+  "hardware": "M5 Ultra 80 GPU, 256 GB, macOS 27",
+  "model_source": "DLSSMac v0.1.6",
+  "runtime": "MLX-DLSS 0ca2deab092fe6f3e331bf4f616271dbc64521d0 with VSR-first patch; FP16 NR",
+  "image": "1024x1024 -> 2048x2048; natural, intensity/detail/colour=1",
+  "video": "416x736 -> 832x1472, 24 fps, 120 frames with audio; natural, intensity/detail/colour=1, temporal on, NR scale 2, HEVC",
+  "timing": "Full Comfy node call. Warm means runs two and three; worker/model startup remains included.",
+  "summary": {
+    "vsr": {
+      "warm_e2e_seconds": 0.7107654374849517,
+      "runs_seconds": [
+        0.7298814159585163,
+        0.7172438339912333,
+        0.7042870409786701
+      ],
+      "peak_active_mlx_gib": 1.071482803672552
+    },
+    "nr-scale1": {
+      "warm_e2e_seconds": 1.3995034164981917,
+      "runs_seconds": [
+        1.551158582966309,
+        1.4060489580151625,
+        1.3929578749812208
+      ],
+      "peak_active_mlx_gib": 2.1068329103291035
+    },
+    "nr-scale2": {
+      "warm_e2e_seconds": 3.0737203954777215,
+      "runs_seconds": [
+        3.157484041992575,
+        3.0994160829577595,
+        3.0480247079976834
+      ],
+      "peak_active_mlx_gib": 7.331340694800019
+    },
+    "video-5s-nr-scale2": {
+      "warm_e2e_seconds": 44.109457021026174,
+      "runs_seconds": [
+        43.970551374950446,
+        44.12890008301474,
+        44.090013959037606
+      ],
+      "peak_active_mlx_gib": 3.0896247569471598
+    }
+  },
+  "validation": {
+    "vsr_unchanged_byte_exact": true,
+    "intensity_zero_bypasses_missing_model": true,
+    "repeated_image_tensors_identical": true,
+    "streamed_video_no_get_components": true,
+    "scene_cut_resets": 1,
+    "live_model_dropdowns_verified": true,
+    "combined_matches_explicit_in_memory_stages_byte_exact": true,
+    "png_intermediate_changes_nr_input": true
+  },
+  "quality": "Exploratory visual comparison, not an established quality gain across subjects or equivalence to NVIDIA."
+}

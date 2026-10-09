@@ -11,6 +11,32 @@ import torch
 from _patches import minimax_fast as patch
 
 
+def test_block_replacement_attention_keyword_and_custom_callable(monkeypatch):
+    calls = []
+
+    class Block:
+        norm1 = object()
+
+        def adaln_proj(self, _t):
+            return (None,) * 6
+
+        def forward(self, x, t_emb, mod_segments, rope_freqs,
+                    transformer_options=None, attention=None):
+            calls.append((attention, dict(transformer_options)))
+            return attention(x) if attention is not None else x
+
+    monkeypatch.setattr(patch, "_orig_block", None)
+    monkeypatch.setattr(patch, "_norm_mod", lambda *args: None)
+    patch._install_block_fusion(types.SimpleNamespace(DiTBlock=Block))
+    x = torch.ones(2)
+    assert Block().forward(x, None, [], None, {}, attention=None) is x
+    custom = lambda value: value + 3
+    options = {patch._CROSS_BLOCK_KEY: object()}
+    torch.testing.assert_close(
+        Block().forward(x, None, [], None, options, attention=custom), x + 3)
+    assert calls == [(None, {}), (custom, {})]
+
+
 def test_owned_attention_inputs_fall_back_on_old_comfyui(monkeypatch):
     real_import = __import__
 
@@ -454,3 +480,11 @@ def test_final_layer_f32_graph_kernel_matches_eager_rounding():
     torch.mps.synchronize()
     assert actual.dtype == torch.float32
     assert torch.equal(actual.cpu(), expected.cpu())
+
+
+def test_per_token_modulation_declines_scalar_fusion_without_exception():
+    rows = patch._seg_rows([(0, 2, 0), (2, 5, torch.tensor([1, 1, 2]))], 5, torch.device('cpu'))
+    assert rows is None
+    # A later unmasked render still gets its original cached scalar layout.
+    assert torch.equal(patch._seg_rows([(0, 2, 0), (2, 5, 1)], 5, torch.device('cpu')),
+                       torch.tensor([0, 0, 1, 1, 1], dtype=torch.int32))

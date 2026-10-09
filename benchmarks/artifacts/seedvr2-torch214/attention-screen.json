@@ -1,0 +1,22 @@
+[
+  {
+    "label": "base8",
+    "seconds": 0.0036289164854679257,
+    "exact": true
+  },
+  {
+    "label": "pack8",
+    "seconds": 0.0033522294543217868,
+    "exact": true
+  },
+  {
+    "label": "base16",
+    "seconds": 0.003608750004786998,
+    "exact": true
+  },
+  {
+    "label": "pack16",
+    "seconds": 0.0029036669875495136,
+    "exact": true
+  }
+]

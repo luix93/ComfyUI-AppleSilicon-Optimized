@@ -50,22 +50,26 @@ def test_h3cache_injection_rewires_model_consumers_without_mutating_input():
     original = _prompt()
     changed = bench.set_h3cache(
         original, (0.04, 0.2, 0.85, 1.0), audio_weight=1.5,
-        prediction_mode="velocity_hold", cached_suffix_blocks=5)
+        prediction_mode="first_block_cache")
 
     assert original["scheduler"]["inputs"]["model"] == ["loader", 0]
     assert changed["scheduler"]["inputs"]["model"] == ["asfp8:h3cache", 0]
     assert changed["guider"]["inputs"]["model"] == ["asfp8:h3cache", 0]
-    assert changed["asfp8:h3cache"]["inputs"] == {
-        "model": ["loader", 0],
-        "reuse_threshold": 0.04,
-        "start_percent": 0.2,
-        "end_percent": 0.85,
-        "max_consecutive_skips": 1,
-        "audio_weight": 1.5,
-        "cached_suffix_blocks": 5,
-        "prediction_mode": "velocity_hold",
-        "verbose": True,
-    }
+    node = changed["asfp8:h3cache"]
+    assert node["class_type"] == "AppleSiliconH3UnifiedAcceleration"
+    inputs = node["inputs"]
+    assert inputs["model"] == ["loader", 0]
+    assert inputs["cache_reuse_threshold"] == 0.04
+    assert inputs["cache_audio_weight"] == 1.5
+    assert inputs["cache_mode"] == "first_block_cache"
+    assert inputs["token_reduction"] is False
+    assert inputs["sparse_attention"] is False
+
+
+def test_retired_cache_experiments_fail_before_submission():
+    with pytest.raises(ValueError, match="retired cache"):
+        bench.set_h3cache(_prompt(), (0.04, 0.2, 0.85, 1), prediction_mode="velocity_hold")
+
 
 
 def test_h3cache_requires_exactly_one_loader():
@@ -157,11 +161,11 @@ def test_h3_sparse_injection_rewires_model_consumers_without_mutating_input():
     assert changed["scheduler"]["inputs"]["model"] == ["asfp8:h3sparse", 0]
     assert changed["guider"]["inputs"]["model"] == ["asfp8:h3sparse", 0]
     node = changed["asfp8:h3sparse"]
-    assert node["class_type"] == "AppleSiliconH3SparseAttention"
+    assert node["class_type"] == "AppleSiliconH3UnifiedAcceleration"
     assert node["inputs"]["model"] == ["loader", 0]
-    assert node["inputs"]["mode"] == "corrected"
-    assert node["inputs"]["tau"] == 1.0
-    assert node["inputs"]["dense_leading_blocks"] == 2
+    assert node["inputs"]["sparse_mode"] == "corrected"
+    assert node["inputs"]["sparse_tau"] == 1.0
+    assert node["inputs"]["sparse_dense_leading_blocks"] == 2
 
 
 def test_h3_sparse_chains_after_an_injected_cache():
@@ -194,20 +198,8 @@ def test_h3_sparse_requires_exactly_one_loader():
         bench.set_h3_sparse(prompt, ("corrected", 1.0, 0.2, 2, 8192))
 
 
-def test_h3_preset_injection_rewires_model_consumers():
-    original = _prompt()
-    changed = bench.set_h3_preset(original, "exact")
-
-    assert original["guider"]["inputs"]["model"] == ["loader", 0]
-    node = changed["asfp8:h3preset"]
-    assert node["class_type"] == "AppleSiliconH3Acceleration"
-    assert node["inputs"]["preset"] == "exact"
-    assert node["inputs"]["model"] == ["loader", 0]
-    assert changed["guider"]["inputs"]["model"] == ["asfp8:h3preset", 0]
 
 
-def test_h3_preset_is_a_noop_when_not_requested():
-    assert bench.set_h3_preset(_prompt(), None) == _prompt()
 
 
 def test_reserved_injection_ids_cannot_collide():

@@ -279,7 +279,11 @@ def _int8_qkv_prequant(layer, x, heads, head_dim, norm_rope):
         return None
     if (runtime_lora is not None and (
             not getattr(runtime_lora, "fast", False)
-            or not hasattr(runtime_lora, "linear_parts"))):
+            or not hasattr(runtime_lora, "add_qkv_to"))):
+        return None
+    # The fused norm/RoPE epilogue has one delta input. For a stack, use
+    # QKV scatter, ordered rounded additions, then the existing norm/RoPE pass.
+    if lora_norm_rope and not hasattr(runtime_lora, "linear_parts"):
         return None
     try:
         from comfy_kitchen.tensor import QuantizedTensor

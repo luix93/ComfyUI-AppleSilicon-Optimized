@@ -1,0 +1,56 @@
+{
+  "config": {
+    "label": "encode120-before",
+    "frames": 120,
+    "video_sync": "none",
+    "seed": 959948902156062,
+    "model": "int8",
+    "fix": true,
+    "mode": "native",
+    "stage": "encode",
+    "input_size": 416,
+    "repeats": 1,
+    "limit_gib": 48.0,
+    "sample_file": null,
+    "installed": false,
+    "default_fix": false,
+    "core_video": true,
+    "export_video": false
+  },
+  "state": {
+    "stage": "encode",
+    "max_driver_gib": 48.13236999511719,
+    "max_live_gib": 3.61114501953125,
+    "max_rss_gib": 9.38519287109375,
+    "video_sync": "none",
+    "tile_calls": 0,
+    "conv_calls": 273,
+    "torch_version": "2.14.0",
+    "torch_git": "08187d9e0fba026dc8217405802ab5381dc88d90",
+    "stopped": "sampled Metal memory cutoff"
+  },
+  "records": [],
+  "memory_probe_count": 376,
+  "phase_peaks": {
+    "encode": {
+      "driver_gib": 48.13236999511719,
+      "live_gib": 3.61114501953125,
+      "rss_gib": 8.637557983398438
+    },
+    "load_vae": {
+      "driver_gib": 0.03948974609375,
+      "live_gib": 0.0,
+      "rss_gib": 9.38519287109375
+    },
+    "preprocess": {
+      "driver_gib": 0.03948974609375,
+      "live_gib": 0.0,
+      "rss_gib": 8.55865478515625
+    },
+    "resize": {
+      "driver_gib": 0.03948974609375,
+      "live_gib": 0.0,
+      "rss_gib": 3.6307220458984375
+    }
+  }
+}

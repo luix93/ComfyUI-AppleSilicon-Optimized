@@ -1,0 +1,138 @@
+{
+  "config": {
+    "label": "full240-installed",
+    "frames": 240,
+    "video_sync": "production",
+    "seed": 959948902156062,
+    "model": "int8",
+    "fix": true,
+    "mode": "native",
+    "stage": "full",
+    "input_size": 416,
+    "repeats": 2,
+    "limit_gib": 64.0,
+    "sample_file": null,
+    "installed": true,
+    "default_fix": false,
+    "core_video": true,
+    "export_video": true
+  },
+  "state": {
+    "stage": "verification",
+    "max_driver_gib": 47.52760314941406,
+    "max_live_gib": 15.734758377075195,
+    "max_rss_gib": 25.878005981445312,
+    "video_sync": "production",
+    "tile_calls": 32,
+    "conv_calls": 59520,
+    "torch_version": "2.14.0",
+    "torch_git": "08187d9e0fba026dc8217405802ab5381dc88d90",
+    "last_progress": 544.4422667910112,
+    "completed": true
+  },
+  "records": [
+    {
+      "repeat": 0,
+      "timings": {
+        "resize": 2.4591774579603225,
+        "preprocess": 0.16578470799140632,
+        "load_vae": 0.09685166599228978,
+        "encode": 70.73468195798341,
+        "load_model": 0.06733958295080811,
+        "sample": 33.03486549999798,
+        "decode": 170.78814670804422,
+        "postprocess": 5.7792000006884336e-05,
+        "save_image": 0.07306954095838591,
+        "export_video": 1.8352576660108753
+      },
+      "total_seconds": 279.2708873330266,
+      "encoded_sha256": "e0143ffae0b573d89bd979f952b46b73b662c20306e757d911c73849c1d6c34e",
+      "sampled_sha256": "d48ca866098954abb41299eb8a6e9a560983be216fc108a02bc0a2fc96d4b117",
+      "frames_sha256": "2cd7135f599af83e3ee87ba67a8244165b33bc66e546f63a1325160ed85d0ef7",
+      "frames_finite": true,
+      "output_shape": [
+        240,
+        1472,
+        832,
+        3
+      ]
+    },
+    {
+      "repeat": 1,
+      "timings": {
+        "resize": 2.534611833980307,
+        "preprocess": 0.20200333400862291,
+        "encode": 70.65013083297526,
+        "sample": 32.243094542005565,
+        "decode": 171.01307774998713,
+        "postprocess": 3.3999967854470015e-05,
+        "save_image": 0.07191695796791464,
+        "export_video": 1.8677895419532433
+      },
+      "total_seconds": 278.5988337500021,
+      "encoded_sha256": "e0143ffae0b573d89bd979f952b46b73b662c20306e757d911c73849c1d6c34e",
+      "sampled_sha256": "d48ca866098954abb41299eb8a6e9a560983be216fc108a02bc0a2fc96d4b117",
+      "frames_sha256": "2cd7135f599af83e3ee87ba67a8244165b33bc66e546f63a1325160ed85d0ef7",
+      "frames_finite": true,
+      "output_shape": [
+        240,
+        1472,
+        832,
+        3
+      ]
+    }
+  ],
+  "memory_probe_count": 82682,
+  "phase_peaks": {
+    "decode": {
+      "driver_gib": 47.52760314941406,
+      "live_gib": 15.734758377075195,
+      "rss_gib": 16.365829467773438
+    },
+    "encode": {
+      "driver_gib": 44.813720703125,
+      "live_gib": 12.46775484085083,
+      "rss_gib": 23.3043212890625
+    },
+    "export_video": {
+      "driver_gib": 45.14024353027344,
+      "live_gib": 8.232285737991333,
+      "rss_gib": 12.61102294921875
+    },
+    "load_model": {
+      "driver_gib": 14.86395263671875,
+      "live_gib": 0.4674184322357178,
+      "rss_gib": 9.03741455078125
+    },
+    "load_vae": {
+      "driver_gib": 0.03948974609375,
+      "live_gib": 0.0,
+      "rss_gib": 16.547988891601562
+    },
+    "postprocess": {
+      "driver_gib": 45.14024353027344,
+      "live_gib": 8.232285737991333,
+      "rss_gib": 16.365829467773438
+    },
+    "preprocess": {
+      "driver_gib": 43.29063415527344,
+      "live_gib": 8.231549501419067,
+      "rss_gib": 23.06201171875
+    },
+    "resize": {
+      "driver_gib": 43.29063415527344,
+      "live_gib": 8.231549501419067,
+      "rss_gib": 16.492172241210938
+    },
+    "sample": {
+      "driver_gib": 44.23992919921875,
+      "live_gib": 12.373975276947021,
+      "rss_gib": 13.057937622070312
+    },
+    "save_image": {
+      "driver_gib": 45.14024353027344,
+      "live_gib": 8.232285737991333,
+      "rss_gib": 16.377273559570312
+    }
+  }
+}

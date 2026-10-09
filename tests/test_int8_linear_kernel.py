@@ -564,8 +564,9 @@ def test_qkv_norm_rope_python_route_matches_layout_route(monkeypatch):
 
 
 @requires_int8_ext
+@pytest.mark.parametrize("stacked", [False, True])
 def test_qkv_norm_rope_python_route_applies_standard_runtime_lora_exactly(
-    monkeypatch,
+    monkeypatch, stacked,
 ):
     from comfy.quant_ops import TensorWiseINT8Layout
     from comfy_kitchen.tensor import QuantizedTensor
@@ -609,6 +610,13 @@ def test_qkv_norm_rope_python_route_applies_standard_runtime_lora_exactly(
         5.0, None, None, None,
     ), fast=True)
     adapter.multiplier = -0.6
+    if stacked:
+        from _patches.minimax_h3_turbo import H3RuntimeLoRAStack
+        second = H3RuntimeLoRA((
+            torch.randn(width, 3, generator=g), torch.randn(3, hidden, generator=g),
+            None, None, None, None), fast=True)
+        second.multiplier = 0.4
+        adapter = H3RuntimeLoRAStack([adapter, second])
     setattr(layer, patch._RUNTIME_LORA_ATTR, adapter)
     angles = torch.randn(m, rotary_half, generator=g).to("mps")
     cosine, sine = torch.cos(angles), torch.sin(angles)
@@ -620,13 +628,24 @@ def test_qkv_norm_rope_python_route_applies_standard_runtime_lora_exactly(
         dim, generator=g, dtype=torch.bfloat16).float().to("mps").contiguous()
 
     patch._act_cache = None
+    if stacked:
+        delattr(layer, patch._RUNTIME_LORA_ATTR)
     expected = patch.int8_qkv_prequant(layer, x, heads, dim)
     assert expected is not None
+    if stacked:
+        for entry in adapter.adapters:
+            entry.add_qkv_to(*expected, x, heads, dim)
+        setattr(layer, patch._RUNTIME_LORA_ATTR, adapter)
     dit.rms_rope_attention_partial(
         expected[0], expected[1], freqs, q_weight, k_weight, 1.0e-6)
     patch._act_cache = None
     actual = patch.int8_qkv_rms_rope_prequant(
         layer, x, freqs, q_weight, k_weight, heads, dim, 1.0e-6)
+    if stacked:
+        assert actual is None  # Never send only the first delta to the fused epilogue.
+        actual = patch.int8_qkv_prequant(layer, x, heads, dim)
+        assert actual is not None
+        dit.rms_rope_attention_partial(actual[0], actual[1], freqs, q_weight, k_weight, 1.0e-6)
     torch.mps.synchronize()
 
     assert actual is not None
@@ -804,8 +823,9 @@ def test_h3_mlp_bridge_matches_existing_python_pipeline_bit_exact(monkeypatch):
     ("adapt_fc1", "adapt_fc2"),
     [(True, False), (False, True), (True, True)],
 )
+@pytest.mark.parametrize("adapter_count", [1, 2, 3])
 def test_h3_mlp_bridge_applies_partial_or_full_runtime_lora_exactly(
-    monkeypatch, adapt_fc1, adapt_fc2,
+    monkeypatch, adapt_fc1, adapt_fc2, adapter_count,
 ):
     from comfy.quant_ops import TensorWiseINT8Layout
     from comfy_kitchen.tensor import QuantizedTensor
@@ -856,11 +876,27 @@ def test_h3_mlp_bridge_applies_partial_or_full_runtime_lora_exactly(
     ), fast=True)
     lora1.multiplier = -0.6
     lora2 = H3RuntimeLoRA((
-        torch.randn(hidden, 6, generator=g),
-        torch.randn(6, ffn, generator=g),
+        torch.randn(hidden, 6 if adapter_count == 1 else 8, generator=g),
+        torch.randn(6 if adapter_count == 1 else 8, ffn, generator=g),
         3.0, None, None, None,
     ), fast=True)
     lora2.multiplier = 0.7
+    if adapter_count > 1:
+        from _patches.minimax_h3_turbo import H3RuntimeLoRAStack
+        def stack(first, nout, nin):
+            adapters = [first]
+            for index in range(1, adapter_count):
+                rank = 8 * (index + 1)
+                adapter = H3RuntimeLoRA((
+                    torch.randn(nout, rank, generator=g),
+                    torch.randn(rank, nin, generator=g),
+                    float(rank + 1), None, None, None,
+                ), fast=True)
+                adapter.multiplier = 0.35 if index % 2 else -0.4
+                adapters.append(adapter)
+            return H3RuntimeLoRAStack(adapters)
+        lora1 = stack(lora1, 2 * ffn, hidden)
+        lora2 = stack(lora2, hidden, ffn)
     if adapt_fc1:
         setattr(fc1, patch._RUNTIME_LORA_ATTR, lora1)
     if adapt_fc2:
@@ -880,6 +916,12 @@ def test_h3_mlp_bridge_applies_partial_or_full_runtime_lora_exactly(
     patch._act_cache = None
     actual = patch.int8_mlp_bridge(fc1, fc2, x)
     torch.mps.synchronize()
+    if adapter_count > 1:
+        # Changing BF16 GEMM row shapes changed rounding for stacked adapters
+        # during screening. Decline the tiled bridge; ordinary INT8 forwards
+        # and the fused FC2 activation path still apply the stack.
+        assert actual is None
+        return
     assert actual is not None
     assert torch.equal(actual, reference), (
         torch.count_nonzero(actual != reference).item(),
@@ -967,7 +1009,8 @@ def test_o_proj_prequant_matches_layer_path():
 
 
 @requires_int8_ext
-def test_h3_o_proj_prequant_applies_runtime_lora_exactly(monkeypatch):
+@pytest.mark.parametrize("stacked", [False, True])
+def test_h3_o_proj_prequant_applies_runtime_lora_exactly(monkeypatch, stacked):
     from comfy.quant_ops import TensorWiseINT8Layout
     from comfy_kitchen.tensor import QuantizedTensor
     from _patches.int8_ext import loader
@@ -1006,6 +1049,14 @@ def test_h3_o_proj_prequant_applies_runtime_lora_exactly(monkeypatch):
         5.0, None, None, None,
     ), fast=True)
     adapter.multiplier = -0.6
+
+    if stacked:
+        from _patches.minimax_h3_turbo import H3RuntimeLoRAStack
+        second = H3RuntimeLoRA((
+            torch.randn(output, 3, generator=g), torch.randn(3, merged, generator=g),
+            None, None, None, None), fast=True)
+        second.multiplier = 0.4
+        adapter = H3RuntimeLoRAStack([adapter, second])
 
     expected = patch.int8_o_proj_prequant(layer, attention)
     assert expected is not None
