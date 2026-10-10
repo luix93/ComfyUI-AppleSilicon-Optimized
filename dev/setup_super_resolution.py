@@ -2,6 +2,8 @@
 """Build the optional, pinned MLX-DLSS runtime without changing ComfyUI packages."""
 
 import argparse
+import hashlib
+import json
 from pathlib import Path
 import re
 import shutil
@@ -48,6 +50,53 @@ MEMORY_REPORT = '''
 
 def run(*args, **kwargs):
     return subprocess.run(args, check=True, **kwargs)
+
+
+
+def stage_runtime_notices(source, staged):
+    """Preserve the actual resolved source notices beside a built runtime."""
+    for name in ("LICENSE", "NOTICE"):
+        path = source / name
+        if not path.is_file():
+            raise RuntimeError(f"Missing upstream runtime notice: {path}")
+        shutil.copy2(path, staged / f"{name}-MLX-DLSS.txt")
+    checkouts = source / ".build/checkouts"
+    if not checkouts.is_dir():
+        raise RuntimeError("Resolved Swift dependency checkouts are missing; cannot retain their notices")
+    entries = []
+    dependencies = sorted(p for p in checkouts.iterdir() if p.is_dir())
+    if not dependencies:
+        raise RuntimeError("No resolved Swift dependencies found for the runtime notices")
+    for dependency in dependencies:
+        found = []
+        license_seen = False
+        for path in sorted(dependency.rglob("*")):
+            # Ignore Git/build internals and never dereference a notice symlink.
+            rel = path.relative_to(dependency)
+            if (not path.is_file() or path.is_symlink()
+                    or any(part in (".git", ".build") for part in rel.parts)
+                    or not path.name.upper().startswith(("LICENSE", "LICENCE", "NOTICE", "COPYRIGHT", "COPYING", "UNLICENSE"))):
+                continue
+            target = staged / "THIRD_PARTY_LICENSES" / dependency.name / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(path, target)
+            found.append(str(target.relative_to(staged)))
+            license_seen |= path.name.upper().startswith(("LICENSE", "LICENCE", "COPYING", "UNLICENSE"))
+            entries.append({"dependency": dependency.name, "file": str(target.relative_to(staged)),
+                            "sha256": hashlib.sha256(target.read_bytes()).hexdigest()})
+        if not found or not license_seen:
+            raise RuntimeError(f"No license/notice found for resolved dependency: {dependency.name}")
+    # The separate Metal shader package also retains its original MLX notice.
+    mlx_notice = ROOT / "_patches/krea2_ext/MLX_LICENSE"
+    shutil.copy2(mlx_notice, staged / "LICENSE-MLX-Metal.txt")
+    entries.append({"dependency": "mlx-metal 0.31.1", "file": "LICENSE-MLX-Metal.txt",
+                    "sha256": hashlib.sha256(mlx_notice.read_bytes()).hexdigest()})
+    # Retain the previous filename for tools consuming older runtime layouts.
+    mlx_swift = checkouts / "mlx-swift/LICENSE"
+    if mlx_swift.is_file():
+        shutil.copy2(mlx_swift, staged / "LICENSE-MLX-Swift.txt")
+    (staged / "DEPENDENCY-NOTICES.json").write_text(json.dumps(
+        {"runtime_revision": REVISION, "notices": entries}, indent=2) + "\n")
 
 
 def main():
@@ -115,13 +164,12 @@ def main():
             f"MLX-DLSS {REVISION}\nhttps://github.com/iamwavecut/MLX-DLSS\n"
             "MLX shaders: mlx-metal 0.31.1\n"
             "Local changes: allocator/cache limits; optional VSR before neural rendering.\n")
-        shutil.copy2(source / "LICENSE", staged / "LICENSE-MLX-DLSS.txt")
-        shutil.copy2(source / "NOTICE", staged / "NOTICE-MLX-DLSS.txt")
-        mlx_license = source / ".build/checkouts/mlx-swift/LICENSE"
-        if mlx_license.exists():
-            shutil.copy2(mlx_license, staged / "LICENSE-MLX-Swift.txt")
+        stage_runtime_notices(source, staged)
         for item in staged.iterdir():
-            item.replace(runtime / item.name)
+            if item.is_dir():
+                shutil.copytree(item, runtime / item.name, dirs_exist_ok=True)
+            else:
+                item.replace(runtime / item.name)
     print(f"Installed VSR runtime: {runtime}")
 
 

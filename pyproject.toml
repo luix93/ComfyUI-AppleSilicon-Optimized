@@ -1,13 +1,13 @@
 [project]
-name = "comfyui-applesilicon-fp8"
+name = "comfyui-applesilicon-optimized"
 description = "Run FP8 and INT8 quantized models (FLUX, SD3.5, Ideogram 4, Krea2) on Apple Silicon / MPS — compatibility fixes plus bit-exact fp8/int8 Metal matmul kernels, plus a psutil fix for recent macOS betas."
 version = "1.1.0"
-license = { file = "LICENSE-BUNDLED" }
+license = { file = "LICENSE" }
 readme = "README.md"
 requires-python = ">=3.10"
 
 [project.urls]
-Repository = "https://github.com/pawel-mazurkiewicz/ComfyUI-AppleSilicon-FP8"
+Repository = "https://github.com/luix93/ComfyUI-AppleSilicon-Optimized"
 
 [project.optional-dependencies]
 mlx = ["mlx-vlm"]
@@ -23,6 +23,6 @@ pythonpath = [".", "tests"]
 addopts = "--import-mode=importlib"
 
 [tool.comfy]
-PublisherId = "pawel-mazurkiewicz"
-DisplayName = "ComfyUI-AppleSilicon-FP8"
+# Registry publication requires the maintainer's own registered PublisherId.
+DisplayName = "ComfyUI-AppleSilicon-Optimized"
 Icon = ""

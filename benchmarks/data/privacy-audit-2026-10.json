@@ -1,0 +1,1044 @@
+{
+  "base_revision": "f231e85be193f0dbfda0d978099860ac68ace37d",
+  "working_files": 857,
+  "media_file_counts": {
+    ".png": 21,
+    ".jpg": 43,
+    ".mp4": 28
+  },
+  "commit_identity": {
+    "distinct_emails": 5,
+    "non_noreply_emails": 3
+  },
+  "commit_message_credential_patterns": [],
+  "sensitive_filename_candidates": [],
+  "limits": "Reachable local refs, Git-tracked and nonignored files only; metadata, not pixels; no private external inputs, ignored runtime data, unreachable objects or remote issue/discussion text inspected.",
+  "snapshot": "Initial pre-release working tree, October 10, 2026; before README restructuring",
+  "remote_inventory": {
+    "visibility": "PRIVATE",
+    "branches": [
+      "main"
+    ],
+    "tags": [],
+    "actions_runs": 0,
+    "releases": [],
+    "issues": 0,
+    "pull_requests": 0,
+    "discussions": 0,
+    "forks": 0,
+    "main_matches_base_revision": true
+  },
+  "history": {
+    "text_objects": 1080,
+    "binary_objects": 88,
+    "credential_candidates_reviewed_as_test_fixtures": [
+      {
+        "path": "tests/test_prompt_studio.py",
+        "object": "4c223c5f8a2e48e45e3808bd6b5785ff0a2c4120",
+        "type": "credential_url",
+        "channel": "text"
+      },
+      {
+        "path": "tests/test_prompt_studio.py",
+        "object": "4c223c5f8a2e48e45e3808bd6b5785ff0a2c4120",
+        "type": "literal_credential",
+        "channel": "text"
+      }
+    ],
+    "personal_path_files": [
+      "benchmarks/artifacts/h3-long-qcache/h3-15s-two-step-runtime.json",
+      "benchmarks/artifacts/h3-long-qcache/install.json",
+      "benchmarks/artifacts/h3-long-qcache/launch.py",
+      "benchmarks/artifacts/h3-long-qcache/run.py",
+      "benchmarks/artifacts/h3-node-v2/ui-v2-combinations-candidate.py",
+      "benchmarks/artifacts/h3-node-v2/ui-v2-combinations-runtime.json",
+      "benchmarks/artifacts/h3-recent-methods/recent-five-runtime.json",
+      "benchmarks/artifacts/h3-recent-methods/recent-motion-runtime.json",
+      "benchmarks/artifacts/h3-recent-methods/recent-texture-runtime.json",
+      "benchmarks/artifacts/h3-recent-methods/run.py",
+      "benchmarks/artifacts/h3-recent-methods/vae_bench.py",
+      "benchmarks/artifacts/h3-recent-methods/vae_row_bench.py",
+      "benchmarks/artifacts/seedvr2-torch214/check.py",
+      "benchmarks/artifacts/seedvr2-torch214/models.json",
+      "benchmarks/artifacts/seedvr2-torch214/run.py",
+      "benchmarks/artifacts/seedvr2-torch214/screen.py",
+      "benchmarks/artifacts/seedvr2-torch214/small-unpatched.log",
+      "benchmarks/artifacts/seedvr2-video-memory/install-audit.json",
+      "benchmarks/artifacts/seedvr2-video-memory/run.py",
+      "benchmarks/artifacts/seedvr2-video-memory/shared-output-files.json",
+      "benchmarks/artifacts/seedvr2-video-memory/verification.json",
+      "benchmarks/data/m5-ultra-flux2-klein.json",
+      "benchmarks/data/m5-ultra-h3-presets.json",
+      "benchmarks/data/m5-ultra-h3-sage.json",
+      "benchmarks/data/m5-ultra-h3-veda.json",
+      "benchmarks/data/m5-ultra-ideogram4/exact-full-runtime.json",
+      "benchmarks/data/m5-ultra-ideogram4/gemm-screen-runtime.json",
+      "benchmarks/data/m5-ultra-ideogram4/installation.json",
+      "benchmarks/data/m5-ultra-ideogram4/installed-full-runtime.json",
+      "benchmarks/data/m5-ultra-ideogram4/prompt-check-runtime.json",
+      "benchmarks/data/m5-ultra-ideogram4/source-provenance.json",
+      "benchmarks/data/m5-ultra-ideogram4/stock-full-runtime.json",
+      "benchmarks/data/m5-ultra-int8-vae.json",
+      "benchmarks/data/m5-ultra-ltx25-exact-followup.json",
+      "benchmarks/data/m5-ultra-ltx25-followup.json",
+      "benchmarks/data/m5-ultra-ltx25.json",
+      "benchmarks/data/m5-ultra-qwen21-edit.json",
+      "benchmarks/data/m5-ultra-qwen21.json",
+      "benchmarks/data/m5-ultra-sdxl-torch-comparison.json",
+      "benchmarks/data/m5-ultra-torch214-production.json",
+      "benchmarks/data/m5-ultra-wan22.json",
+      "benchmarks/data/yue2-mothersuperior-workflow.json",
+      "dev/bench_gemm.py",
+      "dev/spike_fp8_ext.py",
+      "dev/spike_fp8_matmul2d.py",
+      "dev/tournament_gemm.py"
+    ],
+    "personal_paths_in_media_metadata": [],
+    "gps_metadata": [],
+    "metadata_read_errors": [],
+    "media_with_metadata": [
+      {
+        "path": "benchmarks/artifacts/h3-kitchen/all-attention-1mp.jpg",
+        "object": "21df326c220eec9780372e4fc06cb98ca3da0f9d",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-kitchen/all-attention-480.jpg",
+        "object": "39a7cc0c595c16b5f01bfa60a3c988f5ee8803a0",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-kitchen/clock-detail-1mp.jpg",
+        "object": "9306dcfdc93132da78ef200049ee8f4a4830cd8c",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-kitchen/clock-detail-480.jpg",
+        "object": "0a427f1a3a9576f9a26b47a7c9123c7970a887b2",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-presets-five-second-comparison.jpg",
+        "object": "1f11668289b4809db5b9f19c0fd42ebd7e7193e5",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-presets-token-comparison.jpg",
+        "object": "3df2a9fa53ff551e8f831351e65782dac91c8803",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-recent-methods/recent-five-1-exact-contact.jpg",
+        "object": "1bd36215948d29504874535a5402bcb68a15716a",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-recent-methods/recent-five-3-spectrum-contact.jpg",
+        "object": "df6f9e0a4996b2e762aa9b2ee293dfea96d15f4d",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-recent-methods/recent-five-5-spectrum-safe-contact.jpg",
+        "object": "b2dab4a37be6aedf4c1c4691840bc860142c4d4a",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-recent-methods/recent-five-7-motion0.15-contact.jpg",
+        "object": "fc5e67fb3d87f083569deaae01d37d3fc58f12ac",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-recent-methods/recent-five-9-speed3-cal01-contact.jpg",
+        "object": "2fd092c1db97215480d6feccf0022aa023a68aa7",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-recent-methods/recent-motion-2-ui-spectrum-protected-compare.jpg",
+        "object": "10a263830148c8dd8fab9755a4932817e60df117",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-recent-methods/recent-motion-4-ui-spectrum-fast-compare.jpg",
+        "object": "f36ade0ffa48f3c8e93a295ec00276b9e8da5021",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-recent-methods/recent-motion-6-ui-motion-compare.jpg",
+        "object": "fe680555c3ca3ef799a6a1494057654cac85459a",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-recent-methods/recent-motion-8-speed3-cal01-compare.jpg",
+        "object": "0bdd2604c5cf7bc0dadadc2af417b242bae3e6d4",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-recent-methods/recent-texture-2-ui-spectrum-protected-compare.jpg",
+        "object": "d145f44f793b291ea4f80cdc10e6f9c05a97f933",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-recent-methods/recent-texture-4-ui-spectrum-fast-compare.jpg",
+        "object": "56fc6bf3ee441956780e4a477c1e3d076e180b50",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-recent-methods/recent-texture-6-ui-motion-compare.jpg",
+        "object": "eb0eb19474af805770780010a6b3e9dad20b9c5e",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-recent-methods/recent-texture-8-speed3-cal01-compare.jpg",
+        "object": "691ecf9b8ab179f3ff7e45fb179b6aa1bdca5cb8",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-sol-aggressive/boat-cache.jpg",
+        "object": "a02a865d918a9f2cd1e45605f4a7a1f5d894ce71",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-sol-aggressive/boat-hybrid.jpg",
+        "object": "794c21cfe6dea4799715ae59de3bcf8495b8d007",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-sol-aggressive/boat-sol14.jpg",
+        "object": "3fbbf4ba2ee7f44a795c5ac8de05c15ca854bfec",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-sol-aggressive/motion-all.jpg",
+        "object": "db3886830005a4dc90f13fab0367540074a812b8",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-sol-aggressive/motion-cache.jpg",
+        "object": "5275d9c429a1be0d64dd087600b7f99feefa64a2",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-sol-aggressive/motion-hybrid.jpg",
+        "object": "b9804dc5d166cddcd2949d0b0f55388649cce943",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-sol-aggressive/texture-cache.jpg",
+        "object": "50e9a6a8e3b8629185022aa0cecf2e59c2291e1d",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-sol-hybrid/five-hybrid-2-hybrid-0.25-compare.jpg",
+        "object": "633760cdd597c1204fabeb21cf8ba97f203b0e1b",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-sol-hybrid/quality-motion-2-hybrid-0.25-compare.jpg",
+        "object": "12a39c0dc7fab609a3749091bb3db8cba745e1bb",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-sol-hybrid/quality-texture-2-hybrid-0.25-compare.jpg",
+        "object": "a6835b74493a0ffde9501c09226ee31ff1e21c14",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-veda/five-filmstrip.jpg",
+        "object": "05ceb86f5de7d5405cccf07e3556249ef6243102",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-veda/five-fixed-1-metal90p-compare.jpg",
+        "object": "fa7336b60a0e63f230c0ee097a83f67b6da5ef27",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-veda/five-fixed-3-metal90m-compare.jpg",
+        "object": "1aab64f040b98490ea42e203a74fdcbfdb99073b",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-veda/five-full-3-metal90-compare.jpg",
+        "object": "952f0f9d21eaf31c8d5e0efac4fc4f84ce0ebc6f",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-veda/five-turbo-2-metal90-compare.jpg",
+        "object": "d518f777110c15ff99fd01963239f8bd95979da6",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-veda/short-flag-3-metal90p-compare.jpg",
+        "object": "dc945f687fa41382b02104fd64ae5de57cfc51f5",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-veda/veda-controls-final.jpg",
+        "object": "3c575b8d7c515b8c8eb26269eb4cbf14afeda36a",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/torch2141-retest/h3-camera-480.jpg",
+        "object": "4b2d0e947fae435e2404bf447530bd2046aac07e",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/torch2141-retest/h3-camera-720.jpg",
+        "object": "3daa3a75599a869b8fddcabc47a9b6a852bf0b63",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/torch2141-retest/seedvr-stack.jpg",
+        "object": "6258be6e4d7bcc34447e91018f9f168f8fddf92e",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/data/m5-ultra-torch214-production-images.jpg",
+        "object": "3e33cfae8c3e0dda350a3d0baa14deb275039942",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/data/m5-ultra-torch214-production-video.jpg",
+        "object": "d5336566466f6eabe3196af4293c3e6731c160c7",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      }
+    ],
+    "files_containing_email_in_text_or_parsed_metadata": []
+  },
+  "working": {
+    "text_objects": 764,
+    "binary_objects": 93,
+    "credential_candidates_reviewed_as_test_fixtures": [
+      {
+        "path": "tests/test_prompt_studio.py",
+        "object": "working",
+        "type": "credential_url",
+        "channel": "text"
+      },
+      {
+        "path": "tests/test_prompt_studio.py",
+        "object": "working",
+        "type": "literal_credential",
+        "channel": "text"
+      }
+    ],
+    "personal_path_files": [
+      "benchmarks/artifacts/h3-long-qcache/h3-15s-two-step-runtime.json",
+      "benchmarks/artifacts/h3-long-qcache/install.json",
+      "benchmarks/artifacts/h3-long-qcache/launch.py",
+      "benchmarks/artifacts/h3-long-qcache/run.py",
+      "benchmarks/artifacts/h3-node-v2/ui-v2-combinations-candidate.py",
+      "benchmarks/artifacts/h3-node-v2/ui-v2-combinations-runtime.json",
+      "benchmarks/artifacts/h3-recent-methods/launch.py",
+      "benchmarks/artifacts/h3-recent-methods/recent-five-runtime.json",
+      "benchmarks/artifacts/h3-recent-methods/recent-motion-runtime.json",
+      "benchmarks/artifacts/h3-recent-methods/recent-texture-runtime.json",
+      "benchmarks/artifacts/h3-recent-methods/run.py",
+      "benchmarks/artifacts/h3-recent-methods/vae_bench.py",
+      "benchmarks/artifacts/h3-recent-methods/vae_row_bench.py",
+      "benchmarks/artifacts/seedvr2-torch214/check.py",
+      "benchmarks/artifacts/seedvr2-torch214/models.json",
+      "benchmarks/artifacts/seedvr2-torch214/run.py",
+      "benchmarks/artifacts/seedvr2-torch214/screen.py",
+      "benchmarks/artifacts/seedvr2-torch214/small-unpatched.log",
+      "benchmarks/artifacts/seedvr2-video-memory/install-audit.json",
+      "benchmarks/artifacts/seedvr2-video-memory/run.py",
+      "benchmarks/artifacts/seedvr2-video-memory/shared-output-files.json",
+      "benchmarks/artifacts/seedvr2-video-memory/verification.json",
+      "benchmarks/data/m5-ultra-flux2-klein.json",
+      "benchmarks/data/m5-ultra-h3-presets.json",
+      "benchmarks/data/m5-ultra-h3-sage.json",
+      "benchmarks/data/m5-ultra-h3-veda.json",
+      "benchmarks/data/m5-ultra-ideogram4/exact-full-runtime.json",
+      "benchmarks/data/m5-ultra-ideogram4/gemm-screen-runtime.json",
+      "benchmarks/data/m5-ultra-ideogram4/installation.json",
+      "benchmarks/data/m5-ultra-ideogram4/installed-full-runtime.json",
+      "benchmarks/data/m5-ultra-ideogram4/layout-screen-runtime.json",
+      "benchmarks/data/m5-ultra-ideogram4/native-full-runtime.json",
+      "benchmarks/data/m5-ultra-ideogram4/prep-screen-runtime.json",
+      "benchmarks/data/m5-ultra-ideogram4/prompt-check-runtime.json",
+      "benchmarks/data/m5-ultra-ideogram4/qk-full-runtime.json",
+      "benchmarks/data/m5-ultra-ideogram4/qk-screen-runtime.json",
+      "benchmarks/data/m5-ultra-ideogram4/seed-check-runtime.json",
+      "benchmarks/data/m5-ultra-ideogram4/source-provenance.json",
+      "benchmarks/data/m5-ultra-ideogram4/stock-full-runtime.json",
+      "benchmarks/data/m5-ultra-int8-vae.json",
+      "benchmarks/data/m5-ultra-ltx25-exact-followup.json",
+      "benchmarks/data/m5-ultra-ltx25-followup.json",
+      "benchmarks/data/m5-ultra-ltx25.json",
+      "benchmarks/data/m5-ultra-qwen21-edit.json",
+      "benchmarks/data/m5-ultra-qwen21.json",
+      "benchmarks/data/m5-ultra-sdxl-torch-comparison.json",
+      "benchmarks/data/m5-ultra-torch214-production.json",
+      "benchmarks/data/m5-ultra-wan22.json",
+      "benchmarks/data/yue2-mothersuperior-workflow.json",
+      "dev/bench_gemm.py",
+      "dev/spike_fp8_ext.py",
+      "dev/spike_fp8_matmul2d.py",
+      "dev/tournament_gemm.py"
+    ],
+    "personal_paths_in_media_metadata": [],
+    "gps_metadata": [],
+    "metadata_read_errors": [],
+    "media_with_metadata": [
+      {
+        "path": "benchmarks/artifacts/h3-kitchen/all-attention-1mp.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-kitchen/all-attention-480.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-kitchen/clock-detail-1mp.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-kitchen/clock-detail-480.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-presets-five-second-comparison.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-presets-token-comparison.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-recent-methods/recent-five-1-exact-contact.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-recent-methods/recent-five-3-spectrum-contact.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-recent-methods/recent-five-5-spectrum-safe-contact.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-recent-methods/recent-five-7-motion0.15-contact.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-recent-methods/recent-five-9-speed3-cal01-contact.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-recent-methods/recent-motion-2-ui-spectrum-protected-compare.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-recent-methods/recent-motion-4-ui-spectrum-fast-compare.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-recent-methods/recent-motion-6-ui-motion-compare.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-recent-methods/recent-motion-8-speed3-cal01-compare.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-recent-methods/recent-texture-2-ui-spectrum-protected-compare.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-recent-methods/recent-texture-4-ui-spectrum-fast-compare.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-recent-methods/recent-texture-6-ui-motion-compare.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-recent-methods/recent-texture-8-speed3-cal01-compare.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-sol-aggressive/boat-cache.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-sol-aggressive/boat-hybrid.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-sol-aggressive/boat-sol14.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-sol-aggressive/motion-all.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-sol-aggressive/motion-cache.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-sol-aggressive/motion-hybrid.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-sol-aggressive/texture-cache.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-sol-hybrid/five-hybrid-2-hybrid-0.25-compare.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-sol-hybrid/quality-motion-2-hybrid-0.25-compare.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-sol-hybrid/quality-texture-2-hybrid-0.25-compare.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-veda/five-filmstrip.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-veda/five-fixed-1-metal90p-compare.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-veda/five-fixed-3-metal90m-compare.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-veda/five-full-3-metal90-compare.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-veda/five-turbo-2-metal90-compare.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-veda/short-flag-3-metal90p-compare.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/h3-veda/veda-controls-final.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/ideogram-h3-oct2026/poster-comparison.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/ideogram-h3-oct2026/teapot-comparison.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/torch2141-retest/h3-camera-480.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/torch2141-retest/h3-camera-720.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/artifacts/torch2141-retest/seedvr-stack.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/data/m5-ultra-torch214-production-images.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      },
+      {
+        "path": "benchmarks/data/m5-ultra-torch214-production-video.jpg",
+        "object": "working",
+        "tags": [
+          "jfif",
+          "jfif_version",
+          "jfif_unit",
+          "jfif_density"
+        ]
+      }
+    ],
+    "files_containing_email_in_text_or_parsed_metadata": []
+  },
+  "historical_sensitive_filename_candidates": [],
+  "current_data_uri_occurrences": [
+    {
+      "path": "tests/test_prompt_studio.py",
+      "count": 1
+    },
+    {
+      "path": "web/prompt_studio_panel.js",
+      "count": 1
+    }
+  ],
+  "current_json_workflow_data_uri_occurrences": [],
+  "final_precommit_recheck": {
+    "working_files": 867,
+    "text_files": 774,
+    "binary_files": 93,
+    "personal_path_files": 53,
+    "media_files": 92,
+    "credential_candidates": "same two test-fixture categories; no new candidate",
+    "gps_metadata": [],
+    "metadata_read_errors": []
+  }
+}

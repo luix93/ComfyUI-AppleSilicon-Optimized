@@ -3,7 +3,8 @@
 Keep projection hooks, weight casting, the selected attention interface and
 all BF16 rounding. The D=256 attention kernel retains PyTorch's math and
 writes the following projection's layout directly and removes forced Q/K
-loop unrolling. Query caching is slower at this width and stays disabled.
+loop unrolling. Query caching is slower at this width and stays disabled. At validated 1MP
+sequence lengths, independent 128-channel output tiles reduce live output state.
 """
 from contextvars import ContextVar
 from pathlib import Path
@@ -16,7 +17,8 @@ from . import torch_mpp_qcache
 _installed = False
 _dead = False
 _attention_dead = False
-_library = _attention_library = None
+_library = None
+_attention_libraries = {}
 _original = _model = None
 _calls = _prep_calls = _attention_calls = 0
 _scope = ContextVar('ideogram4_exact_attention', default=False)
@@ -93,7 +95,7 @@ def _attention(self, x, attn_mask, freqs_cis, transformer_options={}):
     return self.o(out)
 
 
-def _attention_source():
+def _attention_source(output_tile=256):
     source = torch_mpp_qcache._source(head_dim=256, cache_query=False)
     # D=256 needs sixteen Q/K fragments. Forcing all iterations to unroll
     # slows the Ultra; let the compiler schedule the loop. Dot products,
@@ -101,11 +103,35 @@ def _attention_source():
     needle = 'MPP_PRAGMA_UNROLL\n        for (short id = 0; id < TD; id++)'
     if source.count(needle) != 1:
         raise RuntimeError('Unrecognized PyTorch Q/K loop')
-    return source.replace(needle, 'for (short id = 0; id < TD; id++)')
+    source = source.replace(needle, 'for (short id = 0; id < TD; id++)')
+    if output_tile == 256:
+        return source
+    if output_tile != 128:
+        raise ValueError('Unsupported Ideogram output tile')
+    # Split only the output channels. Each tile retains the complete D=256
+    # Q/K dot products, softmax, and the original PV reduction order.
+    start = source.index('prefill_attention_mpp(')
+    pre, body = source[:start], source[start:]
+    changes = {
+        'const int head_idx = tid.y;':
+            'const int head_idx = tid.y / 2;\n  const int output_offset = (tid.y % 2) * 128;',
+        'using otile_t = MPPTile<AccumType, TQ, TD, QFrag_t>;':
+            'using otile_t = MPPTile<AccumType, TQ, 8, QFrag_t>;',
+        'for (short id = 0; id < TD; id += 2)':
+            'for (short id = 0; id < 8; id += 2)',
+        'const int V_load_off = ik * kU * v_seq_stride + id * kU;':
+            'const int V_load_off = ik * kU * v_seq_stride + id * kU + output_offset;',
+        'O += tm * o_seq_stride;': 'O += tm * o_seq_stride + output_offset;',
+    }
+    for old, new in changes.items():
+        if body.count(old) != 1:
+            raise RuntimeError('Unrecognized PyTorch output loop: ' + old)
+        body = body.replace(old, new)
+    return pre + body
 
 
 def maybe_attention(q, k, v, *, output_bshd=False, **kwargs):
-    global _attention_library, _attention_dead, _attention_calls
+    global _attention_dead, _attention_calls
     if (not _scope.get() or _attention_dead or not _runtime() or torch.is_grad_enabled()
             or not output_bshd or os.environ.get('ASFP8_IDEOGRAM_ATTN_LAYOUT', '1') != '1'
             or os.environ.get('ASFP8_ATTN_BACKEND') != 'pytorch'
@@ -120,14 +146,18 @@ def maybe_attention(q, k, v, *, output_bshd=False, **kwargs):
             or kwargs.get('is_causal', False) or kwargs.get('scale') is not None):
         return None
     try:
-        if _attention_library is None:
-            _attention_library = torch.mps.compile_shader(_attention_source())
+        seq = q.shape[2]
+        output_tile = (128 if 4096 <= seq <= 4608
+                       and os.environ.get('ASFP8_IDEOGRAM_ATTN_TILE', '1') == '1' else 256)
+        if output_tile not in _attention_libraries:
+            _attention_libraries[output_tile] = torch.mps.compile_shader(_attention_source(output_tile))
+        library = _attention_libraries[output_tile]
         params = torch_mpp_qcache._parameters(tuple(q.shape), tuple(k.shape),
                     q.stride(), k.stride(), v.stride(), 256**-.5, True)
         seq = q.shape[2]
         out = torch.empty((1, seq, 18, 256), device=q.device, dtype=q.dtype).transpose(1, 2)
-        _attention_library.custom_attn(q, k, v, out, params, params, params,
-                                      threads=(((seq + 63) // 64) * 128, 18, 1),
+        library.custom_attn(q, k, v, out, params, params, params,
+                                      threads=(((seq + 63) // 64) * 128, 18 * (256 // output_tile), 1),
                                       group_size=(128, 1, 1))
     except Exception as exc:
         _attention_dead = True

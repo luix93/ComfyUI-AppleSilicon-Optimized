@@ -4,6 +4,18 @@ __pycache__/
 .DS_Store
 .venv/
 _runtime/
+.pytest_cache/
+
+# Local credentials, ComfyUI user state and media are never release contents.
+.env
+.env.*
+!.env.example
+**/credentials.json
+**/workspace.json
+/user/
+/input/
+/output/
+/models/
 
 # Tooling state (oh-my-claudecode, serena)
 .omc/

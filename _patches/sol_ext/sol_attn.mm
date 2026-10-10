@@ -8,11 +8,12 @@
 // centroid correction can be merged afterwards in PyTorch with no augmented K/V
 // tensors and no score-modification plumbing inside the kernel.
 //
-// Adapted from ComfyUI-FlashVSR-AppleSilicon's sparse_flash.mm, itself adapted
-// from this package's mfa4_ext (flash41.mm), a Metal-4.1 port of mtlflashattn's
-// v2 kernel (MIT License, Copyright (c) Pawel Mazurkiewicz).
+// Based on this package's mfa4_ext/flash41.mm, a Metal-4.1 port of
+// mtlflashattn's v2 kernel (MIT, Copyright (c) Paweł Mazurkiewicz).
+// The earlier FlashVSR project name referred to the maintainer's local
+// prototype, not a third-party project. See THIRD_PARTY_NOTICES.md.
 //
-// Differences from the FlashVSR kernel, all required by MiniMax H3:
+// Sparse-kernel extensions required by MiniMax H3:
 //   * routing block size is a template parameter (64 or 128), not fixed at 128;
 //   * ragged sequences: Lq/Lk need not be multiples of the block size. Callers
 //     pad the tensors; the kernel masks columns past Lk_valid and never writes

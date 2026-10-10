@@ -22,8 +22,8 @@
 // from Cider (https://github.com/Mininglamp-AI/cider,
 // cider/kernels/w8a8_matmul.metal — including its w8a8_matmul_fused_dequant
 // epilogue), MIT License, Copyright (c) 2026 Mininglamp contributors. Only
-// the host dispatch is ours (torch MPS ObjC++ shim mirroring
-// _patches/fp8_ext/fp8_matmul2d.mm).
+// subsequent tile/schedule changes and the host dispatch are local work.
+// Full upstream notice: ../../third_party/cider-MIT.txt.
 // ============================================================
 
 #include <torch/extension.h>
@@ -32,6 +32,8 @@
 #import <Metal/Metal.h>
 #import <Foundation/Foundation.h>
 #include <array>
+#include <cstdlib>
+#include <cstring>
 
 using namespace at::mps;
 
@@ -489,6 +491,75 @@ kernel void int8_matmul_fused_cs(
   short2 sc;
   uint m_base, n_base;
   if (!w8a8_gemm_compute<128, 128, 512, 32, 4, 4, true>(
+          A, B, c_frags, sc, m_base, n_base, M, N, K, swizzle_log, tiles_m,
+          tiles_n, tgid, sgid, lid))
+    return;
+  device bfloat *Dp = D + m_base * N + n_base;
+  for (short mm = 0; mm < TM; mm++)
+    for (short nn = 0; nn < TN; nn++)
+      nax_frag_store_dequant_cs<bfloat>(c_frags[mm * TN + nn], Dp, int(N), sc,
+                                        short(mm * 16), short(nn * 16), M, N,
+                                        m_base, n_base, row_scale, col_scale,
+                                        bias, has_bias != 0u);
+}
+
+// Krea2 1024-square projections on M5 Ultra: 64x128 output tiles with eight
+// SIMD groups expose more independent work for K/V and square projections.
+// INT32 accumulation, K16/BK256 schedule and BF16 epilogue stay unchanged.
+// The 16384-wide MLP keeps its existing 128-row tile; a blanket 64-row policy
+// measured slower. Host selection also retains the original route outside the
+// validated 4096..4352-row, K=6144, N=1536/6144 range.
+kernel void int8_matmul_fused_cs_krea_1mp(
+    const device int8_t *A [[buffer(0)]], const device int8_t *B [[buffer(1)]],
+    device bfloat *D [[buffer(2)]], constant uint &M [[buffer(3)]],
+    constant uint &N [[buffer(4)]], constant uint &K [[buffer(5)]],
+    constant uint &swizzle_log [[buffer(6)]],
+    constant uint &tiles_m [[buffer(7)]], constant uint &tiles_n [[buffer(8)]],
+    const device float *row_scale [[buffer(9)]],
+    const device bfloat *bias [[buffer(10)]],
+    constant uint &has_bias [[buffer(11)]],
+    const device float *col_scale [[buffer(12)]],
+    uint2 tgid [[threadgroup_position_in_grid]],
+    uint sgid [[simdgroup_index_in_threadgroup]],
+    uint lid [[thread_index_in_simdgroup]]) {
+  constexpr short TM = ((64 / 2) / 16), TN = ((128 / 4) / 16);
+  int32_t c_frags[TM * TN][kElemsPerFrag];
+  short2 sc;
+  uint m_base, n_base;
+  if (!w8a8_gemm_compute<64, 128, 512, 32, 2, 4, true>(
+          A, B, c_frags, sc, m_base, n_base, M, N, K, swizzle_log, tiles_m,
+          tiles_n, tgid, sgid, lid))
+    return;
+  device bfloat *Dp = D + m_base * N + n_base;
+  for (short mm = 0; mm < TM; mm++)
+    for (short nn = 0; nn < TN; nn++)
+      nax_frag_store_dequant_cs<bfloat>(c_frags[mm * TN + nn], Dp, int(N), sc,
+                                        short(mm * 16), short(nn * 16), M, N,
+                                        m_base, n_base, row_scale, col_scale,
+                                        bias, has_bias != 0u);
+}
+
+// Ideogram 1MP wide projections use the 64-row tile without the volatile
+// compiler scheduling fence. Real threadgroup synchronization is retained.
+// Narrow projections reuse the identical 128-row long-schedule kernel.
+kernel void int8_matmul_fused_cs_ideogram_1mp(
+    const device int8_t *A [[buffer(0)]], const device int8_t *B [[buffer(1)]],
+    device bfloat *D [[buffer(2)]], constant uint &M [[buffer(3)]],
+    constant uint &N [[buffer(4)]], constant uint &K [[buffer(5)]],
+    constant uint &swizzle_log [[buffer(6)]],
+    constant uint &tiles_m [[buffer(7)]], constant uint &tiles_n [[buffer(8)]],
+    const device float *row_scale [[buffer(9)]],
+    const device bfloat *bias [[buffer(10)]],
+    constant uint &has_bias [[buffer(11)]],
+    const device float *col_scale [[buffer(12)]],
+    uint2 tgid [[threadgroup_position_in_grid]],
+    uint sgid [[simdgroup_index_in_threadgroup]],
+    uint lid [[thread_index_in_simdgroup]]) {
+  constexpr short TM = ((64 / 2) / 16), TN = ((128 / 4) / 16);
+  int32_t c_frags[TM * TN][kElemsPerFrag];
+  short2 sc;
+  uint m_base, n_base;
+  if (!w8a8_gemm_compute<64, 128, 512, 32, 2, 4, false>(
           A, B, c_frags, sc, m_base, n_base, M, N, K, swizzle_log, tiles_m,
           tiles_n, tgid, sgid, lid))
     return;
@@ -1774,8 +1845,43 @@ torch::Tensor i8_matmul2d_nt_fused_cs(torch::Tensor a_i8, torch::Tensor b_i8,
   const bool use_long = long_schedule && main_m >= 8192;
   Geom main_g = geom_for(main_m, N);
   Geom tail_g = do_split ? geom_for(tail, N) : main_g;
-  id<MTLComputePipelineState> main_pso =
-      pso_for_fused_cs(main_g.small, use_long);
+  const char* krea_tile_flag = std::getenv("ASFP8_KREA2_GEMM_TILE");
+  const bool krea_tile = use_ultra_schedule() && !do_split &&
+      M >= 4096 && M <= 4352 && K == 6144 && (N == 1536 || N == 6144) &&
+      (!krea_tile_flag || std::strcmp(krea_tile_flag, "1") == 0);
+  const char* ideogram_flag = std::getenv("ASFP8_IDEOGRAM_GEMM_TILE");
+  const bool ideogram_tile = use_ultra_schedule() && !do_split &&
+      M >= 4096 && M <= 4608 &&
+      ((K == 4608 && (N == 12288 || N == 13824 || N == 4608)) ||
+       (K == 12288 && N == 4608)) &&
+      (!ideogram_flag || std::strcmp(ideogram_flag, "1") == 0);
+  id<MTLComputePipelineState> main_pso;
+  if (ideogram_tile) {
+    const bool wide = N == 12288 || N == 13824;
+    main_g.THREADS = wide ? 256 : 512;
+    main_g.tiles_m = (main_m + (wide ? 63 : 127)) / (wide ? 64 : 128);
+    main_g.swizzle_log = 0;
+    main_g.grid_x = main_g.tiles_n;
+    main_g.grid_y = main_g.tiles_m;
+    if (wide) {
+      static id<MTLComputePipelineState> ideogram_pso = nil;
+      if (!ideogram_pso) ideogram_pso = pso_for_name(@"int8_matmul_fused_cs_ideogram_1mp");
+      main_pso = ideogram_pso;
+    } else {
+      main_pso = pso_for_fused_cs(false, true);
+    }
+  } else if (krea_tile) {
+    main_g.THREADS = 256;
+    main_g.tiles_m = (main_m + 63) / 64;
+    main_g.swizzle_log = 0;
+    main_g.grid_x = main_g.tiles_n;
+    main_g.grid_y = main_g.tiles_m;
+    static id<MTLComputePipelineState> krea_pso = nil;
+    if (!krea_pso) krea_pso = pso_for_name(@"int8_matmul_fused_cs_krea_1mp");
+    main_pso = krea_pso;
+  } else {
+    main_pso = pso_for_fused_cs(main_g.small, use_long);
+  }
   id<MTLComputePipelineState> tail_pso = do_split
       ? pso_for_fused_cs(tail_g.small) : main_pso;
   MPSStream* stream = getCurrentMPSStream();

@@ -87,3 +87,20 @@ def test_cpu_keeps_original(monkeypatch):
         args=(object(),torch.ones(1,3,4608,dtype=torch.bfloat16),None,object(),{})
         assert patch._attention(*args)=='original'
         assert calls==[args]
+
+
+def test_output_tile_toggle(runtime, monkeypatch):
+    with torch.inference_mode():
+        torch.manual_seed(981247)
+        q,k,v = [torch.randn(1,4416,18,256,device='mps',dtype=torch.bfloat16)
+                 [:,1:-1].transpose(1,2) for _ in range(3)]
+        token=patch._scope.set(True)
+        try:
+            monkeypatch.setenv('ASFP8_IDEOGRAM_ATTN_TILE','0')
+            ref=patch.maybe_attention(q,k,v,output_bshd=True)
+            monkeypatch.setenv('ASFP8_IDEOGRAM_ATTN_TILE','1')
+            out=patch.maybe_attention(q,k,v,output_bshd=True)
+        finally:patch._scope.reset(token)
+        assert out.shape == ref.shape == (1,18,4414,256)
+        assert out.transpose(1,2).is_contiguous()
+        bits(out,ref)

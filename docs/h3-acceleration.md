@@ -348,7 +348,7 @@ default exact decoder.
 All three runtimes load only when selected and require no runtime download. Existing
 external provider installations can remain for older workflows. Source commits,
 hashes, attribution and full license texts are included. MotionCache is MIT;
-Spectrum is GPL-3.0-or-later, so the combined distribution uses GPL-3.0-or-later
+Spectrum is GPL-3.0-or-later, so the combined distribution uses GPL-3.0
 while retaining existing MIT notices. See [third-party notices](../THIRD_PARTY_NOTICES.md)
 and [bundled license](../LICENSE-BUNDLED).
 

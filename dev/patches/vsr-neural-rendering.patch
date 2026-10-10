@@ -1,3 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+# Portions copyright 2026 MLX-DLSS contributors.
+# Modified here: stage ordering and VSR-before-neural-rendering controls.
+# Full upstream license/NOTICE: third_party/MLX-DLSS-*.txt.
 diff --git a/Sources/DLSSMedia/MediaOptions.swift b/Sources/DLSSMedia/MediaOptions.swift
 index 189e865..c9edfa1 100644
 --- a/Sources/DLSSMedia/MediaOptions.swift

@@ -1,7 +1,7 @@
 """H3 latent-upscaler network, adapted from LBH-123-AI (MIT).
 
 Upstream revision 40316cf008b2fd8663263270669eb4da23f89d2c.
-See ../../third_party/h3-latent-upscaler-MIT.txt. The training architecture,
+See third_party/h3-latent-upscaler-MIT.txt in the repository root. The training architecture,
 normalization constants and operation order are retained.
 """
 import gc

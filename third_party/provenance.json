@@ -1,0 +1,235 @@
+{
+  "schema_version": 1,
+  "audit_date": "2026-10-10",
+  "distribution_license": "GPL-3.0-only",
+  "spectrum_component_license": "GPL-3.0-or-later",
+  "scope": "Notice/provenance inventory; source revisions and license audit revisions are separate. Model weights and ignored generated runtimes are not part of this source bundle.",
+  "components": [
+    {
+      "name": "Original FP8 layer",
+      "repository": "https://github.com/pawel-mazurkiewicz/ComfyUI-AppleSilicon-FP8",
+      "use": "inherited source",
+      "notices": [
+        "third_party/original-FP8-MIT.txt"
+      ],
+      "license_audited_revision": "9c78935963e885ba93313807974dc64d71058c7f"
+    },
+    {
+      "name": "mtlflashattn",
+      "repository": "https://github.com/pawel-mazurkiewicz/mtlflashattn",
+      "use": "adapted V2 source and installed dependency",
+      "notices": [
+        "third_party/original-FP8-MIT.txt"
+      ],
+      "license_audited_revision": "031ec46d9ed5a9c181ac7f4a3628062786e12ee9",
+      "license_declaration": "MIT in upstream pyproject.toml and installed mtlflashattn 0.2.0 metadata; standalone license file absent in audited upstream tree. The unchanged Paweł MIT notice is preserved with inherited and derived code."
+    },
+    {
+      "name": "Cider",
+      "repository": "https://github.com/Mininglamp-AI/cider",
+      "use": "adapted INT8 GEMM",
+      "notices": [
+        "third_party/cider-MIT.txt"
+      ],
+      "license_audited_revision": "4d91fcee9439f7aea17ae6e965271d9536c604a0"
+    },
+    {
+      "name": "CCV",
+      "repository": "https://github.com/liuliu/ccv",
+      "use": "adapted attention source and generated experimental kernels",
+      "notices": [
+        "third_party/ccv-BSD-3-Clause.txt"
+      ],
+      "source_revisions": [
+        "6a611be1aab6470ae279115ae4eaf7e01bc87135"
+      ]
+    },
+    {
+      "name": "PyTorch",
+      "repository": "https://github.com/pytorch/pytorch",
+      "use": "adapted reduction and runtime-expanded attention source",
+      "notices": [
+        "_patches/krea2_ext/PYTORCH_LICENSE",
+        "_patches/seedvr2_ext/PYTORCH_LICENSE"
+      ],
+      "source_revisions": [
+        "cf30153c4c131c8164ee7798e5022d810682e2cb",
+        "08187d9e0fba026dc8217405802ab5381dc88d90",
+        "5c4886908584029761b579af026dcfb627c84070"
+      ]
+    },
+    {
+      "name": "MLX",
+      "repository": "https://github.com/ml-explore/mlx",
+      "use": "kernel ancestry and installed integration",
+      "notices": [
+        "_patches/krea2_ext/MLX_LICENSE"
+      ]
+    },
+    {
+      "name": "ComfyUI",
+      "repository": "https://github.com/Comfy-Org/ComfyUI",
+      "use": "host integrations and adapted forwards",
+      "notices": [
+        "LICENSE"
+      ],
+      "source_revisions": [
+        "1d2ea2948d33dfda4d7cfe58c6d234968aa62cf8"
+      ]
+    },
+    {
+      "name": "Comfy Kitchen",
+      "repository": "https://github.com/Comfy-Org/comfy-kitchen",
+      "use": "adapted neighborhood-attention grouping and research",
+      "notices": [
+        "third_party/Comfy-Kitchen-Apache-2.0.txt"
+      ],
+      "source_revisions": [
+        "0.2.35"
+      ]
+    },
+    {
+      "name": "SeedVR",
+      "repository": "https://github.com/ByteDance-Seed/SeedVR",
+      "use": "fixed conditioning tensors",
+      "notices": [
+        "_patches/seedvr2_assets/LICENSE"
+      ],
+      "source_revisions": [
+        "e4de8c24441a67e1b7df56abea10645059bb1185"
+      ]
+    },
+    {
+      "name": "MotionCache",
+      "repository": "https://github.com/starsFriday/ComfyUI-MiniMax-H3-MotionCache",
+      "use": "bundled original and maintained derivative",
+      "notices": [
+        "_patches/h3_runtime/motion/LICENSE",
+        "_patches/_vendor/motioncache/LICENSE"
+      ],
+      "source_revisions": [
+        "bc2894102b2486661884371259a27080b0b137bf"
+      ]
+    },
+    {
+      "name": "Spectrum H3",
+      "repository": "https://github.com/xmarre/ComfyUI-Spectrum-MiniMax-H3",
+      "use": "bundled original and maintained derivative",
+      "notices": [
+        "_patches/h3_runtime/spectrum/LICENSE",
+        "_patches/_vendor/spectrum_h3/LICENSE",
+        "_patches/h3_runtime/spectrum/COPYRIGHT",
+        "_patches/_vendor/spectrum_h3/COPYRIGHT"
+      ],
+      "source_revisions": [
+        "5161f0457bc8c52535212d6783eee73f439e1537"
+      ]
+    },
+    {
+      "name": "Veda",
+      "repository": "https://github.com/veda-sparse/Veda-on-ComfyUI",
+      "use": "bundled original and maintained derivative",
+      "notices": [
+        "_patches/h3_runtime/veda/LICENSE",
+        "_patches/_vendor/veda/LICENSE"
+      ],
+      "source_revisions": [
+        "fd59c7277ccc37ebf1a8f6823474b8c2ef2e33a0"
+      ]
+    },
+    {
+      "name": "H3 latent upscaler",
+      "repository": "https://github.com/LBH-123-AI/Comfyui_Minimax_h3_latent_Upscaler",
+      "use": "adapted network architecture",
+      "notices": [
+        "third_party/h3-latent-upscaler-MIT.txt"
+      ],
+      "source_revisions": [
+        "40316cf008b2fd8663263270669eb4da23f89d2c"
+      ]
+    },
+    {
+      "name": "h3.c",
+      "repository": "https://github.com/antirez/h3.c",
+      "use": "token-reduction policy reference",
+      "notices": [
+        "third_party/h3.c-MIT.txt"
+      ],
+      "license_audited_revision": "8974cc055ea9c02fcd14cc27dfda3e1027c05153"
+    },
+    {
+      "name": "NVIDIA Sana / Sol-Attn",
+      "repository": "https://github.com/NVlabs/Sana",
+      "use": "adapted routing policy, no CUDA kernels bundled",
+      "notices": [
+        "third_party/NVIDIA-Sana-Apache-2.0.txt"
+      ],
+      "license_audited_revision": "b43e00cfe3506fcf9206f1b856c8585aa0740375",
+      "branch_licensing_declaration": "https://github.com/NVlabs/Sana/blob/fcef8d4287d5f45e1a5e839c940b7e14c91c71fc/README.md#-license"
+    },
+    {
+      "name": "MLX-DLSS",
+      "repository": "https://github.com/iamwavecut/MLX-DLSS",
+      "use": "optional external runtime and bundled source patch",
+      "notices": [
+        "third_party/MLX-DLSS-Apache-2.0.txt",
+        "third_party/MLX-DLSS-NOTICE.txt"
+      ],
+      "license_audited_revision": "0ca2deab092fe6f3e331bf4f616271dbc64521d0",
+      "source_revisions": [
+        "0ca2deab092fe6f3e331bf4f616271dbc64521d0"
+      ]
+    },
+    {
+      "name": "MLX Swift",
+      "repository": "https://github.com/ml-explore/mlx-swift",
+      "use": "optional external runtime dependency; resolved notices copied at build",
+      "notices": []
+    },
+    {
+      "name": "DLSSMac",
+      "repository": "https://github.com/Mappsnet7/DLSSMac",
+      "use": "reference and optional downloaded model package; app/source not bundled",
+      "notices": [],
+      "license_audited_revision": "f47a05b7f11e2d02c43bfa5337984fe2cee546f2"
+    }
+  ],
+  "notice_sha256": {
+    "LICENSE": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+    "LICENSE-BUNDLED": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+    "_patches/_vendor/motioncache/LICENSE": "165b5ddf9e83f40e2b0cf9246b40463d2d9937ae901985264b93c6c15f40a739",
+    "_patches/_vendor/spectrum_h3/COPYRIGHT": "7827ebccf4f840395f915769dbef9b482a898bc53bf54ebadeec25b50e59825f",
+    "_patches/_vendor/spectrum_h3/LICENSE": "1971f52704b3eba9020175f2ccf1f55bef2a3179bfb2d09dd49fed7bbbc2437d",
+    "_patches/_vendor/veda/LICENSE": "6a651fd959d3457a390cf75e4abadc30801c4e5cdad3cb3ccf7ca0a1725a789d",
+    "_patches/h3_runtime/motion/LICENSE": "165b5ddf9e83f40e2b0cf9246b40463d2d9937ae901985264b93c6c15f40a739",
+    "_patches/h3_runtime/spectrum/COPYRIGHT": "7827ebccf4f840395f915769dbef9b482a898bc53bf54ebadeec25b50e59825f",
+    "_patches/h3_runtime/spectrum/LICENSE": "1971f52704b3eba9020175f2ccf1f55bef2a3179bfb2d09dd49fed7bbbc2437d",
+    "_patches/h3_runtime/veda/LICENSE": "6a651fd959d3457a390cf75e4abadc30801c4e5cdad3cb3ccf7ca0a1725a789d",
+    "_patches/krea2_ext/MLX_LICENSE": "ccfab7ccb2ea306f71531c8ca77bb55507606cd90768b1e32b8b52ab5b48cf01",
+    "_patches/krea2_ext/PYTORCH_LICENSE": "bd018feef8825e88181c84eb7e3aa4eafb8f08a20d9fd6ef948569610c4a3e43",
+    "_patches/seedvr2_assets/LICENSE": "5967a0c153e731109b76c5d83b5e0fae2382b6aaf7b898d08ff03702eea59430",
+    "_patches/seedvr2_ext/PYTORCH_LICENSE": "bd018feef8825e88181c84eb7e3aa4eafb8f08a20d9fd6ef948569610c4a3e43",
+    "third_party/Comfy-Kitchen-Apache-2.0.txt": "cd1c9ea1573c9047e9b5a3676ecc1c8f755e56f249ac1ebd8b5ceda7899037da",
+    "third_party/MLX-DLSS-Apache-2.0.txt": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+    "third_party/MLX-DLSS-NOTICE.txt": "1dc2f582bdd302c11ceb6e5f0de5a2fb8b2cf951e7e444df589785a6dadf2f05",
+    "third_party/NVIDIA-Sana-Apache-2.0.txt": "86ab03e3ea19f1891d7ea5a110de47f809e1e690aef2a64fad13aef6d5aded4f",
+    "third_party/ccv-BSD-3-Clause.txt": "e9bb316b27bd12e23515c91d8a65c09552c68baf2dcc71c74a84b51a91a1d617",
+    "third_party/cider-MIT.txt": "7d994878588893d8ef05414ba9c654c83c7a5566334249718d232f2496b149b0",
+    "third_party/h3-latent-upscaler-MIT.txt": "fde072f9b4addf4e4737dc3ef89b8353bbecb5e44221b47ebbbd73faad7aef7a",
+    "third_party/h3.c-MIT.txt": "663e51edcd9a3a8f858018ce6924ad2895a24c269c26c39ad75325bcd0f7e5bc",
+    "third_party/original-FP8-MIT.txt": "c45670909e49ffccbbd898d02ff36efae672c7272c1e89d3573bd6526276aa06"
+  },
+  "vendor_manifest": "_patches/_vendor/manifest.json",
+  "runtime_origins": "_patches/h3_runtime/ORIGINS.json",
+  "gnu_license_source": "https://www.gnu.org/licenses/gpl-3.0.txt",
+  "research_only": [
+    "https://github.com/yshenaw/ComfyUI-SolAttn-MPS",
+    "https://github.com/kijai/ComfyUI-SolAttn_triton",
+    "https://github.com/KingGore/ComfyUI_sol-attn_Blackwell",
+    "https://github.com/TheStageAI/qlip-mlx",
+    "https://github.com/StanLukuvka/ComfyUI-MiniMax-H3-SPEED",
+    "https://github.com/chengzeyi/ParaAttention",
+    "https://github.com/drawthingsai/draw-things-community"
+  ],
+  "local_prototype_correction": "Maintainer confirmed the historical FlashVSR name was their own local prototype, not a third-party project."
+}
