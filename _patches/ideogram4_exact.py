@@ -27,8 +27,7 @@ def _runtime():
             and os.environ.get('ASFP8_IDEOGRAM_FAST', '1') == '1'
             and os.environ.get('ASFP8_IDEOGRAM_EXACT', '1') == '1'
             and os.environ.get('PYTORCH_MPS_FAST_MATH', '0') == '0'
-            and torch.__version__.split('+')[0] == '2.14.0'
-            and torch.version.git_version == torch_mpp_qcache._TORCH_GIT
+            and torch_mpp_qcache._torch_build_supported()
             and torch_mpp_qcache._hardware())
 
 

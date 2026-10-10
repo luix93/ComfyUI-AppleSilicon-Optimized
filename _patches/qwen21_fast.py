@@ -98,6 +98,9 @@ def _attention(self, x, pe, attn_fn, prefix_len, transformer_options={}):
     with _ops.CastBiasWeightContext(self.norm_q, q, offloadable=True) as (qw, _):
         with _ops.CastBiasWeightContext(self.norm_k, k, offloadable=True) as (kw, _):
             q, k = _rope(q, k, pe, qw, kw, self.norm_q.eps)
+    container = getattr(_model, 'AttentionTensorContainer', None)
+    if container is not None:
+        q, k, v = [container(t) for t in (q, k, v)]
     return self.to_out[0](attn_fn(q, k, v, self.heads, preferred_attention=self.comfy_attention))
 
 
@@ -155,8 +158,7 @@ def install():
     global _installed, _original_norm, _original_residual, _original_attention, _ops, _model
     if (_installed or os.environ.get('ASFP8_DIT_EXT') != '1'
             or os.environ.get('ASFP8_QWEN21_FAST', '1') != '1'
-            or torch.__version__.split('+')[0] != '2.14.0'
-            or torch.version.git_version != torch_mpp_qcache._TORCH_GIT
+            or not torch_mpp_qcache._torch_build_supported()
             or not torch_mpp_qcache._hardware() or not torch.backends.mps.is_available()):
         return
     try:

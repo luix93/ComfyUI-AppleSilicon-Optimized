@@ -16,11 +16,21 @@ import subprocess
 import torch
 
 _TORCH_GIT = '08187d9e0fba026dc8217405802ab5381dc88d90'
+_TORCH_BUILDS = {
+    '2.14.0': _TORCH_GIT,
+    '2.14.1': '5c4886908584029761b579af026dcfb627c84070',
+}
 _SOURCE_HASH = '823c0df0b306a2a82b4c8903439e2b4b70bedb86c28b8f720adb92fb22892cff'
 _library = None
 _half_library = None
 _dead = False
 _calls = 0
+
+
+def _torch_build_supported():
+    """Keep each tested wheel pinned to its actual source revision."""
+    revision = _TORCH_BUILDS.get(torch.__version__.split('+')[0])
+    return revision is not None and torch.version.git_version == revision
 
 
 @functools.lru_cache(maxsize=1)
@@ -131,8 +141,7 @@ def _supports(q, k, v, kwargs):
     if (_dead or os.environ.get('ASFP8_MPP_QCACHE', '1') != '1'
             or os.environ.get('ASFP8_ATTN_BACKEND') != 'pytorch'
             or torch.is_grad_enabled()
-            or torch.__version__.split('+')[0] != '2.14.0'
-            or torch.version.git_version != _TORCH_GIT):
+            or not _torch_build_supported()):
         return False
     if any(type(t) is not torch.Tensor or not t.is_mps
            or t.ndim != 4 for t in (q, k, v)):

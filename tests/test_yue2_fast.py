@@ -83,7 +83,7 @@ def test_inference_revision_avoids_version_access():
 @pytest.mark.parametrize('queries,keys',[(2082,4731),(3002,6601),(4096,8192)])
 def test_scoped_acoustic_attention_parity(monkeypatch,queries,keys):
     from _patches import torch_mpp_qcache as qc
-    if torch.__version__.split('+')[0]!='2.14.0' or torch.version.git_version!=qc._TORCH_GIT or not qc._hardware():pytest.skip('requires validated M5 Ultra / 2.14')
+    if not qc._torch_build_supported() or not qc._hardware():pytest.skip('requires validated M5 Ultra / 2.14')
     for key,value in [('ASFP8_ATTN_BACKEND','pytorch'),('ASFP8_MPP_QCACHE','1'),('ASFP8_YUE2_FAST','1'),('ASFP8_YUE2_ATTN','1')]:monkeypatch.setenv(key,value)
     with torch.inference_mode():
         torch.manual_seed(queries)

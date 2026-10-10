@@ -42,3 +42,11 @@ if os.environ.get("APPLESILICON_FP8_MPS_WATERMARK", "auto").lower() not in ("off
           "spilling into swap; set APPLESILICON_FP8_MPS_WATERMARK=off to disable."
           % (os.environ["PYTORCH_MPS_LOW_WATERMARK_RATIO"],
              os.environ["PYTORCH_MPS_HIGH_WATERMARK_RATIO"]), flush=True)
+
+# Configure a plain clone or finish queued setup, before Torch loads.
+# This imports neither the pack nor Torch during ordinary startup.
+from pathlib import Path
+import runpy
+
+installer = runpy.run_path(str(Path(__file__).resolve().with_name("install.py")))
+installer["startup_setup"]()

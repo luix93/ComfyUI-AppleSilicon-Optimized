@@ -15,8 +15,7 @@ def bits(a, b):
 @pytest.fixture
 def runtime(monkeypatch):
     if not (torch.backends.mps.is_available() and patch.torch_mpp_qcache._hardware()
-            and torch.__version__.split('+')[0] == '2.14.0'
-            and torch.version.git_version == patch.torch_mpp_qcache._TORCH_GIT):
+            and patch.torch_mpp_qcache._torch_build_supported()):
         pytest.skip('validated M5 Ultra / PyTorch 2.14 required')
     for flag in ('ASFP8_DIT_EXT','ASFP8_IDEOGRAM_FAST','ASFP8_IDEOGRAM_EXACT',
                  'ASFP8_IDEOGRAM_PREP','ASFP8_IDEOGRAM_ATTN_LAYOUT'):

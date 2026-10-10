@@ -1,42 +1,170 @@
-<img width="1684" height="934" alt="banner" src="https://github.com/luix93/ComfyUI-AppleSilicon-Optimized/blob/main/banner.png?raw=true" />
-
 # ComfyUI-AppleSilicon-Optimized
+
+An Apple Silicon acceleration and compatibility pack for ComfyUI. It makes
+FP8/INT8 models work on MPS and speeds up sampling, attention and video/image
+VAEs using custom Metal kernels and runtime patches. Standard workflows work
+without adding an acceleration node or setting a main flag.
+
+The pack also includes optional H3 acceleration/LoRA controls, Prompt Studio,
+and Apple Silicon Super Resolution. Cache, sparse attention, token reduction
+and relaxed H3 modes are explicit workflow choices.
+
+[Installation](#installation) · [Performance](#latest-results--m5-ultra-80-gpu-cores)
+· [Numerics](#numerics-policy) · [Settings](#environment-variables)
+
+## Installation
+
+**Install the node pack, then launch ComfyUI.** On Apple Silicon, the first
+prestartup runs setup automatically using that instance's Python, including
+ComfyUI Desktop. No separate installer command is needed for a plain clone.
+The installer selects our tested
+**PyTorch 2.14.1 + torchvision 0.29.1** profile when the existing build is not
+reviewed. This includes replacing newer untested builds. Reviewed 2.14.0/0.29.0
+and 2.14.1/0.29.1 installations are kept when their source revision, imports and
+native-extension headers match. Torchaudio is preserved; there is no 2.14.1
+Torchaudio release in this profile.
+
+Requirements: an Apple Silicon Mac, ComfyUI in a virtual environment, and Python
+3.10–3.14 supported by the selected wheels. Python 3.14.1 is excluded by
+our torchvision wheel's requirements. The full native kernels need a Metal 4.1
+compiler/toolchain; our current measurements use **macOS 27 / M5 Ultra**.
+Older Apple Silicon attempts the enabled routes with existing fallbacks, but
+M1–M4 performance and parity are not yet validated.
+
+### ComfyUI-Manager
+
+1. If your Manager permits **Install via Git URL**, install
+   `https://github.com/luix93/ComfyUI-AppleSilicon-Optimized`.
+2. Manager installs the dependencies and invokes this pack's `install.py`.
+3. Restart ComfyUI. First-launch setup or queued package changes run at
+   prestartup, before Torch loads. Wait for
+   **Setup verified** or **Already configured** in the console.
+
+Unchanged subsequent launches use a local completion record: no downloads,
+package installation or Torch probe. A changed tested profile, pack requirements
+or relevant installed runtime triggers setup again. If another extension has
+already imported Torch before setup runs, stop ComfyUI and use the manual
+installer below; the running process is left unchanged.
+
+### Clone / ComfyUI Desktop
+
+Stop ComfyUI. In Terminal, replace the first path with your actual ComfyUI folder:
+
+```bash
+cd "/path/to/ComfyUI"
+git clone https://github.com/luix93/ComfyUI-AppleSilicon-Optimized custom_nodes/ComfyUI-AppleSilicon-Optimized
+```
+
+For Desktop, clone into the selected instance's actual `custom_nodes` folder,
+not the application bundle. Launch that instance; the hook uses the Python
+Desktop launched, so no virtual-environment activation is needed. Pip-less
+environments use a disposable pip helper targeting that exact Python.
+
+Start ComfyUI normally. Native acceleration is automatic on macOS/MPS; the
+reviewed M5 Ultra / Torch 2.14 builds also select our tested PyTorch attention
+settings. First launch/use can take longer while native extensions compile.
+If Apple developer tools are missing, `xcode-select --install` opens their
+installer; ensure the selected tools include the required Metal compiler.
+Unavailable extension paths retain their existing fallbacks.
+
+### Check, opt out and troubleshoot
+
+From your ComfyUI directory:
+
+```bash
+# Optional: finish setup manually while ComfyUI is stopped.
+./.venv/bin/python custom_nodes/ComfyUI-AppleSilicon-Optimized/install.py
+
+# Read-only: show the interpreter, package versions and reviewed-build status.
+./.venv/bin/python custom_nodes/ComfyUI-AppleSilicon-Optimized/install.py --check
+
+# Install this pack's dependencies while retaining your Torch/vision versions.
+./.venv/bin/python custom_nodes/ComfyUI-AppleSilicon-Optimized/install.py --keep-torch
+```
+
+For Manager installs, `ASFP8_SETUP_KEEP_TORCH=1` supplies the same opt-out.
+Set it before first launch to retain Desktop's existing Torch/vision. An explicit
+`--keep-torch` choice is recorded and retained across automatic setup checks;
+run the installer without that flag/environment variable to select the tested
+profile again. If your environment is named `venv` or lives elsewhere, replace
+`.venv/bin/python` with that environment's Python. The installer rejects a
+global/system interpreter and leaves non-Apple-Silicon environments unchanged.
+`ASFP8_NATIVE=0` disables automatic native feature activation at startup;
+individual feature overrides still take priority. Approximate H3 modes remain off
+unless selected explicitly. See [all settings](#environment-variables).
+
+Setup downloads and resolves wheels before changing packages, verifies the
+reviewed Torch/vision checksums and Torch source revision, and then installs
+from that local wheel set. Before/after package-version records are saved under
+`_runtime/setup/`; they are diagnostic records, not full environment backups.
+PyTorch is shared with other custom nodes, so dependency conflicts are reported
+by `pip check` after setup. No models or private media are read by setup.
+
+The pack's startup prerequisite helper can install a missing `ninja` and restore
+stripped Torch headers from a matching local cache. `ASFP8_AUTOFIX=0` disables
+that helper. Neither optional Super Resolution weights/runtime nor LLM models
+are downloaded by the main installer; their separate setup is documented in
+[Super Resolution](docs/super-resolution.md) and [Prompt Studio](docs/prompt-studio.md).
+
+Installer validation includes first-launch setup from a plain clone in a fresh
+pip-less environment, the checksum-verified profile, a Metal operation, a
+read-only check and an unchanged subsequent launch. Tests also cover setup
+invalidation, live-process deferral, loaded-Torch protection, wrong environments
+and rejecting mismatched wheels before installation.
 
 ## Latest results — M5 Ultra (80 GPU cores)
 
-**README updated 2026-10-09 · measurements through October 8 · 256 GB unified memory · macOS 27.0 · PyTorch 2.14.0**
+**README updated 2026-10-10 · measurements October 9 · 256 GB unified memory · macOS 27.0 · PyTorch 2.14.1**
 
-<!-- Canonical current benchmark table: update the date, measurements and linked
-     report together after validated runs. Keep earlier results below as history. -->
+<!-- Canonical current benchmark table: update the date, measurements and linked report together after validated runs. -->
 
-| Workflow | Before (stock) | After (optimized) | Less total time |
-|---|---:|---:|---:|
-| SDXL, 896×1152 / 12 steps | 2.60 s | **2.42 s** | 7.0% |
-| Z-Image Turbo, 1024×1024 / 8 steps | 7.94 s | **3.44 s** | 56.6% |
-| Flux.2 Klein 9B, text-to-image / 1024×1024 / 4 steps | 5.59 s† | **2.25 s** | 59.6% |
-| Flux.2 Klein 9B, image edit / 1024×1024 / 4 steps | 9.12 s† | **4.66 s** | 48.9% |
-| Ideogram 4, 1024×1024 / 12 steps / dual-model CFG | 43.89 s | **18.23 s** | 58.5% |
-| Krea2 Turbo, 1448×1448 / 8 steps + LoKr | 28.04 s | **13.69 s** | 51.2% |
-| Krea2 Turbo, same workflow without LoKr | 27.92 s | **13.80 s** | 50.6% |
-| Qwen-Image 2.1, 1024×1024 / 25 steps | 29.28 s | **12.59 s** | 57.0% |
-| Qwen-Image 2.1 edit, 1024×1024 / 40 steps | 50.77 s | **23.08 s** | 54.5% |
-| MiniMax H3, 864×480 / 124 frames / 20 steps | 236.75 s | **142.69 s** | 39.7% |
-| LTX 2.5, diffusion VAE / 1280×704 / 121 frames / 8+3 steps | 91.42 s | **46.38 s** | 49.3% |
-| LTX 2.5, convolutional VAE / same clip and original tiling | 51.71 s | **32.34 s** | 37.5% |
-| Wan 2.2 I2V 14B×2, 512×512 / 81 frames / 20 steps / CFG 3.5 | 423.62 s | **302.65 s** | 28.6% |
-| Wan 2.2 I2V 14B×2, same clip / 4-step LoRAs / CFG 1 | 45.76 s | **32.36 s** | 29.3% |
-| SeedVR2 7B INT8, 2400×1600 → 7200×4800 / 1 step | 74.02 s‡ | **49.01 s** | 33.8% |
-| YuE2 3B INT8, controlled 8 s / 128 ABC tokens / 32 steps | 124.05 s§ | **5.60 s** | 95.5% |
+| Workflow | Before (stock) | After (optimized) | Less total time | Speedup |
+|---|---:|---:|---:|---:|
+| SDXL, 896×1152 / 12 steps | 2.61 s | **2.40 s** | 8.2% | **1.09×** |
+| Z-Image Turbo, 1024×1024 / 8 steps | 7.86 s | **3.44 s** | 56.3% | **2.28×** |
+| Flux.2 Klein 9B, text-to-image / 1024×1024 / 4 steps | 5.61 s | **2.27 s** | 59.6% | **2.47×** |
+| Flux.2 Klein 9B, image edit / 1024×1024 / 4 steps | 9.25 s | **4.64 s** | 49.8% | **1.99×** |
+| Ideogram 4, 1024×1024 / 12 steps / dual-model CFG | 43.54 s | **18.21 s** | 58.2% | **2.39×** |
+| Krea2 Turbo, 1448×1448 / 8 steps + LoKr | 27.45 s | **13.63 s** | 50.4% | **2.01×** |
+| Krea2 Turbo, same workflow without LoKr | 27.54 s | **13.96 s** | 49.3% | **1.97×** |
+| Qwen-Image 2.1, 1024×1024 / 25 steps | 28.94 s | **12.66 s** | 56.3% | **2.29×** |
+| Qwen-Image 2.1 edit, generated reference / 1024×1024 / 40 steps | 50.47 s | **23.00 s** | 54.4% | **2.19×** |
+| MiniMax H3, 864×480 / 124 frames / 20 steps | 236.97 s | **141.65 s** | 40.2% | **1.67×** |
+| LTX 2.5, diffusion VAE / 1280×704 / 121 frames / 8+3 steps | 90.82 s | **46.16 s** | 49.2% | **1.97×** |
+| LTX 2.5, convolutional VAE / same clip and original tiling | 50.98 s | **32.05 s** | 37.1% | **1.59×** |
+| Wan 2.2 I2V 14B×2, 512×512 / 81 frames / 20 steps / CFG 3.5 | 421.16 s | **304.33 s** | 27.7% | **1.38×** |
+| Wan 2.2 I2V 14B×2, same clip / 4-step LoRAs / CFG 1 | 46.14 s | **31.90 s** | 30.9% | **1.45×** |
+| SeedVR2 7B INT8, 2400×1600 → 7200×4800 / 1 step | 66.29 s | **45.15 s** | 31.9% | **1.47×** |
+| YuE2 3B INT8, controlled 8 s / 128 ABC tokens / 32 steps | 124.19 s | **5.78 s** | 95.3% | **21.49×** |
 
-Warm end-to-end averages, including sampling, VAE decode and file export;
-model loading and unchanged text/reference encoding are cached, except YuE2,
-which regenerates score/music tokens and conditioning on every run. Both configurations use **PyTorch
-2.14 attention** and matching workflows, prompts and seeds. **Stock** has this
-custom node absent; **optimized** enables its native kernels and exact fusions.
-The optional relaxed H3 preset is **off**. H3 sampling averages **6.58 s/step**.
+Speedup = stock time ÷ optimized time. **2×** means twice the processing speed; **1.2×** means 20% faster.
 
-**YuE2 · full-song results:** the saved `audio_yue2_text2music.json` now
-produces the same **83.2-second song in 33.48 seconds** on this M5 Ultra.
+
+Warm end-to-end averages, including sampling, decode and export; loading and unchanged conditioning are cached. YuE regenerates tokens and conditioning each time. Stock omits this pack; Qwen uses its minimal INT8 encoder compatibility shim, and SeedVR stock retains scheduling-only memory protection. The optional H3 cache, sparse attention, token reduction and relaxed kernels are **off**. H3 sampling averages **6.52 s/step**.
+
+SeedVR2’s exact VAE follow-up reduces a fresh matched image baseline from **47.44 to 45.15 s**, with approximately **32 GiB** peak Metal memory. Bounded video scheduling reduces the five-second 416×736 → 832×1472 fixture from **128.18 to 124.66 s**, peaking at **33.58 GiB**. Both preserve encoded/sample/frame tensor bytes. See the [convolution, fusion and bounded-scheduling audit](benchmarks/m5-ultra-seedvr2-vae2141.md).
+
+These are measurements from the isolated `ComfyUI-AppleSilicon-2.14-Update` install. Its actual core revision is **`v0.39.0-33-g1d2ea294`**, rather than the tagged v0.39.2 release. The earlier install remains untouched. Qwen edit uses a new generated reference; confidential inputs and SATA files were not accessed. Flux and SeedVR output bytes change across this stack update even in stock mode; restored fusions preserve their current optimized outputs. The existing INT8 matrix routes are not a blanket guarantee of parity with stock.
+
+[New-stack timings, compatibility repairs and validation](benchmarks/m5-ultra-torch2141-retest.md). All final retests passed after the compatibility repairs. The legacy full relaxed H3 preset currently measures **155.33 s**, slower than **141.65 s exact optimized**, and remains default off. Its September gains were measured on Torch 2.13, before the faster 2.14 exact route.
+
+**Current optional H3 attention · 20 steps / 124 frames:** matched camera-scene averages against our exact optimized stack. Cache, token reduction and relaxed VAE are off; SOL remains non-bit-exact. All six mode/size pairs preserve their earlier output bytes.
+
+| Attention mode | 864×480 E2E | 1344×768 E2E |
+|---|---:|---:|
+| Exact optimized | 146.40 s | 606.72 s |
+| SOL INT8 Fast | 114.39 s | 384.59 s |
+| SOL INT8 Hybrid Fast | **113.79 s** | **371.75 s** |
+
+Hybrid saves **22.3% / 38.7%** in these matched tests. The large exact reference is 3.3% slower than the earlier batch; output bytes are unchanged. All 21 individual H3 recipes and three short combinations pass. Veda is slower on the small screen, and combining cache/sparse/token controls does not guarantee additive gains. Top-k Wide retains its morphing warning. [Complete mode timings, counters and comparisons](benchmarks/m5-ultra-torch2141-retest.md).
+
+**SeedVR2 video safety:** the initial stack retest's generated-reference 5/10-second upscales completed in **128.57 / 262.57 s**, peaking at **33.55 / 46.15 GiB** Metal memory, with repeatable outputs and no watchdog triggered. The exact follow-up now measures **124.66 s / 33.58 GiB** for the same five-second fixture; the ten-second case has not been rerun with the new schedule. The old video is missing, so these are new references at matching dimensions, not a strict old/new input comparison.
+
+**YuE2 · current full-song results:** the same 83.2-second song measures **50.46 → 34.12 s** against the matched GPU route with the extra fusions disabled. Mothersuperior AR + real-audio v4 adapters measure **31.35 → 21.94 s** for the 20-second workflow. Paired current-stack tokens, tensors, waveform and FLAC bytes match. Across stacks the encoded audio frames and PCM checksums match; only the exporter vendor comment differs.
+
+**Historical YuE2 measurements · October 7–8:**
+ the saved `audio_yue2_text2music.json`
+produced the same **83.2-second song in 33.48 seconds** on this M5 Ultra.
 The latest paired warm test improves **47.95 → 33.48 s**, **30.2% less time**,
 against the preceding exact GPU implementation. These are complete workflow
 times, regenerating score/music tokens, conditioning, sampling, decode and FLAC.
@@ -223,15 +351,12 @@ NR is an optional appearance-changing stage, disabled in existing workflows.
 [Settings and example workflows](docs/super-resolution.md#optional-neural-rendering-vsr-first-detail-second)
 · [Measurements](benchmarks/data/m5-ultra-vsr-neural-rendering.json).
 
-† Klein's checkpoint omits its INT8 format metadata. Its stock baseline uses
+Klein's checkpoint omits its INT8 format metadata. Its stock baseline uses
 only the existing metadata repair needed to load it, with acceleration absent.
 
-‡ SeedVR2 stock retains only the tiled-VAE synchronization safeguard against
-temporary-memory accumulation. Its timing includes recomputing input encoding
-on every run. The new exact VAE cleanup saves only about 0.2 s over our
-previous optimized stack; the main gains were already implemented.
+SeedVR2 stock retains the tiled-VAE synchronization safeguard against temporary-memory accumulation and recomputes input encoding on every run. The updated-core exact fusions were restored with source/build guards; the initial 2.14.1 retest measured 66.29 → 47.59 s. The subsequent exact VAE follow-up reaches **45.15 s**, preserving current optimized output bytes.
 
-§ YuE2 stock uses ComfyUI's default CPU FP32 encoder; optimized uses the existing
+YuE2 stock uses ComfyUI's default CPU FP32 encoder; optimized uses the existing
 MPS BF16 encoder plus the new exact patches. The controlled short screen truncates
 the score at 128 tokens and generates 8 s of music, rerunning all stages. It is
 not the full saved song or a quality example. Stock CPU and GPU arithmetic differ;
@@ -263,11 +388,13 @@ settings to learn.
 MPS or fall back to paths so slow they're unusable. The compatibility layer
 (automatic, any M1→M5) makes them load and render correctly.
 
-**What it speeds up:** with one environment variable (`ASFP8_NATIVE=1`),
+**What it speeds up:** automatically on macOS with an available MPS device,
 custom Metal kernels take over the heavy math — attention, the quantized
 matrix multiplies, and each model family's glue code. Image models render in
 roughly **half** their stock time; long video generation becomes genuinely
-viable on a laptop. On an M5 Max, Z-Image runs ~7.6 s, Krea2 ~14 s,
+viable on a laptop. No acceleration flag or extra workflow node is required.
+Set `ASFP8_NATIVE=0` to disable the implied native feature groups; individual
+feature overrides retain priority. On an M5 Max, Z-Image runs ~7.6 s, Krea2 ~14 s,
 Ideogram 4 ~41 s, and an 81-frame Wan 2.2 video ~111 s — matching or beating
 the fastest native Mac apps (full table below). These are measured results
 for specific hardware, software and kernel designs; the tuning experiments
@@ -304,10 +431,12 @@ workflow-level approximation are called out separately in the
 
 ## PyTorch 2.14 on M5 Ultra
 
-The separate `ComfyUI-AppleSilicon-2.14` installation now runs PyTorch 2.14.0
-and torchvision 0.29.0. The original installation remains on 2.13.
+The isolated `ComfyUI-AppleSilicon-2.14-Update` installation runs PyTorch 2.14.1
+and torchvision 0.29.1. The earlier `ComfyUI-AppleSilicon-2.14` installation
+remains on 2.14.0 / 0.29.0 and is unchanged.
 The clone keeps native INT8/DiT/VAE kernels and selects PyTorch's new MPS
-attention with these startup settings:
+attention with these settings, now selected automatically on the reviewed
+M5 Ultra builds when no explicit override is supplied:
 
 ```text
 ASFP8_NATIVE=1
@@ -315,12 +444,13 @@ ASFP8_ATTN_BACKEND=pytorch
 MTLFLASHATTN_SDPA=off
 ```
 
-Use `--use-pytorch-cross-attention` in ComfyUI's launch arguments. The explicit
+The benchmark launch also uses `--use-pytorch-cross-attention`; it can still be
+used to select ComfyUI's default for calls outside our router. The automatic
 backend setting routes supported calls directly to 2.14 SDPA, including Krea2's
 native grouped heads, while retaining fused Q/K normalization, RoPE, layouts,
 quantization and projections. Third-party attention overrides retain priority.
-Unsupported shapes retain the existing router. Removing the backend setting
-restores that router; it does not restore 2.13 arithmetic or output bytes.
+Unsupported shapes retain the existing router. Set `ASFP8_ATTN_BACKEND=` explicitly
+to retain the earlier router; it does not restore 2.13 arithmetic or output bytes.
 The earlier H3 relaxed preset remains separate and off by default.
 
 Native extensions use PyTorch's compiler-standard default (C++20 on 2.14),
@@ -331,7 +461,7 @@ from SDXL; `ASFP8_SDXL_GEGLU=0` disables it. Its 128 KiB lookup table contains
 PyTorch's evaluated GELU for every FP16 input bit pattern, retaining the
 intermediate rounding before multiplication.
 
-On the validated M5 Ultra / 2.14.0 build, dense BF16 D=128 attention also
+On the pinned, validated M5 Ultra / 2.14.0 and 2.14.1 builds, dense BF16 D=128 attention also
 keeps query tiles in registers across the key loop. This retains PyTorch's
 arithmetic and reduction order. H3's BF16 56-head geometry is validated through
 **65,536 tokens**, covering the 44,600-token 15-second reference clip; other
@@ -788,25 +918,32 @@ long-context correctness/OOM, text encoders moved off the CPU, plus fixes for
 macOS-beta psutil, the PiD ≥2048px black image, and WanVideo block swap. No
 env vars needed. See [the compatibility layer](#the-compatibility-layer-patches-116).
 
-**2. Native kernels (opt-in, `ASFP8_NATIVE=1`).** Seven ObjC++/Metal
+**2. Native kernels (automatic on macOS/MPS).** Seven ObjC++/Metal
 extensions, JIT-built on first use against **Metal 4.1**. Six production
 feature groups sit behind the master switch; the seventh (`sol_ext`) builds
 only when the experimental H3 sparse-attention node is applied. Developed on
-the macOS 27 dev beta; the int8 and fp8 matmuls additionally need an
-**M5**-class GPU for cooperative TensorOps / the fp8 format type. Production
-routes that cannot build or do not apply fall back silently, so the master
-switch is safe to leave on; the explicit sparse node instead refuses to apply
-when its required kernel is unavailable.
+macOS 27 and benchmarked on M5 Max/Ultra. Older Apple Silicon also attempts the
+enabled routes, retaining existing build/runtime fallbacks. Their performance
+and numerical parity have not been validated on M1–M4. M5 Ultra-specific
+source/build/hardware guards remain intact. The explicit sparse node instead
+refuses to apply when its required kernel is unavailable.
 
 ```bash
 xcode-select --install        # Metal toolchain
 pip install ninja
-export ASFP8_NATIVE=1         # before launching ComfyUI
 ```
 
-`ASFP8_NATIVE=1` implies `ASFP8_FP8_EXT`, `ASFP8_FP8_SGEMM`,
+With no launch flag, macOS/MPS sets `ASFP8_NATIVE=1` and implies `ASFP8_FP8_EXT`, `ASFP8_FP8_SGEMM`,
 `ASFP8_INT8_EXT`, `ASFP8_ATTN_ROUTER`, `ASFP8_DIT_EXT`, `ASFP8_CONV3D`.
 Explicit per-feature values always win (e.g. `ASFP8_NATIVE=1 ASFP8_DIT_EXT=0`).
+`ASFP8_NATIVE=0` disables this automatic implication while keeping compatibility
+and memory fixes. Explicitly enabled individual features still run. Linux,
+Windows and macOS without MPS receive no automatic native settings.
+
+On pinned tested PyTorch 2.14.0/2.14.1 builds and M5 Ultra, the pack also defaults
+to `ASFP8_ATTN_BACKEND=pytorch` and `MTLFLASHATTN_SDPA=off`; explicit modern or
+legacy settings retain priority. Other hardware/builds keep the existing router.
+H3 relaxed kernels, sparse attention, caches and token reduction remain optional.
 
 For MiniMax H3, that one switch also activates the eligible native subpaths
 behind the INT8 and DiT extensions: direct QKV emission, Q/K RMSNorm + RoPE,
@@ -1129,7 +1266,7 @@ mirrors eager rounding op-for-op (exact-or-1-ulp) and falls back per call:
   the INT_MAX error as retryable. Numerically free — the query rows are merely
   divided into more calls and each still sees the full key length.
 - **SeedVR2 VAE tile scheduling (#36, `ASFP8_SEEDVR2_VAE_SYNC`)**: waits for
-  MPS completion between spatial encoder/decoder tiles and between residual
+  MPS completion between spatial encoder/decoder tiles and bounds pending residual
   blocks inside video tiles. On the tested M5 Ultra
   setup, the original tile loop grows Metal temporary allocations even while
   live tensor memory stays flat; the same growth occurs without this custom
@@ -1141,6 +1278,11 @@ mirrors eager rounding op-for-op (exact-or-1-ulp) and falls back per call:
   are insufficient: the saved five-second video crossed a protected 48 GiB
   cutoff during encoding with only 3.36 GiB of live tensors. The new video
   waits preserve causal caches and output bytes; **Split Latent can stay off**.
+  The reviewed 2.14.1/current-core/M5 Ultra FP16 path now queues at most four
+  residual blocks, fencing earlier at 2 GiB driver growth or 40 GiB total driver
+  allocation. The latter is an early-fence threshold, not a hard allocation cap.
+  Spatial-tile fences remain unchanged. Set `ASFP8_SEEDVR2_VAE_BLOCK_BATCH=1`
+  to restore every-block waits; FP32 and unsupported builds retain that policy.
   `ASFP8_SEEDVR2_VAE_VIDEO_SYNC=0` restores spatial-only waits for diagnostics.
   See the [video memory investigation](benchmarks/m5-ultra-seedvr2-video-memory.md).
   Non-tiled SeedVR2 calls, other VAEs, CPU and CUDA retain their original calls.
@@ -1153,6 +1295,7 @@ mirrors eager rounding op-for-op (exact-or-1-ulp) and falls back per call:
   The [SeedVR2 acceleration audit](benchmarks/m5-ultra-seedvr2-acceleration.md)
   records the original INT8/convolution coverage. The subsequent exact stack
   below supersedes its preliminary optimization status.
+- **SeedVR2 PyTorch 2.14.1 exact VAE follow-up:** the reviewed M5 Ultra path fuses FP16 GroupNorm, SiLU and causal channel folding in two dispatches, retaining FP32 statistics/reduction order and both FP16 rounding boundaries. Fresh full-image comparison: **47.44 → 45.15 s**; fixed-latent complete decode: **22.86 → 21.66 s**. Bounded four-block video scheduling gives **128.18 → 124.66 s** on the five-second fixture. All encoded latents, sampled latents and decoded frame bytes are identical; memory fences remain active. Set `ASFP8_SEEDVR2_VAE_GN_SPLIT=0` or `ASFP8_SEEDVR2_VAE_BLOCK_BATCH=1` to restore the respective preceding routes. See the [follow-up report](benchmarks/m5-ultra-seedvr2-vae2141.md).
 - **SeedVR2 PyTorch 2.14 retest:** **74.02 s stock + memory safeguard → 49.01 s optimized** at 2400×1600 → 7200×4800. Unit-scale VAE residuals avoid a redundant division; output bytes match the preceding optimized stack. See the [current retest](benchmarks/m5-ultra-seedvr2-torch214.md). The following measurements are historical PyTorch 2.13 results.
 - **SeedVR2 exact kernels and bounded attention (#37)**: with
   `ASFP8_NATIVE=1`, cache convolution weight layouts only during each tiled VAE
@@ -1834,24 +1977,25 @@ alone—by accident.
 
 | Var | Default | Meaning |
 |---|---|---|
-| `ASFP8_NATIVE` | off | Master switch: enables the six exact/native feature groups below; it does not apply LoRAs or approximation nodes |
-| `ASFP8_FP8_EXT` | off | fp8-native `_scaled_mm` kernel (M5+, Metal 4.1) |
-| `ASFP8_FP8_SGEMM` | off | staged half×fp8 W8A16 backend |
-| `ASFP8_INT8_EXT` | off | int8 W8A8 kernel + fused epilogue (M5+) |
-| `ASFP8_ATTN_ROUTER` | off | per-call attention routing (flash41 / bmm / sub-quad) |
-| `ASFP8_ATTN_BACKEND` | unset | `pytorch` selects the tested PyTorch 2.14 MPS attention route; unset retains the existing router |
-| `ASFP8_MPP_QCACHE` | on | exact query-load hoisting under the PyTorch attention route; guarded to validated M5 Ultra / 2.14.0 build, headers and shapes; H3 supports up to 65,536 tokens, other families up to 32,768; `0` restores the unmodified PyTorch kernel |
+| `ASFP8_SETUP_KEEP_TORCH` | 0 | installer/first-launch opt-out: `1` retains installed Torch/vision while installing pack dependencies; unchanged launches skip setup |
+| `ASFP8_NATIVE` | on on macOS/MPS; otherwise unset | Master switch: enables the six native feature groups below; `0` disables automatic implication; explicit per-feature settings win; it does not apply LoRAs or approximation nodes |
+| `ASFP8_FP8_EXT` | implied by native | fp8-native `_scaled_mm` kernel, validated on M5 / Metal 4.1 |
+| `ASFP8_FP8_SGEMM` | implied by native | staged half×fp8 W8A16 backend |
+| `ASFP8_INT8_EXT` | implied by native | int8 W8A8 kernel + fused epilogue, validated on M5 |
+| `ASFP8_ATTN_ROUTER` | implied by native | per-call attention routing (flash41 / bmm / sub-quad) |
+| `ASFP8_ATTN_BACKEND` | `pytorch` on pinned tested 2.14.0/2.14.1 + M5 Ultra with native enabled; otherwise unset | selects the tested PyTorch MPS route; an explicitly empty value retains the earlier router; explicit backend settings win |
+| `ASFP8_MPP_QCACHE` | on | exact query-load hoisting under the PyTorch attention route; guarded to pinned validated M5 Ultra / 2.14.0 and 2.14.1 builds, headers and shapes; H3 supports up to 65,536 tokens, other families up to 32,768; `0` restores the unmodified PyTorch kernel |
 | `ASFP8_ATTN_NA` | 1 | production independent-simdgroup flash41 kernel; `0` restores the older cooperative kernel |
-| `ASFP8_DIT_EXT` | off | DiT block-fusion kernels (all families) |
+| `ASFP8_DIT_EXT` | implied by native | DiT block-fusion kernels (all families) |
 | `ASFP8_INT8_EMBEDDING` | on | preserve already-dequantized INT8 embedding weights across CPU/MPS casts; compatibility repair independent of native kernels |
-| `ASFP8_QWEN21_FAST` | on (under DIT_EXT) | exact Qwen-Image 2.1 fusions on the validated M5 Ultra / PyTorch 2.14.0 build; `0` retains the encoder fix and generic native paths |
+| `ASFP8_QWEN21_FAST` | on (under DIT_EXT) | exact Qwen-Image 2.1 fusions on the pinned validated M5 Ultra / PyTorch 2.14.0 and 2.14.1 builds; `0` retains the encoder fix and generic native paths |
 | `ASFP8_SOL_LAYOUT` | `head_major` | optional SOL physical layout; `legacy` selects the prior wrapper/shaders for diagnosis. New layout preserves prior SOL output bytes, not exact-native attention bytes; restart after changing it |
 | `ASFP8_YUE2_FAST` | on | exact phase-local cast-weight reuse, guarded vocabulary projection and single-token BF16 RoPE for the MPS YuE2 encoder; scoped acoustic attention under the existing PyTorch query-cache route; `0` restores the preceding YuE2 paths |
 | `ASFP8_YUE2_WEIGHT_CACHE` / `ASFP8_YUE2_VOCAB_HEAD` / `ASFP8_YUE2_ATTN` / `ASFP8_YUE2_ROPE` | on | independent YuE2 switches; exact against the existing GPU stack |
 | `ASFP8_YUE2_CACHE_GIB` / `ASFP8_YUE2_VERBOSE` | 8 / off | temporary weight-cache cap (also limited by device memory/headroom) / optional phase counters; cache size 0 disables storage |
 | `ASFP8_QWEN21_ROPE` / `ASFP8_QWEN21_MODULATE` / `ASFP8_QWEN21_RESIDUAL` | on (under QWEN21_FAST) | independent switches for Q/K RMSNorm + RoPE, modulation, and gated residual fusions |
 | `ASFP8_SDXL_GEGLU` | on (under DIT_EXT) | exact FP16 GELU + multiplication fusion for SDXL on PyTorch 2.14 MPS; `0` restores eager GEGLU |
-| `ASFP8_CONV3D` | off | conv3d → sliced conv2d + Wan VAE fast path |
+| `ASFP8_CONV3D` | implied by native | conv3d → sliced conv2d + Wan VAE fast path |
 | `ASFP8_FLUX_FAST` / `KREA2_FAST` / `LTX_FAST` / `WAN_FAST` / `WAN_VAE_FAST` / `IDEOGRAM_FAST` / `MINIMAX_FAST` | on (under DIT_EXT/CONV3D) | per-architecture kill switches |
 | `ASFP8_KREA2_GLUE` | on | exact Krea2 normalization/modulation, residual, SwiGLU and attention-layout fusions; guarded to M5 Ultra / PyTorch 2.13–2.14 under KREA2_FAST |
 | `ASFP8_KREA2_ATTN_SCHEDULE` | on | exact synchronized Morton attention schedule for M5 Ultra BF16 Krea2, B=1, 48Q/12KV, D=128, 8192–12287 tokens; other geometries keep their existing schedule |
@@ -1887,8 +2031,9 @@ alone—by accident.
 | `ASFP8_WAN_VAE_CHUNK` | 16 | Wan VAE frames per causal pass (even, 2–32; lower caps decode memory peak) |
 | `ASFP8_FREE_MEM` | on | MPS free-memory accounting fix (patch #30) |
 | `ASFP8_VAE_SLICE_FIX` | on | VAE slice_attention INT_MAX cap (patch #31) |
-| `ASFP8_SEEDVR2_VAE_SYNC` | on | wait between SeedVR2 VAE spatial tiles and video residual blocks on MPS to bound temporary allocations; scheduling-only, independent of native/relaxed flags |
-| `ASFP8_SEEDVR2_VAE_VIDEO_SYNC` | on | include residual-block waits inside SeedVR2 video tiles; setting 0 restores the previous spatial-only schedule and its video memory growth |
+| `ASFP8_SEEDVR2_VAE_SYNC` | on | wait between SeedVR2 VAE spatial tiles and bound pending video residual blocks on MPS; scheduling-only protection remains enabled independently of native/relaxed flags |
+| `ASFP8_SEEDVR2_VAE_VIDEO_SYNC` | on | include bounded residual-block waits inside SeedVR2 video tiles; setting 0 restores the previous spatial-only schedule and its video memory growth |
+| `ASFP8_SEEDVR2_VAE_BLOCK_BATCH` | 4 on reviewed 2.14.1/M5 Ultra/current-core FP16 video; otherwise 1 | cap pending residual blocks at 1–4 while retaining every spatial-tile fence; early fences at 2 GiB driver growth or 40 GiB total (an early-fence threshold, not a hard allocation cap); `1` restores every-block waits, invalid values use 1, FAST=0 retains 1 |
 | `ASFP8_SEEDVR2_LOADER` | on | supply official missing conditioning for raw original SeedVR2 7B checkpoints on macOS; existing conditioning and weights are preserved |
 | `ASFP8_SEEDVR2_FAST` | on | SeedVR2 exact performance additions; native sampling/SiLU kernels require `ASFP8_DIT_EXT=1` (implied by `ASFP8_NATIVE=1`); `0` at startup retains the memory/error safeguards |
 | `ASFP8_SEEDVR2_ATTN_FIX` | on | pack MPS attention windows into bounded buffers to avoid oversized-backing-storage `INT_MAX` failures; independent of the native kernel flag |
@@ -1896,6 +2041,7 @@ alone—by accident.
 | `ASFP8_SEEDVR2_VAE_PACK` | on | reuse folded convolution weights within a tiled SeedVR2 VAE call; requires FAST and VAE_SYNC wrappers |
 | `ASFP8_SEEDVR2_VAE_SILU` | on | native FP16 single-frame SiLU + causal padding + channel packing, retaining MPS Conv2D |
 | `ASFP8_SEEDVR2_MOD` / `ASFP8_SEEDVR2_RMS` / `ASFP8_SEEDVR2_ROPE` | on | independent native SeedVR2 BF16 sampling fusions; RMS retains PyTorch's existing mean/rsqrt reduction |
+| `ASFP8_SEEDVR2_VAE_GN_SPLIT` | on for the reviewed 2.14.1/M5 Ultra/current-core path | exact two-dispatch FP16 GroupNorm + SiLU + causal folding in image VAE residual blocks; preserves intermediate rounding, existing convolutions and memory fences; `0` restores the preceding exact implementation |
 | `ASFP8_SEEDVR2_VAE_GN` | off | experimental exact GroupNorm + SiLU + packing on tested PyTorch 2.13; whole-decoder timing was neutral, so it is not enabled by default |
 | `ASFP8_FREE_INTERLEAVE` | on | drain the MPS pool between models on explicit free-all requests |
 | `ASFP8_MPS_RESERVE_GB` | max(16, 15%) | OS memory reserve held back from comfy's estimate |
@@ -1906,37 +2052,6 @@ alone—by accident.
 | `ASFP8_EXEC_TRACE_SYNC` | off | with EXEC_TRACE: time the GPU tail drain after the sampler loop (splits real overhead from queued GPU work) |
 | `APPLESILICON_FP8_PSUTIL` | auto | psutil fix: `auto` / `off` / `force` |
 | `MTLFLASHATTN_SDPA*` | — | patch #5 gates (see mtlflashattn docs) |
-
-## Install
-
-```bash
-cd <your ComfyUI>/custom_nodes
-git clone https://github.com/luix93/ComfyUI-AppleSilicon-Optimized
-pip install -r ComfyUI-AppleSilicon-Optimized/requirements.txt
-```
-
-Restart ComfyUI. The only required dependency (`mtlflashattn`) installs
-automatically; the native kernels additionally need `ninja` + Xcode
-command-line tools + torch's C++ headers — and the node **self-heals the
-first two Python-side gaps at boot**: it installs `ninja` into the venv and
-restores torch's C++ headers from a local cache when the bundled torch ships
-without them (ComfyUI Desktop strips them; a healthy venv seeds the cache).
-`ASFP8_AUTOFIX=0` opts out. If prerequisites still can't be met, a loud
-banner says exactly what's missing instead of silently rendering at half
-speed. For ComfyUI Desktop, install into the app's own venv
-(`.venv/bin/python3 -m pip ...`) — the bundled torch is the one that matters.
-
-Startup prints one line per active patch
-(`[AppleSilicon-Optimized/<patch>] ...`); with `ASFP8_NATIVE=1` you'll also
-see the master-switch line listing what it implied. Kernels JIT-build on
-first use (a one-time delay per dtype) and print nothing when they fall back
-— set the debug vars above to see routing decisions.
-
-> Primary release validation: `ComfyUI-torch213-latest` on M5 Max / 128 GB,
-> macOS 27 dev beta, PyTorch 2.13.0, Python 3.13, ComfyUI Desktop. M1–M4 get
-> the compatibility
-> layer and flash attention; the int8/fp8 matmul kernels need M5-class
-> TensorOps and fall back cleanly below that.
 
 ## Field notes (what the benchmarks taught us)
 

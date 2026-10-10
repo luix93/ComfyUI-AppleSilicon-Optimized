@@ -16,7 +16,7 @@ def bits(a, b):
 @pytest.fixture
 def kernel():
     if not (torch.backends.mps.is_available() and patch.torch_mpp_qcache._hardware()
-            and torch.__version__.split('+')[0] == '2.14.0'):
+            and patch.torch_mpp_qcache._torch_build_supported()):
         pytest.skip('validated M5 Ultra / PyTorch 2.14 required')
     assert patch._lib() is not None
 

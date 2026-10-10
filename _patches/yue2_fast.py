@@ -128,8 +128,7 @@ def _head_supported(head, device, dtype, bounds):
     from . import torch_mpp_qcache
     return (bounds is not None and _enabled('VOCAB_HEAD')
             and torch.device(device).type == 'mps' and dtype == torch.bfloat16
-            and torch.__version__.split('+')[0] == '2.14.0'
-            and torch.version.git_version == torch_mpp_qcache._TORCH_GIT
+            and torch_mpp_qcache._torch_build_supported()
             and os.environ.get('PYTORCH_MPS_FAST_MATH', '0') == '0'
             and torch_mpp_qcache._hardware()
             and callable(getattr(head, '_forward', None))

@@ -84,14 +84,19 @@ if __spec__ is not None and __spec__.parent:
           "Silicon acceleration layer (runtime patches + Metal 4.1 kernels); "
           "lines tagged [AppleSilicon-Optimized/...] are ours.")
 
-    # Master switch: ASFP8_NATIVE=1 enables every opt-in native fast path at
-    # once (fp8/int8 Metal kernels, staged W8A16 backend, attention router, DiT
-    # fusions). Explicit per-feature values always win — see _common.NATIVE_IMPLIES.
+    # Default to native acceleration on macOS/MPS. Explicit master/per-feature
+    # values always win, and each route retains its own guards and fallbacks.
     from ._patches._common import apply_native_master_switch as _anms
+    from ._patches._common import apply_default_attention_backend as _adab
     from ._patches._common import ensure_native_prereqs as _enp
     _implied = _anms()
     if _implied:
         print(f"[AppleSilicon-Optimized] ASFP8_NATIVE=1 -> {', '.join(v + '=1' for v in _implied)}")
+    _attention_implied = _adab()
+    if _attention_implied:
+        import os as _default_os
+        print("[AppleSilicon-Optimized] tested attention defaults -> "
+              + ', '.join(v + '=' + _default_os.environ[v] for v in _attention_implied))
     # Self-heal JIT prerequisites BEFORE any extension tries to build
     # (fresh Desktop venvs: no ninja, stripped torch headers). ASFP8_AUTOFIX=0
     # disables; the loud banner below still reports anything left broken.

@@ -13,14 +13,14 @@ with a real FP8->float cast and runs entirely on the GPU.
 """
 
 import os
+import sys
 
 import torch
 
 FP8_DTYPES = (torch.float8_e4m3fn, torch.float8_e5m2)
 
-# The opt-in native fast paths implied by the ASFP8_NATIVE=1 master switch.
-# Every one auto-falls-back where unsupported (older macOS, pre-M5 GPU, missing
-# toolchain), so turning them all on together is safe by construction.
+# Native fast paths implied by the master switch, enabled automatically on MPS.
+# Individual routes keep their build, input and hardware guards and fallbacks.
 NATIVE_IMPLIES = (
     "ASFP8_FP8_EXT",      # patch #3 fp8-native _scaled_mm + patch #18 build flag
     "ASFP8_FP8_SGEMM",    # patch #18 staged W8A16 backend (preferred; auto-fallback)
@@ -32,7 +32,7 @@ NATIVE_IMPLIES = (
 
 
 def apply_native_master_switch(environ=None):
-    """ASFP8_NATIVE=1 turns on every opt-in native fast path at once.
+    """Default to native acceleration on macOS/MPS; explicit values win.
 
     Per-feature vars stay authoritative: any explicitly set value (including
     "0") wins over the master switch, so e.g. `ASFP8_NATIVE=1 ASFP8_DIT_EXT=0`
@@ -40,6 +40,10 @@ def apply_native_master_switch(environ=None):
     switch actually implied (for the startup log)."""
     if environ is None:
         environ = os.environ
+    if "ASFP8_NATIVE" not in environ:
+        if sys.platform != "darwin" or not torch.backends.mps.is_available():
+            return []
+        environ["ASFP8_NATIVE"] = "1"
     if environ.get("ASFP8_NATIVE") != "1":
         return []
     implied = []
@@ -47,6 +51,26 @@ def apply_native_master_switch(environ=None):
         if var not in environ:
             environ[var] = "1"
             implied.append(var)
+    return implied
+
+
+def apply_default_attention_backend(environ=None):
+    """Use the measured PyTorch route only on the reviewed M5 Ultra builds."""
+    if environ is None:
+        environ = os.environ
+    if (environ.get("ASFP8_NATIVE") != "1"
+            or "ASFP8_ATTN_BACKEND" in environ or sys.platform != "darwin"
+            or not torch.backends.mps.is_available()):
+        return []
+    from . import torch_mpp_qcache as qc
+    if not qc._torch_build_supported() or not qc._hardware():
+        return []
+    environ["ASFP8_ATTN_BACKEND"] = "pytorch"
+    implied = ["ASFP8_ATTN_BACKEND"]
+    # Explicit modern and legacy SDPA choices retain priority.
+    if "MTLFLASHATTN_SDPA" not in environ and "APPLESILICON_FP8_SDPA" not in environ:
+        environ["MTLFLASHATTN_SDPA"] = "off"
+        implied.append("MTLFLASHATTN_SDPA")
     return implied
 
 def ensure_native_prereqs(environ=None):

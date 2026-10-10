@@ -59,8 +59,7 @@ def install():
     if (_installed or os.environ.get('ASFP8_DIT_EXT') != '1'
             or os.environ.get('ASFP8_LTX25_FAST', '1') != '1'
             or os.environ.get('PYTORCH_MPS_FAST_MATH', '0') != '0'
-            or torch.__version__.split('+')[0] != '2.14.0'
-            or torch.version.git_version != torch_mpp_qcache._TORCH_GIT
+            or not torch_mpp_qcache._torch_build_supported()
             or not torch_mpp_qcache._hardware() or not torch.backends.mps.is_available()):
         return
     try:

@@ -16,8 +16,7 @@ def bits(a, b):
 @pytest.fixture
 def runtime(monkeypatch):
     if not (torch.backends.mps.is_available() and attention._hardware()
-            and torch.__version__.split('+')[0] == '2.14.0'
-            and torch.version.git_version == attention._TORCH_GIT):
+            and attention._torch_build_supported()):
         pytest.skip('validated M5 Ultra / PyTorch 2.14 required')
     for flag in ('ASFP8_INT8_EXT', 'ASFP8_DIT_EXT', 'ASFP8_WAN_FAST',
                  'ASFP8_WAN_EXACT', 'ASFP8_WAN_FP16_GEMM', 'ASFP8_WAN_ATTN',

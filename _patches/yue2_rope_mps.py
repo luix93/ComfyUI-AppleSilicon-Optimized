@@ -13,6 +13,7 @@ from pathlib import Path
 import torch
 
 _LLAMA_SHA = '3e8cbb319e0c727d1a75525cbe29863463aa8263485fac22303c58fa0316ab4a'
+_LLAMA_SHAS = {_LLAMA_SHA, '630a9d0f66448ae1b8de53041fde7dc2c4df1e7a16f29fab8ed6c9bb44ff7fdd'}
 _EAGER_SHA = '630a3d287bf602046935086f9d43eb6db2ec4971913a1cb3fb35bae6ea4ac9ee'
 _library = None
 _dead = False
@@ -46,7 +47,7 @@ def _sources_supported():
     try:
         from comfy.text_encoders import llama
         from comfy_kitchen.backends.eager import rope
-        return (hashlib.sha256(Path(llama.__file__).read_bytes()).hexdigest() == _LLAMA_SHA
+        return (hashlib.sha256(Path(llama.__file__).read_bytes()).hexdigest() in _LLAMA_SHAS
                 and hashlib.sha256(Path(rope.__file__).read_bytes()).hexdigest() == _EAGER_SHA)
     except (ImportError, OSError, TypeError):
         return False
@@ -66,8 +67,7 @@ def prepare(config):
     if (_dead or getattr(config, 'hidden_size', None) != 2048
             or getattr(config, 'num_attention_heads', None) != 16
             or getattr(config, 'num_key_value_heads', None) != 8
-            or torch.__version__.split('+')[0] != '2.14.0'
-            or torch.version.git_version != qc._TORCH_GIT
+            or not qc._torch_build_supported()
             or os.environ.get('PYTORCH_MPS_FAST_MATH', '0') != '0'
             or not qc._hardware() or not _sources_supported()):
         return None

@@ -1,0 +1,29 @@
+{
+  "torch": "2.14.1",
+  "torchvision": "0.29.1",
+  "torch_git": "5c4886908584029761b579af026dcfb627c84070",
+  "supported": {
+    "2.14.0": {
+      "git": "08187d9e0fba026dc8217405802ab5381dc88d90",
+      "torchvision": "0.29.0"
+    },
+    "2.14.1": {
+      "git": "5c4886908584029761b579af026dcfb627c84070",
+      "torchvision": "0.29.1"
+    }
+  },
+  "wheel_sha256": {
+    "torch-2.14.1-cp310-cp310-macosx_14_0_arm64.whl": "e24b9815001d18e73e76eae1ea25f8ef908c6103e857378ad20f8f6cf5c954f5",
+    "torch-2.14.1-cp311-cp311-macosx_14_0_arm64.whl": "b6074b130fd26bc50f5d171f07dfed70db22dd0c354ab34767729249f9e0f042",
+    "torch-2.14.1-cp312-cp312-macosx_14_0_arm64.whl": "420dbf314c180ee4b86e9bc00aee5746a7d6e5bacdd7df925af671ed393f0b2e",
+    "torch-2.14.1-cp313-cp313-macosx_14_0_arm64.whl": "dbe359d705f4d67236743794c296c6dee93a922fd8117eff8c3e880d7d0fb2b9",
+    "torch-2.14.1-cp314-cp314-macosx_14_0_arm64.whl": "cee091caf2a6229e248daf41d18ceebf590ba02d9179205610062c64ee5fef03",
+    "torch-2.14.1-cp314-cp314t-macosx_14_0_arm64.whl": "06c3ec25f3b497f9a73dc0c36f293f295cfe8d5584fd446238d9a501b30a66d5",
+    "torchvision-0.29.1-cp310-cp310-macosx_14_0_arm64.whl": "9ef8de9b4a47b00dbe0a6a35bba22907f86f091adef57a76f1581502dbfc59f8",
+    "torchvision-0.29.1-cp311-cp311-macosx_14_0_arm64.whl": "880c1c789fd9cdc31cdb4dbe906b8c74bd8b9b70509cc9fffe6b996ad0a0f656",
+    "torchvision-0.29.1-cp312-cp312-macosx_14_0_arm64.whl": "3b6eb9d2f8fe9b93d9d37637749df361efeed133d96ddd503184a1b5b12bb27f",
+    "torchvision-0.29.1-cp313-cp313-macosx_14_0_arm64.whl": "b0b3de76f2ee5678b7950ba9971cf72d9c5887cd7993db61788552f371686fed",
+    "torchvision-0.29.1-cp314-cp314-macosx_14_0_arm64.whl": "c33cbd596afa13c24de752ead437eb5da48285efd6dc2a06543948821bfde57a",
+    "torchvision-0.29.1-cp314-cp314t-macosx_14_0_arm64.whl": "8b26ff2c61cd1da60d74cf704cae6007bc38902a60d4a7068fe327db1cb45c62"
+  }
+}

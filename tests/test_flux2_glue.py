@@ -14,7 +14,7 @@ def bits(a, b):
 @pytest.fixture
 def kernel(monkeypatch):
     if not (torch.backends.mps.is_available() and patch.torch_mpp_qcache._hardware()
-            and torch.version.git_version == patch.torch_mpp_qcache._TORCH_GIT):
+            and patch.torch_mpp_qcache._torch_build_supported()):
         pytest.skip('validated M5 Ultra / PyTorch 2.14 required')
     monkeypatch.setattr(patch, '_activation_type', SiLUActivation)
     monkeypatch.setattr(patch, '_original', SiLUActivation.forward)

@@ -18,7 +18,7 @@ def bits(a,b):
 @pytest.fixture
 def kernel(monkeypatch):
     if not (torch.backends.mps.is_available() and patch.torch_mpp_qcache._hardware()
-            and torch.__version__.split('+')[0]=='2.14.0'):
+            and patch.torch_mpp_qcache._torch_build_supported()):
         pytest.skip('validated M5 Ultra / PyTorch 2.14 required')
     monkeypatch.setattr(patch,'_model',SimpleNamespace(comfy=SimpleNamespace(model_management=SimpleNamespace(in_training=False))))
     assert patch._lib() is not None
@@ -73,6 +73,41 @@ def test_attention_hooks_keep_original_forward(monkeypatch):
     layer=object();x=object();pe=object();attn=object();opts={'patches':{'attn1_patch':[object()]}}
     assert patch._attention(layer,x,pe,attn,42,opts)=='original'
     assert calls==[(layer,x,pe,attn,42,opts)]
+
+
+@pytest.mark.parametrize('containers', [False, True])
+def test_attention_preserves_current_and_legacy_callback_contract(kernel, monkeypatch, containers):
+    from contextlib import contextmanager
+    from comfy.ldm.modules.attention import AttentionTensorContainer
+    model = SimpleNamespace(comfy=SimpleNamespace(model_management=SimpleNamespace(in_training=False)))
+    if containers:
+        model.AttentionTensorContainer = AttentionTensorContainer
+    monkeypatch.setattr(patch, '_model', model)
+    @contextmanager
+    def cast(norm, x, **kwargs):
+        yield norm.weight, None
+    monkeypatch.setattr(patch, '_ops', SimpleNamespace(CastBiasWeightContext=cast))
+    with torch.inference_mode():
+        torch.manual_seed(114)
+        x = torch.randn(1, 3, 4096, device='mps', dtype=torch.bfloat16)
+        pe = torch.randn(1, 3, 1, 64, 2, 2, device='mps')
+        q, k, v = [torch.randn_like(x) for _ in range(3)]
+        qw, kw = [torch.ones(128, device='mps', dtype=x.dtype) for _ in range(2)]
+        expected_q, expected_k = rms_rope(q.view(1, 3, 32, 128), k.view(1, 3, 32, 128), pe, qw, kw, 1e-6)
+        preferred = object()
+        layer = SimpleNamespace(heads=32, norm_q=SimpleNamespace(eps=1e-6, weight=qw),
+            norm_k=SimpleNamespace(eps=1e-6, weight=kw), to_q=lambda x:q,
+            to_k=lambda x:k, to_v=lambda x:v, to_out=[lambda x:x], comfy_attention=preferred)
+        def attention(a, b, c, heads, preferred_attention):
+            assert heads == 32 and preferred_attention is preferred
+            if containers:
+                assert all(isinstance(t, AttentionTensorContainer) for t in (a, b, c))
+                a, b, c = [t.take() for t in (a, b, c)]
+            bits(a, expected_q)
+            bits(b, expected_k)
+            bits(c, v.view(1, 3, 32, 128))
+            return c.flatten(2)
+        bits(patch._attention(layer, x, pe, attention, 0), v)
 
 
 @pytest.fixture(scope='module')

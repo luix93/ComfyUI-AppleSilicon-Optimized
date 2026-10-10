@@ -21,8 +21,7 @@ def maybe_prequant(kernel, x, row_scale, weight, col_scale, bias, shape):
             or os.environ.get('ASFP8_WAN_FAST', '1') != '1'
             or os.environ.get('ASFP8_WAN_EXACT', '1') != '1'
             or os.environ.get('ASFP8_WAN_FP16_GEMM', '1') != '1'
-            or torch.__version__.split('+')[0] != '2.14.0'
-            or torch.version.git_version != torch_mpp_qcache._TORCH_GIT
+            or not torch_mpp_qcache._torch_build_supported()
             or os.environ.get('PYTORCH_MPS_FAST_MATH', '0') != '0'
             or kernel is None or not hasattr(kernel, 'i8_matmul2d_nt_fused_cs_half')
             or tuple(weight.shape) not in _shapes

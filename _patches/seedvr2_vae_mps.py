@@ -4,7 +4,9 @@ The tiled encoder can accumulate MPS/MPSGraph temporary allocations even when
 live tensor memory stays flat. Waiting after each tile allows those buffers to
 be reused. A video tile contains multiple temporal chunks, so it also needs
 waits between residual blocks. Arithmetic, tile geometry, causal caches, and
-non-tiled forwards are unchanged.
+non-tiled forwards are unchanged. The reviewed current-core M5 Ultra path can queue up to four
+residual blocks, with early fences at 2 GiB driver growth or 40 GiB total.
+ASFP8_SEEDVR2_VAE_BLOCK_BATCH=1 restores per-block waits.
 ASFP8_SEEDVR2_VAE_SYNC=0 restores the original scheduling.
 """
 from contextvars import ContextVar
@@ -15,10 +17,29 @@ import sys
 
 import torch
 
+from . import seedvr2_fast
+
 TAG = "[AppleSilicon-Optimized/seedvr2_vae]"
 _installed = False
 _tiled_model = ContextVar("asfp8_seedvr2_tiled_model", default=None)
 _video_tiled = ContextVar("asfp8_seedvr2_video_tiled", default=False)
+_pending_blocks = ContextVar("asfp8_seedvr2_pending_blocks", default=None)
+
+
+def _block_batch_size():
+    if not seedvr2_fast._current_vae_fusions or not seedvr2_fast._enabled("FAST"):
+        return 1
+    try:
+        return min(4, max(1, int(os.environ.get("ASFP8_SEEDVR2_VAE_BLOCK_BATCH", "4"))))
+    except ValueError:
+        return 1
+
+
+def _flush_blocks(state):
+    torch.mps.synchronize()
+    state["count"] = 0
+    state["driver"] = torch.mps.driver_allocated_memory()
+
 
 
 def _wrap_tiling(original):
@@ -28,6 +49,10 @@ def _wrap_tiling(original):
         video_token = _video_tiled.set(
             x.device.type == "mps" and x.ndim == 5 and x.shape[2] > 1
             and os.environ.get("ASFP8_SEEDVR2_VAE_VIDEO_SYNC", "1") == "1")
+        limit = _block_batch_size() if (_video_tiled.get() and x.dtype == torch.float16) else 1
+        state = ({"limit": limit, "count": 0, "driver": torch.mps.driver_allocated_memory()}
+                 if limit > 1 else None)
+        block_token = _pending_blocks.set(state)
         try:
             from .conv3d_mps import packing_scope
             pack = (x.device.type == 'mps' and not torch.is_grad_enabled()
@@ -36,8 +61,13 @@ def _wrap_tiling(original):
             with packing_scope() if pack else nullcontext():
                 return original(x, vae_model, *args, **kwargs)
         finally:
-            _video_tiled.reset(video_token)
-            _tiled_model.reset(token)
+            try:
+                if state is not None and state["count"]:
+                    _flush_blocks(state)
+            finally:
+                _pending_blocks.reset(block_token)
+                _video_tiled.reset(video_token)
+                _tiled_model.reset(token)
     return tiled
 
 
@@ -46,7 +76,11 @@ def _wrap_tile_call(original):
     def tile(self, x, *args, **kwargs):
         out = original(self, x, *args, **kwargs)
         if _tiled_model.get() is self and x.device.type == "mps":
-            torch.mps.synchronize()
+            state = _pending_blocks.get()
+            if state is None:
+                torch.mps.synchronize()
+            else:
+                _flush_blocks(state)
         return out
     return tile
 
@@ -56,7 +90,15 @@ def _wrap_video_block(original):
     def block(self, input_tensor, *args, **kwargs):
         out = original(self, input_tensor, *args, **kwargs)
         if _video_tiled.get() and input_tensor.device.type == "mps":
-            torch.mps.synchronize()
+            state = _pending_blocks.get()
+            if state is None:
+                torch.mps.synchronize()
+            else:
+                state["count"] += 1
+                driver = torch.mps.driver_allocated_memory()
+                if (state["count"] >= state["limit"] or driver >= 40 * 2**30
+                        or driver - state["driver"] >= 2 * 2**30):
+                    _flush_blocks(state)
         return out
     return block
 
@@ -75,10 +117,15 @@ def install():
 
     tiled = vae.tiled_vae
     encode = vae.VideoAutoencoderKLWrapper.encode
-    decode = vae.VideoAutoencoderKL.decode_
+    if hasattr(vae, "VideoAutoencoderKL"):
+        decoder, decode_name = vae.VideoAutoencoderKL, "decode_"
+    else:
+        # Current ComfyUI owns temporal slicing directly on the wrapper.
+        decoder, decode_name = vae.VideoAutoencoderKLWrapper, "slicing_decode"
+    decode = getattr(decoder, decode_name)
     vae.tiled_vae = _wrap_tiling(tiled)
     vae.VideoAutoencoderKLWrapper.encode = _wrap_tile_call(encode)
-    vae.VideoAutoencoderKL.decode_ = _wrap_tile_call(decode)
+    setattr(decoder, decode_name, _wrap_tile_call(decode))
     vae.ResnetBlock3D.forward = _wrap_video_block(vae.ResnetBlock3D.forward)
     _installed = True
     video = (" and video residual blocks"

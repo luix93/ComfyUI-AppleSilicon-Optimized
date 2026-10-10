@@ -1,0 +1,3989 @@
+{
+  "runtime": {
+    "date": "2026-10-09",
+    "machine": "M5 Ultra, 80 GPU cores, 256 GB unified memory",
+    "macos": "27.0",
+    "python": "3.13.12",
+    "torch": "2.14.1",
+    "torch_git": "5c4886908584029761b579af026dcfb627c84070",
+    "torchvision": "0.29.1",
+    "comfy_commit": "1d2ea2948d33dfda4d7cfe58c6d234968aa62cf8",
+    "comfy_git_describe": "v0.39.0-33-g1d2ea294",
+    "frontend": "1.55.16",
+    "pyav": "19.0.1"
+  },
+  "completed_jobs": [
+    {
+      "family": "torch214-production",
+      "label": "sdxl-optimized-validated",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 60.04463315010071
+    },
+    {
+      "family": "torch214-production",
+      "label": "zimage-optimized-validated",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 24.917420148849487
+    },
+    {
+      "family": "torch214-production",
+      "label": "krea2-lokr-optimized-validated",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 78.38046383857727
+    },
+    {
+      "family": "torch214-production",
+      "label": "krea2-no-lokr-optimized-validated",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 77.26684212684631
+    },
+    {
+      "family": "flux2-klein",
+      "label": "flux2-t2i-native-validated",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 63.89894390106201
+    },
+    {
+      "family": "flux2-klein",
+      "label": "flux2-edit-native-validated",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 32.50827479362488
+    },
+    {
+      "family": "qwen21-ultra",
+      "label": "qwen21-t2i-optimized-validated",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 112.9047281742096
+    },
+    {
+      "family": "ideogram4",
+      "label": "ideogram4-native-validated",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 142.26302409172058
+    },
+    {
+      "family": "qwen21-generated-edit",
+      "label": "qwen21-generated-edit-stock",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 272.89054584503174
+    },
+    {
+      "family": "qwen21-generated-edit",
+      "label": "qwen21-generated-edit-optimized",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 126.45563697814941
+    },
+    {
+      "family": "torch214-production",
+      "label": "h3-short-stock",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 43.5948212146759
+    },
+    {
+      "family": "torch214-production",
+      "label": "h3-short-optimized",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 65.03711891174316
+    },
+    {
+      "family": "torch214-production",
+      "label": "h3-full-stock",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 725.4751379489899
+    },
+    {
+      "family": "torch214-production",
+      "label": "h3-full-optimized",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 440.0060119628906
+    },
+    {
+      "family": "ltx25",
+      "label": "ltx25-short-stock",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 69.00955390930176
+    },
+    {
+      "family": "ltx25",
+      "label": "ltx25-short-optimized",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 72.46715092658997
+    },
+    {
+      "family": "ltx25",
+      "label": "ltx25-diffusion-stock",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 300.7905821800232
+    },
+    {
+      "family": "ltx25",
+      "label": "ltx25-diffusion-optimized",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 156.78722620010376
+    },
+    {
+      "family": "ltx25",
+      "label": "ltx25-conv-stock",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 180.84657096862793
+    },
+    {
+      "family": "ltx25",
+      "label": "ltx25-conv-optimized",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 114.22192406654358
+    },
+    {
+      "family": "wan22",
+      "label": "wan22-short-stock",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 56.59528708457947
+    },
+    {
+      "family": "wan22",
+      "label": "wan22-short-native",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 72.31911087036133
+    },
+    {
+      "family": "wan22",
+      "label": "wan22-turbo-stock",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 159.01304817199707
+    },
+    {
+      "family": "wan22",
+      "label": "wan22-turbo-native",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 114.60876417160034
+    },
+    {
+      "family": "wan22",
+      "label": "wan22-20step-stock",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 1272.9831409454346
+    },
+    {
+      "family": "wan22",
+      "label": "wan22-20step-native",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 928.8059780597687
+    },
+    {
+      "family": "auxiliary",
+      "label": "seedvr2-current-kernels",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 10.51617693901062
+    },
+    {
+      "family": "seedvr2-torch214",
+      "label": "seedvr2-image-small-stock",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 13.17911672592163
+    },
+    {
+      "family": "seedvr2-torch214",
+      "label": "seedvr2-image-small-native",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 50.752310037612915
+    },
+    {
+      "family": "seedvr2-torch214",
+      "label": "seedvr2-image-3x-stock",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 204.2920389175415
+    },
+    {
+      "family": "seedvr2-torch214",
+      "label": "seedvr2-image-3x-native",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 172.60974407196045
+    },
+    {
+      "family": "seedvr2-video",
+      "label": "seedvr2-video-9f-native",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 35.91297101974487
+    },
+    {
+      "family": "seedvr2-video",
+      "label": "seedvr2-video-120f-native",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 393.6466341018677
+    },
+    {
+      "family": "seedvr2-video",
+      "label": "seedvr2-video-240f-native",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 797.1515820026398
+    },
+    {
+      "family": "seedvr2-torch214",
+      "label": "seedvr2-fp16-small-native",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 10.574562788009644
+    },
+    {
+      "family": "seedvr2-torch214",
+      "label": "seedvr2-image-small-native-current-fused",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 54.66754698753357
+    },
+    {
+      "family": "seedvr2-torch214",
+      "label": "seedvr2-image-3x-native-current-fused",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 148.47310590744019
+    },
+    {
+      "family": "seedvr2-torch214",
+      "label": "seedvr2-installed-default-small",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 17.645278930664062
+    },
+    {
+      "family": "yue2",
+      "label": "yue2-8s-stock",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 379.7826681137085
+    },
+    {
+      "family": "yue2",
+      "label": "yue2-8s-optimized",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 66.81312203407288
+    },
+    {
+      "family": "yue2",
+      "label": "yue2-full-baseline-gpu",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 115.59960985183716
+    },
+    {
+      "family": "yue2",
+      "label": "yue2-full-optimized",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 125.58457112312317
+    },
+    {
+      "family": "yue2",
+      "label": "yue2-mothersuperior-baseline-gpu",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 104.00985598564148
+    },
+    {
+      "family": "yue2",
+      "label": "yue2-mothersuperior-optimized",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 74.97252821922302
+    },
+    {
+      "family": "h3-kitchen",
+      "label": "h3-presets-short",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 913.0562245845795
+    },
+    {
+      "family": "auxiliary",
+      "label": "vsr-neural-rendering",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 18.45423698425293
+    },
+    {
+      "family": "auxiliary",
+      "label": "h3-latent-upscaler",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 9.017422914505005
+    },
+    {
+      "family": "torch214-production",
+      "label": "h3-int8-vae-sanity",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 67.72106981277466
+    },
+    {
+      "family": "torch214-production",
+      "label": "h3-relaxed-sanity",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 31.400455951690674
+    },
+    {
+      "family": "torch214-production",
+      "label": "h3-full-relaxed",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 481.83344173431396
+    },
+    {
+      "family": "h3-kitchen",
+      "label": "h3-camera-480-optimized",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 887.187658071518
+    },
+    {
+      "family": "h3-kitchen",
+      "label": "h3-camera-720-optimized",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 2986.3093478679657
+    },
+    {
+      "family": "torch214-production",
+      "label": "h3-int8-core-vae-sanity",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 80.21912217140198
+    },
+    {
+      "family": "torch214-production",
+      "label": "h3-int8-relaxed-vae-sanity",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 23.876537084579468
+    },
+    {
+      "family": "h3-kitchen",
+      "label": "h3-combined-short",
+      "status": "success",
+      "exit_code": 0,
+      "wall_seconds": 163.66309118270874
+    }
+  ],
+  "main": [
+    {
+      "workflow": "SDXL, 896\u00d71152 / 12 steps",
+      "stock": {
+        "label": "sdxl-stock",
+        "status": "success",
+        "mean": 2.6109999999999998,
+        "minimum": 2.598,
+        "maximum": 2.627,
+        "measured_runs": 3,
+        "finite": true,
+        "repeatable_tensors": true,
+        "result_file": "torch214-production/sdxl-stock-results.json"
+      },
+      "optimized": {
+        "label": "sdxl-optimized-validated",
+        "status": "success",
+        "mean": 2.396,
+        "minimum": 2.382,
+        "maximum": 2.418,
+        "measured_runs": 3,
+        "finite": true,
+        "repeatable_tensors": true,
+        "result_file": "torch214-production/sdxl-optimized-validated-results.json"
+      },
+      "previous_optimized_seconds": 2.416,
+      "less_total_time_percent": 8.23439295289161
+    },
+    {
+      "workflow": "Z-Image Turbo, 1024\u00d71024 / 8 steps",
+      "stock": {
+        "label": "zimage-stock",
+        "status": "success",
+        "mean": 7.858333333333333,
+        "minimum": 7.822,
+        "maximum": 7.895,
+        "measured_runs": 3,
+        "finite": true,
+        "repeatable_tensors": true,
+        "result_file": "torch214-production/zimage-stock-results.json"
+      },
+      "optimized": {
+        "label": "zimage-optimized-validated",
+        "status": "success",
+        "mean": 3.4366666666666665,
+        "minimum": 3.407,
+        "maximum": 3.476,
+        "measured_runs": 3,
+        "finite": true,
+        "repeatable_tensors": true,
+        "result_file": "torch214-production/zimage-optimized-validated-results.json"
+      },
+      "previous_optimized_seconds": 3.443,
+      "less_total_time_percent": 56.267232237539766
+    },
+    {
+      "workflow": "Flux.2 Klein 9B, text-to-image / 1024\u00d71024 / 4 steps",
+      "stock": {
+        "label": "flux2-t2i-stock",
+        "status": "success",
+        "mean": 5.613666666666667,
+        "minimum": 5.599,
+        "maximum": 5.63,
+        "measured_runs": 3,
+        "finite": true,
+        "repeatable_tensors": true,
+        "result_file": "flux2-klein/flux2-t2i-stock-results.json"
+      },
+      "optimized": {
+        "label": "flux2-t2i-native-validated",
+        "status": "success",
+        "mean": 2.27,
+        "minimum": 2.25,
+        "maximum": 2.292,
+        "measured_runs": 3,
+        "finite": true,
+        "repeatable_tensors": true,
+        "result_file": "flux2-klein/flux2-t2i-native-validated-results.json"
+      },
+      "previous_optimized_seconds": 2.25,
+      "less_total_time_percent": 59.562971319992876
+    },
+    {
+      "workflow": "Flux.2 Klein 9B, image edit / 1024\u00d71024 / 4 steps",
+      "stock": {
+        "label": "flux2-edit-stock",
+        "status": "success",
+        "mean": 9.250333333333334,
+        "minimum": 9.228,
+        "maximum": 9.262,
+        "measured_runs": 3,
+        "finite": true,
+        "repeatable_tensors": true,
+        "result_file": "flux2-klein/flux2-edit-stock-results.json"
+      },
+      "optimized": {
+        "label": "flux2-edit-native-validated",
+        "status": "success",
+        "mean": 4.641333333333334,
+        "minimum": 4.567,
+        "maximum": 4.706,
+        "measured_runs": 3,
+        "finite": true,
+        "repeatable_tensors": true,
+        "result_file": "flux2-klein/flux2-edit-native-validated-results.json"
+      },
+      "previous_optimized_seconds": 4.66,
+      "less_total_time_percent": 49.82523152318835
+    },
+    {
+      "workflow": "Ideogram 4, 1024\u00d71024 / 12 steps / dual-model CFG",
+      "stock": {
+        "label": "ideogram4-stock",
+        "status": "success",
+        "mean": 43.535666666666664,
+        "minimum": 43.488,
+        "maximum": 43.57,
+        "measured_runs": 3,
+        "finite": true,
+        "repeatable_tensors": true,
+        "result_file": "ideogram4/ideogram4-stock-results.json"
+      },
+      "optimized": {
+        "label": "ideogram4-native-validated",
+        "status": "success",
+        "mean": 18.206666666666667,
+        "minimum": 18.135,
+        "maximum": 18.276,
+        "measured_runs": 3,
+        "finite": true,
+        "repeatable_tensors": true,
+        "result_file": "ideogram4/ideogram4-native-validated-results.json"
+      },
+      "previous_optimized_seconds": 18.23,
+      "less_total_time_percent": 58.17988316093318
+    },
+    {
+      "workflow": "Krea2 Turbo, 1448\u00d71448 / 8 steps + LoKr",
+      "stock": {
+        "label": "krea2-lokr-stock",
+        "status": "success",
+        "mean": 27.45,
+        "minimum": 27.384,
+        "maximum": 27.58,
+        "measured_runs": 3,
+        "finite": true,
+        "repeatable_tensors": true,
+        "result_file": "torch214-production/krea2-lokr-stock-results.json"
+      },
+      "optimized": {
+        "label": "krea2-lokr-optimized-validated",
+        "status": "success",
+        "mean": 13.626,
+        "minimum": 13.599,
+        "maximum": 13.644,
+        "measured_runs": 3,
+        "finite": true,
+        "repeatable_tensors": true,
+        "result_file": "torch214-production/krea2-lokr-optimized-validated-results.json"
+      },
+      "previous_optimized_seconds": 13.688,
+      "less_total_time_percent": 50.36065573770492
+    },
+    {
+      "workflow": "Krea2 Turbo, same workflow without LoKr",
+      "stock": {
+        "label": "krea2-no-lokr-stock",
+        "status": "success",
+        "mean": 27.542333333333335,
+        "minimum": 27.51,
+        "maximum": 27.578,
+        "measured_runs": 3,
+        "finite": true,
+        "repeatable_tensors": true,
+        "result_file": "torch214-production/krea2-no-lokr-stock-results.json"
+      },
+      "optimized": {
+        "label": "krea2-no-lokr-optimized-validated",
+        "status": "success",
+        "mean": 13.963666666666667,
+        "minimum": 13.904,
+        "maximum": 14.029,
+        "measured_runs": 3,
+        "finite": true,
+        "repeatable_tensors": true,
+        "result_file": "torch214-production/krea2-no-lokr-optimized-validated-results.json"
+      },
+      "previous_optimized_seconds": 13.798,
+      "less_total_time_percent": 49.301075919493634
+    },
+    {
+      "workflow": "Qwen-Image 2.1, 1024\u00d71024 / 25 steps",
+      "stock": {
+        "label": "qwen21-t2i-stock",
+        "status": "success",
+        "mean": 28.944333333333333,
+        "minimum": 28.881,
+        "maximum": 28.979,
+        "measured_runs": 3,
+        "finite": true,
+        "repeatable_tensors": true,
+        "result_file": "qwen21-ultra/qwen21-t2i-stock-results.json"
+      },
+      "optimized": {
+        "label": "qwen21-t2i-optimized-validated",
+        "status": "success",
+        "mean": 12.656666666666666,
+        "minimum": 12.593,
+        "maximum": 12.689,
+        "measured_runs": 3,
+        "finite": true,
+        "repeatable_tensors": true,
+        "result_file": "qwen21-ultra/qwen21-t2i-optimized-validated-results.json"
+      },
+      "previous_optimized_seconds": 12.59,
+      "less_total_time_percent": 56.27238492278281
+    },
+    {
+      "workflow": "Qwen-Image 2.1 edit, generated reference / 1024\u00d71024 / 40 steps",
+      "stock": {
+        "label": "qwen21-generated-edit-stock",
+        "status": "success",
+        "mean": 50.471666666666664,
+        "minimum": 50.379,
+        "maximum": 50.578,
+        "measured_runs": 3,
+        "finite": true,
+        "repeatable_tensors": true,
+        "result_file": "qwen21-generated-edit/qwen21-generated-edit-stock-results.json"
+      },
+      "optimized": {
+        "label": "qwen21-generated-edit-optimized",
+        "status": "success",
+        "mean": 22.999666666666666,
+        "minimum": 22.971,
+        "maximum": 23.04,
+        "measured_runs": 3,
+        "finite": true,
+        "repeatable_tensors": true,
+        "result_file": "qwen21-generated-edit/qwen21-generated-edit-optimized-results.json"
+      },
+      "previous_optimized_seconds": null,
+      "less_total_time_percent": 54.43053858600535
+    },
+    {
+      "workflow": "MiniMax H3, 864\u00d7480 / 124 frames / 20 steps",
+      "stock": {
+        "label": "h3-full-stock",
+        "status": "success",
+        "mean": 236.9725,
+        "minimum": 236.78,
+        "maximum": 237.165,
+        "measured_runs": 2,
+        "finite": true,
+        "repeatable_tensors": true,
+        "result_file": "torch214-production/h3-full-stock-results.json"
+      },
+      "optimized": {
+        "label": "h3-full-optimized",
+        "status": "success",
+        "mean": 141.64749999999998,
+        "minimum": 141.637,
+        "maximum": 141.658,
+        "measured_runs": 2,
+        "finite": true,
+        "repeatable_tensors": true,
+        "result_file": "torch214-production/h3-full-optimized-results.json"
+      },
+      "previous_optimized_seconds": 142.69,
+      "less_total_time_percent": 40.226186582831346
+    },
+    {
+      "workflow": "LTX 2.5, diffusion VAE / 1280\u00d7704 / 121 frames / 8+3 steps",
+      "stock": {
+        "label": "ltx25-diffusion-stock",
+        "status": "success",
+        "mean": 90.822,
+        "minimum": 90.822,
+        "maximum": 90.822,
+        "measured_runs": 2,
+        "finite": true,
+        "repeatable_tensors": true,
+        "result_file": "ltx25/ltx25-diffusion-stock-results.json"
+      },
+      "optimized": {
+        "label": "ltx25-diffusion-optimized",
+        "status": "success",
+        "mean": 46.161500000000004,
+        "minimum": 46.152,
+        "maximum": 46.171,
+        "measured_runs": 2,
+        "finite": true,
+        "repeatable_tensors": true,
+        "result_file": "ltx25/ltx25-diffusion-optimized-results.json"
+      },
+      "previous_optimized_seconds": 46.38,
+      "less_total_time_percent": 49.17365836471339
+    },
+    {
+      "workflow": "LTX 2.5, convolutional VAE / same clip and original tiling",
+      "stock": {
+        "label": "ltx25-conv-stock",
+        "status": "success",
+        "mean": 50.975,
+        "minimum": 50.966,
+        "maximum": 50.984,
+        "measured_runs": 2,
+        "finite": true,
+        "repeatable_tensors": true,
+        "result_file": "ltx25/ltx25-conv-stock-results.json"
+      },
+      "optimized": {
+        "label": "ltx25-conv-optimized",
+        "status": "success",
+        "mean": 32.051500000000004,
+        "minimum": 32.046,
+        "maximum": 32.057,
+        "measured_runs": 2,
+        "finite": true,
+        "repeatable_tensors": true,
+        "result_file": "ltx25/ltx25-conv-optimized-results.json"
+      },
+      "previous_optimized_seconds": 32.34,
+      "less_total_time_percent": 37.12309955860715
+    },
+    {
+      "workflow": "Wan 2.2 I2V 14B\u00d72, 512\u00d7512 / 81 frames / 20 steps / CFG 3.5",
+      "stock": {
+        "label": "wan22-20step-stock",
+        "status": "success",
+        "mean": 421.156,
+        "minimum": 421.031,
+        "maximum": 421.281,
+        "measured_runs": 2,
+        "finite": true,
+        "repeatable_tensors": true,
+        "result_file": "wan22/wan22-20step-stock-results.json"
+      },
+      "optimized": {
+        "label": "wan22-20step-native",
+        "status": "success",
+        "mean": 304.3325,
+        "minimum": 303.777,
+        "maximum": 304.888,
+        "measured_runs": 2,
+        "finite": true,
+        "repeatable_tensors": true,
+        "result_file": "wan22/wan22-20step-native-results.json"
+      },
+      "previous_optimized_seconds": 302.65,
+      "less_total_time_percent": 27.738771381625817
+    },
+    {
+      "workflow": "Wan 2.2 I2V 14B\u00d72, same clip / 4-step LoRAs / CFG 1",
+      "stock": {
+        "label": "wan22-turbo-stock",
+        "status": "success",
+        "mean": 46.1395,
+        "minimum": 45.357,
+        "maximum": 46.922,
+        "measured_runs": 2,
+        "finite": true,
+        "repeatable_tensors": true,
+        "result_file": "wan22/wan22-turbo-stock-results.json"
+      },
+      "optimized": {
+        "label": "wan22-turbo-native",
+        "status": "success",
+        "mean": 31.9,
+        "minimum": 31.899,
+        "maximum": 31.901,
+        "measured_runs": 2,
+        "finite": true,
+        "repeatable_tensors": true,
+        "result_file": "wan22/wan22-turbo-native-results.json"
+      },
+      "previous_optimized_seconds": 32.36,
+      "less_total_time_percent": 30.86184288949815
+    },
+    {
+      "workflow": "SeedVR2 7B INT8, 2400\u00d71600 \u2192 7200\u00d74800 / 1 step",
+      "stock": {
+        "label": "seedvr2-image-3x-stock",
+        "status": "success",
+        "mean": 66.29473133315332,
+        "minimum": 66.10652045812458,
+        "maximum": 66.48294220818207,
+        "measured_runs": 2,
+        "memory": {
+          "max_driver_gib": 52.12078857421875,
+          "max_live_gib": 8.428120613098145,
+          "max_rss_gib": 5.6470489501953125
+        },
+        "finite": true,
+        "repeatable_tensors": true,
+        "result_file": "seedvr2-torch214/seedvr2-image-3x-stock.json"
+      },
+      "optimized": {
+        "label": "seedvr2-image-3x-native-current-fused",
+        "status": "success",
+        "mean": 47.58676816651132,
+        "minimum": 47.47688612504862,
+        "maximum": 47.69665020797402,
+        "measured_runs": 2,
+        "memory": {
+          "max_driver_gib": 31.727203369140625,
+          "max_live_gib": 8.61825704574585,
+          "max_rss_gib": 6.236968994140625
+        },
+        "finite": true,
+        "repeatable_tensors": true,
+        "result_file": "seedvr2-torch214/seedvr2-image-3x-native-current-fused.json"
+      },
+      "previous_optimized_seconds": 49.01,
+      "less_total_time_percent": 28.21938152615506
+    },
+    {
+      "workflow": "YuE2 3B INT8, controlled 8 s / 128 ABC tokens / 32 steps",
+      "stock": {
+        "label": "yue2-8s-stock",
+        "status": "success",
+        "mean": 124.185,
+        "minimum": 124.006,
+        "maximum": 124.364,
+        "measured_runs": 2,
+        "finite": true,
+        "repeatable_tensors": true,
+        "repeatable_tokens": true,
+        "repeatable_flac": true,
+        "result_file": "yue2/yue2-8s-stock-results.json"
+      },
+      "optimized": {
+        "label": "yue2-8s-optimized",
+        "status": "success",
+        "mean": 5.784,
+        "minimum": 5.686,
+        "maximum": 5.882,
+        "measured_runs": 2,
+        "finite": true,
+        "repeatable_tensors": true,
+        "repeatable_tokens": true,
+        "repeatable_flac": true,
+        "result_file": "yue2/yue2-8s-optimized-results.json"
+      },
+      "previous_optimized_seconds": 5.6,
+      "less_total_time_percent": 95.3424326609494
+    }
+  ],
+  "supplemental": [
+    {
+      "label": "sdxl-stock",
+      "status": "success",
+      "mean": 2.6109999999999998,
+      "minimum": 2.598,
+      "maximum": 2.627,
+      "measured_runs": 3,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "torch214-production/sdxl-stock-results.json"
+    },
+    {
+      "label": "sdxl-optimized-validated",
+      "status": "success",
+      "mean": 2.396,
+      "minimum": 2.382,
+      "maximum": 2.418,
+      "measured_runs": 3,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "torch214-production/sdxl-optimized-validated-results.json"
+    },
+    {
+      "label": "zimage-optimized-validated",
+      "status": "success",
+      "mean": 3.4366666666666665,
+      "minimum": 3.407,
+      "maximum": 3.476,
+      "measured_runs": 3,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "torch214-production/zimage-optimized-validated-results.json"
+    },
+    {
+      "label": "krea2-lokr-optimized-validated",
+      "status": "success",
+      "mean": 13.626,
+      "minimum": 13.599,
+      "maximum": 13.644,
+      "measured_runs": 3,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "torch214-production/krea2-lokr-optimized-validated-results.json"
+    },
+    {
+      "label": "krea2-no-lokr-optimized-validated",
+      "status": "success",
+      "mean": 13.963666666666667,
+      "minimum": 13.904,
+      "maximum": 14.029,
+      "measured_runs": 3,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "torch214-production/krea2-no-lokr-optimized-validated-results.json"
+    },
+    {
+      "label": "flux2-t2i-native-validated",
+      "status": "success",
+      "mean": 2.27,
+      "minimum": 2.25,
+      "maximum": 2.292,
+      "measured_runs": 3,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "flux2-klein/flux2-t2i-native-validated-results.json"
+    },
+    {
+      "label": "flux2-edit-native-validated",
+      "status": "success",
+      "mean": 4.641333333333334,
+      "minimum": 4.567,
+      "maximum": 4.706,
+      "measured_runs": 3,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "flux2-klein/flux2-edit-native-validated-results.json"
+    },
+    {
+      "label": "qwen21-t2i-optimized-validated",
+      "status": "success",
+      "mean": 12.656666666666666,
+      "minimum": 12.593,
+      "maximum": 12.689,
+      "measured_runs": 3,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "qwen21-ultra/qwen21-t2i-optimized-validated-results.json"
+    },
+    {
+      "label": "ideogram4-native-validated",
+      "status": "success",
+      "mean": 18.206666666666667,
+      "minimum": 18.135,
+      "maximum": 18.276,
+      "measured_runs": 3,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "ideogram4/ideogram4-native-validated-results.json"
+    },
+    {
+      "label": "qwen21-generated-edit-stock",
+      "status": "success",
+      "mean": 50.471666666666664,
+      "minimum": 50.379,
+      "maximum": 50.578,
+      "measured_runs": 3,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "qwen21-generated-edit/qwen21-generated-edit-stock-results.json"
+    },
+    {
+      "label": "qwen21-generated-edit-optimized",
+      "status": "success",
+      "mean": 22.999666666666666,
+      "minimum": 22.971,
+      "maximum": 23.04,
+      "measured_runs": 3,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "qwen21-generated-edit/qwen21-generated-edit-optimized-results.json"
+    },
+    {
+      "label": "h3-short-stock",
+      "status": "success",
+      "mean": 7.142,
+      "minimum": 7.142,
+      "maximum": 7.142,
+      "measured_runs": 1,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "torch214-production/h3-short-stock-results.json"
+    },
+    {
+      "label": "h3-short-optimized",
+      "status": "success",
+      "mean": 3.742,
+      "minimum": 3.742,
+      "maximum": 3.742,
+      "measured_runs": 1,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "torch214-production/h3-short-optimized-results.json"
+    },
+    {
+      "label": "h3-full-stock",
+      "status": "success",
+      "mean": 236.9725,
+      "minimum": 236.78,
+      "maximum": 237.165,
+      "measured_runs": 2,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "torch214-production/h3-full-stock-results.json"
+    },
+    {
+      "label": "h3-full-optimized",
+      "status": "success",
+      "mean": 141.64749999999998,
+      "minimum": 141.637,
+      "maximum": 141.658,
+      "measured_runs": 2,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "torch214-production/h3-full-optimized-results.json"
+    },
+    {
+      "label": "ltx25-short-stock",
+      "status": "success",
+      "mean": 15.729,
+      "minimum": 15.729,
+      "maximum": 15.729,
+      "measured_runs": 1,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "ltx25/ltx25-short-stock-results.json"
+    },
+    {
+      "label": "ltx25-short-optimized",
+      "status": "success",
+      "mean": 7.129,
+      "minimum": 7.129,
+      "maximum": 7.129,
+      "measured_runs": 1,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "ltx25/ltx25-short-optimized-results.json"
+    },
+    {
+      "label": "ltx25-diffusion-stock",
+      "status": "success",
+      "mean": 90.822,
+      "minimum": 90.822,
+      "maximum": 90.822,
+      "measured_runs": 2,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "ltx25/ltx25-diffusion-stock-results.json"
+    },
+    {
+      "label": "ltx25-diffusion-optimized",
+      "status": "success",
+      "mean": 46.161500000000004,
+      "minimum": 46.152,
+      "maximum": 46.171,
+      "measured_runs": 2,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "ltx25/ltx25-diffusion-optimized-results.json"
+    },
+    {
+      "label": "ltx25-conv-stock",
+      "status": "success",
+      "mean": 50.975,
+      "minimum": 50.966,
+      "maximum": 50.984,
+      "measured_runs": 2,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "ltx25/ltx25-conv-stock-results.json"
+    },
+    {
+      "label": "ltx25-conv-optimized",
+      "status": "success",
+      "mean": 32.051500000000004,
+      "minimum": 32.046,
+      "maximum": 32.057,
+      "measured_runs": 2,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "ltx25/ltx25-conv-optimized-results.json"
+    },
+    {
+      "label": "wan22-short-stock",
+      "status": "success",
+      "mean": 16.466,
+      "minimum": 16.466,
+      "maximum": 16.466,
+      "measured_runs": 1,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "wan22/wan22-short-stock-results.json"
+    },
+    {
+      "label": "wan22-short-native",
+      "status": "success",
+      "mean": 9.906,
+      "minimum": 9.906,
+      "maximum": 9.906,
+      "measured_runs": 1,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "wan22/wan22-short-native-results.json"
+    },
+    {
+      "label": "wan22-turbo-stock",
+      "status": "success",
+      "mean": 46.1395,
+      "minimum": 45.357,
+      "maximum": 46.922,
+      "measured_runs": 2,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "wan22/wan22-turbo-stock-results.json"
+    },
+    {
+      "label": "wan22-turbo-native",
+      "status": "success",
+      "mean": 31.9,
+      "minimum": 31.899,
+      "maximum": 31.901,
+      "measured_runs": 2,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "wan22/wan22-turbo-native-results.json"
+    },
+    {
+      "label": "wan22-20step-stock",
+      "status": "success",
+      "mean": 421.156,
+      "minimum": 421.031,
+      "maximum": 421.281,
+      "measured_runs": 2,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "wan22/wan22-20step-stock-results.json"
+    },
+    {
+      "label": "wan22-20step-native",
+      "status": "success",
+      "mean": 304.3325,
+      "minimum": 303.777,
+      "maximum": 304.888,
+      "measured_runs": 2,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "wan22/wan22-20step-native-results.json"
+    },
+    {
+      "label": "seedvr2-current-kernels",
+      "status": "success"
+    },
+    {
+      "label": "seedvr2-image-small-stock",
+      "status": "success",
+      "mean": 1.9717311459826306,
+      "minimum": 1.964171500178054,
+      "maximum": 1.9792907917872071,
+      "measured_runs": 2,
+      "memory": {
+        "max_driver_gib": 11.4945068359375,
+        "max_live_gib": 8.235310554504395,
+        "max_rss_gib": 2.330902099609375
+      },
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "seedvr2-torch214/seedvr2-image-small-stock.json"
+    },
+    {
+      "label": "seedvr2-image-small-native",
+      "status": "success",
+      "mean": 0.9336845210054889,
+      "minimum": 0.9321000000927597,
+      "maximum": 0.9352690419182181,
+      "measured_runs": 2,
+      "memory": {
+        "max_driver_gib": 12.5745849609375,
+        "max_live_gib": 8.51334524154663,
+        "max_rss_gib": 2.208587646484375
+      },
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "seedvr2-torch214/seedvr2-image-small-native.json"
+    },
+    {
+      "label": "seedvr2-image-3x-stock",
+      "status": "success",
+      "mean": 66.29473133315332,
+      "minimum": 66.10652045812458,
+      "maximum": 66.48294220818207,
+      "measured_runs": 2,
+      "memory": {
+        "max_driver_gib": 52.12078857421875,
+        "max_live_gib": 8.428120613098145,
+        "max_rss_gib": 5.6470489501953125
+      },
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "seedvr2-torch214/seedvr2-image-3x-stock.json"
+    },
+    {
+      "label": "seedvr2-image-3x-native",
+      "status": "success",
+      "mean": 55.73802393756341,
+      "minimum": 55.5284177090507,
+      "maximum": 55.947630166076124,
+      "measured_runs": 2,
+      "memory": {
+        "max_driver_gib": 31.625701904296875,
+        "max_live_gib": 8.6168532371521,
+        "max_rss_gib": 6.212799072265625
+      },
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "seedvr2-torch214/seedvr2-image-3x-native.json"
+    },
+    {
+      "label": "seedvr2-video-9f-native",
+      "status": "success",
+      "mean": 9.946107145864516,
+      "minimum": 9.916202708845958,
+      "maximum": 9.976011582883075,
+      "measured_runs": 2,
+      "memory": {
+        "max_driver_gib": 18.50164794921875,
+        "max_live_gib": 11.113358974456787,
+        "max_rss_gib": 2.725982666015625
+      },
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "seedvr2-video/seedvr2-video-9f-native.json"
+    },
+    {
+      "label": "seedvr2-video-120f-native",
+      "status": "success",
+      "mean": 128.57142210402526,
+      "minimum": 128.44438945804723,
+      "maximum": 128.6984547500033,
+      "measured_runs": 2,
+      "memory": {
+        "max_driver_gib": 33.55242919921875,
+        "max_live_gib": 11.301072597503662,
+        "max_rss_gib": 13.183441162109375
+      },
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "seedvr2-video/seedvr2-video-120f-native.json"
+    },
+    {
+      "label": "seedvr2-video-240f-native",
+      "status": "success",
+      "mean": 262.5723078539595,
+      "minimum": 259.51100299996324,
+      "maximum": 265.63361270795576,
+      "measured_runs": 2,
+      "memory": {
+        "max_driver_gib": 46.15399169921875,
+        "max_live_gib": 12.506360530853271,
+        "max_rss_gib": 25.472381591796875
+      },
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "seedvr2-video/seedvr2-video-240f-native.json"
+    },
+    {
+      "label": "seedvr2-fp16-small-native",
+      "status": "success",
+      "mean": 0.9003808959387243,
+      "minimum": 0.8979867498856038,
+      "maximum": 0.9027750419918448,
+      "measured_runs": 2,
+      "memory": {
+        "max_driver_gib": 21.24639892578125,
+        "max_live_gib": 16.097001314163208,
+        "max_rss_gib": 30.4324951171875
+      },
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "seedvr2-torch214/seedvr2-fp16-small-native.json"
+    },
+    {
+      "label": "seedvr2-image-small-native-current-fused",
+      "status": "success",
+      "mean": 0.8034581255633384,
+      "minimum": 0.8014260840136558,
+      "maximum": 0.805490167113021,
+      "measured_runs": 2,
+      "memory": {
+        "max_driver_gib": 13.56671142578125,
+        "max_live_gib": 8.51139211654663,
+        "max_rss_gib": 1.986572265625
+      },
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "seedvr2-torch214/seedvr2-image-small-native-current-fused.json"
+    },
+    {
+      "label": "seedvr2-image-3x-native-current-fused",
+      "status": "success",
+      "mean": 47.58676816651132,
+      "minimum": 47.47688612504862,
+      "maximum": 47.69665020797402,
+      "measured_runs": 2,
+      "memory": {
+        "max_driver_gib": 31.727203369140625,
+        "max_live_gib": 8.61825704574585,
+        "max_rss_gib": 6.236968994140625
+      },
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "seedvr2-torch214/seedvr2-image-3x-native-current-fused.json"
+    },
+    {
+      "label": "seedvr2-installed-default-small",
+      "status": "success",
+      "mean": 0.809824958560057,
+      "minimum": 0.8026767501141876,
+      "maximum": 0.8169731670059264,
+      "measured_runs": 2,
+      "memory": {
+        "max_driver_gib": 13.56671142578125,
+        "max_live_gib": 8.51218557357788,
+        "max_rss_gib": 2.1900482177734375
+      },
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "seedvr2-torch214/seedvr2-installed-default-small.json"
+    },
+    {
+      "label": "yue2-8s-stock",
+      "status": "success",
+      "mean": 124.185,
+      "minimum": 124.006,
+      "maximum": 124.364,
+      "measured_runs": 2,
+      "finite": true,
+      "repeatable_tensors": true,
+      "repeatable_tokens": true,
+      "repeatable_flac": true,
+      "result_file": "yue2/yue2-8s-stock-results.json"
+    },
+    {
+      "label": "yue2-8s-optimized",
+      "status": "success",
+      "mean": 5.784,
+      "minimum": 5.686,
+      "maximum": 5.882,
+      "measured_runs": 2,
+      "finite": true,
+      "repeatable_tensors": true,
+      "repeatable_tokens": true,
+      "repeatable_flac": true,
+      "result_file": "yue2/yue2-8s-optimized-results.json"
+    },
+    {
+      "label": "yue2-full-baseline-gpu",
+      "status": "success",
+      "mean": 50.4555,
+      "minimum": 50.192,
+      "maximum": 50.719,
+      "measured_runs": 2,
+      "finite": true,
+      "repeatable_tensors": true,
+      "repeatable_tokens": true,
+      "repeatable_flac": true,
+      "result_file": "yue2/yue2-full-baseline-gpu-results.json"
+    },
+    {
+      "label": "yue2-full-optimized",
+      "status": "success",
+      "mean": 34.1175,
+      "minimum": 34.045,
+      "maximum": 34.19,
+      "measured_runs": 2,
+      "finite": true,
+      "repeatable_tensors": true,
+      "repeatable_tokens": true,
+      "repeatable_flac": true,
+      "result_file": "yue2/yue2-full-optimized-results.json"
+    },
+    {
+      "label": "yue2-mothersuperior-baseline-gpu",
+      "status": "success",
+      "mean": 31.349,
+      "minimum": 31.198,
+      "maximum": 31.5,
+      "measured_runs": 2,
+      "finite": true,
+      "repeatable_tensors": true,
+      "repeatable_tokens": true,
+      "repeatable_flac": true,
+      "result_file": "yue2/yue2-mothersuperior-baseline-gpu-results.json"
+    },
+    {
+      "label": "yue2-mothersuperior-optimized",
+      "status": "success",
+      "mean": 21.942500000000003,
+      "minimum": 21.917,
+      "maximum": 21.968,
+      "measured_runs": 2,
+      "finite": true,
+      "repeatable_tensors": true,
+      "repeatable_tokens": true,
+      "repeatable_flac": true,
+      "result_file": "yue2/yue2-mothersuperior-optimized-results.json"
+    },
+    {
+      "label": "h3-presets-short",
+      "status": "success",
+      "minimum": 11.425,
+      "maximum": 28.023,
+      "measured_runs": 42,
+      "modes": {
+        "attention_1": {
+          "mean": 19.060499999999998,
+          "measured_runs": 2,
+          "repeatable_tensors": true
+        },
+        "attention_10": {
+          "mean": 27.891,
+          "measured_runs": 2,
+          "repeatable_tensors": true
+        },
+        "attention_2": {
+          "mean": 18.402,
+          "measured_runs": 2,
+          "repeatable_tensors": true
+        },
+        "attention_3": {
+          "mean": 18.2305,
+          "measured_runs": 2,
+          "repeatable_tensors": true
+        },
+        "attention_4": {
+          "mean": 18.1685,
+          "measured_runs": 2,
+          "repeatable_tensors": true
+        },
+        "attention_5": {
+          "mean": 17.8805,
+          "measured_runs": 2,
+          "repeatable_tensors": true
+        },
+        "attention_6": {
+          "mean": 19.191,
+          "measured_runs": 2,
+          "repeatable_tensors": true
+        },
+        "attention_7": {
+          "mean": 19.115,
+          "measured_runs": 2,
+          "repeatable_tensors": true
+        },
+        "attention_8": {
+          "mean": 18.3735,
+          "measured_runs": 2,
+          "repeatable_tensors": true
+        },
+        "attention_9": {
+          "mean": 24.7395,
+          "measured_runs": 2,
+          "repeatable_tensors": true
+        },
+        "cache_1": {
+          "mean": 17.404,
+          "measured_runs": 2,
+          "repeatable_tensors": true
+        },
+        "cache_2": {
+          "mean": 15.810500000000001,
+          "measured_runs": 2,
+          "repeatable_tensors": true
+        },
+        "cache_3": {
+          "mean": 14.987,
+          "measured_runs": 2,
+          "repeatable_tensors": true
+        },
+        "cache_4": {
+          "mean": 11.493,
+          "measured_runs": 2,
+          "repeatable_tensors": true
+        },
+        "cache_5": {
+          "mean": 13.149999999999999,
+          "measured_runs": 2,
+          "repeatable_tensors": true
+        },
+        "cache_6": {
+          "mean": 11.458,
+          "measured_runs": 2,
+          "repeatable_tensors": true
+        },
+        "exact": {
+          "mean": 19.511000000000003,
+          "measured_runs": 2,
+          "repeatable_tensors": true
+        },
+        "tokens_1": {
+          "mean": 18.506,
+          "measured_runs": 2,
+          "repeatable_tensors": true
+        },
+        "tokens_2": {
+          "mean": 16.533,
+          "measured_runs": 2,
+          "repeatable_tensors": true
+        },
+        "tokens_3": {
+          "mean": 17.308,
+          "measured_runs": 2,
+          "repeatable_tensors": true
+        },
+        "tokens_4": {
+          "mean": 14.5835,
+          "measured_runs": 2,
+          "repeatable_tensors": true
+        }
+      },
+      "finite": true,
+      "result_file": "h3-kitchen/h3-presets-short-results.json"
+    },
+    {
+      "label": "vsr-neural-rendering",
+      "status": "success"
+    },
+    {
+      "label": "h3-latent-upscaler",
+      "status": "success"
+    },
+    {
+      "label": "h3-int8-vae-sanity",
+      "status": "success",
+      "mean": 3.3209999999999997,
+      "minimum": 3.267,
+      "maximum": 3.375,
+      "measured_runs": 2,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "torch214-production/h3-int8-vae-sanity-results.json"
+    },
+    {
+      "label": "h3-relaxed-sanity",
+      "status": "success",
+      "mean": 3.6205,
+      "minimum": 3.517,
+      "maximum": 3.724,
+      "measured_runs": 2,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "torch214-production/h3-relaxed-sanity-results.json"
+    },
+    {
+      "label": "h3-full-relaxed",
+      "status": "success",
+      "mean": 155.32600000000002,
+      "minimum": 155.264,
+      "maximum": 155.388,
+      "measured_runs": 2,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "torch214-production/h3-full-relaxed-results.json"
+    },
+    {
+      "label": "h3-camera-480-optimized",
+      "status": "success",
+      "minimum": 113.471,
+      "maximum": 147.187,
+      "measured_runs": 6,
+      "modes": {
+        "attention_3": {
+          "mean": 114.259,
+          "measured_runs": 2,
+          "repeatable_tensors": true
+        },
+        "attention_8": {
+          "mean": 113.7865,
+          "measured_runs": 2,
+          "repeatable_tensors": true
+        },
+        "exact": {
+          "mean": 146.402,
+          "measured_runs": 2,
+          "repeatable_tensors": true
+        }
+      },
+      "finite": true,
+      "result_file": "h3-kitchen/h3-camera-480-optimized-results.json"
+    },
+    {
+      "label": "h3-camera-720-optimized",
+      "status": "success",
+      "minimum": 371.603,
+      "maximum": 609.417,
+      "measured_runs": 6,
+      "modes": {
+        "attention_3": {
+          "mean": 384.591,
+          "measured_runs": 2,
+          "repeatable_tensors": true
+        },
+        "attention_8": {
+          "mean": 371.74850000000004,
+          "measured_runs": 2,
+          "repeatable_tensors": true
+        },
+        "exact": {
+          "mean": 606.7175,
+          "measured_runs": 2,
+          "repeatable_tensors": true
+        }
+      },
+      "finite": true,
+      "result_file": "h3-kitchen/h3-camera-720-optimized-results.json"
+    },
+    {
+      "label": "h3-int8-core-vae-sanity",
+      "status": "success",
+      "mean": 4.593999999999999,
+      "minimum": 4.494,
+      "maximum": 4.694,
+      "measured_runs": 2,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "torch214-production/h3-int8-core-vae-sanity-results.json"
+    },
+    {
+      "label": "h3-int8-relaxed-vae-sanity",
+      "status": "success",
+      "mean": 3.3455,
+      "minimum": 3.25,
+      "maximum": 3.441,
+      "measured_runs": 2,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "torch214-production/h3-int8-relaxed-vae-sanity-results.json"
+    },
+    {
+      "label": "h3-combined-short",
+      "status": "success",
+      "minimum": 12.861,
+      "maximum": 18.525,
+      "measured_runs": 6,
+      "modes": {
+        "fbc_sol_tokens": {
+          "mean": 14.592,
+          "measured_runs": 2,
+          "repeatable_tensors": true
+        },
+        "motion_sol": {
+          "mean": 18.476999999999997,
+          "measured_runs": 2,
+          "repeatable_tensors": true
+        },
+        "spectrum_sol": {
+          "mean": 12.93,
+          "measured_runs": 2,
+          "repeatable_tensors": true
+        }
+      },
+      "finite": true,
+      "result_file": "h3-kitchen/h3-combined-short-results.json"
+    },
+    {
+      "label": "zimage-stock",
+      "status": "success",
+      "mean": 7.858333333333333,
+      "minimum": 7.822,
+      "maximum": 7.895,
+      "measured_runs": 3,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "torch214-production/zimage-stock-results.json"
+    },
+    {
+      "label": "krea2-lokr-stock",
+      "status": "success",
+      "mean": 27.45,
+      "minimum": 27.384,
+      "maximum": 27.58,
+      "measured_runs": 3,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "torch214-production/krea2-lokr-stock-results.json"
+    },
+    {
+      "label": "krea2-no-lokr-stock",
+      "status": "success",
+      "mean": 27.542333333333335,
+      "minimum": 27.51,
+      "maximum": 27.578,
+      "measured_runs": 3,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "torch214-production/krea2-no-lokr-stock-results.json"
+    },
+    {
+      "label": "flux2-t2i-stock",
+      "status": "success",
+      "mean": 5.613666666666667,
+      "minimum": 5.599,
+      "maximum": 5.63,
+      "measured_runs": 3,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "flux2-klein/flux2-t2i-stock-results.json"
+    },
+    {
+      "label": "flux2-edit-stock",
+      "status": "success",
+      "mean": 9.250333333333334,
+      "minimum": 9.228,
+      "maximum": 9.262,
+      "measured_runs": 3,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "flux2-klein/flux2-edit-stock-results.json"
+    },
+    {
+      "label": "qwen21-t2i-stock",
+      "status": "success",
+      "mean": 28.944333333333333,
+      "minimum": 28.881,
+      "maximum": 28.979,
+      "measured_runs": 3,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "qwen21-ultra/qwen21-t2i-stock-results.json"
+    },
+    {
+      "label": "ideogram4-stock",
+      "status": "success",
+      "mean": 43.535666666666664,
+      "minimum": 43.488,
+      "maximum": 43.57,
+      "measured_runs": 3,
+      "finite": true,
+      "repeatable_tensors": true,
+      "result_file": "ideogram4/ideogram4-stock-results.json"
+    }
+  ],
+  "byte_checks": [
+    {
+      "file": "cross-stack-early-byte-checks.json",
+      "data": {
+        "SDXL": {
+          "reference": "final-sdxl-optimized",
+          "new": "sdxl-optimized",
+          "byte_checks": {
+            "conditioning": {
+              "/0/0": true,
+              "/0/1/pooled_output": true
+            },
+            "noise": {
+              "/": true
+            },
+            "latents": {
+              "/0/samples": true
+            },
+            "frames": {
+              "": true
+            }
+          },
+          "new_stack_repeatable": {
+            "conditioning": true,
+            "noise": true,
+            "latents": true,
+            "frames": true
+          }
+        },
+        "Z-Image": {
+          "reference": "final-zimage-optimized",
+          "new": "zimage-optimized",
+          "byte_checks": {
+            "conditioning": {
+              "/0/0": true,
+              "/0/1/attention_mask": true
+            },
+            "noise": {
+              "/": true
+            },
+            "latents": {
+              "/0/samples": true
+            },
+            "frames": {
+              "": true
+            }
+          },
+          "new_stack_repeatable": {
+            "conditioning": true,
+            "noise": true,
+            "latents": true,
+            "frames": true
+          }
+        },
+        "Krea2 + LoKr": {
+          "reference": "final-krea2-optimized",
+          "new": "krea2-lokr-optimized",
+          "byte_checks": {
+            "conditioning": {
+              "/0/0": true
+            },
+            "noise": {
+              "/": true
+            },
+            "latents": {
+              "/0/samples": true
+            },
+            "frames": {
+              "": true
+            }
+          },
+          "new_stack_repeatable": {
+            "conditioning": true,
+            "noise": true,
+            "latents": true,
+            "frames": true
+          }
+        },
+        "Krea2": {
+          "reference": "final-krea2-no-lokr-optimized",
+          "new": "krea2-no-lokr-optimized",
+          "byte_checks": {
+            "conditioning": {
+              "/0/0": true
+            },
+            "noise": {
+              "/": true
+            },
+            "latents": {
+              "/0/samples": true
+            },
+            "frames": {
+              "": true
+            }
+          },
+          "new_stack_repeatable": {
+            "conditioning": true,
+            "noise": true,
+            "latents": true,
+            "frames": true
+          }
+        }
+      }
+    },
+    {
+      "file": "cross-stack-more-image-byte-checks.json",
+      "data": [
+        {
+          "old": "flux2-klein/t2i-installed-results.json",
+          "new": "flux2-klein/flux2-t2i-native-validated-results.json",
+          "equal": {
+            "sampling_conditioning": true,
+            "sampling_input_latents": true,
+            "sampling_noise": true,
+            "sampling_latents": false,
+            "frames": false
+          }
+        },
+        {
+          "old": "flux2-klein/edit-exact-results.json",
+          "new": "flux2-klein/flux2-edit-native-validated-results.json",
+          "equal": {
+            "sampling_conditioning": true,
+            "sampling_input_latents": true,
+            "sampling_noise": true,
+            "sampling_latents": false,
+            "frames": false
+          }
+        },
+        {
+          "old": "ideogram4/exact-full-results.json",
+          "new": "ideogram4/ideogram4-native-validated-results.json",
+          "equal": {
+            "sampling_conditioning": true,
+            "sampling_input_latents": true,
+            "sampling_noise": true,
+            "sampling_latents": true,
+            "frames": true
+          }
+        }
+      ]
+    },
+    {
+      "file": "flux-stock-cross-stack-byte-checks.json",
+      "data": [
+        {
+          "old": "t2i-stock-compat",
+          "new": "flux2-t2i-stock",
+          "equal": {
+            "sampling_conditioning": true,
+            "sampling_input_latents": true,
+            "sampling_noise": true,
+            "sampling_latents": false,
+            "frames": false
+          }
+        },
+        {
+          "old": "edit-stock-compat",
+          "new": "flux2-edit-stock",
+          "equal": {
+            "sampling_conditioning": true,
+            "sampling_input_latents": true,
+            "sampling_noise": true,
+            "sampling_latents": false,
+            "frames": false
+          }
+        }
+      ]
+    },
+    {
+      "file": "h3-camera-cross-stack-byte-check.json",
+      "data": [
+        {
+          "resolution": 480,
+          "mode": "exact",
+          "reference": "audit480-1-exact",
+          "current": "h3-camera-480-optimized-2-exact",
+          "equal": {
+            "conditioning": true,
+            "noise": true,
+            "latents": true,
+            "audio_decode": true,
+            "frames": true
+          },
+          "repeatable": true
+        },
+        {
+          "resolution": 480,
+          "mode": "attention_3",
+          "reference": "production480-8-fast_layout",
+          "current": "h3-camera-480-optimized-5-attention_3",
+          "equal": {
+            "conditioning": true,
+            "noise": true,
+            "latents": true,
+            "audio_decode": true,
+            "frames": true
+          },
+          "repeatable": true
+        },
+        {
+          "resolution": 480,
+          "mode": "attention_8",
+          "reference": "production480-11-hybrid_fast",
+          "current": "h3-camera-480-optimized-8-attention_8",
+          "equal": {
+            "conditioning": true,
+            "noise": true,
+            "latents": true,
+            "audio_decode": true,
+            "frames": true
+          },
+          "repeatable": true
+        },
+        {
+          "resolution": 720,
+          "mode": "exact",
+          "reference": "audit1mp-0-1-exact",
+          "current": "h3-camera-720-optimized-2-exact",
+          "equal": {
+            "conditioning": true,
+            "noise": true,
+            "latents": true,
+            "audio_decode": true,
+            "frames": true
+          },
+          "repeatable": true
+        },
+        {
+          "resolution": 720,
+          "mode": "attention_3",
+          "reference": "candidate1mp-repeat-5-fast_layout",
+          "current": "h3-camera-720-optimized-5-attention_3",
+          "equal": {
+            "conditioning": true,
+            "noise": true,
+            "latents": true,
+            "audio_decode": true,
+            "frames": true
+          },
+          "repeatable": true
+        },
+        {
+          "resolution": 720,
+          "mode": "attention_8",
+          "reference": "candidate1mp-repeat-7-hybrid_best",
+          "current": "h3-camera-720-optimized-8-attention_8",
+          "equal": {
+            "conditioning": true,
+            "noise": true,
+            "latents": true,
+            "audio_decode": true,
+            "frames": true
+          },
+          "repeatable": true
+        }
+      ]
+    },
+    {
+      "file": "h3-cross-stack-byte-check.json",
+      "data": {
+        "comparison": "old optimized vs new optimized, H3 canonical 124f, initial completed render",
+        "equal": {
+          "conditioning": true,
+          "noise": true,
+          "latents": true,
+          "audio_decode": true,
+          "frames": true
+        }
+      }
+    },
+    {
+      "file": "ltx-conv-cross-stack-byte-check.json",
+      "data": {
+        "old_reference": "diagnostics/ltx25/next-conv-native-results.json",
+        "equal": [
+          {
+            "stage1_conditioning": true,
+            "stage1_input_latents": true,
+            "stage1_noise": true,
+            "stage1_latents": true,
+            "latent_upscale": true,
+            "stage2_conditioning": true,
+            "stage2_input_latents": true,
+            "stage2_noise": true,
+            "stage2_latents": true,
+            "audio_decode": true,
+            "frames": true
+          },
+          {
+            "stage1_conditioning": true,
+            "stage1_input_latents": true,
+            "stage1_noise": true,
+            "stage1_latents": true,
+            "latent_upscale": true,
+            "stage2_conditioning": true,
+            "stage2_input_latents": true,
+            "stage2_noise": true,
+            "stage2_latents": true,
+            "audio_decode": true,
+            "frames": true
+          }
+        ]
+      }
+    },
+    {
+      "file": "ltx-diffusion-cross-stack-byte-check.json",
+      "data": {
+        "old_reference": "diagnostics/ltx25/next-exact-full-results.json",
+        "new": "ltx25-diffusion-optimized",
+        "equal": [
+          {
+            "stage1_conditioning": true,
+            "stage1_input_latents": true,
+            "stage1_noise": true,
+            "stage1_latents": true,
+            "latent_upscale": true,
+            "stage2_conditioning": true,
+            "stage2_input_latents": true,
+            "stage2_noise": true,
+            "stage2_latents": true,
+            "audio_decode": true,
+            "frames": true
+          },
+          {
+            "stage1_conditioning": true,
+            "stage1_input_latents": true,
+            "stage1_noise": true,
+            "stage1_latents": true,
+            "latent_upscale": true,
+            "stage2_conditioning": true,
+            "stage2_input_latents": true,
+            "stage2_noise": true,
+            "stage2_latents": true,
+            "audio_decode": true,
+            "frames": true
+          }
+        ]
+      }
+    },
+    {
+      "file": "restored-fusions-image-byte-checks.json",
+      "data": [
+        {
+          "label": "sdxl-optimized-validated",
+          "identical": [
+            {
+              "conditioning": true,
+              "noise": true,
+              "latents": true,
+              "frames": true
+            },
+            {
+              "conditioning": true,
+              "noise": true,
+              "latents": true,
+              "frames": true
+            },
+            {
+              "conditioning": true,
+              "noise": true,
+              "latents": true,
+              "frames": true
+            }
+          ],
+          "before": 2.3876666666666666,
+          "after": 2.3960000000000004
+        },
+        {
+          "label": "zimage-optimized-validated",
+          "identical": [
+            {
+              "conditioning": true,
+              "noise": true,
+              "latents": true,
+              "frames": true
+            },
+            {
+              "conditioning": true,
+              "noise": true,
+              "latents": true,
+              "frames": true
+            },
+            {
+              "conditioning": true,
+              "noise": true,
+              "latents": true,
+              "frames": true
+            }
+          ],
+          "before": 3.514333333333333,
+          "after": 3.436666666666667
+        },
+        {
+          "label": "krea2-lokr-optimized-validated",
+          "identical": [
+            {
+              "conditioning": true,
+              "noise": true,
+              "latents": true,
+              "frames": true
+            },
+            {
+              "conditioning": true,
+              "noise": true,
+              "latents": true,
+              "frames": true
+            },
+            {
+              "conditioning": true,
+              "noise": true,
+              "latents": true,
+              "frames": true
+            }
+          ],
+          "before": 14.120333333333335,
+          "after": 13.626
+        },
+        {
+          "label": "krea2-no-lokr-optimized-validated",
+          "identical": [
+            {
+              "conditioning": true,
+              "noise": true,
+              "latents": true,
+              "frames": true
+            },
+            {
+              "conditioning": true,
+              "noise": true,
+              "latents": true,
+              "frames": true
+            },
+            {
+              "conditioning": true,
+              "noise": true,
+              "latents": true,
+              "frames": true
+            }
+          ],
+          "before": 14.144666666666666,
+          "after": 13.963666666666667
+        },
+        {
+          "label": "flux2-t2i-native-validated",
+          "identical": [
+            {
+              "sampling_conditioning": true,
+              "sampling_input_latents": true,
+              "sampling_noise": true,
+              "sampling_latents": true,
+              "frames": true
+            },
+            {
+              "sampling_conditioning": true,
+              "sampling_input_latents": true,
+              "sampling_noise": true,
+              "sampling_latents": true,
+              "frames": true
+            },
+            {
+              "sampling_conditioning": true,
+              "sampling_input_latents": true,
+              "sampling_noise": true,
+              "sampling_latents": true,
+              "frames": true
+            }
+          ],
+          "before": 2.3543333333333334,
+          "after": 2.27
+        },
+        {
+          "label": "flux2-edit-native-validated",
+          "identical": [
+            {
+              "sampling_conditioning": true,
+              "sampling_input_latents": true,
+              "sampling_noise": true,
+              "sampling_latents": true,
+              "frames": true
+            },
+            {
+              "sampling_conditioning": true,
+              "sampling_input_latents": true,
+              "sampling_noise": true,
+              "sampling_latents": true,
+              "frames": true
+            },
+            {
+              "sampling_conditioning": true,
+              "sampling_input_latents": true,
+              "sampling_noise": true,
+              "sampling_latents": true,
+              "frames": true
+            }
+          ],
+          "before": 4.959,
+          "after": 4.641333333333333
+        },
+        {
+          "label": "qwen21-t2i-optimized-validated",
+          "identical": [
+            {
+              "conditioning": true,
+              "noise": true,
+              "latents": true,
+              "frames": true
+            },
+            {
+              "conditioning": true,
+              "noise": true,
+              "latents": true,
+              "frames": true
+            },
+            {
+              "conditioning": true,
+              "noise": true,
+              "latents": true,
+              "frames": true
+            }
+          ],
+          "before": 15.173333333333332,
+          "after": 12.656666666666666
+        },
+        {
+          "label": "ideogram4-native-validated",
+          "identical": [
+            {
+              "sampling_conditioning": true,
+              "sampling_input_latents": true,
+              "sampling_noise": true,
+              "sampling_latents": true,
+              "frames": true
+            },
+            {
+              "sampling_conditioning": true,
+              "sampling_input_latents": true,
+              "sampling_noise": true,
+              "sampling_latents": true,
+              "frames": true
+            },
+            {
+              "sampling_conditioning": true,
+              "sampling_input_latents": true,
+              "sampling_noise": true,
+              "sampling_latents": true,
+              "frames": true
+            }
+          ],
+          "before": 24.64,
+          "after": 18.206666666666667
+        }
+      ]
+    },
+    {
+      "file": "seedvr-current-fusions-full-byte-check.json",
+      "data": [
+        {
+          "label": "seedvr2-image-small-native",
+          "checks": {
+            "encoded_sha256": true,
+            "sampled_sha256": true,
+            "frames_sha256": true
+          },
+          "all_identical": true,
+          "before_seconds": 0.9336845210054889,
+          "after_seconds": 0.8034581255633384,
+          "new_memory": {
+            "stage": "verification",
+            "max_driver_gib": 13.56671142578125,
+            "max_live_gib": 8.51139211654663,
+            "max_rss_gib": 1.986572265625,
+            "torch_version": "2.14.1",
+            "torch_git": "5c4886908584029761b579af026dcfb627c84070",
+            "completed": true
+          }
+        },
+        {
+          "label": "seedvr2-image-3x-native",
+          "checks": {
+            "encoded_sha256": true,
+            "sampled_sha256": true,
+            "frames_sha256": true
+          },
+          "all_identical": true,
+          "before_seconds": 55.73802393756341,
+          "after_seconds": 47.58676816651132,
+          "new_memory": {
+            "stage": "verification",
+            "max_driver_gib": 31.727203369140625,
+            "max_live_gib": 8.61825704574585,
+            "max_rss_gib": 6.236968994140625,
+            "torch_version": "2.14.1",
+            "torch_git": "5c4886908584029761b579af026dcfb627c84070",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "file": "seedvr-input-byte-check.json",
+      "data": [
+        {
+          "input": "input-320x213.png",
+          "identical_bytes": true
+        },
+        {
+          "input": "input-2400x1600.png",
+          "identical_bytes": true
+        }
+      ]
+    },
+    {
+      "file": "seedvr-installed-default-byte-check.json",
+      "data": {
+        "checks": {
+          "encoded_sha256": true,
+          "sampled_sha256": true,
+          "frames_sha256": true
+        },
+        "default_engaged": true,
+        "mean": 0.809824958560057
+      }
+    },
+    {
+      "file": "seedvr-stock-cross-stack-byte-check.json",
+      "data": [
+        {
+          "size": "small",
+          "stock_old_vs_new": {
+            "encoded_sha256": false,
+            "sampled_sha256": false,
+            "frames_sha256": false
+          },
+          "note": "Core/stack output changes exist with our node absent; restored current fusions preserve the current optimized output."
+        },
+        {
+          "size": "3x",
+          "stock_old_vs_new": {
+            "encoded_sha256": false,
+            "sampled_sha256": false,
+            "frames_sha256": false
+          },
+          "note": "Core/stack output changes exist with our node absent; restored current fusions preserve the current optimized output."
+        }
+      ]
+    },
+    {
+      "file": "vae-selection-byte-check.json",
+      "data": [
+        {
+          "label": "h3-int8-core-vae-sanity",
+          "sampler_latents_equal_fp16_exact": true,
+          "conditioning_equal": true,
+          "noise_equal": true,
+          "decoder_repeatable": true,
+          "finite": true
+        },
+        {
+          "label": "h3-int8-vae-sanity",
+          "sampler_latents_equal_fp16_exact": true,
+          "conditioning_equal": true,
+          "noise_equal": true,
+          "decoder_repeatable": true,
+          "finite": true
+        },
+        {
+          "label": "h3-relaxed-sanity",
+          "sampler_latents_equal_fp16_exact": true,
+          "conditioning_equal": true,
+          "noise_equal": true,
+          "decoder_repeatable": true,
+          "finite": true
+        },
+        {
+          "label": "h3-int8-relaxed-vae-sanity",
+          "sampler_latents_equal_fp16_exact": true,
+          "conditioning_equal": true,
+          "noise_equal": true,
+          "decoder_repeatable": true,
+          "finite": true
+        }
+      ]
+    },
+    {
+      "file": "wan-full-cross-stack-byte-check.json",
+      "data": {
+        "workflow": "Wan 2.2 20-step optimized / CFG3.5",
+        "checks": {
+          "high_noise_conditioning": {
+            "/positive/0/0": true,
+            "/positive/0/1/concat_latent_image": true,
+            "/positive/0/1/concat_mask": true,
+            "/negative/0/0": true,
+            "/negative/0/1/concat_latent_image": true,
+            "/negative/0/1/concat_mask": true
+          },
+          "high_noise_input_latents": {
+            "/samples": true
+          },
+          "high_noise_noise": {
+            "": true
+          },
+          "high_noise_latents": {
+            "/0/samples": true
+          },
+          "low_noise_conditioning": {
+            "/positive/0/0": true,
+            "/positive/0/1/concat_latent_image": true,
+            "/positive/0/1/concat_mask": true,
+            "/negative/0/0": true,
+            "/negative/0/1/concat_latent_image": true,
+            "/negative/0/1/concat_mask": true
+          },
+          "low_noise_input_latents": {
+            "/samples": true
+          },
+          "low_noise_noise": {
+            "": true
+          },
+          "low_noise_latents": {
+            "/0/samples": true
+          },
+          "frames": {
+            "": true
+          }
+        },
+        "all_identical": true
+      }
+    },
+    {
+      "file": "wan-stock-cross-stack-byte-check.json",
+      "data": {
+        "workflow": "Wan 2.2 20-step stock / CFG3.5",
+        "checks": {
+          "high_noise_conditioning": {
+            "/positive/0/0": true,
+            "/positive/0/1/concat_latent_image": true,
+            "/positive/0/1/concat_mask": true,
+            "/negative/0/0": true,
+            "/negative/0/1/concat_latent_image": true,
+            "/negative/0/1/concat_mask": true
+          },
+          "high_noise_input_latents": {
+            "/samples": true
+          },
+          "high_noise_noise": {
+            "": true
+          },
+          "high_noise_latents": {
+            "/0/samples": true
+          },
+          "low_noise_conditioning": {
+            "/positive/0/0": true,
+            "/positive/0/1/concat_latent_image": true,
+            "/positive/0/1/concat_mask": true,
+            "/negative/0/0": true,
+            "/negative/0/1/concat_latent_image": true,
+            "/negative/0/1/concat_mask": true
+          },
+          "low_noise_input_latents": {
+            "/samples": true
+          },
+          "low_noise_noise": {
+            "": true
+          },
+          "low_noise_latents": {
+            "/0/samples": true
+          },
+          "frames": {
+            "": true
+          }
+        },
+        "all_identical": true
+      }
+    },
+    {
+      "file": "wan-turbo-cross-stack-byte-check.json",
+      "data": {
+        "workflow": "Wan 2.2 four-step LoRAs / CFG1, 512x512 x81f",
+        "checks": {
+          "high_noise_conditioning": {
+            "/positive/0/0": true,
+            "/positive/0/1/concat_latent_image": true,
+            "/positive/0/1/concat_mask": true,
+            "/negative/0/0": true,
+            "/negative/0/1/concat_latent_image": true,
+            "/negative/0/1/concat_mask": true
+          },
+          "high_noise_input_latents": {
+            "/samples": true
+          },
+          "high_noise_noise": {
+            "": true
+          },
+          "high_noise_latents": {
+            "/0/samples": true
+          },
+          "low_noise_conditioning": {
+            "/positive/0/0": true,
+            "/positive/0/1/concat_latent_image": true,
+            "/positive/0/1/concat_mask": true,
+            "/negative/0/0": true,
+            "/negative/0/1/concat_latent_image": true,
+            "/negative/0/1/concat_mask": true
+          },
+          "low_noise_input_latents": {
+            "/samples": true
+          },
+          "low_noise_noise": {
+            "": true
+          },
+          "low_noise_latents": {
+            "/0/samples": true
+          },
+          "frames": {
+            "": true
+          }
+        },
+        "all_identical": true
+      }
+    },
+    {
+      "file": "yue-cross-stack-byte-check.json",
+      "data": [
+        {
+          "workflow": "full",
+          "paired_gpu": {
+            "abc_ids": true,
+            "semantic_ids": true,
+            "YuE2GenerateABC": true,
+            "tensor_groups": {
+              "KSampler": true,
+              "VAEDecodeAudio": true,
+              "YuE2GenerateABC": true,
+              "YuE2GenerateMusic": true,
+              "abc_ids": true,
+              "semantic_ids": true
+            },
+            "flac_bytes": true
+          },
+          "optimized_repeat": {
+            "abc_ids": true,
+            "semantic_ids": true,
+            "YuE2GenerateABC": true,
+            "tensor_groups": {
+              "KSampler": true,
+              "VAEDecodeAudio": true,
+              "YuE2GenerateABC": true,
+              "YuE2GenerateMusic": true,
+              "abc_ids": true,
+              "semantic_ids": true
+            },
+            "flac_bytes": true
+          },
+          "old_optimized": {
+            "abc_ids": true,
+            "semantic_ids": true,
+            "YuE2GenerateABC": true,
+            "tensor_groups": {
+              "KSampler": true,
+              "VAEDecodeAudio": true,
+              "YuE2GenerateABC": true,
+              "YuE2GenerateMusic": true,
+              "abc_ids": true,
+              "semantic_ids": true
+            },
+            "flac_bytes": false
+          }
+        },
+        {
+          "workflow": "mothersuperior",
+          "paired_gpu": {
+            "abc_ids": true,
+            "semantic_ids": true,
+            "YuE2GenerateABC": true,
+            "tensor_groups": {
+              "KSampler": true,
+              "VAEDecodeAudio": true,
+              "YuE2GenerateABC": true,
+              "YuE2GenerateMusic": true,
+              "abc_ids": true,
+              "semantic_ids": true
+            },
+            "flac_bytes": true
+          },
+          "optimized_repeat": {
+            "abc_ids": true,
+            "semantic_ids": true,
+            "YuE2GenerateABC": true,
+            "tensor_groups": {
+              "KSampler": true,
+              "VAEDecodeAudio": true,
+              "YuE2GenerateABC": true,
+              "YuE2GenerateMusic": true,
+              "abc_ids": true,
+              "semantic_ids": true
+            },
+            "flac_bytes": true
+          },
+          "old_optimized": {
+            "abc_ids": true,
+            "semantic_ids": true,
+            "YuE2GenerateABC": true,
+            "tensor_groups": {
+              "KSampler": true,
+              "VAEDecodeAudio": true,
+              "YuE2GenerateABC": true,
+              "YuE2GenerateMusic": true,
+              "abc_ids": true,
+              "semantic_ids": true
+            },
+            "flac_bytes": false
+          }
+        }
+      ]
+    },
+    {
+      "file": "flac-streaminfo-check.json",
+      "data": [
+        {
+          "old": "followup-production-11",
+          "new": "yue2-full-optimized-2",
+          "pcm_bytes_equal": true,
+          "encoded_audio_frames_equal": true,
+          "old_metadata": {
+            "streaminfo": {
+              "sample_rate": 48000,
+              "channels": 2,
+              "bits_per_sample": 16,
+              "samples": 3993600,
+              "md5": "6ee5c79bdc6c4006efc775a074b1bd8c"
+            },
+            "blocks": [
+              {
+                "kind": 0,
+                "length": 34,
+                "sha256": "5b9ff827790bf223a8c30c1cc287c647e8c7fe4ac7088771cc5f5b505eb215f2"
+              },
+              {
+                "kind": 4,
+                "length": 46,
+                "sha256": "c65a075c88af276b3e074eed19d64475ca673c38a64143713818850c2ee205a1"
+              },
+              {
+                "kind": 1,
+                "length": 8192,
+                "sha256": "9f1dcbc35c350d6027f98be0f5c8b43b42ca52b7604459c0c42be3aa88913d47"
+              }
+            ],
+            "vendor": "Lavf62.12.102",
+            "frames_sha256": "9a4a891847cac754310bd99ad6ec2b044050e03a37ea696559073baf86c97731"
+          },
+          "new_metadata": {
+            "streaminfo": {
+              "sample_rate": 48000,
+              "channels": 2,
+              "bits_per_sample": 16,
+              "samples": 3993600,
+              "md5": "6ee5c79bdc6c4006efc775a074b1bd8c"
+            },
+            "blocks": [
+              {
+                "kind": 0,
+                "length": 34,
+                "sha256": "5b9ff827790bf223a8c30c1cc287c647e8c7fe4ac7088771cc5f5b505eb215f2"
+              },
+              {
+                "kind": 4,
+                "length": 44,
+                "sha256": "45f95326a573dda6e0189094fae48d3551832dc69071f800b7399b4b7bab3a31"
+              },
+              {
+                "kind": 1,
+                "length": 8192,
+                "sha256": "9f1dcbc35c350d6027f98be0f5c8b43b42ca52b7604459c0c42be3aa88913d47"
+              }
+            ],
+            "vendor": "Lavf63.1.102",
+            "frames_sha256": "9a4a891847cac754310bd99ad6ec2b044050e03a37ea696559073baf86c97731"
+          }
+        },
+        {
+          "old": "followup-lora-5",
+          "new": "yue2-mothersuperior-optimized-2",
+          "pcm_bytes_equal": true,
+          "encoded_audio_frames_equal": true,
+          "old_metadata": {
+            "streaminfo": {
+              "sample_rate": 48000,
+              "channels": 2,
+              "bits_per_sample": 16,
+              "samples": 960000,
+              "md5": "0cdd9c1078bfd74448a74352d88a4afc"
+            },
+            "blocks": [
+              {
+                "kind": 0,
+                "length": 34,
+                "sha256": "d759a0593011e3a263e399b1a47c250778f0460f43563018dd8e2286a0b458b2"
+              },
+              {
+                "kind": 4,
+                "length": 46,
+                "sha256": "c65a075c88af276b3e074eed19d64475ca673c38a64143713818850c2ee205a1"
+              },
+              {
+                "kind": 1,
+                "length": 8192,
+                "sha256": "9f1dcbc35c350d6027f98be0f5c8b43b42ca52b7604459c0c42be3aa88913d47"
+              }
+            ],
+            "vendor": "Lavf62.12.102",
+            "frames_sha256": "3dfe8f07c33060c75ff8666e7053e00db9568b5da68efac063e1b536ea3688d0"
+          },
+          "new_metadata": {
+            "streaminfo": {
+              "sample_rate": 48000,
+              "channels": 2,
+              "bits_per_sample": 16,
+              "samples": 960000,
+              "md5": "0cdd9c1078bfd74448a74352d88a4afc"
+            },
+            "blocks": [
+              {
+                "kind": 0,
+                "length": 34,
+                "sha256": "d759a0593011e3a263e399b1a47c250778f0460f43563018dd8e2286a0b458b2"
+              },
+              {
+                "kind": 4,
+                "length": 44,
+                "sha256": "45f95326a573dda6e0189094fae48d3551832dc69071f800b7399b4b7bab3a31"
+              },
+              {
+                "kind": 1,
+                "length": 8192,
+                "sha256": "9f1dcbc35c350d6027f98be0f5c8b43b42ca52b7604459c0c42be3aa88913d47"
+              }
+            ],
+            "vendor": "Lavf63.1.102",
+            "frames_sha256": "3dfe8f07c33060c75ff8666e7053e00db9568b5da68efac063e1b536ea3688d0"
+          }
+        }
+      ]
+    }
+  ],
+  "h3_runtime_activity": [
+    {
+      "label": "h3-presets-short",
+      "mode": "exact",
+      "run_id": "h3-presets-short-1-exact",
+      "log_alignment_verified": true,
+      "runtime_messages": []
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "exact",
+      "run_id": "h3-presets-short-2-exact",
+      "log_alignment_verified": true,
+      "runtime_messages": []
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "cache_1",
+      "run_id": "h3-presets-short-4-cache_1",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] MiniMax H3 MotionCache - skipped 2/20 model calls (estimated 1.11x DiT speedup)"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "cache_1",
+      "run_id": "h3-presets-short-5-cache_1",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] MiniMax H3 MotionCache - skipped 2/20 model calls (estimated 1.11x DiT speedup)"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "cache_2",
+      "run_id": "h3-presets-short-7-cache_2",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] MiniMax H3 MotionCache - skipped 4/20 model calls (estimated 1.25x DiT speedup)"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "cache_2",
+      "run_id": "h3-presets-short-8-cache_2",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] MiniMax H3 MotionCache - skipped 4/20 model calls (estimated 1.25x DiT speedup)"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "cache_3",
+      "run_id": "h3-presets-short-10-cache_3",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] MiniMax H3 FirstBlockCache - skipped 245/1000 transformer blocks (estimated 1.32x block-compute speedup)",
+        "[AppleSilicon-Optimized/H3Cache] evaluations=0 refreshed=0 reused=0",
+        "[AppleSilicon-Optimized/H3Cache] first_block_cache evaluations=20 refreshed=15 reused=5 peak_cached_bytes=31911936"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "cache_3",
+      "run_id": "h3-presets-short-11-cache_3",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] MiniMax H3 FirstBlockCache - skipped 245/1000 transformer blocks (estimated 1.32x block-compute speedup)",
+        "[AppleSilicon-Optimized/H3Cache] evaluations=0 refreshed=0 reused=0",
+        "[AppleSilicon-Optimized/H3Cache] first_block_cache evaluations=20 refreshed=15 reused=5 peak_cached_bytes=31911936"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "cache_4",
+      "run_id": "h3-presets-short-13-cache_4",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] MiniMax H3 FirstBlockCache - skipped 441/1000 transformer blocks (estimated 1.79x block-compute speedup)",
+        "[AppleSilicon-Optimized/H3Cache] evaluations=0 refreshed=0 reused=0",
+        "[AppleSilicon-Optimized/H3Cache] first_block_cache evaluations=20 refreshed=11 reused=9 peak_cached_bytes=31911936"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "cache_4",
+      "run_id": "h3-presets-short-14-cache_4",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] MiniMax H3 FirstBlockCache - skipped 441/1000 transformer blocks (estimated 1.79x block-compute speedup)",
+        "[AppleSilicon-Optimized/H3Cache] evaluations=0 refreshed=0 reused=0",
+        "[AppleSilicon-Optimized/H3Cache] first_block_cache evaluations=20 refreshed=11 reused=9 peak_cached_bytes=31911936"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "cache_5",
+      "run_id": "h3-presets-short-16-cache_5",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] MiniMax H3 Spectrum - saved 7/20 DiT calls (estimated 1.54x DiT speedup; replay/predictor overhead excluded)"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "cache_5",
+      "run_id": "h3-presets-short-17-cache_5",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] MiniMax H3 Spectrum - saved 7/20 DiT calls (estimated 1.54x DiT speedup; replay/predictor overhead excluded)"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "cache_6",
+      "run_id": "h3-presets-short-19-cache_6",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] MiniMax H3 Spectrum - saved 9/20 DiT calls (estimated 1.82x DiT speedup; replay/predictor overhead excluded)"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "cache_6",
+      "run_id": "h3-presets-short-20-cache_6",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] MiniMax H3 Spectrum - saved 9/20 DiT calls (estimated 1.82x DiT speedup; replay/predictor overhead excluded)"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "attention_1",
+      "run_id": "h3-presets-short-22-attention_1",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: protected_steps",
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: leading_block",
+        "[AppleSilicon-Optimized/H3Sparse] dense fallback: protected_layer",
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8 mode=corrected tau=0.25 evaluations=20 (sparse=7 dense=13) attention_calls=1000 routed=315 sparse=315 dense=685 effective_density=50.2%"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "attention_1",
+      "run_id": "h3-presets-short-23-attention_1",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: protected_steps",
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: leading_block",
+        "[AppleSilicon-Optimized/H3Sparse] dense fallback: protected_layer",
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8 mode=corrected tau=0.25 evaluations=20 (sparse=7 dense=13) attention_calls=1000 routed=315 sparse=315 dense=685 effective_density=50.2%"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "attention_2",
+      "run_id": "h3-presets-short-25-attention_2",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: protected_steps",
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: leading_block",
+        "[AppleSilicon-Optimized/H3Sparse] dense fallback: protected_layer",
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8 mode=corrected tau=0.5 evaluations=20 (sparse=14 dense=6) attention_calls=1000 routed=630 sparse=630 dense=370 effective_density=44.6%"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "attention_2",
+      "run_id": "h3-presets-short-26-attention_2",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: protected_steps",
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: leading_block",
+        "[AppleSilicon-Optimized/H3Sparse] dense fallback: protected_layer",
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8 mode=corrected tau=0.5 evaluations=20 (sparse=14 dense=6) attention_calls=1000 routed=630 sparse=630 dense=370 effective_density=44.6%"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "attention_3",
+      "run_id": "h3-presets-short-28-attention_3",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: protected_steps",
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: leading_block",
+        "[AppleSilicon-Optimized/H3Sparse] dense fallback: protected_layer",
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8 mode=corrected tau=1.3 evaluations=20 (sparse=14 dense=6) attention_calls=1000 routed=630 sparse=630 dense=370 effective_density=30.8%"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "attention_3",
+      "run_id": "h3-presets-short-29-attention_3",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: protected_steps",
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: leading_block",
+        "[AppleSilicon-Optimized/H3Sparse] dense fallback: protected_layer",
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8 mode=corrected tau=1.3 evaluations=20 (sparse=14 dense=6) attention_calls=1000 routed=630 sparse=630 dense=370 effective_density=30.8%"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "attention_4",
+      "run_id": "h3-presets-short-31-attention_4",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: protected_steps",
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: leading_block",
+        "[AppleSilicon-Optimized/H3Sparse] dense fallback: protected_layer",
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8 mode=corrected tau=1.3 evaluations=20 (sparse=17 dense=3) attention_calls=1000 routed=765 sparse=765 dense=235 effective_density=29.6%"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "attention_4",
+      "run_id": "h3-presets-short-32-attention_4",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: protected_steps",
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: leading_block",
+        "[AppleSilicon-Optimized/H3Sparse] dense fallback: protected_layer",
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8 mode=corrected tau=1.3 evaluations=20 (sparse=17 dense=3) attention_calls=1000 routed=765 sparse=765 dense=235 effective_density=29.6%"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "attention_5",
+      "run_id": "h3-presets-short-34-attention_5",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8 mode=corrected tau=1.3 evaluations=20 (sparse=20 dense=0) attention_calls=1000 routed=1000 sparse=1000 dense=0 effective_density=26.1%"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "attention_5",
+      "run_id": "h3-presets-short-35-attention_5",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8 mode=corrected tau=1.3 evaluations=20 (sparse=20 dense=0) attention_calls=1000 routed=1000 sparse=1000 dense=0 effective_density=26.1%"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "attention_6",
+      "run_id": "h3-presets-short-37-attention_6",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: protected_steps",
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: leading_block",
+        "[AppleSilicon-Optimized/H3Sparse] dense fallback: protected_layer",
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=dense_int8 mode=corrected tau=1 evaluations=20 (sparse=14 dense=6) attention_calls=1000 routed=630 sparse=630 dense=370 effective_density=100.0%"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "attention_6",
+      "run_id": "h3-presets-short-38-attention_6",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: protected_steps",
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: leading_block",
+        "[AppleSilicon-Optimized/H3Sparse] dense fallback: protected_layer",
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=dense_int8 mode=corrected tau=1 evaluations=20 (sparse=14 dense=6) attention_calls=1000 routed=630 sparse=630 dense=370 effective_density=100.0%"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "attention_7",
+      "run_id": "h3-presets-short-40-attention_7",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=dense_int8 mode=corrected tau=1 evaluations=20 (sparse=20 dense=0) attention_calls=1000 routed=1000 sparse=1000 dense=0 effective_density=100.0%"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "attention_7",
+      "run_id": "h3-presets-short-41-attention_7",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=dense_int8 mode=corrected tau=1 evaluations=20 (sparse=20 dense=0) attention_calls=1000 routed=1000 sparse=1000 dense=0 effective_density=100.0%"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "attention_8",
+      "run_id": "h3-presets-short-43-attention_8",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: protected_steps",
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: leading_block",
+        "[AppleSilicon-Optimized/H3Sparse] dense fallback: protected_layer",
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8_hybrid mode=corrected tau=1.3 evaluations=20 (sparse=14 dense=6) attention_calls=1000 routed=630 sparse=630 dense=370 effective_density=30.8%"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "attention_8",
+      "run_id": "h3-presets-short-44-attention_8",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: protected_steps",
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: leading_block",
+        "[AppleSilicon-Optimized/H3Sparse] dense fallback: protected_layer",
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8_hybrid mode=corrected tau=1.3 evaluations=20 (sparse=14 dense=6) attention_calls=1000 routed=630 sparse=630 dense=370 effective_density=30.8%"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "attention_9",
+      "run_id": "h3-presets-short-46-attention_9",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[AppleSilicon-Optimized/H3Veda] Veda done \u00b7 Veda Metal MPP",
+        "Attention computed: 57.2% of full attention (42.8% skipped)",
+        "Video tiles kept: 6.1% of video x video tile pairs",
+        "Attention calls: 630 sparse; full attention: full-attention layer 100, protected step 270"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "attention_9",
+      "run_id": "h3-presets-short-47-attention_9",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[AppleSilicon-Optimized/H3Veda] Veda done \u00b7 Veda Metal MPP",
+        "Attention computed: 57.2% of full attention (42.8% skipped)",
+        "Video tiles kept: 6.1% of video x video tile pairs",
+        "Attention calls: 630 sparse; full attention: full-attention layer 100, protected step 270"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "attention_10",
+      "run_id": "h3-presets-short-49-attention_10",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[AppleSilicon-Optimized/H3Veda] Veda done \u00b7 Veda Metal MPP",
+        "Attention computed: 32.1% of full attention (67.9% skipped)",
+        "Video tiles kept: 6.1% of video x video tile pairs",
+        "Attention calls: 1000 sparse"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "attention_10",
+      "run_id": "h3-presets-short-50-attention_10",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[AppleSilicon-Optimized/H3Veda] Veda done \u00b7 Veda Metal MPP",
+        "Attention computed: 32.1% of full attention (67.9% skipped)",
+        "Video tiles kept: 6.1% of video x video tile pairs",
+        "Attention calls: 1000 sparse"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "tokens_1",
+      "run_id": "h3-presets-short-52-tokens_1",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[AppleSilicon-Optimized/H3Structure] enabled scale=1 early_evaluations=10 restore_blocks=12/8",
+        "[AppleSilicon-Optimized/H3Structure] evaluations=20 reduced=14 rows=(2968, 1603) bypasses={}",
+        "[INFO] MiniMax H3 Token reduction - reduced 14/20 model evaluations; last token count 2968 \u2192 1603 in reduced blocks (speedup not measured)"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "tokens_1",
+      "run_id": "h3-presets-short-53-tokens_1",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[AppleSilicon-Optimized/H3Structure] enabled scale=1 early_evaluations=10 restore_blocks=12/8",
+        "[AppleSilicon-Optimized/H3Structure] evaluations=20 reduced=14 rows=(2968, 1603) bypasses={}",
+        "[INFO] MiniMax H3 Token reduction - reduced 14/20 model evaluations; last token count 2968 \u2192 1603 in reduced blocks (speedup not measured)"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "tokens_2",
+      "run_id": "h3-presets-short-55-tokens_2",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[AppleSilicon-Optimized/H3Structure] enabled scale=1 early_evaluations=10 restore_blocks=30/20",
+        "[AppleSilicon-Optimized/H3Structure] evaluations=20 reduced=17 rows=(2968, 1603) bypasses={}",
+        "[INFO] MiniMax H3 Token reduction - reduced 17/20 model evaluations; last token count 2968 \u2192 1603 in reduced blocks (speedup not measured)"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "tokens_2",
+      "run_id": "h3-presets-short-56-tokens_2",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[AppleSilicon-Optimized/H3Structure] enabled scale=1 early_evaluations=10 restore_blocks=30/20",
+        "[AppleSilicon-Optimized/H3Structure] evaluations=20 reduced=17 rows=(2968, 1603) bypasses={}",
+        "[INFO] MiniMax H3 Token reduction - reduced 17/20 model evaluations; last token count 2968 \u2192 1603 in reduced blocks (speedup not measured)"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "tokens_3",
+      "run_id": "h3-presets-short-58-tokens_3",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[AppleSilicon-Optimized/H3Structure] enabled scale=1 early_evaluations=10 restore_blocks=20/12",
+        "[AppleSilicon-Optimized/H3Structure] evaluations=20 reduced=20 rows=(2968, 1603) bypasses={}",
+        "[INFO] MiniMax H3 Token reduction - reduced 20/20 model evaluations; last token count 2968 \u2192 1603 in reduced blocks (speedup not measured)"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "tokens_3",
+      "run_id": "h3-presets-short-59-tokens_3",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[AppleSilicon-Optimized/H3Structure] enabled scale=1 early_evaluations=10 restore_blocks=20/12",
+        "[AppleSilicon-Optimized/H3Structure] evaluations=20 reduced=20 rows=(2968, 1603) bypasses={}",
+        "[INFO] MiniMax H3 Token reduction - reduced 20/20 model evaluations; last token count 2968 \u2192 1603 in reduced blocks (speedup not measured)"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "tokens_4",
+      "run_id": "h3-presets-short-61-tokens_4",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[AppleSilicon-Optimized/H3Structure] enabled scale=1 early_evaluations=10 restore_blocks=40/30",
+        "[AppleSilicon-Optimized/H3Structure] evaluations=20 reduced=20 rows=(2968, 1603) bypasses={}",
+        "[INFO] MiniMax H3 Token reduction - reduced 20/20 model evaluations; last token count 2968 \u2192 1603 in reduced blocks (speedup not measured)"
+      ]
+    },
+    {
+      "label": "h3-presets-short",
+      "mode": "tokens_4",
+      "run_id": "h3-presets-short-62-tokens_4",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[AppleSilicon-Optimized/H3Structure] enabled scale=1 early_evaluations=10 restore_blocks=40/30",
+        "[AppleSilicon-Optimized/H3Structure] evaluations=20 reduced=20 rows=(2968, 1603) bypasses={}",
+        "[INFO] MiniMax H3 Token reduction - reduced 20/20 model evaluations; last token count 2968 \u2192 1603 in reduced blocks (speedup not measured)"
+      ]
+    },
+    {
+      "label": "h3-camera-480-optimized",
+      "mode": "exact",
+      "run_id": "h3-camera-480-optimized-1-exact",
+      "log_alignment_verified": true,
+      "runtime_messages": []
+    },
+    {
+      "label": "h3-camera-480-optimized",
+      "mode": "exact",
+      "run_id": "h3-camera-480-optimized-2-exact",
+      "log_alignment_verified": true,
+      "runtime_messages": []
+    },
+    {
+      "label": "h3-camera-480-optimized",
+      "mode": "attention_3",
+      "run_id": "h3-camera-480-optimized-4-attention_3",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: protected_steps",
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: leading_block",
+        "[AppleSilicon-Optimized/H3Sparse] dense fallback: protected_layer",
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8 mode=corrected tau=1.3 evaluations=20 (sparse=14 dense=6) attention_calls=1000 routed=630 sparse=630 dense=370 effective_density=22.6%"
+      ]
+    },
+    {
+      "label": "h3-camera-480-optimized",
+      "mode": "attention_3",
+      "run_id": "h3-camera-480-optimized-5-attention_3",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: protected_steps",
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: leading_block",
+        "[AppleSilicon-Optimized/H3Sparse] dense fallback: protected_layer",
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8 mode=corrected tau=1.3 evaluations=20 (sparse=14 dense=6) attention_calls=1000 routed=630 sparse=630 dense=370 effective_density=22.6%"
+      ]
+    },
+    {
+      "label": "h3-camera-480-optimized",
+      "mode": "attention_8",
+      "run_id": "h3-camera-480-optimized-7-attention_8",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: protected_steps",
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: leading_block",
+        "[AppleSilicon-Optimized/H3Sparse] dense fallback: protected_layer",
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8_hybrid mode=corrected tau=1.3 evaluations=20 (sparse=14 dense=6) attention_calls=1000 routed=630 sparse=630 dense=370 effective_density=22.6%"
+      ]
+    },
+    {
+      "label": "h3-camera-480-optimized",
+      "mode": "attention_8",
+      "run_id": "h3-camera-480-optimized-8-attention_8",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: protected_steps",
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: leading_block",
+        "[AppleSilicon-Optimized/H3Sparse] dense fallback: protected_layer",
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8_hybrid mode=corrected tau=1.3 evaluations=20 (sparse=14 dense=6) attention_calls=1000 routed=630 sparse=630 dense=370 effective_density=22.6%"
+      ]
+    },
+    {
+      "label": "h3-camera-720-optimized",
+      "mode": "exact",
+      "run_id": "h3-camera-720-optimized-1-exact",
+      "log_alignment_verified": true,
+      "runtime_messages": []
+    },
+    {
+      "label": "h3-camera-720-optimized",
+      "mode": "exact",
+      "run_id": "h3-camera-720-optimized-2-exact",
+      "log_alignment_verified": true,
+      "runtime_messages": []
+    },
+    {
+      "label": "h3-camera-720-optimized",
+      "mode": "attention_3",
+      "run_id": "h3-camera-720-optimized-4-attention_3",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: protected_steps",
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: leading_block",
+        "[AppleSilicon-Optimized/H3Sparse] dense fallback: protected_layer",
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8 mode=corrected tau=1.3 evaluations=20 (sparse=14 dense=6) attention_calls=1000 routed=630 sparse=630 dense=370 effective_density=18.4%"
+      ]
+    },
+    {
+      "label": "h3-camera-720-optimized",
+      "mode": "attention_3",
+      "run_id": "h3-camera-720-optimized-5-attention_3",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: protected_steps",
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: leading_block",
+        "[AppleSilicon-Optimized/H3Sparse] dense fallback: protected_layer",
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8 mode=corrected tau=1.3 evaluations=20 (sparse=14 dense=6) attention_calls=1000 routed=630 sparse=630 dense=370 effective_density=18.4%"
+      ]
+    },
+    {
+      "label": "h3-camera-720-optimized",
+      "mode": "attention_8",
+      "run_id": "h3-camera-720-optimized-7-attention_8",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: protected_steps",
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: leading_block",
+        "[AppleSilicon-Optimized/H3Sparse] dense fallback: protected_layer",
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8_hybrid mode=corrected tau=1.3 evaluations=20 (sparse=14 dense=6) attention_calls=1000 routed=630 sparse=630 dense=370 effective_density=18.5%"
+      ]
+    },
+    {
+      "label": "h3-camera-720-optimized",
+      "mode": "attention_8",
+      "run_id": "h3-camera-720-optimized-8-attention_8",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: protected_steps",
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: leading_block",
+        "[AppleSilicon-Optimized/H3Sparse] dense fallback: protected_layer",
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8_hybrid mode=corrected tau=1.3 evaluations=20 (sparse=14 dense=6) attention_calls=1000 routed=630 sparse=630 dense=370 effective_density=18.5%"
+      ]
+    },
+    {
+      "label": "h3-combined-short",
+      "mode": "motion_sol",
+      "run_id": "h3-combined-short-1-motion_sol",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: protected_steps",
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: leading_block",
+        "[AppleSilicon-Optimized/H3Sparse] dense fallback: protected_layer",
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8 mode=corrected tau=1.3 evaluations=20 (sparse=14 dense=6) attention_calls=1000 routed=630 sparse=630 dense=370 effective_density=30.8%",
+        "[INFO] MiniMax H3 MotionCache - skipped 0/20 model calls (estimated 1.00x DiT speedup)"
+      ]
+    },
+    {
+      "label": "h3-combined-short",
+      "mode": "motion_sol",
+      "run_id": "h3-combined-short-2-motion_sol",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: protected_steps",
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: leading_block",
+        "[AppleSilicon-Optimized/H3Sparse] dense fallback: protected_layer",
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8 mode=corrected tau=1.3 evaluations=20 (sparse=14 dense=6) attention_calls=1000 routed=630 sparse=630 dense=370 effective_density=30.8%",
+        "[INFO] MiniMax H3 MotionCache - skipped 0/20 model calls (estimated 1.00x DiT speedup)"
+      ]
+    },
+    {
+      "label": "h3-combined-short",
+      "mode": "spectrum_sol",
+      "run_id": "h3-combined-short-4-spectrum_sol",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[AppleSilicon-Optimized/H3Sparse] dense fallback: protected_steps",
+        "[AppleSilicon-Optimized/H3Sparse] dense fallback: leading_block",
+        "[AppleSilicon-Optimized/H3Sparse] dense fallback: protected_layer",
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8_hybrid mode=corrected tau=1.3 evaluations=13 (sparse=7 dense=6) attention_calls=650 routed=315 sparse=315 dense=335 effective_density=30.9%",
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8_hybrid mode=corrected tau=1.3 evaluations=0 (sparse=0 dense=0) attention_calls=0 routed=0 sparse=0 dense=0 effective_density=0.0%",
+        "[INFO] MiniMax H3 Spectrum - saved 7/20 DiT calls (estimated 1.54x DiT speedup; replay/predictor overhead excluded)"
+      ]
+    },
+    {
+      "label": "h3-combined-short",
+      "mode": "spectrum_sol",
+      "run_id": "h3-combined-short-5-spectrum_sol",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[AppleSilicon-Optimized/H3Sparse] dense fallback: protected_steps",
+        "[AppleSilicon-Optimized/H3Sparse] dense fallback: leading_block",
+        "[AppleSilicon-Optimized/H3Sparse] dense fallback: protected_layer",
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8_hybrid mode=corrected tau=1.3 evaluations=13 (sparse=7 dense=6) attention_calls=650 routed=315 sparse=315 dense=335 effective_density=30.9%",
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8_hybrid mode=corrected tau=1.3 evaluations=0 (sparse=0 dense=0) attention_calls=0 routed=0 sparse=0 dense=0 effective_density=0.0%",
+        "[INFO] MiniMax H3 Spectrum - saved 7/20 DiT calls (estimated 1.54x DiT speedup; replay/predictor overhead excluded)"
+      ]
+    },
+    {
+      "label": "h3-combined-short",
+      "mode": "fbc_sol_tokens",
+      "run_id": "h3-combined-short-7-fbc_sol_tokens",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[AppleSilicon-Optimized/H3Structure] enabled scale=1 early_evaluations=10 restore_blocks=12/8",
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: protected_steps",
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: leading_block",
+        "[AppleSilicon-Optimized/H3Sparse] dense fallback: protected_layer",
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8 mode=corrected tau=0.5 evaluations=20 (sparse=14 dense=6) attention_calls=755 routed=405 sparse=405 dense=350 effective_density=44.8%",
+        "[AppleSilicon-Optimized/H3Structure] evaluations=20 reduced=9 rows=(2968, 1603) bypasses={}",
+        "[INFO] MiniMax H3 Token reduction - reduced 9/20 model evaluations; last token count 2968 \u2192 1603 in reduced blocks (speedup not measured)",
+        "[INFO] MiniMax H3 FirstBlockCache - skipped 245/1000 transformer blocks (estimated 1.32x block-compute speedup)",
+        "[AppleSilicon-Optimized/H3Cache] evaluations=0 refreshed=0 reused=0",
+        "[AppleSilicon-Optimized/H3Cache] first_block_cache evaluations=20 refreshed=15 reused=5 peak_cached_bytes=31911936"
+      ]
+    },
+    {
+      "label": "h3-combined-short",
+      "mode": "fbc_sol_tokens",
+      "run_id": "h3-combined-short-8-fbc_sol_tokens",
+      "log_alignment_verified": true,
+      "runtime_messages": [
+        "[AppleSilicon-Optimized/H3Structure] enabled scale=1 early_evaluations=10 restore_blocks=12/8",
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: protected_steps",
+        "[INFO] [AppleSilicon-Optimized/H3Sparse] dense fallback: leading_block",
+        "[AppleSilicon-Optimized/H3Sparse] dense fallback: protected_layer",
+        "[AppleSilicon-Optimized/H3Sparse] router=diag64 backend=int8 mode=corrected tau=0.5 evaluations=20 (sparse=14 dense=6) attention_calls=755 routed=405 sparse=405 dense=350 effective_density=44.8%",
+        "[AppleSilicon-Optimized/H3Structure] evaluations=20 reduced=9 rows=(2968, 1603) bypasses={}",
+        "[INFO] MiniMax H3 Token reduction - reduced 9/20 model evaluations; last token count 2968 \u2192 1603 in reduced blocks (speedup not measured)",
+        "[INFO] MiniMax H3 FirstBlockCache - skipped 245/1000 transformer blocks (estimated 1.32x block-compute speedup)",
+        "[AppleSilicon-Optimized/H3Cache] evaluations=0 refreshed=0 reused=0",
+        "[AppleSilicon-Optimized/H3Cache] first_block_cache evaluations=20 refreshed=15 reused=5 peak_cached_bytes=31911936"
+      ]
+    }
+  ],
+  "auxiliary": {
+    "super_resolution": [
+      {
+        "kind": "image",
+        "input": [
+          384,
+          256
+        ],
+        "scale": 1,
+        "iteration": 1,
+        "e2e_seconds": 1.4300315000582486,
+        "native": {
+          "elapsedSeconds": 1.3560262920000001,
+          "inputFrames": 1,
+          "motionBackend": "disabled",
+          "outputFrames": 1,
+          "sceneResets": 0,
+          "worker_peak_rss_bytes": 947109888,
+          "metal_peak_bytes": 1006049372
+        },
+        "mae_vs_vsr": 0.04040613770484924
+      },
+      {
+        "kind": "image",
+        "input": [
+          384,
+          256
+        ],
+        "scale": 1,
+        "iteration": 2,
+        "e2e_seconds": 0.4868204591330141,
+        "native": {
+          "elapsedSeconds": 0.41435125,
+          "inputFrames": 1,
+          "motionBackend": "disabled",
+          "outputFrames": 1,
+          "sceneResets": 0,
+          "worker_peak_rss_bytes": 962265088,
+          "metal_peak_bytes": 1149015704
+        },
+        "mae_vs_vsr": 0.04040613770484924
+      },
+      {
+        "kind": "image",
+        "input": [
+          384,
+          256
+        ],
+        "scale": 1,
+        "iteration": 3,
+        "e2e_seconds": 0.4817158340010792,
+        "native": {
+          "elapsedSeconds": 0.408431333,
+          "inputFrames": 1,
+          "motionBackend": "disabled",
+          "outputFrames": 1,
+          "sceneResets": 0,
+          "worker_peak_rss_bytes": 962756608,
+          "metal_peak_bytes": 1143100514
+        },
+        "mae_vs_vsr": 0.04040613770484924
+      },
+      {
+        "kind": "image",
+        "input": [
+          384,
+          256
+        ],
+        "scale": 2,
+        "iteration": 1,
+        "e2e_seconds": 0.6918610001448542,
+        "native": {
+          "elapsedSeconds": 0.616946625,
+          "inputFrames": 1,
+          "motionBackend": "disabled",
+          "outputFrames": 1,
+          "sceneResets": 0,
+          "worker_peak_rss_bytes": 956137472,
+          "metal_peak_bytes": 1568007932
+        },
+        "mae_vs_vsr": 0.034199297428131104
+      },
+      {
+        "kind": "image",
+        "input": [
+          384,
+          256
+        ],
+        "scale": 2,
+        "iteration": 2,
+        "e2e_seconds": 0.5721685828175396,
+        "native": {
+          "elapsedSeconds": 0.499134041,
+          "inputFrames": 1,
+          "motionBackend": "disabled",
+          "outputFrames": 1,
+          "sceneResets": 0,
+          "worker_peak_rss_bytes": 960266240,
+          "metal_peak_bytes": 1661348854
+        },
+        "mae_vs_vsr": 0.034199297428131104
+      },
+      {
+        "kind": "image",
+        "input": [
+          384,
+          256
+        ],
+        "scale": 2,
+        "iteration": 3,
+        "e2e_seconds": 0.5697844168171287,
+        "native": {
+          "elapsedSeconds": 0.496977209,
+          "inputFrames": 1,
+          "motionBackend": "disabled",
+          "outputFrames": 1,
+          "sceneResets": 0,
+          "worker_peak_rss_bytes": 960462848,
+          "metal_peak_bytes": 1713744238
+        },
+        "mae_vs_vsr": 0.034199297428131104
+      },
+      {
+        "kind": "video",
+        "temporal": false,
+        "iteration": 1,
+        "e2e_seconds": 1.9974446669220924,
+        "width": 768,
+        "height": 512,
+        "fps": "24/1",
+        "audio_streams": 1,
+        "duration": 0.5,
+        "native": {
+          "elapsedSeconds": 1.917557875,
+          "inputFrames": 12,
+          "motionBackend": "disabled",
+          "outputFrames": 12,
+          "sceneResets": 0,
+          "timing": {
+            "audioSeconds": 0.001568917,
+            "decodingSeconds": 0.15592799899999998,
+            "encodingSeconds": 0.047624168999999994,
+            "generationSeconds": 0,
+            "motionSeconds": 0,
+            "renderingSeconds": 1.20869875,
+            "setupSeconds": 0.438464208,
+            "superResolutionSeconds": 0.065957667
+          },
+          "worker_peak_rss_bytes": 978714624,
+          "metal_peak_bytes": 1781293794
+        },
+        "frames": 12,
+        "decoded_frames_sha256": "907a1039840fc8cf94c96fba6ef842e562557483e9ef286515e44cfd00414954"
+      },
+      {
+        "kind": "video",
+        "temporal": false,
+        "iteration": 2,
+        "e2e_seconds": 1.964592584175989,
+        "width": 768,
+        "height": 512,
+        "fps": "24/1",
+        "audio_streams": 1,
+        "duration": 0.5,
+        "native": {
+          "elapsedSeconds": 1.883659875,
+          "inputFrames": 12,
+          "motionBackend": "disabled",
+          "outputFrames": 12,
+          "sceneResets": 0,
+          "timing": {
+            "audioSeconds": 0.001556917,
+            "decodingSeconds": 0.112438251,
+            "encodingSeconds": 0.046801168000000004,
+            "generationSeconds": 0,
+            "motionSeconds": 0,
+            "renderingSeconds": 1.2401729179999998,
+            "setupSeconds": 0.416766625,
+            "superResolutionSeconds": 0.066603917
+          },
+          "worker_peak_rss_bytes": 978124800,
+          "metal_peak_bytes": 1794337790
+        },
+        "frames": 12,
+        "decoded_frames_sha256": "907a1039840fc8cf94c96fba6ef842e562557483e9ef286515e44cfd00414954"
+      },
+      {
+        "kind": "video",
+        "temporal": true,
+        "iteration": 1,
+        "e2e_seconds": 3.483485040953383,
+        "width": 768,
+        "height": 512,
+        "fps": "24/1",
+        "audio_streams": 1,
+        "duration": 0.5,
+        "native": {
+          "elapsedSeconds": 3.382171666,
+          "inputFrames": 12,
+          "motionBackend": "videotoolbox",
+          "outputFrames": 12,
+          "sceneResets": 0,
+          "timing": {
+            "audioSeconds": 0.001609042,
+            "decodingSeconds": 0.113887082,
+            "encodingSeconds": 0.044422212,
+            "generationSeconds": 0,
+            "motionSeconds": 0.369762249,
+            "renderingSeconds": 1.289761666,
+            "setupSeconds": 1.49667975,
+            "superResolutionSeconds": 0.066691458
+          },
+          "worker_peak_rss_bytes": 988741632,
+          "metal_peak_bytes": 1681540544
+        },
+        "frames": 12,
+        "decoded_frames_sha256": "de5cef2c6fdb47efa9f85a975764236160c0108e53e7238f6ee72de21b2c4814"
+      },
+      {
+        "kind": "video",
+        "temporal": true,
+        "iteration": 2,
+        "e2e_seconds": 3.063470375025645,
+        "width": 768,
+        "height": 512,
+        "fps": "24/1",
+        "audio_streams": 1,
+        "duration": 0.5,
+        "native": {
+          "elapsedSeconds": 2.963324541,
+          "inputFrames": 12,
+          "motionBackend": "videotoolbox",
+          "outputFrames": 12,
+          "sceneResets": 0,
+          "timing": {
+            "audioSeconds": 0.001577167,
+            "decodingSeconds": 0.11030249899999997,
+            "encodingSeconds": 0.049965331,
+            "generationSeconds": 0,
+            "motionSeconds": 0.136896709,
+            "renderingSeconds": 1.203038667,
+            "setupSeconds": 1.398552458,
+            "superResolutionSeconds": 0.063626375
+          },
+          "worker_peak_rss_bytes": 988626944,
+          "metal_peak_bytes": 1689037484
+        },
+        "frames": 12,
+        "decoded_frames_sha256": "de5cef2c6fdb47efa9f85a975764236160c0108e53e7238f6ee72de21b2c4814"
+      }
+    ],
+    "latent_upscaler": {
+      "runs": [
+        {
+          "precision": "fp16",
+          "iteration": 0,
+          "seconds": 0.9945932500995696,
+          "shape": [
+            1,
+            24,
+            7,
+            60,
+            108
+          ],
+          "audio_unchanged": true,
+          "finite": true,
+          "sha256": "1845676f15e6b0a1662debbd21d615915852c4023165577d20fd404f1984132c"
+        },
+        {
+          "precision": "fp16",
+          "iteration": 1,
+          "seconds": 0.4249462918378413,
+          "shape": [
+            1,
+            24,
+            7,
+            60,
+            108
+          ],
+          "audio_unchanged": true,
+          "finite": true,
+          "sha256": "1845676f15e6b0a1662debbd21d615915852c4023165577d20fd404f1984132c"
+        },
+        {
+          "precision": "fp16",
+          "iteration": 2,
+          "seconds": 0.4216873748227954,
+          "shape": [
+            1,
+            24,
+            7,
+            60,
+            108
+          ],
+          "audio_unchanged": true,
+          "finite": true,
+          "sha256": "1845676f15e6b0a1662debbd21d615915852c4023165577d20fd404f1984132c"
+        },
+        {
+          "precision": "bf16",
+          "iteration": 0,
+          "seconds": 0.49286445905454457,
+          "shape": [
+            1,
+            24,
+            7,
+            60,
+            108
+          ],
+          "audio_unchanged": true,
+          "finite": true,
+          "sha256": "af904d4312662159d9ae8eb895e07f47d5fff017cb71c19e26dcc5f4b373449b"
+        },
+        {
+          "precision": "bf16",
+          "iteration": 1,
+          "seconds": 0.4497698328923434,
+          "shape": [
+            1,
+            24,
+            7,
+            60,
+            108
+          ],
+          "audio_unchanged": true,
+          "finite": true,
+          "sha256": "af904d4312662159d9ae8eb895e07f47d5fff017cb71c19e26dcc5f4b373449b"
+        },
+        {
+          "precision": "bf16",
+          "iteration": 2,
+          "seconds": 0.4428165419958532,
+          "shape": [
+            1,
+            24,
+            7,
+            60,
+            108
+          ],
+          "audio_unchanged": true,
+          "finite": true,
+          "sha256": "af904d4312662159d9ae8eb895e07f47d5fff017cb71c19e26dcc5f4b373449b"
+        },
+        {
+          "precision": "fp32",
+          "iteration": 0,
+          "seconds": 1.7112229159101844,
+          "shape": [
+            1,
+            24,
+            7,
+            60,
+            108
+          ],
+          "audio_unchanged": true,
+          "finite": true,
+          "sha256": "11bc05fd238c34b268fec9fbf48999f05511abc70e2de35d66b37f01f55f3f9e"
+        },
+        {
+          "precision": "fp32",
+          "iteration": 1,
+          "seconds": 1.6914026669692248,
+          "shape": [
+            1,
+            24,
+            7,
+            60,
+            108
+          ],
+          "audio_unchanged": true,
+          "finite": true,
+          "sha256": "11bc05fd238c34b268fec9fbf48999f05511abc70e2de35d66b37f01f55f3f9e"
+        },
+        {
+          "precision": "fp32",
+          "iteration": 2,
+          "seconds": 1.7071249159052968,
+          "shape": [
+            1,
+            24,
+            7,
+            60,
+            108
+          ],
+          "audio_unchanged": true,
+          "finite": true,
+          "sha256": "11bc05fd238c34b268fec9fbf48999f05511abc70e2de35d66b37f01f55f3f9e"
+        }
+      ],
+      "sampled_peak_gib": {
+        "rss": 1.753082275390625,
+        "mps": 1.4631195068359375,
+        "driver": 2.12078857421875
+      }
+    }
+  },
+  "installed_runtime_files": [
+    {
+      "file": "flux2_glue.py",
+      "sha256": "2c2ef4c82d98f59ade57b848b77311310a075129111697239e37b2f2b59e99f5",
+      "installed_matches": true
+    },
+    {
+      "file": "ideogram4_exact.py",
+      "sha256": "ef038b7f675803286fd699bbcbf23b99a41cd2dd18bcb3e1016813b3dc54a8b2",
+      "installed_matches": true
+    },
+    {
+      "file": "ltx25_fast.py",
+      "sha256": "dd4219d0ca85a15e8d144ec21c3651a9c2c5921bfbb86cbba49d52e1d2e150d8",
+      "installed_matches": true
+    },
+    {
+      "file": "qwen21_fast.py",
+      "sha256": "e92c726290128734d9efc6405b59848ffc29227a52a838feb986db4f87a30e0e",
+      "installed_matches": true
+    },
+    {
+      "file": "seedvr2_fast.py",
+      "sha256": "2b52572443c33cc03eddd6dea131141a5609c1979c83673a2a143a8e6232589d",
+      "installed_matches": true
+    },
+    {
+      "file": "seedvr2_vae_mps.py",
+      "sha256": "db1f57882ab6fb15597d1035b0077d98ecfe89486742b896cc6d520fdcd4c36d",
+      "installed_matches": true
+    },
+    {
+      "file": "torch_mpp_qcache.py",
+      "sha256": "0f1acecf7845accbbe69ba933a84d9d1dd2021a51bc826c1af4fe1c08c697339",
+      "installed_matches": true
+    },
+    {
+      "file": "wan_fp16.py",
+      "sha256": "a2dbea3d641ff1ee86ab80a51c4ce7b887822b40db645b079935c54f969ef9ed",
+      "installed_matches": true
+    },
+    {
+      "file": "yue2_fast.py",
+      "sha256": "2edc183f9253aa085062c315880addf4dfa8a75093f42201b47c846a2f568a9e",
+      "installed_matches": true
+    },
+    {
+      "file": "yue2_rope_mps.py",
+      "sha256": "218c1a06e4dbfc38be16d571f388834179bd172ac8c5a419d2d683e43a29396c",
+      "installed_matches": true
+    }
+  ],
+  "previous_instance_preserved": [
+    {
+      "file": "requirements-mac.txt",
+      "unchanged": true,
+      "sha256": "89f6715fc7ccdf86925ada0611d718102f49fbf438339f1b2136790efd2030fd"
+    },
+    {
+      "file": "manifest.json",
+      "unchanged": true,
+      "sha256": "0476be4a38347f60e6f350f0c2e09c502cff3dea3d10f4ce4c595b7126d692df"
+    },
+    {
+      "file": "ComfyUI/.venv/lib/python3.13/site-packages/torch/__init__.py",
+      "unchanged": true,
+      "sha256": "bd4a10ff16357ed78f45aaf4b46ce5b771fdc0e8549402206e324d0eb792c672"
+    },
+    {
+      "file": "ComfyUI/.venv/lib/python3.13/site-packages/torch/lib/libtorch_cpu.dylib",
+      "unchanged": true,
+      "sha256": "ca979f3619acb92240c2ef46d7581b1a388761e0fccfa7dc491a7eaa153d584a"
+    },
+    {
+      "file": "ComfyUI/.venv/lib/python3.13/site-packages/torchvision/__init__.py",
+      "unchanged": true,
+      "sha256": "9410a7e648ff07a695587173d09301d7da997a017cd8cef7b54e5b2f6dc8c342"
+    }
+  ],
+  "previous_pack_preserved": [
+    {
+      "file": "flux2_glue.py",
+      "sha256": "3d529ab86869a68ed07a866e27ad98403c666c2804ce3933b2f35920192e95b2",
+      "matches_initial_updated_clone": true
+    },
+    {
+      "file": "ideogram4_exact.py",
+      "sha256": "43e1b3a1eda85e98a65c0b1738e94f300137f02d02051f08288682af1867483d",
+      "matches_initial_updated_clone": true
+    },
+    {
+      "file": "ltx25_fast.py",
+      "sha256": "c6b6ed1f93f6fdcefd5fed84dd131403b5d097f486bf9836f7422a1c4b32d092",
+      "matches_initial_updated_clone": true
+    },
+    {
+      "file": "qwen21_fast.py",
+      "sha256": "8e546825c64e68450677bf097a0c629d5e0ea21565ab89dce0a13abf71dfa227",
+      "matches_initial_updated_clone": true
+    },
+    {
+      "file": "torch_mpp_qcache.py",
+      "sha256": "1906857e28aeabbfcf3b25d72e432147afad6063e55b4ff4d1c4e701a000599e",
+      "matches_initial_updated_clone": true
+    },
+    {
+      "file": "wan_fp16.py",
+      "sha256": "b30695f1832d29d15c5bfde55dd16508d0ec4646c19c2bca409ad39499f3c066",
+      "matches_initial_updated_clone": true
+    },
+    {
+      "file": "yue2_fast.py",
+      "sha256": "0a2f5c5a0fc817cf7bf5b77f6825ccb4b3ffe5abc311c1b1b77e50948665ad86",
+      "matches_initial_updated_clone": true
+    },
+    {
+      "file": "yue2_rope_mps.py",
+      "sha256": "539e9b50dd4353a247d20b423fe2e5f9e5b2ca5d0fd9966cda3b8ca30e6cc04f",
+      "matches_initial_updated_clone": true
+    },
+    {
+      "file": "seedvr2_fast.py",
+      "sha256": "65dcd11ac2de328ddfda29401de59e692aa28ce0eb7cd4fb4cac7e351350813e",
+      "matches_initial_updated_clone": true
+    },
+    {
+      "file": "seedvr2_vae_mps.py",
+      "sha256": "aa99f0f31e8571a6cf4475cfc32bab9ae47d135ed7bf370556507160d13efed5",
+      "matches_initial_updated_clone": true
+    }
+  ],
+  "seedvr_exported_pixel_difference": {
+    "comparison": "Previous vs updated optimized SeedVR exported PNG RGB pixels",
+    "shape": [
+      4800,
+      7200,
+      3
+    ],
+    "mae": 0.003335374693499317,
+    "rmse": 0.006042480199474358,
+    "maximum": 0.3294117748737335,
+    "changed_channel_fraction": 0.5268682966820988
+  }
+}

@@ -8,8 +8,7 @@ from _patches import torch_mpp_qcache as patch
 
 def _available():
     return (torch.backends.mps.is_available()
-            and torch.__version__.split('+')[0] == '2.14.0'
-            and torch.version.git_version == patch._TORCH_GIT
+            and patch._torch_build_supported()
             and patch._hardware())
 
 
@@ -53,6 +52,21 @@ def test_unsupported_build_falls_back(monkeypatch):
     monkeypatch.setattr(torch.version,'git_version','unvalidated')
     with torch.inference_mode():
         assert patch.maybe_attention(None,None,None) is None
+
+
+@pytest.mark.parametrize('version,revision', list(patch._TORCH_BUILDS.items()))
+def test_validated_build_requires_matching_revision(monkeypatch, version, revision):
+    monkeypatch.setattr(torch, '__version__', version + '+local')
+    monkeypatch.setattr(torch.version, 'git_version', revision)
+    assert patch._torch_build_supported()
+    monkeypatch.setattr(torch.version, 'git_version', 'unvalidated')
+    assert not patch._torch_build_supported()
+
+
+def test_unknown_version_falls_back_even_with_known_revision(monkeypatch):
+    monkeypatch.setattr(torch, '__version__', '2.14.2')
+    monkeypatch.setattr(torch.version, 'git_version', patch._TORCH_GIT)
+    assert not patch._torch_build_supported()
 
 
 @pytest.mark.skipif(not _available(), reason='requires validated M5 Ultra / PyTorch 2.14')
