@@ -35,6 +35,13 @@ compiler/toolchain; our current measurements use **macOS 27 / M5 Ultra**.
 Older Apple Silicon attempts the enabled routes with existing fallbacks, but
 M1–M4 performance and parity are not yet validated.
 
+**Tested ComfyUI core:** `v0.39.0-33-g1d2ea294` — package version **0.39.0**,
+33 commits after the v0.39.0 tag, at
+[`1d2ea2948d33dfda4d7cfe58c6d234968aa62cf8`](https://github.com/Comfy-Org/ComfyUI/commit/1d2ea2948d33dfda4d7cfe58c6d234968aa62cf8).
+This is the checkout used for the current benchmarks, not the tagged v0.39.2
+release. The installer manages the tested Torch profile; it does not pin or
+update ComfyUI core.
+
 ### ComfyUI-Manager
 
 1. If your Manager permits **Install via Git URL**, install
@@ -125,6 +132,9 @@ geometry. A model loading successfully does not prove that its fast path ran.
 ## Latest results — M5 Ultra (80 GPU cores)
 
 **README updated 2026-10-13 · stock/optimized table measured October 9–10 · 256 GB unified memory · macOS 27.0 · PyTorch 2.14.1**
+
+**ComfyUI core used for this table:** `v0.39.0-33-g1d2ea294` (package version
+0.39.0). [Recorded test environment](benchmarks/m5-ultra-torch2141-retest.md).
 
 <!-- Canonical current benchmark table: update the date, measurements and linked report together after validated runs. -->
 
