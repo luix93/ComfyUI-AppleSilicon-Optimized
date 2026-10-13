@@ -12,7 +12,7 @@ preceding optimized output without matching stock ComfyUI.
 | Full PyTorch 2.14.1 retest | [Models, compatibility and timings](m5-ultra-torch2141-retest.md) |
 | SDXL / Z-Image | [2.14 production workflows](m5-ultra-torch214-production.md), [SDXL investigation](m5-ultra-sdxl-investigation.md) |
 | Krea2 | [October exact tile and rejected attention experiments](m5-ultra-krea2-oct2026.md), [earlier exact work](m5-ultra-krea2-exact.md) |
-| Ideogram 4 / H3 kernels | [October kernel follow-up](m5-ultra-ideogram-h3-oct2026.md), [Ideogram baseline](m5-ultra-ideogram4.md) |
+| Ideogram 4 / H3 kernels | [Exact matrix execution experiments](m5-ultra-h3-matrix-execution.md), [Hardware counters and occupancy](m5-ultra-h3-gpu-counters.md), [GPU profiling and exact K/V layout](m5-ultra-h3-attention-profile.md), [Exact attention pipeline screens](m5-ultra-h3-exact-attention-pipeline.md), [Long-clip exact attention follow-up](m5-ultra-h3-long-exact.md), [October kernel follow-up](m5-ultra-ideogram-h3-oct2026.md), [Ideogram baseline](m5-ultra-ideogram4.md) |
 | Qwen 2.1 | [Generation](m5-ultra-qwen21.md), [image edit](m5-ultra-qwen21-edit.md) |
 | Flux.2 Klein | [Text-to-image and edit](m5-ultra-flux2-klein.md) |
 | LTX 2.5 | [Baseline](m5-ultra-ltx25.md), [VAE and exact follow-up](m5-ultra-ltx25-followup.md) |
@@ -20,7 +20,7 @@ preceding optimized output without matching stock ComfyUI.
 | SeedVR2 | [2.14.1 exact VAE follow-up](m5-ultra-seedvr2-vae2141.md), [video memory diagnosis](m5-ultra-seedvr2-video-memory.md) |
 | YuE2 | [Initial pass](m5-ultra-yue2.md), [RoPE/full-song follow-up](m5-ultra-yue2-followup.md) |
 | H3 optional attention | [Kitchen/dense/hybrid attention and morphing](m5-ultra-h3-kitchen-attention.md), [SOL/top-k](m5-ultra-h3-sol-topk.md), [Veda](m5-ultra-h3-veda.md) |
-| H3 cache/token controls | [Presets](m5-ultra-h3-presets.md), [bundled runtimes](m5-ultra-h3-owned-runtime.md), [combined aggressive tests](m5-ultra-h3-sol-aggressive.md) |
+| H3 cache/token controls | [Adaptive Fast presets](m5-ultra-h3-token-dynamic.md), [Fast artifact fix](m5-ultra-h3-fast-token-fix.md), [presets](m5-ultra-h3-presets.md), [bundled runtimes](m5-ultra-h3-owned-runtime.md), [combined aggressive tests](m5-ultra-h3-sol-aggressive.md) |
 
 ## Historical experiments
 

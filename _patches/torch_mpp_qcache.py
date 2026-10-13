@@ -1,7 +1,8 @@
 """Exact query-load hoisting for PyTorch 2.14 MPP attention on M5 Ultra.
 
-Uses the installed, hash-checked PyTorch headers. Only Q loads move outside
-its key loop; tile sizes, MMA, softmax, barriers and reductions stay intact.
+Uses installed, hash-checked PyTorch headers. Q loads move outside the key
+loop. Long H3 sequences additionally adjust dispatch order and one scheduling
+barrier; tile sizes, MMA arithmetic, softmax and reduction order stay intact.
 The bounded parameter cache holds at most 16 KiB, never activations.
 """
 import functools
@@ -23,6 +24,7 @@ _TORCH_BUILDS = {
 _SOURCE_HASH = '823c0df0b306a2a82b4c8903439e2b4b70bedb86c28b8f720adb92fb22892cff'
 _library = None
 _half_library = None
+_h3_long_library = None
 _dead = False
 _calls = 0
 
@@ -43,7 +45,7 @@ def _hardware():
         return False
 
 
-def _source(dtype='bfloat', *, head_dim=128, cache_query=True):
+def _source(dtype='bfloat', *, head_dim=128, cache_query=True, h3_long=False):
     root = Path(torch.__file__).parent / 'include'
     seen = set()
     def expand(name):
@@ -83,6 +85,18 @@ def _source(dtype='bfloat', *, head_dim=128, cache_query=True):
         body = body.replace(before, load + before).replace(
             '          MPPTile<T, 1, 1, QFrag_t> Qtile;',
             '          thread auto& Qtile = Qcache[id];').replace(old_load, '')
+    if h3_long:
+        # Scheduling only: every QK/PV operation and softmax reduction retains
+        # its original order. Keep the final cooperative-tensor drain intact.
+        replacements = {
+            'const int head_idx = tid.y;\n  const int block_idx = tid.x;':
+                'const int head_idx = tid.x;\n  const int block_idx = tid.y;',
+            'if (id == 4) {\n            threadgroup_barrier(mem_flags::mem_none);':
+                'if (id == 6) {\n            threadgroup_barrier(mem_flags::mem_none);',
+        }
+        for old, new in replacements.items():
+            assert body.count(old) == 1
+            body = body.replace(old, new)
     assert dtype in ('bfloat', 'half')
     assert head_dim in (128, 256)
     return (prefix + body + '\ninstantiate_kernel("custom_attn", prefill_attention_mpp, '
@@ -173,13 +187,27 @@ def _supports(q, k, v, kwargs):
     return (scale is None or type(scale) in (float, int) and math.isfinite(scale)) and _hardware()
 
 
+def _h3_long_schedule(q, k):
+    # The scheduling refinement has complete-sampler validation on 2.14.1.
+    # Older validated query-cache builds retain their preceding schedule.
+    return (torch.__version__.split('+')[0] == '2.14.1'
+            and q.shape[1] == k.shape[1] == 56
+            and 30000 < q.shape[2] <= 65536
+            and os.environ.get('ASFP8_H3_LONG_ATTN', '1') == '1')
+
+
 def maybe_attention(q, k, v, *, output_bshd=False, **kwargs):
-    global _library, _half_library, _dead, _calls
+    global _library, _half_library, _h3_long_library, _dead, _calls
     if not _supports(q, k, v, kwargs):
         return None
     try:
         wan = _wan(q, k)
-        if wan:
+        h3_long = _h3_long_schedule(q, k)
+        if h3_long:
+            if _h3_long_library is None:
+                _h3_long_library = torch.mps.compile_shader(_source(h3_long=True))
+            library = _h3_long_library
+        elif wan:
             if _half_library is None:
                 _half_library = torch.mps.compile_shader(_source('half'))
                 print('[AppleSilicon-Optimized/mpp_qcache] exact Wan FP16 query-load hoisting enabled.')
@@ -198,8 +226,11 @@ def maybe_attention(q, k, v, *, output_bshd=False, **kwargs):
                               device=q.device, dtype=q.dtype).transpose(1, 2)
         else:
             out = torch.empty(q.shape, device=q.device, dtype=q.dtype)
+        query_groups = (q.shape[2] + 63) // 64
+        threads = ((q.shape[1] * 128, query_groups, q.shape[0]) if h3_long
+                   else (query_groups * 128, q.shape[1], q.shape[0]))
         library.custom_attn(q, k, v, out, params, params, params,
-                            threads=(((q.shape[2] + 63) // 64) * 128, q.shape[1], q.shape[0]),
+                            threads=threads,
                             group_size=(128, 1, 1))
         _calls += 1
         return out

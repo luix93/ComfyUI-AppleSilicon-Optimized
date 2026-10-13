@@ -1,0 +1,1272 @@
+{
+  "date": "2026-10-13",
+  "hardware": "M5 Ultra, 80 GPU cores, 256 GB RAM",
+  "torch": "2.14.1",
+  "reference": "Accepted H3 long MPP query-cache schedule, BQ64/BK32/BD128, head-major dispatch, PV barrier at index 6",
+  "shape": [
+    1,
+    56,
+    44600,
+    128
+  ],
+  "dtype": "bfloat16",
+  "rounds_per_screen": 7,
+  "screens": {
+    "screen-initial": {
+      "shape": [
+        1,
+        56,
+        44600,
+        128
+      ],
+      "reference_sha256": "3dad4faf1ac08c28056e323b0f568bdecce315a281464b07cf59c998c769f4d3",
+      "results": {
+        "baseline": {
+          "byte_equal": true,
+          "samples_ms": [
+            535.6674171052873,
+            535.0841670297086,
+            536.5788340568542,
+            536.0622089356184,
+            535.09616618976,
+            531.348415883258,
+            532.8016669955105
+          ],
+          "source_sha256": "38d0c60aff8df8d6f9f0e9358f43ac2fef56f0a1b4f840ea90e3d28aa3acea25",
+          "median_ms": 535.09616618976
+        },
+        "qk16_persistent": {
+          "byte_equal": true,
+          "samples_ms": [
+            536.7309579160064,
+            530.1534591708332,
+            532.772250007838,
+            532.2842919267714,
+            534.3134170398116,
+            535.1706249639392,
+            531.9789589848369
+          ],
+          "source_sha256": "939bf711bceb9e4439dc267a7f172f0e2c84910b3625965d26b3612c73f8c48e",
+          "median_ms": 532.772250007838
+        },
+        "qk64": {
+          "error": "In file included from program_source:1730:\nIn file included from /System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/MetalPerformancePrimitives.h:10:\nIn file included from /System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/MPPTensorOpsMatMul2d.h:411:\n/System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/__impl/MPPTensorOpsMatMul2dImpl.h:6367:5: error: static_assert failed due to requirement 'mpp::tensor_ops::matmul2d_descriptor{16, 32, 64, false, true, true, 1}.k == 16 || mpp::tensor_ops::matmul2d_descriptor{16, 32, 64, false, true, true, 1}.k == 32' \"K must be 16 or 32 if both inputs are cooperative tensors\"\n    static_assert(descriptor.k == 16 || descriptor.k == 32, \"K must be 16 or 32 if both inputs are cooperative tensors\");\n    ^             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n/System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/MPPTensorOpsMatMul2d.h:437:24: note: in instantiation of function template specialization 'mpp::tensor_ops::__mutmul2d_detail::__run<{16, 32, 64, false, true, true, 1}, metal::execution_simdgroups<1>, metal::cooperative_tensor<bfloat, metal::extents<int, 18446744073709551615, 18446744073709551615>, mpp::tensor_ops::__mutmul2d_detail::__operand_layout<{16, 32, 64, false, true, true, 1}, mpp::tensor_ops::__mutmul2d_detail::__matmul2d_cooperative_operand_index::left, metal::execution_simdgroups<1>, bfloat, bfloat, float, int>>, metal::cooperative_tensor<bfloat, metal::extents<int, 18446744073709551615, 18446744073709551615>, mpp::tensor_ops::__mutmul2d_detail::__operand_layout<{16, 32, 64, false, true, true, 1}, mpp::tensor_ops::__mutmul2d_detail::__matmul2d_cooperative_operand_index::right, metal::execution_simdgroups<1>, bfloat, bfloat, float, int>>, metal::cooperative_tensor<float, metal::extents<int, 18446744073709551615, 18446744073709551615>, mpp::tensor_ops::__mutmul2d_detail::__operand_layout<{16, 32, 64, false, true, true, 1}, mpp::tensor_ops::__mut"
+        },
+        "qk128": {
+          "error": "In file included from program_source:1730:\nIn file included from /System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/MetalPerformancePrimitives.h:10:\nIn file included from /System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/MPPTensorOpsMatMul2d.h:411:\n/System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/__impl/MPPTensorOpsMatMul2dImpl.h:6367:5: error: static_assert failed due to requirement 'mpp::tensor_ops::matmul2d_descriptor{16, 32, 128, false, true, true, 1}.k == 16 || mpp::tensor_ops::matmul2d_descriptor{16, 32, 128, false, true, true, 1}.k == 32' \"K must be 16 or 32 if both inputs are cooperative tensors\"\n    static_assert(descriptor.k == 16 || descriptor.k == 32, \"K must be 16 or 32 if both inputs are cooperative tensors\");\n    ^             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n/System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/MPPTensorOpsMatMul2d.h:437:24: note: in instantiation of function template specialization 'mpp::tensor_ops::__mutmul2d_detail::__run<{16, 32, 128, false, true, true, 1}, metal::execution_simdgroups<1>, metal::cooperative_tensor<bfloat, metal::extents<int, 18446744073709551615, 18446744073709551615>, mpp::tensor_ops::__mutmul2d_detail::__operand_layout<{16, 32, 128, false, true, true, 1}, mpp::tensor_ops::__mutmul2d_detail::__matmul2d_cooperative_operand_index::left, metal::execution_simdgroups<1>, bfloat, bfloat, float, int>>, metal::cooperative_tensor<bfloat, metal::extents<int, 18446744073709551615, 18446744073709551615>, mpp::tensor_ops::__mutmul2d_detail::__operand_layout<{16, 32, 128, false, true, true, 1}, mpp::tensor_ops::__mutmul2d_detail::__matmul2d_cooperative_operand_index::right, metal::execution_simdgroups<1>, bfloat, bfloat, float, int>>, metal::cooperative_tensor<float, metal::extents<int, 18446744073709551615, 18446744073709551615>, mpp::tensor_ops::__mutmul2d_detail::__operand_layout<{16, 32, 128, false, true, true, 1}, mpp::tensor_ops:"
+        },
+        "pv_persistent": {
+          "byte_equal": true,
+          "samples_ms": [
+            540.9332918934524,
+            539.8541658651084,
+            538.5094999801368,
+            539.6152918692678,
+            535.6107919942588,
+            540.3438748326153,
+            539.9992079474032
+          ],
+          "source_sha256": "a54d79d8d1eccea0f09b11155c89243619961d40f477fc5b6249ebffd85b2cc7",
+          "median_ms": 539.8541658651084
+        },
+        "strides": {
+          "byte_equal": true,
+          "samples_ms": [
+            542.1375001315027,
+            542.641791049391,
+            542.493584100157,
+            540.4903749004006,
+            548.4079578891397,
+            541.9014999642968,
+            544.316542102024
+          ],
+          "source_sha256": "90fa9dbfa364b6702abdab9e0737c767b0e27ef8d65b37f6619210a86400abcc",
+          "median_ms": 542.493584100157
+        },
+        "tail_split": {
+          "byte_equal": true,
+          "samples_ms": [
+            620.1168748084456,
+            613.8364998623729,
+            614.4593749195337,
+            613.9326251577586,
+            612.6114157959819,
+            615.5385840684175,
+            612.5425840727985
+          ],
+          "source_sha256": "8ad6468ddfb5ebdbc59866e343439953ae5a29627759c55e7d614760da4cdfde",
+          "median_ms": 613.9326251577586
+        },
+        "unroll2": {
+          "byte_equal": true,
+          "samples_ms": [
+            531.4482080284506,
+            537.9692921414971,
+            535.1921250112355,
+            537.2727499343455,
+            536.3043749239296,
+            530.8681251481175,
+            536.4954578690231
+          ],
+          "source_sha256": "aebb289a01e29154923925a5e29ab570ef33e6d2872fa1b59982b76f6fb4c2d2",
+          "median_ms": 536.3043749239296
+        },
+        "unroll4": {
+          "byte_equal": true,
+          "samples_ms": [
+            533.5344581399113,
+            531.6524170339108,
+            539.6618330851197,
+            534.8048331215978,
+            531.6521660424769,
+            539.5432910881937,
+            534.6059580333531
+          ],
+          "source_sha256": "0fedcccf6789ec9a8fe38a17a95af441de0f8c4a4d217089c52b60aa7240b605",
+          "median_ms": 534.6059580333531
+        }
+      },
+      "driver_gib": 2.44598388671875
+    },
+    "screen-look-sync": {
+      "shape": [
+        1,
+        56,
+        44600,
+        128
+      ],
+      "reference_sha256": "3dad4faf1ac08c28056e323b0f568bdecce315a281464b07cf59c998c769f4d3",
+      "results": {
+        "baseline": {
+          "byte_equal": true,
+          "samples_ms": [
+            561.1380839254707,
+            543.0402499623597,
+            535.1344998925924,
+            540.3237079735845,
+            532.8597079496831,
+            535.8265000395477,
+            533.2805840298533
+          ],
+          "source_sha256": "38d0c60aff8df8d6f9f0e9358f43ac2fef56f0a1b4f840ea90e3d28aa3acea25",
+          "median_ms": 535.8265000395477
+        },
+        "look2": {
+          "byte_equal": true,
+          "samples_ms": [
+            926.2597500346601,
+            929.3760000728071,
+            918.8835839740932,
+            925.2914998214692,
+            929.2980830650777,
+            935.2883750107139,
+            931.19145790115
+          ],
+          "source_sha256": "124b35a63cdbc9c8cf7833d3100ec66dd6ce32006dba3e6966ace3e3c2d0a84f",
+          "median_ms": 929.2980830650777
+        },
+        "look4": {
+          "byte_equal": true,
+          "samples_ms": [
+            1374.10470796749,
+            1345.6833749078214,
+            1344.4781659636647,
+            1366.8484170921147,
+            1350.992709165439,
+            1363.9638749882579,
+            1369.1725831013173
+          ],
+          "source_sha256": "e597915d662db91ddd7ccd61b81c940503755a2a0311243884580d2c04eab4bd",
+          "median_ms": 1363.9638749882579
+        },
+        "sync0": {
+          "byte_equal": true,
+          "samples_ms": [
+            1064.6669999696314,
+            1059.5672919880599,
+            1071.591709041968,
+            1032.105040969327,
+            1026.5832501463592,
+            1082.2357500437647,
+            1065.49399998039
+          ],
+          "source_sha256": "c5d9565e8649435a3321f7adcf81e500b58a967f2b9240ddcbf6d5cf2b31577b",
+          "median_ms": 1064.6669999696314
+        },
+        "sync2": {
+          "byte_equal": true,
+          "samples_ms": [
+            565.4638330452144,
+            540.2127089910209,
+            535.7549171894789,
+            543.1680420879275,
+            543.3960000518709,
+            547.5747091695666,
+            545.0493339449167
+          ],
+          "source_sha256": "4f558b6fab65a31ee4ff8e17a25663a248503bd5f64ecdbec6ea4add9d16a070",
+          "median_ms": 543.3960000518709
+        },
+        "sync4": {
+          "byte_equal": true,
+          "samples_ms": [
+            547.9871667921543,
+            536.9800420012325,
+            536.3671251107007,
+            539.2358340322971,
+            537.8035418689251,
+            538.5592081584036,
+            539.9880839977413
+          ],
+          "source_sha256": "5242ae46602a33f92c6cc68b8e27c58ca3b8add9668218cf3095cd434875294a",
+          "median_ms": 538.5592081584036
+        },
+        "sync8": {
+          "byte_equal": true,
+          "samples_ms": [
+            549.0693340543658,
+            539.5173749420792,
+            537.30683401227,
+            536.6992498748004,
+            540.5918750911951,
+            535.8084589242935,
+            535.6700830161572
+          ],
+          "source_sha256": "45bc1cf3cce36a130546b02b941ec67ecc5b714b6e1ace302eaa2b09e67cbda4",
+          "median_ms": 537.30683401227
+        },
+        "sync16": {
+          "byte_equal": true,
+          "samples_ms": [
+            538.6705410201102,
+            543.381666066125,
+            538.3552920538932,
+            537.2578329406679,
+            539.0299169812351,
+            539.1072079073638,
+            539.9110829457641
+          ],
+          "source_sha256": "906b6da6b0634989d902198ab9b20ebcf463a81cb30fe182e54fd37707e2c323",
+          "median_ms": 539.0299169812351
+        }
+      },
+      "driver_gib": 2.44598388671875
+    },
+    "screen-output-first": {
+      "shape": [
+        1,
+        56,
+        44600,
+        128
+      ],
+      "reference_sha256": "3dad4faf1ac08c28056e323b0f568bdecce315a281464b07cf59c998c769f4d3",
+      "results": {
+        "baseline": {
+          "byte_equal": true,
+          "samples_ms": [
+            534.9307500291616,
+            532.1692079305649,
+            535.6489999685436,
+            537.603166885674,
+            537.8480418585241,
+            533.2665001042187,
+            539.1097920946777
+          ],
+          "source_sha256": "38d0c60aff8df8d6f9f0e9358f43ac2fef56f0a1b4f840ea90e3d28aa3acea25",
+          "median_ms": 535.6489999685436
+        },
+        "output_ct": {
+          "error": "program_source:2513:21: warning: unused variable 'Q_load_off' [-Wunused-variable]\n          const int Q_load_off = iq * kU * q_seq_stride + id * kU;\n                    ^\nprogram_source:2452:3: error: cannot declare array of non-constant size type 'PC' (aka 'cooperative_tensor<float, extents<int, 18446744073709551615UL, 18446744073709551615UL>, __operand_layout<mpp::tensor_ops::matmul2d_descriptor{16, 32, 16, false, false, true, 1}, (mpp::tensor_ops::__mutmul2d_detail::__matmul2d_cooperative_operand_index)2, metal::execution_simdgroups<1>, float, bfloat, float, int>>')\n  PC OC[TD/2];\n  ^\nprogram_source:2741:35: note: in instantiation of function template specialization 'prefill_attention_mpp<bfloat, 64, 32, 128, 4, 1, false, false, true, bfloat>' requested here\ninstantiate_kernel(\"custom_attn\", prefill_attention_mpp, bfloat, 64, 32, 128, 4, 1, false, false, true, bfloat);\n                                  ^\n"
+        },
+        "maxthreads256": {
+          "byte_equal": true,
+          "samples_ms": [
+            542.0185411348939,
+            539.4678749144077,
+            536.9269589427859,
+            533.4428751375526,
+            536.4594999700785,
+            532.8721669502556,
+            535.6370841618627
+          ],
+          "source_sha256": "a1b3ec68c743732caadb8eff10e491420a5c2917db80bf9ddf6688e907e7d735",
+          "median_ms": 536.4594999700785
+        },
+        "maxthreads512": {
+          "byte_equal": true,
+          "samples_ms": [
+            533.9297498576343,
+            541.3870841730386,
+            536.2232499755919,
+            533.3516250830144,
+            541.3501251023263,
+            536.9601252023131,
+            538.3785420563072
+          ],
+          "source_sha256": "9c3073ba5093dd8c707e40b1ed11553a533e5ca2da5e3ad1f2dc9aca8973540c",
+          "median_ms": 536.9601252023131
+        }
+      },
+      "driver_gib": 2.44598388671875
+    },
+    "screen-final-options": {
+      "shape": [
+        1,
+        56,
+        44600,
+        128
+      ],
+      "reference_sha256": "3dad4faf1ac08c28056e323b0f568bdecce315a281464b07cf59c998c769f4d3",
+      "results": {
+        "baseline": {
+          "byte_equal": true,
+          "samples_ms": [
+            536.5291670896113,
+            540.9790000412613,
+            534.2530829366297,
+            538.4385411161929,
+            539.8737920913845,
+            534.6096658613533,
+            537.3992919921875
+          ],
+          "source_sha256": "38d0c60aff8df8d6f9f0e9358f43ac2fef56f0a1b4f840ea90e3d28aa3acea25",
+          "median_ms": 537.3992919921875
+        },
+        "vectorload": {
+          "byte_equal": true,
+          "samples_ms": [
+            535.6706660240889,
+            535.5777500662953,
+            542.0327079482377,
+            534.5940408296883,
+            535.9981660731137,
+            536.9830001145601,
+            536.9963750708848
+          ],
+          "source_sha256": "49b70442edc8a094d08c0f3d778b838ea86a67b8f29131e1c4650ab2370579d0",
+          "median_ms": 535.9981660731137
+        },
+        "pv_f32": {
+          "byte_equal": true,
+          "samples_ms": [
+            1260.5862501077354,
+            1260.415666969493,
+            1258.4825830999762,
+            1258.660166990012,
+            1259.5142910722643,
+            1258.8417921215296,
+            1261.1539168283343
+          ],
+          "source_sha256": "dd66bf7eb5c4d98e395e5356fc9222cf809b63614748301ccc1d9f7635f30f08",
+          "median_ms": 1259.5142910722643
+        },
+        "rescale_late": {
+          "byte_equal": true,
+          "samples_ms": [
+            532.4187080841511,
+            535.8857919927686,
+            539.5882080774754,
+            533.5085419937968,
+            537.6284581143409,
+            536.2252499908209,
+            538.1509580183774
+          ],
+          "source_sha256": "66671e02317869bf3060e6403bfe0e1944f35aa73b37b2e47ecd39d3b5273485",
+          "median_ms": 536.2252499908209
+        }
+      },
+      "driver_gib": 2.44598388671875
+    },
+    "screen-output": {
+      "shape": [
+        1,
+        56,
+        44600,
+        128
+      ],
+      "reference_sha256": "3dad4faf1ac08c28056e323b0f568bdecce315a281464b07cf59c998c769f4d3",
+      "results": {
+        "baseline": {
+          "byte_equal": true,
+          "samples_ms": [
+            534.6162500791252,
+            536.255625076592,
+            539.3180418759584,
+            533.0098748672754,
+            532.6720830053091,
+            536.3377500325441,
+            536.696083843708
+          ],
+          "source_sha256": "38d0c60aff8df8d6f9f0e9358f43ac2fef56f0a1b4f840ea90e3d28aa3acea25",
+          "median_ms": 536.255625076592
+        },
+        "output_ct": {
+          "byte_equal": true,
+          "samples_ms": [
+            603.4003749955446,
+            603.4329580143094,
+            609.543250175193,
+            603.135459125042,
+            603.5187910310924,
+            604.4071251526475,
+            606.0522918123752
+          ],
+          "source_sha256": "1037576011d96b28f2bacb85d72e9e04b8313f750944786e5f99fc5d69ce29c0",
+          "median_ms": 603.5187910310924
+        }
+      },
+      "driver_gib": 2.44598388671875
+    },
+    "screen-more-first": {
+      "shape": [
+        1,
+        56,
+        44600,
+        128
+      ],
+      "reference_sha256": "3dad4faf1ac08c28056e323b0f568bdecce315a281464b07cf59c998c769f4d3",
+      "results": {
+        "baseline": {
+          "byte_equal": true,
+          "samples_ms": [
+            532.9601250123233,
+            537.2373331338167,
+            539.8507500067353,
+            532.2842500172555,
+            542.5404580309987,
+            539.0024168882519,
+            537.2297498397529
+          ],
+          "source_sha256": "38d0c60aff8df8d6f9f0e9358f43ac2fef56f0a1b4f840ea90e3d28aa3acea25",
+          "median_ms": 537.2373331338167
+        },
+        "directqk": {
+          "error": "program_source:2516:21: warning: unused variable 'Q_load_off' [-Wunused-variable]\n          const int Q_load_off = iq * kU * q_seq_stride + id * kU;\n                    ^\nIn file included from program_source:1730:\nIn file included from /System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/MetalPerformancePrimitives.h:10:\nIn file included from /System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/MPPTensorOpsMatMul2d.h:411:\n/System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/__impl/MPPTensorOpsMatMul2dImpl.h:4385:5: error: static_assert failed due to requirement '__tensor_ops_detail::__is_same_v<const bfloat, unsigned char> || __tensor_ops_detail::__is_same_v<const bfloat, signed char> || __tensor_ops_detail::__is_same_v<const bfloat, metal::uint4b_format> || __tensor_ops_detail::__is_same_v<const bfloat, metal::int4b_format> || __tensor_ops_detail::__is_same_v<const bfloat, float> || __tensor_ops_detail::__is_same_v<const bfloat, bfloat> || __tensor_ops_detail::__is_same_v<const bfloat, half>' \"cooperative tensor source data type can only be one of uint8_t/int8_t/uint2b_format/int2b_format/uint4b_format/int4b_format/float/half/bfloat/metal_fp8_e4m3_format/metal_fp8_e5m2_format/metal_fp4_e2m1_format\"\n    static_assert(__tensor_ops_detail::__is_same_v<left_element_type, uint8_t> ||\n    ^             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n/System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/__impl/MPPTensorOpsMatMul2dImpl.h:5223:1: note: in instantiation of template class 'mpp::tensor_ops::__mutmul2d_detail::__operand_layout<{16, 32, 128, false, true, true, 1}, mpp::tensor_ops::__mutmul2d_detail::__matmul2d_cooperative_operand_index::destination, metal::execution_simdgroups<1>, const bfloat, const bfloat, float, int>' requested here\nusing __cooperative_tensor_t =\n^\n/System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/__impl/MPPTensorOpsMatMul2dImpl.h:5"
+        },
+        "directqk_static": {
+          "error": "program_source:2516:21: warning: unused variable 'Q_load_off' [-Wunused-variable]\n          const int Q_load_off = iq * kU * q_seq_stride + id * kU;\n                    ^\nIn file included from program_source:1730:\nIn file included from /System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/MetalPerformancePrimitives.h:10:\nIn file included from /System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/MPPTensorOpsMatMul2d.h:411:\n/System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/__impl/MPPTensorOpsMatMul2dImpl.h:4385:5: error: static_assert failed due to requirement '__tensor_ops_detail::__is_same_v<const bfloat, unsigned char> || __tensor_ops_detail::__is_same_v<const bfloat, signed char> || __tensor_ops_detail::__is_same_v<const bfloat, metal::uint4b_format> || __tensor_ops_detail::__is_same_v<const bfloat, metal::int4b_format> || __tensor_ops_detail::__is_same_v<const bfloat, float> || __tensor_ops_detail::__is_same_v<const bfloat, bfloat> || __tensor_ops_detail::__is_same_v<const bfloat, half>' \"cooperative tensor source data type can only be one of uint8_t/int8_t/uint2b_format/int2b_format/uint4b_format/int4b_format/float/half/bfloat/metal_fp8_e4m3_format/metal_fp8_e5m2_format/metal_fp4_e2m1_format\"\n    static_assert(__tensor_ops_detail::__is_same_v<left_element_type, uint8_t> ||\n    ^             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n/System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/__impl/MPPTensorOpsMatMul2dImpl.h:5223:1: note: in instantiation of template class 'mpp::tensor_ops::__mutmul2d_detail::__operand_layout<{16, 32, 128, false, true, true, 1}, mpp::tensor_ops::__mutmul2d_detail::__matmul2d_cooperative_operand_index::destination, metal::execution_simdgroups<1>, const bfloat, const bfloat, float, int>' requested here\nusing __cooperative_tensor_t =\n^\n/System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/__impl/MPPTensorOpsMatMul2dImpl.h:5"
+        },
+        "prefetchv1": {
+          "error": "program_source:1628:19: error: use of undeclared identifier 'QFrag_t'\n    MPPTile<T,1,2,QFrag_t> Vearly[1*TK];\n                  ^\nprogram_source:1629:5: error: use of undeclared identifier 'MPP_PRAGMA_UNROLL'\n    MPP_PRAGMA_UNROLL\n    ^\nprogram_source:1642:7: error: use of undeclared identifier 'new_max'\n      new_max[i] = max_score[i];\n      ^\nprogram_source:1645:38: error: use of undeclared identifier 'new_max'\n    Stile.template row_reduce<MaxOp>(new_max);\n                                     ^\nprogram_source:1646:41: error: use of undeclared identifier 'new_max'\n    Stile.template row_bin_op<ExpSubOp>(new_max);\n                                        ^\nprogram_source:1653:20: error: use of undeclared identifier 'new_max'\n      factor[i] = (new_max[i] == -INFINITY)\n                   ^\nprogram_source:1655:39: error: use of undeclared identifier 'new_max'\n          : fast::exp2(max_score[i] - new_max[i]);\n                                      ^\nprogram_source:1660:22: error: use of undeclared identifier 'new_max'\n      max_score[i] = new_max[i];\n                     ^\nprogram_source:2511:21: warning: unused variable 'Q_load_off' [-Wunused-variable]\n          const int Q_load_off = iq * kU * q_seq_stride + id * kU;\n                    ^\n"
+        },
+        "prefetchv2": {
+          "error": "program_source:1628:19: error: use of undeclared identifier 'QFrag_t'\n    MPPTile<T,1,2,QFrag_t> Vearly[2*TK];\n                  ^\nprogram_source:1629:5: error: use of undeclared identifier 'MPP_PRAGMA_UNROLL'\n    MPP_PRAGMA_UNROLL\n    ^\nprogram_source:1642:7: error: use of undeclared identifier 'new_max'\n      new_max[i] = max_score[i];\n      ^\nprogram_source:1645:38: error: use of undeclared identifier 'new_max'\n    Stile.template row_reduce<MaxOp>(new_max);\n                                     ^\nprogram_source:1646:41: error: use of undeclared identifier 'new_max'\n    Stile.template row_bin_op<ExpSubOp>(new_max);\n                                        ^\nprogram_source:1653:20: error: use of undeclared identifier 'new_max'\n      factor[i] = (new_max[i] == -INFINITY)\n                   ^\nprogram_source:1655:39: error: use of undeclared identifier 'new_max'\n          : fast::exp2(max_score[i] - new_max[i]);\n                                      ^\nprogram_source:1660:22: error: use of undeclared identifier 'new_max'\n      max_score[i] = new_max[i];\n                     ^\nprogram_source:2511:21: warning: unused variable 'Q_load_off' [-Wunused-variable]\n          const int Q_load_off = iq * kU * q_seq_stride + id * kU;\n                    ^\n"
+        },
+        "prefetchv4": {
+          "error": "program_source:1628:19: error: use of undeclared identifier 'QFrag_t'\n    MPPTile<T,1,2,QFrag_t> Vearly[4*TK];\n                  ^\nprogram_source:1629:5: error: use of undeclared identifier 'MPP_PRAGMA_UNROLL'\n    MPP_PRAGMA_UNROLL\n    ^\nprogram_source:1642:7: error: use of undeclared identifier 'new_max'\n      new_max[i] = max_score[i];\n      ^\nprogram_source:1645:38: error: use of undeclared identifier 'new_max'\n    Stile.template row_reduce<MaxOp>(new_max);\n                                     ^\nprogram_source:1646:41: error: use of undeclared identifier 'new_max'\n    Stile.template row_bin_op<ExpSubOp>(new_max);\n                                        ^\nprogram_source:1653:20: error: use of undeclared identifier 'new_max'\n      factor[i] = (new_max[i] == -INFINITY)\n                   ^\nprogram_source:1655:39: error: use of undeclared identifier 'new_max'\n          : fast::exp2(max_score[i] - new_max[i]);\n                                      ^\nprogram_source:1660:22: error: use of undeclared identifier 'new_max'\n      max_score[i] = new_max[i];\n                     ^\nprogram_source:2511:21: warning: unused variable 'Q_load_off' [-Wunused-variable]\n          const int Q_load_off = iq * kU * q_seq_stride + id * kU;\n                    ^\n"
+        },
+        "prefetchk": {
+          "byte_equal": true,
+          "samples_ms": [
+            533.7856251280755,
+            531.4773751888424,
+            536.4190419204533,
+            532.8242499381304,
+            538.5959579143673,
+            537.6556660048664,
+            536.3770418334752
+          ],
+          "source_sha256": "8406412352f6b0bef2ff167f22720c040149d4c285dee49f776866ef1b5fcbee",
+          "median_ms": 536.3770418334752
+        },
+        "warps3": {
+          "byte_equal": true,
+          "samples_ms": [
+            556.9550830405205,
+            552.9751668218523,
+            552.3858750239015,
+            558.0093751195818,
+            549.4076658505946,
+            559.4241248909384,
+            552.5907501578331
+          ],
+          "source_sha256": "cf23f264a2cc2cd01f4d229aedd967cad41e811bd67214a11c7cd53953d62e9a",
+          "median_ms": 552.9751668218523
+        },
+        "warps5": {
+          "byte_equal": true,
+          "samples_ms": [
+            570.2792080119252,
+            568.0208748672158,
+            570.3219999559224,
+            568.5084578581154,
+            564.4274160731584,
+            571.0126250050962,
+            567.4501662142575
+          ],
+          "source_sha256": "654261eff41332914f7fafca927c847921a55914906258c7b73e9ee814c7d010",
+          "median_ms": 568.5084578581154
+        },
+        "warps6": {
+          "byte_equal": true,
+          "samples_ms": [
+            648.3406249899417,
+            651.4854158740491,
+            646.8499589245766,
+            650.8902080822736,
+            648.8356250338256,
+            653.2297080848366,
+            644.2071669735014
+          ],
+          "source_sha256": "6e2436b0334c36f82b44de581d61a11a9e56c59f1d779259de78e586c7170174",
+          "median_ms": 648.8356250338256
+        }
+      },
+      "driver_gib": 2.44598388671875
+    },
+    "screen-rows-noq": {
+      "shape": [
+        1,
+        56,
+        44600,
+        128
+      ],
+      "reference_sha256": "3dad4faf1ac08c28056e323b0f568bdecce315a281464b07cf59c998c769f4d3",
+      "results": {
+        "baseline": {
+          "byte_equal": true,
+          "samples_ms": [
+            542.414499912411,
+            543.5704998672009,
+            537.6611249521375,
+            540.379042038694,
+            537.4081251211464,
+            541.1844169721007,
+            535.4237500578165
+          ],
+          "source_sha256": "38d0c60aff8df8d6f9f0e9358f43ac2fef56f0a1b4f840ea90e3d28aa3acea25",
+          "median_ms": 540.379042038694
+        },
+        "m32row_noq2": {
+          "byte_equal": true,
+          "samples_ms": [
+            1831.3361250329763,
+            1841.2513330113143,
+            1820.728125050664,
+            1808.4227920044214,
+            1817.8463750518858,
+            1812.0690409559757,
+            1816.4929170161486
+          ],
+          "source_sha256": "21382bbf349a519db3723fbf33e56cc5b7e7cd0bc3fe4b21715d07f0b26d3951",
+          "median_ms": 1817.8463750518858
+        },
+        "m32row_split_noq2": {
+          "byte_equal": true,
+          "samples_ms": [
+            992.2784171067178,
+            1007.8805410303175,
+            989.0145000535995,
+            1002.0355419255793,
+            990.0169582106173,
+            994.3635419476777,
+            989.6334582008421
+          ],
+          "source_sha256": "d5e15363331531d455dbd7cf8c6da35fcbac069eeb63d413b971534edad0b9e6",
+          "median_ms": 992.2784171067178
+        },
+        "m32row_split_noq4": {
+          "byte_equal": true,
+          "samples_ms": [
+            1004.4057921040803,
+            1010.3342919610441,
+            998.5835840925574,
+            1007.0703749079257,
+            998.3468339778483,
+            999.1980420891196,
+            1000.5556659307331
+          ],
+          "source_sha256": "cc61400d2045d5a1b10f197171b20f35d78a45b9421cfd6c1adc088f0a5ad299",
+          "median_ms": 1000.5556659307331
+        },
+        "m32row_split_noq1": {
+          "byte_equal": true,
+          "samples_ms": [
+            1294.908125186339,
+            1296.876666136086,
+            1281.9944580551237,
+            1290.3842499945313,
+            1280.016208998859,
+            1282.7761671505868,
+            1265.028625028208
+          ],
+          "source_sha256": "eebe561ce8eee1e57ec71a47b6b8155f9cb9413785945c5245e6186f8dc4e03c",
+          "median_ms": 1282.7761671505868
+        }
+      },
+      "driver_gib": 2.44598388671875
+    },
+    "screen-loads": {
+      "shape": [
+        1,
+        56,
+        44600,
+        128
+      ],
+      "reference_sha256": "3dad4faf1ac08c28056e323b0f568bdecce315a281464b07cf59c998c769f4d3",
+      "results": {
+        "baseline": {
+          "byte_equal": true,
+          "samples_ms": [
+            533.4050839301199,
+            535.2843329310417,
+            538.3156668394804,
+            543.4609588701278,
+            552.1146659739316,
+            538.5152499657124,
+            547.675000037998
+          ],
+          "source_sha256": "38d0c60aff8df8d6f9f0e9358f43ac2fef56f0a1b4f840ea90e3d28aa3acea25",
+          "median_ms": 538.5152499657124
+        },
+        "directqk": {
+          "byte_equal": true,
+          "samples_ms": [
+            645.7224159967154,
+            637.4126670416445,
+            645.2398749534041,
+            659.5032499171793,
+            652.7247920166701,
+            638.6685420293361,
+            640.927332919091
+          ],
+          "source_sha256": "10a3205a29a8876efcc692a8b1db6b4e01e4b98742dcb933f110083027a602c6",
+          "median_ms": 645.2398749534041
+        },
+        "directqk_static": {
+          "byte_equal": true,
+          "samples_ms": [
+            641.1875421181321,
+            642.7460829727352,
+            607.1362500078976,
+            643.2478330098093,
+            649.1145838517696,
+            636.4877079613507,
+            643.7617079354823
+          ],
+          "source_sha256": "7fa91494787ed50dde47298c23c6969ca6c3b4a8f036bc8f616e72af0ff9b922",
+          "median_ms": 642.7460829727352
+        },
+        "prefetchv1": {
+          "byte_equal": true,
+          "samples_ms": [
+            663.7572499457747,
+            662.5670830253512,
+            668.6846250668168,
+            691.9683751184493,
+            684.7171250265092,
+            670.1611671596766,
+            671.3057500310242
+          ],
+          "source_sha256": "8e6d6b7fe9ce9d56fd6a6b3840d5764a96a70b7cf7860f2a69a7e6032ddc12c8",
+          "median_ms": 670.1611671596766
+        },
+        "prefetchv2": {
+          "byte_equal": true,
+          "samples_ms": [
+            958.453208906576,
+            958.3504172042012,
+            956.3852918799967,
+            977.5805829558522,
+            963.7628749478608,
+            963.5675840545446,
+            959.1707079671323
+          ],
+          "source_sha256": "bca0f73954dd855f6f1fa600109f900e49da5ef457ba4c1d687fbf0084b5f5ab",
+          "median_ms": 959.1707079671323
+        },
+        "prefetchv4": {
+          "byte_equal": true,
+          "samples_ms": [
+            1080.8869579341263,
+            1075.2055409830064,
+            1080.927792005241,
+            1099.9192909803241,
+            1096.058459021151,
+            1077.334834029898,
+            1101.5020420309156
+          ],
+          "source_sha256": "5904803b774177c96901e6f24a7457cbf20b24b18a6bde6a87f2da45f6774470",
+          "median_ms": 1080.927792005241
+        },
+        "prefetchk": {
+          "byte_equal": true,
+          "samples_ms": [
+            537.0445000007749,
+            541.6307500563562,
+            540.0878340005875,
+            543.4114160016179,
+            546.5012090280652,
+            540.8904170617461,
+            534.4829170498997
+          ],
+          "source_sha256": "8406412352f6b0bef2ff167f22720c040149d4c285dee49f776866ef1b5fcbee",
+          "median_ms": 540.8904170617461
+        }
+      },
+      "driver_gib": 2.44598388671875
+    },
+    "screen-mlx": {
+      "shape": [
+        1,
+        56,
+        44600,
+        128
+      ],
+      "reference_sha256": "3dad4faf1ac08c28056e323b0f568bdecce315a281464b07cf59c998c769f4d3",
+      "results": {
+        "baseline": {
+          "byte_equal": true,
+          "samples_ms": [
+            534.3918327707797,
+            534.1097919736058,
+            533.206625143066,
+            534.3273340258747,
+            532.2942500934005,
+            537.7565829548985,
+            535.1938330568373
+          ],
+          "source_sha256": "38d0c60aff8df8d6f9f0e9358f43ac2fef56f0a1b4f840ea90e3d28aa3acea25",
+          "median_ms": 534.3273340258747
+        },
+        "inner4": {
+          "byte_equal": true,
+          "samples_ms": [
+            924.1223749704659,
+            922.6580830290914,
+            916.4852080866694,
+            922.9706248734146,
+            923.5285418108106,
+            925.9297500830144,
+            922.7925420273095
+          ],
+          "source_sha256": "0149201c5a31bb6dd88d6f8f1f2caf208315e1641d3413afdea3cbaaec1715ac",
+          "median_ms": 922.9706248734146
+        },
+        "inner2": {
+          "byte_equal": true,
+          "samples_ms": [
+            998.8841251470149,
+            997.6715000811964,
+            999.2040840443224,
+            1002.3696660064161,
+            999.1882089525461,
+            1002.8439578600228,
+            1000.1935828477144
+          ],
+          "source_sha256": "780192f07e7d3c7fe43e6ff50b6d412e4016770e75af9d64861720ab0544952f",
+          "median_ms": 999.2040840443224
+        },
+        "inner4_noq": {
+          "byte_equal": true,
+          "samples_ms": [
+            645.7272078841925,
+            642.5234999042004,
+            638.6720421724021,
+            645.8191249985248,
+            644.4274999666959,
+            643.5375839937478,
+            647.7322080172598
+          ],
+          "source_sha256": "a3526cd8e9791e07f2366d32f71d304b8260a4191d34f0c32e6169aeffab32b0",
+          "median_ms": 644.4274999666959
+        },
+        "inner2_noq": {
+          "byte_equal": true,
+          "samples_ms": [
+            723.9236671011895,
+            722.6894169580191,
+            724.6896671131253,
+            724.5917089749128,
+            728.3791250083596,
+            725.2423330210149,
+            725.2250001765788
+          ],
+          "source_sha256": "448c90b14fa931e629bda5825d7a952e3910e98e3a4172e7d580d54d1756467c",
+          "median_ms": 724.6896671131253
+        },
+        "uniform": {
+          "byte_equal": true,
+          "samples_ms": [
+            536.1153748817742,
+            537.7359590493143,
+            541.7009168304503,
+            535.5146250221878,
+            538.2669169921428,
+            538.6370830237865,
+            539.2707090359181
+          ],
+          "source_sha256": "926fd5a7048450749bfd8fb1473f0cdbf83c0305cf63593201521799de0e25e1",
+          "median_ms": 538.2669169921428
+        },
+        "inner4_uniform_noq": {
+          "byte_equal": true,
+          "samples_ms": [
+            641.5948749054223,
+            641.1392500158399,
+            646.7358749359846,
+            642.856250051409,
+            646.5350829530507,
+            640.1295410469174,
+            644.0879160072654
+          ],
+          "source_sha256": "65628502bc9bfd077942f434a1ed17f8024474a2984ed7a8d5763042464d9122",
+          "median_ms": 642.856250051409
+        }
+      },
+      "driver_gib": 2.44598388671875
+    },
+    "screen-rows": {
+      "shape": [
+        1,
+        56,
+        44600,
+        128
+      ],
+      "reference_sha256": "3dad4faf1ac08c28056e323b0f568bdecce315a281464b07cf59c998c769f4d3",
+      "results": {
+        "baseline": {
+          "byte_equal": true,
+          "samples_ms": [
+            539.9225000292063,
+            543.4161671437323,
+            551.3993338681757,
+            547.2679159138352,
+            544.9902091640979,
+            538.7096670456231,
+            539.7395419422537
+          ],
+          "source_sha256": "38d0c60aff8df8d6f9f0e9358f43ac2fef56f0a1b4f840ea90e3d28aa3acea25",
+          "median_ms": 543.4161671437323
+        },
+        "m32row2": {
+          "byte_equal": true,
+          "samples_ms": [
+            2354.544417001307,
+            2332.051333039999,
+            2343.426625011489,
+            2347.1514170523733,
+            2376.668249955401,
+            2346.7210000380874,
+            2348.9633339922875
+          ],
+          "source_sha256": "b0ddb54f4989846641992df6f32649c04a381c2bb5ee2b262f41fcfeea692c42",
+          "median_ms": 2347.1514170523733
+        },
+        "m32col2": {
+          "byte_equal": false,
+          "samples_ms": [],
+          "source_sha256": "94f50f1db7865203058f199eaf87d6e99a83ef5bf07560b8882972c6f16194ba",
+          "max_abs": 159.8291015625
+        },
+        "m32row_split2": {
+          "byte_equal": true,
+          "samples_ms": [
+            1434.4295838382095,
+            1446.9215420540422,
+            1437.8500829916447,
+            1452.4156670086086,
+            1450.7317498791963,
+            1442.2514999751002,
+            1453.7597498856485
+          ],
+          "source_sha256": "232ca600fda1008467ed88f38d5cae9b6cdf42d4ac03cc7fb0620eded222a7f0",
+          "median_ms": 1446.9215420540422
+        },
+        "m32col_split2": {
+          "byte_equal": false,
+          "samples_ms": [],
+          "source_sha256": "31794d90ef0419c550578b689b540b8b36bb2d60a7f5f5156882027eed86386e",
+          "max_abs": 159.8291015625
+        },
+        "m32row_split4": {
+          "byte_equal": true,
+          "samples_ms": [
+            1399.1307499818504,
+            1387.0610408484936,
+            1376.6918750479817,
+            1396.8823340255767,
+            1398.0494579300284,
+            1396.6296669095755,
+            1392.9405831731856
+          ],
+          "source_sha256": "c24db76da5f4cf11ee9c8f0dfff47971fd55d1e5c573bc6a961191fb1d2941f4",
+          "median_ms": 1396.6296669095755
+        }
+      },
+      "driver_gib": 2.44598388671875
+    }
+  },
+  "production_change": false,
+  "paired_repeat": {
+    "qk16_persistent": {
+      "pairs_ms": [
+        [
+          538.1112918257713,
+          534.118833951652
+        ],
+        [
+          540.0774998124689,
+          532.5842502061278
+        ],
+        [
+          537.692042067647,
+          533.5851251147687
+        ],
+        [
+          535.494334064424,
+          540.3816669713706
+        ],
+        [
+          533.7674580514431,
+          536.2495000008494
+        ],
+        [
+          540.1522920001298,
+          537.1391249354929
+        ],
+        [
+          537.2605419252068,
+          537.8753328695893
+        ],
+        [
+          537.0734580792487,
+          537.3468329198658
+        ],
+        [
+          540.5297500547022,
+          539.2011248040944
+        ],
+        [
+          536.1071671359241,
+          536.1103338655084
+        ],
+        [
+          539.4104169681668,
+          535.7968339230865
+        ],
+        [
+          536.2768331542611,
+          539.6822919137776
+        ],
+        [
+          541.0294160246849,
+          535.3679170366377
+        ],
+        [
+          532.6212090440094,
+          532.7585421036929
+        ],
+        [
+          536.5285840816796,
+          532.4260001070797
+        ],
+        [
+          536.237166961655,
+          536.6060421802104
+        ],
+        [
+          535.6794157996774,
+          533.0005418509245
+        ],
+        [
+          569.3942080251873,
+          548.4626248944551
+        ],
+        [
+          579.7315419185907,
+          542.5789998844266
+        ],
+        [
+          561.637416947633,
+          555.8905000798404
+        ]
+      ],
+      "byte_equal": true,
+      "median_throughput_ratio": 1.005317841662856,
+      "baseline_median_ms": 537.4762919964269,
+      "candidate_median_ms": 536.4277710905299,
+      "paired_bootstrap_95ci": [
+        0.9996167366844888,
+        1.0077054538541972
+      ]
+    },
+    "vectorload": {
+      "pairs_ms": [
+        [
+          538.7505418621004,
+          536.8662080727518
+        ],
+        [
+          532.7752910088748,
+          536.0062089748681
+        ],
+        [
+          538.4365420322865,
+          536.7844591382891
+        ],
+        [
+          534.0313748456538,
+          532.6211249921471
+        ],
+        [
+          534.474957967177,
+          539.2757500521839
+        ],
+        [
+          534.1079169884324,
+          538.6537499725819
+        ],
+        [
+          536.4728751592338,
+          536.0538752283901
+        ],
+        [
+          533.3825000561774,
+          538.9866658952087
+        ],
+        [
+          534.4967909622937,
+          535.8937080018222
+        ],
+        [
+          536.0341661144048,
+          535.3010830003768
+        ],
+        [
+          534.6758749801666,
+          538.1555831991136
+        ],
+        [
+          533.5695829708129,
+          532.0364169310778
+        ],
+        [
+          533.5607081651688,
+          532.8134580049664
+        ],
+        [
+          536.1997499130666,
+          535.5888330377638
+        ],
+        [
+          535.0462920032442,
+          534.9802088458091
+        ],
+        [
+          537.9817918874323,
+          533.3457919768989
+        ],
+        [
+          535.5240830685943,
+          536.1073748208582
+        ],
+        [
+          544.3247079383582,
+          553.7893341388553
+        ],
+        [
+          559.2556251212955,
+          544.7591671254486
+        ],
+        [
+          552.1111250855029,
+          570.7055409438908
+        ]
+      ],
+      "byte_equal": true,
+      "median_throughput_ratio": 1.0004525811068565,
+      "baseline_median_ms": 535.2851875359192,
+      "candidate_median_ms": 536.0806250246242,
+      "paired_bootstrap_95ci": [
+        0.9937531242715385,
+        1.0020251076918587
+      ]
+    },
+    "rescale_late": {
+      "pairs_ms": [
+        [
+          534.0317499358207,
+          532.1460841223598
+        ],
+        [
+          536.812667036429,
+          535.6985831167549
+        ],
+        [
+          528.3791669644415,
+          533.0384999979287
+        ],
+        [
+          534.3383329454809,
+          539.7007081191987
+        ],
+        [
+          537.2429580893368,
+          537.2185418382287
+        ],
+        [
+          532.5435418635607,
+          536.3065421115607
+        ],
+        [
+          536.650416906923,
+          537.5290419906378
+        ],
+        [
+          540.0975840166211,
+          532.4612502008677
+        ],
+        [
+          536.5011671092361,
+          532.8924159985036
+        ],
+        [
+          538.6165000963956,
+          534.7567920107394
+        ],
+        [
+          535.2101249154657,
+          534.9576249718666
+        ],
+        [
+          533.4097910672426,
+          537.9817499779165
+        ],
+        [
+          533.3662920165807,
+          536.4788330625743
+        ],
+        [
+          535.7135410886258,
+          535.7859157957137
+        ],
+        [
+          540.4618750326335,
+          533.5252499207854
+        ],
+        [
+          535.3080001659691,
+          534.2742090579122
+        ],
+        [
+          531.4602090511471,
+          538.0150841083378
+        ],
+        [
+          557.799416128546,
+          533.401875058189
+        ],
+        [
+          564.5157499238849,
+          546.755249844864
+        ],
+        [
+          564.8026668932289,
+          558.1202921457589
+        ]
+      ],
+      "byte_equal": true,
+      "median_throughput_ratio": 1.0012034723533474,
+      "baseline_median_ms": 536.107354098931,
+      "candidate_median_ms": 535.7422494562343,
+      "paired_bootstrap_95ci": [
+        0.9962818202217996,
+        1.0069948478218036
+      ]
+    },
+    "sync8": {
+      "pairs_ms": [
+        [
+          537.7751660998911,
+          541.4188329596072
+        ],
+        [
+          534.2964590527117,
+          536.4869171753526
+        ],
+        [
+          535.572208929807,
+          540.0374589953572
+        ],
+        [
+          532.0642499718815,
+          540.8370420336723
+        ],
+        [
+          532.0784170180559,
+          538.3321249391884
+        ],
+        [
+          537.0354580227286,
+          541.5852500591427
+        ],
+        [
+          539.8764160927385,
+          540.3051248285919
+        ],
+        [
+          540.0182087905705,
+          533.7259590160102
+        ],
+        [
+          535.9712089411914,
+          539.7032499313354
+        ],
+        [
+          537.0213331189007,
+          536.0217499546707
+        ],
+        [
+          534.8677081055939,
+          538.3942499756813
+        ],
+        [
+          538.8561668805778,
+          542.0170000288635
+        ],
+        [
+          538.8206250499934,
+          540.1559579186141
+        ],
+        [
+          535.7761250343174,
+          537.4526251107454
+        ],
+        [
+          532.73820807226,
+          536.5413748659194
+        ],
+        [
+          538.4104170370847,
+          539.6568749565631
+        ],
+        [
+          550.6312500219792,
+          545.5189591739327
+        ],
+        [
+          544.7180829942226,
+          579.8010001890361
+        ],
+        [
+          565.0299170520157,
+          538.2369998842478
+        ],
+        [
+          557.6085839420557,
+          570.7089579664171
+        ]
+      ],
+      "byte_equal": true,
+      "median_throughput_ratio": 0.9938091384297463,
+      "baseline_median_ms": 537.4053120613098,
+      "candidate_median_ms": 539.8703544633463,
+      "paired_bootstrap_95ci": [
+        0.992321645454501,
+        0.9976090761439809
+      ]
+    }
+  },
+  "distinct_candidates": 45
+}

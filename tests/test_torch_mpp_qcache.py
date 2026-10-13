@@ -97,8 +97,10 @@ def test_qwen_edit_layout_and_optouts(monkeypatch, keys):
 
 
 @pytest.mark.skipif(not _available(), reason='requires validated M5 Ultra / PyTorch 2.14')
-@pytest.mark.parametrize('seq', [32769, 44600, 65536])
-def test_h3_long_interleaved_attention_bytes(monkeypatch, seq):
+@pytest.mark.parametrize('seq', [30001, 32769, 44600, 65536])
+@pytest.mark.parametrize('enabled', ['0', '1'])
+def test_h3_long_interleaved_attention_bytes(monkeypatch, seq, enabled):
+    monkeypatch.setenv('ASFP8_H3_LONG_ATTN', enabled)
     monkeypatch.setenv('ASFP8_ATTN_BACKEND', 'pytorch')
     monkeypatch.setenv('ASFP8_MPP_QCACHE', '1')
     with torch.inference_mode():
@@ -123,3 +125,19 @@ def test_extended_limit_is_h3_only(monkeypatch):
                                      (30, 32768, True), (30, 32769, False)]:
             q = small.expand(1, heads, seq, 128)
             assert patch._supports(q, q, q, {}) == expected
+
+
+@pytest.mark.parametrize('heads,seq,expected', [(56,30000,False), (56,30001,True),
+                                               (56,65536,True), (56,65537,False),
+                                               (40,44600,False)])
+def test_h3_long_schedule_scope_and_optout(monkeypatch, heads, seq, expected):
+    from types import SimpleNamespace
+    q = SimpleNamespace(shape=(1, heads, seq, 128))
+    monkeypatch.setattr(torch, '__version__', '2.14.1')
+    monkeypatch.delenv('ASFP8_H3_LONG_ATTN', raising=False)
+    assert patch._h3_long_schedule(q, q) is expected
+    monkeypatch.setenv('ASFP8_H3_LONG_ATTN', '0')
+    assert not patch._h3_long_schedule(q, q)
+    monkeypatch.setenv('ASFP8_H3_LONG_ATTN', '1')
+    monkeypatch.setattr(torch, '__version__', '2.14.0')
+    assert not patch._h3_long_schedule(q, q)

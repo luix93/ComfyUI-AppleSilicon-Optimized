@@ -1,0 +1,1242 @@
+{
+  "date": "2026-10-13",
+  "device": "Apple M5 Ultra 80 GPU cores, 256 GB",
+  "os": "macOS27.0 (26A428)",
+  "torch": "2.14.1",
+  "reference": "Current exact long-sequence query-cache kernel, not stock PyTorch",
+  "shape": [
+    1,
+    56,
+    44600,
+    128
+  ],
+  "production_source_sha256": "50e55b40756623f1b03220c577d577b793cc18d2938278db9c64a9a130e31fe4",
+  "batches": {
+    "screen": {
+      "shape": [
+        1,
+        56,
+        44600,
+        128
+      ],
+      "reference_sha256": "3dad4faf1ac08c28056e323b0f568bdecce315a281464b07cf59c998c769f4d3",
+      "results": {
+        "baseline": {
+          "byte_equal": true,
+          "samples_ms": [
+            533.8744160253555,
+            532.5746659655124,
+            536.4593751728535,
+            531.944917049259,
+            538.506249897182,
+            535.6464160140604,
+            533.1896669231355,
+            533.9893749915063,
+            536.451542051509
+          ],
+          "source_sha256": "38d0c60aff8df8d6f9f0e9358f43ac2fef56f0a1b4f840ea90e3d28aa3acea25",
+          "median_ms": 533.9893749915063,
+          "throughput_vs_same_batch_baseline": 1.0
+        },
+        "mixedqk16": {
+          "byte_equal": true,
+          "samples_ms": [
+            576.0883330367506,
+            572.9802090208977,
+            574.8371661175042,
+            571.403875015676,
+            575.5585839506239,
+            574.1719589568675,
+            575.5573748610914,
+            580.6593340821564,
+            575.6932080257684
+          ],
+          "source_sha256": "840632c080d28651568c8f38e20816b8c962e09aa329778e4045ff893d12c710",
+          "median_ms": 575.5573748610914,
+          "throughput_vs_same_batch_baseline": 0.9277778346952511
+        },
+        "mixedqk32": {
+          "byte_equal": true,
+          "samples_ms": [
+            572.9345420841128,
+            575.7650840096176,
+            577.8870419599116,
+            579.0723748505116,
+            574.3206248153001,
+            577.4499168619514,
+            574.4090001098812,
+            575.112332822755,
+            573.8984169438481
+          ],
+          "source_sha256": "610535b433af08b72653eec1ef40e14141a13199af65dab9d956b9bcd5511883",
+          "median_ms": 575.112332822755,
+          "throughput_vs_same_batch_baseline": 0.9284957816338075
+        },
+        "mixedpv_n32_k16": {
+          "byte_equal": true,
+          "samples_ms": [
+            608.4476669784635,
+            601.8054999876767,
+            606.2981670256704,
+            603.7150411866605,
+            613.6889168992639,
+            604.2353748343885,
+            601.2712500523776,
+            601.5496668405831,
+            601.9687079824507
+          ],
+          "source_sha256": "faa849c77152e2be56d28e2b827d090fa6e247026be78e937ca46e74b79a8724",
+          "median_ms": 603.7150411866605,
+          "throughput_vs_same_batch_baseline": 0.8845056666832392
+        },
+        "mixedpv_n32_k32": {
+          "byte_equal": true,
+          "samples_ms": [
+            585.8703749254346,
+            585.5693330522627,
+            587.4630829785019,
+            591.8057078961283,
+            585.7675420120358,
+            591.2595000118017,
+            586.374375037849,
+            586.0765830148011,
+            586.5976670756936
+          ],
+          "source_sha256": "4ef5bf1313132a631d64f0832c96c83b56bba93fbd121af19c35533ea194b6a9",
+          "median_ms": 586.374375037849,
+          "throughput_vs_same_batch_baseline": 0.9106628763527375
+        },
+        "mixedpv_n64_k16": {
+          "byte_equal": true,
+          "samples_ms": [
+            644.2811249289662,
+            643.9606249332428,
+            645.1996250543743,
+            638.5610420256853,
+            641.6680000256747,
+            640.6916670966893,
+            639.7022500168532,
+            645.3223749995232,
+            638.9236249960959
+          ],
+          "source_sha256": "2363106d0d4015c6d3e31767dd1188a41808082b106bba9c15ce4444447efc62",
+          "median_ms": 641.6680000256747,
+          "throughput_vs_same_batch_baseline": 0.8321895044947545
+        },
+        "mixedpv_n64_k32": {
+          "byte_equal": true,
+          "samples_ms": [
+            568.3876669500023,
+            567.3607499338686,
+            562.3337919823825,
+            564.6368749439716,
+            566.9436668977141,
+            564.1025418881327,
+            564.9690409190953,
+            563.7921660672873,
+            562.6455419696867
+          ],
+          "source_sha256": "5760a6f64f0df2d5342e52c78cca828b1f35084bbe6190377b164724410458fa",
+          "median_ms": 564.6368749439716,
+          "throughput_vs_same_batch_baseline": 0.9457217526653632
+        },
+        "mixedpv_n128_k16": {
+          "byte_equal": true,
+          "samples_ms": [
+            602.0003750454634,
+            599.1377090103924,
+            598.3955000992864,
+            600.8070420939475,
+            604.6653329394758,
+            600.6382498890162,
+            599.6708339080215,
+            600.2632498275489,
+            599.3273339699954
+          ],
+          "source_sha256": "4c2c15302571a2fc8bcd274059e3772ec8e18223ac139227ddc4aaba2ebcd2a4",
+          "median_ms": 600.2632498275489,
+          "throughput_vs_same_batch_baseline": 0.8895919834254679
+        },
+        "mixedboth": {
+          "byte_equal": true,
+          "samples_ms": [
+            659.9936250131577,
+            661.9021659716964,
+            657.7380001544952,
+            655.1924159284681,
+            660.7385829556733,
+            658.5832498967648,
+            657.9894588794559,
+            659.0182920917869,
+            655.6574169080704
+          ],
+          "source_sha256": "8d9d265b3e170a812da9d79a6ba769923b8440621d3c6bf2d1568c32d1f0dc2b",
+          "median_ms": 658.5832498967648,
+          "throughput_vs_same_batch_baseline": 0.8108152994708127
+        }
+      },
+      "driver_gib_at_end": 2.44598388671875
+    },
+    "register": {
+      "shape": [
+        1,
+        56,
+        44600,
+        128
+      ],
+      "reference_sha256": "3dad4faf1ac08c28056e323b0f568bdecce315a281464b07cf59c998c769f4d3",
+      "results": {
+        "baseline": {
+          "byte_equal": true,
+          "samples_ms": [
+            546.675750054419,
+            545.4735420644283,
+            543.6290411744267,
+            551.0293329134583,
+            548.6015828792006,
+            550.3846250940114,
+            551.7652078997344,
+            551.624916959554,
+            552.2452080622315
+          ],
+          "source_sha256": "38d0c60aff8df8d6f9f0e9358f43ac2fef56f0a1b4f840ea90e3d28aa3acea25",
+          "median_ms": 550.3846250940114,
+          "throughput_vs_same_batch_baseline": 1.0
+        },
+        "regpv_n32_k16": {
+          "byte_equal": true,
+          "samples_ms": [
+            537.1934589929879,
+            551.4506248291582,
+            552.8843330685049,
+            549.119875067845,
+            545.3931249212474,
+            549.1437499877065,
+            549.7789171058685,
+            558.1846670247614,
+            553.218541899696
+          ],
+          "source_sha256": "fdb3130848fb68f6f35e35692d8e5369877e611a698ae1f33da1c84c57af12c9",
+          "median_ms": 549.7789171058685,
+          "throughput_vs_same_batch_baseline": 1.0011017301124088
+        },
+        "regpv_n64_k16": {
+          "error": "program_source:2501:21: warning: unused variable 'Q_load_off' [-Wunused-variable]\n          const int Q_load_off = iq * kU * q_seq_stride + id * kU;\n                    ^\nIn file included from program_source:1730:\nIn file included from /System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/MetalPerformancePrimitives.h:10:\nIn file included from /System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/MPPTensorOpsMatMul2d.h:411:\n/System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/__impl/MPPTensorOpsMatMul2dImpl.h:6364:5: error: static_assert failed due to requirement 'mpp::tensor_ops::matmul2d_descriptor{16, 64, 16, false, false, true, 1}.m == 32 || mpp::tensor_ops::matmul2d_descriptor{16, 64, 16, false, false, true, 1}.n == 32 || mpp::tensor_ops::matmul2d_descriptor{16, 64, 16, false, false, true, 1}.k == 32' \"At least one of M, N, or K must be 32 if both inputs are cooperative tensors\"\n    static_assert(descriptor.m == 32 || descriptor.n == 32 || descriptor.k == 32, \"At least one of M, N, or K must be 32 if both inputs are cooperative tensors\");\n    ^             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n/System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/MPPTensorOpsMatMul2d.h:437:24: note: in instantiation of function template specialization 'mpp::tensor_ops::__mutmul2d_detail::__run<{16, 64, 16, false, false, true, 1}, metal::execution_simdgroups<1>, metal::cooperative_tensor<float, metal::extents<int, 18446744073709551615, 18446744073709551615>, mpp::tensor_ops::__mutmul2d_detail::__operand_layout<{16, 64, 16, false, false, true, 1}, mpp::tensor_ops::__mutmul2d_detail::__matmul2d_cooperative_operand_index::left, metal::execution_simdgroups<1>, float, bfloat, float, int>>, metal::cooperative_tensor<bfloat, metal::extents<int, 18446744073709551615, 18446744073709551615>, mpp::tensor_ops::__mutmul2d_detail::__operand_layout<{16, 64, 16, false, false, true, 1}, mpp::tensor_o"
+        },
+        "regpv_n64_k32": {
+          "error": "program_source:2501:21: warning: unused variable 'Q_load_off' [-Wunused-variable]\n          const int Q_load_off = iq * kU * q_seq_stride + id * kU;\n                    ^\nIn file included from program_source:1730:\nIn file included from /System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/MetalPerformancePrimitives.h:10:\nIn file included from /System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/MPPTensorOpsMatMul2d.h:411:\n/System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/__impl/MPPTensorOpsMatMul2dImpl.h:6366:5: error: static_assert failed due to requirement 'mpp::tensor_ops::matmul2d_descriptor{16, 64, 32, false, false, true, 1}.n == 16 || mpp::tensor_ops::matmul2d_descriptor{16, 64, 32, false, false, true, 1}.n == 32' \"N must be 16 or 32 if both inputs are cooperative tensors\"\n    static_assert(descriptor.n == 16 || descriptor.n == 32, \"N must be 16 or 32 if both inputs are cooperative tensors\");\n    ^             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n/System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/MPPTensorOpsMatMul2d.h:437:24: note: in instantiation of function template specialization 'mpp::tensor_ops::__mutmul2d_detail::__run<{16, 64, 32, false, false, true, 1}, metal::execution_simdgroups<1>, metal::cooperative_tensor<float, metal::extents<int, 18446744073709551615, 18446744073709551615>, mpp::tensor_ops::__mutmul2d_detail::__operand_layout<{16, 64, 32, false, false, true, 1}, mpp::tensor_ops::__mutmul2d_detail::__matmul2d_cooperative_operand_index::left, metal::execution_simdgroups<1>, float, bfloat, float, int>>, metal::cooperative_tensor<bfloat, metal::extents<int, 18446744073709551615, 18446744073709551615>, mpp::tensor_ops::__mutmul2d_detail::__operand_layout<{16, 64, 32, false, false, true, 1}, mpp::tensor_ops::__mutmul2d_detail::__matmul2d_cooperative_operand_index::right, metal::execution_simdgroups<1>, float, bfloat, float, int>>, metal::cooperative_tensor<float, met"
+        },
+        "regpv_n128_k16": {
+          "error": "program_source:2501:21: warning: unused variable 'Q_load_off' [-Wunused-variable]\n          const int Q_load_off = iq * kU * q_seq_stride + id * kU;\n                    ^\nIn file included from program_source:1730:\nIn file included from /System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/MetalPerformancePrimitives.h:10:\nIn file included from /System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/MPPTensorOpsMatMul2d.h:411:\n/System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/__impl/MPPTensorOpsMatMul2dImpl.h:6364:5: error: static_assert failed due to requirement 'mpp::tensor_ops::matmul2d_descriptor{16, 128, 16, false, false, true, 1}.m == 32 || mpp::tensor_ops::matmul2d_descriptor{16, 128, 16, false, false, true, 1}.n == 32 || mpp::tensor_ops::matmul2d_descriptor{16, 128, 16, false, false, true, 1}.k == 32' \"At least one of M, N, or K must be 32 if both inputs are cooperative tensors\"\n    static_assert(descriptor.m == 32 || descriptor.n == 32 || descriptor.k == 32, \"At least one of M, N, or K must be 32 if both inputs are cooperative tensors\");\n    ^             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n/System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/MPPTensorOpsMatMul2d.h:437:24: note: in instantiation of function template specialization 'mpp::tensor_ops::__mutmul2d_detail::__run<{16, 128, 16, false, false, true, 1}, metal::execution_simdgroups<1>, metal::cooperative_tensor<float, metal::extents<int, 18446744073709551615, 18446744073709551615>, mpp::tensor_ops::__mutmul2d_detail::__operand_layout<{16, 128, 16, false, false, true, 1}, mpp::tensor_ops::__mutmul2d_detail::__matmul2d_cooperative_operand_index::left, metal::execution_simdgroups<1>, float, bfloat, float, int>>, metal::cooperative_tensor<bfloat, metal::extents<int, 18446744073709551615, 18446744073709551615>, mpp::tensor_ops::__mutmul2d_detail::__operand_layout<{16, 128, 16, false, false, true, 1}, mpp::te"
+        },
+        "regpv_n128_k32": {
+          "error": "program_source:2501:21: warning: unused variable 'Q_load_off' [-Wunused-variable]\n          const int Q_load_off = iq * kU * q_seq_stride + id * kU;\n                    ^\nIn file included from program_source:1730:\nIn file included from /System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/MetalPerformancePrimitives.h:10:\nIn file included from /System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/MPPTensorOpsMatMul2d.h:411:\n/System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/__impl/MPPTensorOpsMatMul2dImpl.h:6366:5: error: static_assert failed due to requirement 'mpp::tensor_ops::matmul2d_descriptor{16, 128, 32, false, false, true, 1}.n == 16 || mpp::tensor_ops::matmul2d_descriptor{16, 128, 32, false, false, true, 1}.n == 32' \"N must be 16 or 32 if both inputs are cooperative tensors\"\n    static_assert(descriptor.n == 16 || descriptor.n == 32, \"N must be 16 or 32 if both inputs are cooperative tensors\");\n    ^             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n/System/Library/Frameworks/MetalPerformancePrimitives.framework/Headers/MPPTensorOpsMatMul2d.h:437:24: note: in instantiation of function template specialization 'mpp::tensor_ops::__mutmul2d_detail::__run<{16, 128, 32, false, false, true, 1}, metal::execution_simdgroups<1>, metal::cooperative_tensor<float, metal::extents<int, 18446744073709551615, 18446744073709551615>, mpp::tensor_ops::__mutmul2d_detail::__operand_layout<{16, 128, 32, false, false, true, 1}, mpp::tensor_ops::__mutmul2d_detail::__matmul2d_cooperative_operand_index::left, metal::execution_simdgroups<1>, float, bfloat, float, int>>, metal::cooperative_tensor<bfloat, metal::extents<int, 18446744073709551615, 18446744073709551615>, mpp::tensor_ops::__mutmul2d_detail::__operand_layout<{16, 128, 32, false, false, true, 1}, mpp::tensor_ops::__mutmul2d_detail::__matmul2d_cooperative_operand_index::right, metal::execution_simdgroups<1>, float, bfloat, float, int>>, metal::cooperative_tensor<float"
+        },
+        "pvorder": {
+          "byte_equal": true,
+          "samples_ms": [
+            605.2437920589,
+            607.2122079785913,
+            600.063499994576,
+            606.9217501208186,
+            602.4192918557674,
+            602.4196250364184,
+            614.4520409870893,
+            614.6320828702301,
+            607.9632081091404
+          ],
+          "source_sha256": "5c2e6ccebf88b1e98a22d89ee9aecdd5d3a5ccbc54ffce257571fc2e110880fc",
+          "median_ms": 606.9217501208186,
+          "throughput_vs_same_batch_baseline": 0.9068461049294205
+        },
+        "pvorder_sync": {
+          "byte_equal": true,
+          "samples_ms": [
+            611.5619998890907,
+            610.7874580193311,
+            609.7520841285586,
+            607.0330410730094,
+            613.60670812428,
+            611.4947500173002,
+            612.9811669234186,
+            614.6996251773089,
+            610.4796668514609
+          ],
+          "source_sha256": "3cc3f2791c8bff261c41f1e2072078ab2d7395bc5308e8c0b87e411a8062467e",
+          "median_ms": 611.4947500173002,
+          "throughput_vs_same_batch_baseline": 0.9000643506398708
+        }
+      },
+      "driver_gib_at_end": 2.44598388671875
+    },
+    "shapes": {
+      "shape": [
+        1,
+        56,
+        44600,
+        128
+      ],
+      "reference_sha256": "3dad4faf1ac08c28056e323b0f568bdecce315a281464b07cf59c998c769f4d3",
+      "results": {
+        "baseline": {
+          "byte_equal": true,
+          "samples_ms": [
+            535.3676669765264,
+            537.7297499217093,
+            540.4278747737408,
+            538.7937920168042,
+            538.6029158253223,
+            537.1836251579225,
+            537.6627498771995,
+            540.1398329995573,
+            536.6329590324312,
+            542.8183751646429,
+            536.7174579296261
+          ],
+          "source_sha256": "38d0c60aff8df8d6f9f0e9358f43ac2fef56f0a1b4f840ea90e3d28aa3acea25",
+          "median_ms": 537.7297499217093,
+          "throughput_vs_same_batch_baseline": 1.0
+        },
+        "regpv_n16_k32": {
+          "byte_equal": true,
+          "samples_ms": [
+            567.1552498824894,
+            562.6682080328465,
+            563.0439170636237,
+            563.9577500987798,
+            564.8383339866996,
+            568.0379590485245,
+            563.074667006731,
+            565.7838750630617,
+            566.5962919592857,
+            564.2222920432687,
+            569.1854159813374
+          ],
+          "source_sha256": "825318e828b33678eac15e0236c90d6c8022f6118149a8cf7d3afb2ce0b12ea7",
+          "median_ms": 564.8383339866996,
+          "throughput_vs_same_batch_baseline": 0.9520064725889716
+        },
+        "regqk_n16_k32": {
+          "byte_equal": true,
+          "samples_ms": [
+            567.0699579641223,
+            566.0741669125855,
+            564.1364578623325,
+            565.3364160098135,
+            565.2194579597563,
+            564.7428331431001,
+            566.6603751014918,
+            562.2850831132382,
+            565.9397090785205,
+            563.6552500072867,
+            566.2586248945445
+          ],
+          "source_sha256": "030f9f7cd0cf1d3ae9b9be6dfd3470e94e3fff8eeee3f5303a9d1f02538b1d7c",
+          "median_ms": 565.3364160098135,
+          "throughput_vs_same_batch_baseline": 0.9511677201285668
+        },
+        "mixedpv_n32_k32_trans": {
+          "byte_equal": false,
+          "samples_ms": [],
+          "source_sha256": "010acef9360cfd429608974457ead930336270fbd6d012c8f3baae461fd4486e"
+        },
+        "mixedpv_n64_k32_trans": {
+          "byte_equal": false,
+          "samples_ms": [],
+          "source_sha256": "6859f71c81d5c51403662c54d28c7d637f7902407b6ece7fc3e8a84d4eeb4f46"
+        }
+      },
+      "driver_gib_at_end": 2.44598388671875
+    },
+    "widen": {
+      "shape": [
+        1,
+        56,
+        44600,
+        128
+      ],
+      "reference_sha256": "3dad4faf1ac08c28056e323b0f568bdecce315a281464b07cf59c998c769f4d3",
+      "results": {
+        "baseline": {
+          "byte_equal": true,
+          "samples_ms": [
+            538.4622910059988,
+            537.7511249389499,
+            542.0112500432879,
+            544.5953749585897,
+            537.370041012764,
+            541.9964999891818,
+            537.5745831988752,
+            536.8968339171261,
+            539.1937079839408
+          ],
+          "source_sha256": "38d0c60aff8df8d6f9f0e9358f43ac2fef56f0a1b4f840ea90e3d28aa3acea25",
+          "median_ms": 538.4622910059988,
+          "throughput_vs_same_batch_baseline": 1.0
+        },
+        "qk_widen_q": {
+          "byte_equal": true,
+          "samples_ms": [
+            1226.1109999381006,
+            1232.8096660785377,
+            1226.7682920210063,
+            1230.6985419709235,
+            1225.1117080450058,
+            1223.4302500728518,
+            1224.1506658028811,
+            1225.046917097643,
+            1225.0750418752432
+          ],
+          "source_sha256": "08953f00e09bc5649fde7d16ac66a565b98581ca5b5b7f910c5dec53fa7161c7",
+          "median_ms": 1225.1117080450058,
+          "throughput_vs_same_batch_baseline": 0.4395209738589959
+        },
+        "qk_widen_k": {
+          "byte_equal": true,
+          "samples_ms": [
+            918.2147078681737,
+            919.2059580236673,
+            919.5870410185307,
+            928.8339170161635,
+            924.6880421414971,
+            919.5179999805987,
+            911.591999931261,
+            915.9617498517036,
+            915.6367909163237
+          ],
+          "source_sha256": "007a53157289fa450e3c3d9e44e51fdec16efab4c9cc7125cfd453085777e1a7",
+          "median_ms": 919.2059580236673,
+          "throughput_vs_same_batch_baseline": 0.5857906884804317
+        },
+        "qk_widen_both": {
+          "byte_equal": true,
+          "samples_ms": [
+            1624.533416936174,
+            1635.6928329914808,
+            1637.0710839983076,
+            1640.4155411291867,
+            1631.8044578656554,
+            1622.908707940951,
+            1621.5855421032757,
+            1623.255250044167,
+            1622.2497920971364
+          ],
+          "source_sha256": "9edd8fc1323ce1a6bcb54e76a37fdbe0f108d0ddfff3b2b7a7b7fd0e16f0932d",
+          "median_ms": 1624.533416936174,
+          "throughput_vs_same_batch_baseline": 0.33145658032786063
+        }
+      },
+      "driver_gib_at_end": 2.44598388671875
+    },
+    "packed": {
+      "shape": [
+        1,
+        56,
+        44600,
+        128
+      ],
+      "reference_sha256": "3dad4faf1ac08c28056e323b0f568bdecce315a281464b07cf59c998c769f4d3",
+      "results": {
+        "baseline": {
+          "byte_equal": true,
+          "samples_ms": [
+            538.5374168399721,
+            533.2694579847157,
+            535.8919999562204,
+            532.0062499959022,
+            538.9198330231011,
+            536.7454171646386,
+            532.7321251388639,
+            534.9005828611553,
+            534.8906659055501,
+            533.6475421208888,
+            537.99270815216
+          ],
+          "source_sha256": "38d0c60aff8df8d6f9f0e9358f43ac2fef56f0a1b4f840ea90e3d28aa3acea25",
+          "median_ms": 534.9005828611553,
+          "throughput_vs_same_batch_baseline": 1.0
+        },
+        "packed_baseline": {
+          "byte_equal": true,
+          "samples_ms": [
+            511.90145895816386,
+            512.5476671382785,
+            512.5907498877496,
+            512.7716660499573,
+            511.74879097379744,
+            514.336708933115,
+            515.5511249322444,
+            511.5577920805663,
+            511.60075003281236,
+            511.6000408306718,
+            510.91041695326567
+          ],
+          "source_sha256": "faedf1e35240e0fb48ec601ad420a0b86ace91583290982ddc572026bfccbed1",
+          "median_ms": 511.90145895816386,
+          "throughput_vs_same_batch_baseline": 1.0449288110055397
+        },
+        "packed_mixedpv_n32_k32": {
+          "byte_equal": true,
+          "samples_ms": [
+            580.1407499238849,
+            580.2155830897391,
+            577.908291015774,
+            572.5209580268711,
+            576.5344579704106,
+            581.6963750403374,
+            575.8854590822011,
+            576.9412911031395,
+            575.6967500783503,
+            579.6084578614682,
+            583.0989580135792
+          ],
+          "source_sha256": "b07149191f4576d05cae60c94eaa3db9060ddefac0580b31a04fdc841183360d",
+          "median_ms": 577.908291015774,
+          "throughput_vs_same_batch_baseline": 0.9255803925584365
+        },
+        "packed_mixedpv_n64_k32": {
+          "byte_equal": true,
+          "samples_ms": [
+            616.8952090665698,
+            626.3015829026699,
+            618.330999976024,
+            619.8681250680238,
+            625.2349580172449,
+            623.4019999392331,
+            627.0730001851916,
+            620.4177502077073,
+            621.0550419054925,
+            624.3855829816312,
+            621.1628329474479
+          ],
+          "source_sha256": "d010204670a8273bdd8a54dc23cac0a018a695b50ee26ad80beaee608023cff4",
+          "median_ms": 621.1628329474479,
+          "throughput_vs_same_batch_baseline": 0.8611277985243031
+        },
+        "packed_regpv_n16_k32": {
+          "byte_equal": true,
+          "samples_ms": [
+            516.0974578466266,
+            519.7548749856651,
+            519.1456670872867,
+            517.1526251360774,
+            519.5731658022851,
+            516.6032088454813,
+            515.6024170573801,
+            525.135540869087,
+            519.287624862045,
+            517.3178748227656,
+            517.2175001353025
+          ],
+          "source_sha256": "ba33a8fd9701cd550756bb6dc5e7ccd02d3bebea10dfdc6779c41b5132c45cd2",
+          "median_ms": 517.3178748227656,
+          "throughput_vs_same_batch_baseline": 1.03398820897966
+        }
+      },
+      "driver_gib_at_end": 3.66473388671875
+    },
+    "combo": {
+      "shape": [
+        1,
+        56,
+        44600,
+        128
+      ],
+      "reference_sha256": "3dad4faf1ac08c28056e323b0f568bdecce315a281464b07cf59c998c769f4d3",
+      "results": {
+        "baseline": {
+          "byte_equal": true,
+          "samples_ms": [
+            534.1993749607354,
+            533.757041906938,
+            535.8196250163019,
+            533.9837500359863,
+            534.8064170684665,
+            536.9831658899784,
+            535.1177919656038,
+            530.0814579240978,
+            535.277958959341,
+            536.1849169712514,
+            533.7451659142971
+          ],
+          "source_sha256": "38d0c60aff8df8d6f9f0e9358f43ac2fef56f0a1b4f840ea90e3d28aa3acea25",
+          "median_ms": 534.8064170684665,
+          "throughput_vs_same_batch_baseline": 1.0
+        },
+        "packed_baseline": {
+          "byte_equal": true,
+          "samples_ms": [
+            514.3101250287145,
+            511.80329103954136,
+            514.1204590909183,
+            515.7660839613527,
+            515.4929999262094,
+            513.3392079733312,
+            512.5739169307053,
+            508.80916602909565,
+            510.68899990059435,
+            513.9522079844028,
+            513.6145409196615
+          ],
+          "source_sha256": "faedf1e35240e0fb48ec601ad420a0b86ace91583290982ddc572026bfccbed1",
+          "median_ms": 513.6145409196615,
+          "throughput_vs_same_batch_baseline": 1.041260272948775
+        },
+        "packed_regpv_n16_k32": {
+          "byte_equal": true,
+          "samples_ms": [
+            516.2142910994589,
+            519.6589580737054,
+            520.6489998381585,
+            520.2742090914398,
+            517.7884579170495,
+            519.8401671368629,
+            518.2027919217944,
+            512.1530001051724,
+            519.2557498812675,
+            519.8308750987053,
+            520.4165829345584
+          ],
+          "source_sha256": "ba33a8fd9701cd550756bb6dc5e7ccd02d3bebea10dfdc6779c41b5132c45cd2",
+          "median_ms": 519.6589580737054,
+          "throughput_vs_same_batch_baseline": 1.0291488461026639
+        },
+        "packed_qk32_pv16": {
+          "byte_equal": true,
+          "samples_ms": [
+            519.2560409195721,
+            516.3135409820825,
+            516.9863330665976,
+            513.6766252107918,
+            516.3644580170512,
+            518.8181670382619,
+            519.2795840557665,
+            519.0222919918597,
+            519.0447920467705,
+            516.2650418933481,
+            520.1405000407249
+          ],
+          "source_sha256": "55a9cc0ccd24108112ad4c4fbf95017d7cc43af1d70e28f8156af8caa11536ec",
+          "median_ms": 518.8181670382619,
+          "throughput_vs_same_batch_baseline": 1.0308166734435604
+        },
+        "packed_qk32_pv32": {
+          "byte_equal": true,
+          "samples_ms": [
+            516.8359170202166,
+            513.6100410018116,
+            513.5858331341296,
+            513.9782088808715,
+            515.0585828814656,
+            512.1387089602649,
+            510.80062496475875,
+            513.3678331039846,
+            518.0470410268754,
+            514.0388750005513,
+            511.0344160348177
+          ],
+          "source_sha256": "d8ed7674660495ca124305741adcd6c7f800625b9c3fd63fdb763633c812ae41",
+          "median_ms": 513.6100410018116,
+          "throughput_vs_same_batch_baseline": 1.041269395795516
+        }
+      },
+      "driver_gib_at_end": 3.66473388671875
+    },
+    "transpack": {
+      "shape": [
+        1,
+        56,
+        44600,
+        128
+      ],
+      "reference_sha256": "3dad4faf1ac08c28056e323b0f568bdecce315a281464b07cf59c998c769f4d3",
+      "results": {
+        "baseline": {
+          "byte_equal": true,
+          "samples_ms": [
+            533.8669999036938,
+            535.0062081124634,
+            537.7896251156926,
+            535.0336250849068,
+            534.0214159805328,
+            530.1099999342114,
+            534.1703749727458,
+            537.0424999855459,
+            529.3698748573661
+          ],
+          "source_sha256": "38d0c60aff8df8d6f9f0e9358f43ac2fef56f0a1b4f840ea90e3d28aa3acea25",
+          "median_ms": 534.1703749727458,
+          "throughput_vs_same_batch_baseline": 1.0
+        },
+        "pv_transpack32": {
+          "byte_equal": true,
+          "samples_ms": [
+            602.8996251989156,
+            591.5737911127508,
+            610.7132500037551,
+            611.2429581116885,
+            608.4194160066545,
+            603.683500085026,
+            610.1087080314755,
+            607.4047090951353,
+            598.4234169591218
+          ],
+          "source_sha256": "bf35e80d8f10b09bb58653a10206cde744456810a1c9cfcd32eeca3bc0c1f7fe",
+          "median_ms": 607.4047090951353,
+          "throughput_vs_same_batch_baseline": 0.8794307435787114
+        },
+        "pv_transpack64": {
+          "byte_equal": true,
+          "samples_ms": [
+            572.6329160388559,
+            573.8937498535961,
+            579.2149999178946,
+            571.3845419231802,
+            570.308665977791,
+            569.4600001443177,
+            575.555874966085,
+            572.3456668201834,
+            569.5916251279414
+          ],
+          "source_sha256": "c05e260dc6ed7d6405dc9a60350e4334124933cad9f8fce77e5599a9fd0ad8b3",
+          "median_ms": 572.3456668201834,
+          "throughput_vs_same_batch_baseline": 0.9333002867663339
+        }
+      },
+      "driver_gib_at_end": 3.05535888671875
+    }
+  },
+  "hardware_profiles": {
+    "mixedpv_n64_k32": {
+      "frame": {
+        "Commands": "1",
+        "Consistent state": "yes",
+        "Cores": "2 sampled / 80 total",
+        "Encoders": "1",
+        "Frame begin": "0 ns",
+        "Frame duration": "561.1320 ms",
+        "Frame end": "561132000 ns",
+        "GPU time": "561.1320 ms",
+        "Overlap": "yes",
+        "Profiled state": "max"
+      },
+      "shader": {
+        "ALU": "1059",
+        "Branch": "41",
+        "Cost": "99.50%",
+        "Device atomics": "0",
+        "Device loads": "160",
+        "Device stores": "32",
+        "FP16": "0",
+        "FP32": "351",
+        "Instructions": "1857",
+        "INT16": "76",
+        "INT32": "159",
+        "Invocations": "1",
+        "SIMD groups": "990",
+        "Spilled bytes": "368",
+        "Stage": "compute",
+        "Temp registers": "126",
+        "Texture reads": "0",
+        "Texture writes": "0",
+        "Threadgroup atomics": "0",
+        "Threadgroup loads": "0",
+        "Threadgroup memory (bytes)": "0",
+        "Threadgroup stores": "0",
+        "Uniform registers": "100",
+        "Wait": "0"
+      },
+      "counters": {
+        "l1_cache--l1_cache_utilization": {
+          "average": 13.97594433266388,
+          "unit": "Percentage of Peak L1 Performance"
+        },
+        "alu--alu_utilization": {
+          "average": 15.17008924258714,
+          "unit": "Percentage of Peak ALU Performance"
+        },
+        "instruction_throughput--instruction_throughput_limiter": {
+          "average": 72.57394866814735,
+          "unit": "Percentage of Peak Performance"
+        },
+        "l1_read_bandwidth--buffer_l1_read_bandwidth": {
+          "average": 5900.998107377375,
+          "unit": "GiB/s"
+        },
+        "bandwidth--gpu_read_bandwidth": {
+          "average": 512.2542793929995,
+          "unit": "GiB / Second"
+        },
+        "active_cores--active_cores": {
+          "average": 98.32372909290004,
+          "unit": "% GPU Cores"
+        },
+        "instruction_throughput--instruction_throughput_utilization": {
+          "average": 28.63182677087154,
+          "unit": "Percentage of Peak Performance"
+        },
+        "l1_residency--l1_total_residency": {
+          "average": 88.26277323014148,
+          "unit": "% L1 Capacity"
+        },
+        "l1_cache--l1_cache_limiter": {
+          "average": 24.601453370197948,
+          "unit": "Percentage of Peak L1 Performance"
+        },
+        "last_level_cache--last_level_cache_utilization": {
+          "average": 12.55629901921956,
+          "unit": "Percentage of Peak Cache Performance"
+        },
+        "neural_accelerator--neural_accelerator_limiter": {
+          "average": 77.23744891710983,
+          "unit": "Percentage of Peak Neural Accelerator Performance"
+        },
+        "l1_residency--l1_stack_residency": {
+          "average": 62.697749183605005,
+          "unit": "% L1 Capacity"
+        },
+        "occupancy--total_occupancy": {
+          "average": 21.581596240296225,
+          "unit": "% Shader Core Resources"
+        },
+        "l1_residency--l1_register_residency": {
+          "average": 43.25516395247622,
+          "unit": "% L1 Capacity"
+        },
+        "l1_read_bandwidth--register_l1_read_bandwidth": {
+          "average": 717.1285669347097,
+          "unit": "GiB/s"
+        },
+        "occupancy--kernel_occupancy": {
+          "average": 21.174772590066517,
+          "unit": "Percentage of Shader Core Resources"
+        },
+        "l1_read_bandwidth--stack_l1_read_bandwidth": {
+          "average": 3367.3716991274296,
+          "unit": "GiB/s"
+        },
+        "last_level_cache--last_level_cache_limiter": {
+          "average": 12.817766315868255,
+          "unit": "Percentage of Peak Cache Performance"
+        },
+        "bandwidth--gpu_bandwidth": {
+          "average": 528.5526930361045,
+          "unit": "GiB / Second"
+        },
+        "occupancy_target_influences--memory_request_stalls_influence": {
+          "average": 0.9456846797534584,
+          "unit": "Percentage Influence on Occupancy"
+        },
+        "occupancy_target_influences--l1_cache_pressure_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy"
+        },
+        "occupancy_manager--occupancy_manager_target": {
+          "average": 22.45144422074871,
+          "unit": "% Shader Core Resources"
+        },
+        "occupancy_target_influences--register_pressure_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy"
+        },
+        "mmu--mmu_utilization": {
+          "average": 4.29453950451902,
+          "unit": "Percentage of Peak MMU Performance"
+        },
+        "mmu--mmu_limiter": {
+          "average": 4.562718545439907,
+          "unit": "Percentage of Peak MMU Performance"
+        },
+        "neural_accelerator--neural_accelerator_utilization": {
+          "average": 76.38848889829997,
+          "unit": "Percentage of Peak Neural Accelerator Performance"
+        },
+        "bandwidth--gpu_write_bandwidth": {
+          "average": 16.298413643106045,
+          "unit": "GiB / Second"
+        }
+      },
+      "captured_output_sha256": "3dad4faf1ac08c28056e323b0f568bdecce315a281464b07cf59c998c769f4d3"
+    },
+    "pvorder": {
+      "frame": {
+        "Commands": "1",
+        "Consistent state": "yes",
+        "Cores": "1 sampled / 80 total",
+        "Encoders": "1",
+        "Frame begin": "0 ns",
+        "Frame duration": "586.3026 ms",
+        "Frame end": "586302625 ns",
+        "GPU time": "586.3026 ms",
+        "Overlap": "yes",
+        "Profiled state": "max"
+      },
+      "shader": {
+        "ALU": "1071",
+        "Branch": "50",
+        "Cost": "99.64%",
+        "Device atomics": "0",
+        "Device loads": "160",
+        "Device stores": "32",
+        "FP16": "0",
+        "FP32": "351",
+        "Instructions": "1791",
+        "INT16": "88",
+        "INT32": "155",
+        "Invocations": "1",
+        "SIMD groups": "517",
+        "Spilled bytes": "384",
+        "Stage": "compute",
+        "Temp registers": "126",
+        "Texture reads": "0",
+        "Texture writes": "0",
+        "Threadgroup atomics": "0",
+        "Threadgroup loads": "0",
+        "Threadgroup memory (bytes)": "0",
+        "Threadgroup stores": "0",
+        "Uniform registers": "92",
+        "Wait": "0"
+      },
+      "counters": {
+        "l1_cache--l1_cache_utilization": {
+          "average": 14.198533974465036,
+          "unit": "Percentage of Peak L1 Performance"
+        },
+        "alu--alu_utilization": {
+          "average": 14.699853248477913,
+          "unit": "Percentage of Peak ALU Performance"
+        },
+        "instruction_throughput--instruction_throughput_limiter": {
+          "average": 65.89991819805138,
+          "unit": "Percentage of Peak Performance"
+        },
+        "l1_read_bandwidth--buffer_l1_read_bandwidth": {
+          "average": 5648.875796514804,
+          "unit": "GiB/s"
+        },
+        "bandwidth--gpu_read_bandwidth": {
+          "average": 532.0849918802948,
+          "unit": "GiB / Second"
+        },
+        "active_cores--active_cores": {
+          "average": 98.6813935002035,
+          "unit": "% GPU Cores"
+        },
+        "instruction_throughput--instruction_throughput_utilization": {
+          "average": 28.033233627672544,
+          "unit": "Percentage of Peak Performance"
+        },
+        "l1_residency--l1_total_residency": {
+          "average": 90.99702838825344,
+          "unit": "% L1 Capacity"
+        },
+        "l1_cache--l1_cache_limiter": {
+          "average": 25.12788069925617,
+          "unit": "Percentage of Peak L1 Performance"
+        },
+        "last_level_cache--last_level_cache_utilization": {
+          "average": 14.178079123997987,
+          "unit": "Percentage of Peak Cache Performance"
+        },
+        "neural_accelerator--neural_accelerator_limiter": {
+          "average": 74.59728987951395,
+          "unit": "Percentage of Peak Neural Accelerator Performance"
+        },
+        "l1_residency--l1_stack_residency": {
+          "average": 70.74900584842968,
+          "unit": "% L1 Capacity"
+        },
+        "occupancy--total_occupancy": {
+          "average": 18.95247275449402,
+          "unit": "% Shader Core Resources"
+        },
+        "l1_residency--l1_register_residency": {
+          "average": 45.875998600825696,
+          "unit": "% L1 Capacity"
+        },
+        "l1_read_bandwidth--register_l1_read_bandwidth": {
+          "average": 188.70380721195784,
+          "unit": "GiB/s"
+        },
+        "occupancy--kernel_occupancy": {
+          "average": 18.54588306536337,
+          "unit": "Percentage of Shader Core Resources"
+        },
+        "l1_read_bandwidth--stack_l1_read_bandwidth": {
+          "average": 3972.3452881749995,
+          "unit": "GiB/s"
+        },
+        "last_level_cache--last_level_cache_limiter": {
+          "average": 14.321684409409663,
+          "unit": "Percentage of Peak Cache Performance"
+        },
+        "bandwidth--gpu_bandwidth": {
+          "average": 559.7484244448174,
+          "unit": "GiB / Second"
+        },
+        "occupancy_target_influences--memory_request_stalls_influence": {
+          "average": 0.7088928411456143,
+          "unit": "Percentage Influence on Occupancy"
+        },
+        "occupancy_target_influences--l1_cache_pressure_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy"
+        },
+        "occupancy_manager--occupancy_manager_target": {
+          "average": 20.024810077409906,
+          "unit": "% Shader Core Resources"
+        },
+        "occupancy_target_influences--register_pressure_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy"
+        },
+        "mmu--mmu_utilization": {
+          "average": 4.547313334736647,
+          "unit": "Percentage of Peak MMU Performance"
+        },
+        "mmu--mmu_limiter": {
+          "average": 4.882885507096784,
+          "unit": "Percentage of Peak MMU Performance"
+        },
+        "neural_accelerator--neural_accelerator_utilization": {
+          "average": 73.12507457107647,
+          "unit": "Percentage of Peak Neural Accelerator Performance"
+        },
+        "bandwidth--gpu_write_bandwidth": {
+          "average": 27.663432564521496,
+          "unit": "GiB / Second"
+        }
+      },
+      "captured_output_sha256": "3dad4faf1ac08c28056e323b0f568bdecce315a281464b07cf59c998c769f4d3"
+    }
+  },
+  "unique_screened_variants_including_controls": 30,
+  "packed_qk32_vs_previous_packing": {
+    "median_paired_ratio": 1.0008434322991253,
+    "bootstrap_95_percent": [
+      0.9951129712384071,
+      1.0034715931799592
+    ],
+    "rounds": 11,
+    "interpretation": "No established incremental improvement."
+  },
+  "transpose_coordinate_audit": {
+    "equal": true,
+    "normal_lane0": [
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        2,
+        0,
+        2,
+        0
+      ],
+      [
+        3,
+        0,
+        3,
+        0
+      ],
+      [
+        0,
+        8,
+        0,
+        8
+      ],
+      [
+        1,
+        8,
+        1,
+        8
+      ],
+      [
+        2,
+        8,
+        2,
+        8
+      ],
+      [
+        3,
+        8,
+        3,
+        8
+      ],
+      [
+        16,
+        0,
+        16,
+        0
+      ],
+      [
+        17,
+        0,
+        17,
+        0
+      ],
+      [
+        18,
+        0,
+        18,
+        0
+      ],
+      [
+        19,
+        0,
+        19,
+        0
+      ],
+      [
+        16,
+        8,
+        16,
+        8
+      ],
+      [
+        17,
+        8,
+        17,
+        8
+      ],
+      [
+        18,
+        8,
+        18,
+        8
+      ],
+      [
+        19,
+        8,
+        19,
+        8
+      ]
+    ],
+    "transposed_lane0": [
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        2,
+        0,
+        2,
+        0
+      ],
+      [
+        3,
+        0,
+        3,
+        0
+      ],
+      [
+        0,
+        8,
+        0,
+        8
+      ],
+      [
+        1,
+        8,
+        1,
+        8
+      ],
+      [
+        2,
+        8,
+        2,
+        8
+      ],
+      [
+        3,
+        8,
+        3,
+        8
+      ],
+      [
+        16,
+        0,
+        16,
+        0
+      ],
+      [
+        17,
+        0,
+        17,
+        0
+      ],
+      [
+        18,
+        0,
+        18,
+        0
+      ],
+      [
+        19,
+        0,
+        19,
+        0
+      ],
+      [
+        16,
+        8,
+        16,
+        8
+      ],
+      [
+        17,
+        8,
+        17,
+        8
+      ],
+      [
+        18,
+        8,
+        18,
+        8
+      ],
+      [
+        19,
+        8,
+        19,
+        8
+      ]
+    ]
+  },
+  "accepted_production_changes": [],
+  "sampler_runs_this_investigation": 0,
+  "limitations": [
+    "Byte equality is measured on the saved complete attention fixture, not a proof for arbitrary inputs or intermediate FP32 states. No new candidate was promoted.",
+    "Hardware profiles isolate one dispatch; no new full-clip timing is claimed.",
+    "Baseline hardware counters are from the immediately preceding investigation on the same stack; ordinary timing comparisons have within-batch controls.",
+    "Transpose views failed the output byte gate; they are rejected, not offered as approximate modes."
+  ],
+  "rejected_transpose_errors": {
+    "mixedpv_n32_k32_trans": {
+      "max_abs": 18.0625,
+      "mismatched_elements": 319568160,
+      "elements": 319692800
+    },
+    "mixedpv_n64_k32_trans": {
+      "max_abs": 18.0625,
+      "mismatched_elements": 319568160,
+      "elements": 319692800
+    }
+  }
+}

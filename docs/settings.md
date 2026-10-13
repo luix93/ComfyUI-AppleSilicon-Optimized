@@ -14,6 +14,7 @@ Optional workflow approximations remain independently selectable.
 | `ASFP8_ATTN_ROUTER` | implied by native | per-call attention routing (flash41 / bmm / sub-quad) |
 | `ASFP8_ATTN_BACKEND` | `pytorch` on pinned tested 2.14.0/2.14.1 + M5 Ultra with native enabled; otherwise unset | selects the tested PyTorch MPS route; an explicitly empty value retains the earlier router; explicit backend settings win |
 | `ASFP8_MPP_QCACHE` | on | exact query-load hoisting under the PyTorch attention route; guarded to pinned validated M5 Ultra / 2.14.0 and 2.14.1 builds, headers and shapes; H3 supports up to 65,536 tokens, other families up to 32,768; `0` restores the unmodified PyTorch kernel |
+| `ASFP8_H3_LONG_ATTN` | on | exact long-H3 attention scheduling on validated M5 Ultra / PyTorch 2.14.1, 30,001–65,536 tokens; changes dispatch order and one scheduling barrier, retaining arithmetic and output bytes; `0` restores the preceding query-cache schedule. See [long-clip measurements](../benchmarks/m5-ultra-h3-long-exact.md) |
 | `ASFP8_ATTN_NA` | 1 | production independent-simdgroup flash41 kernel; `0` restores the older cooperative kernel |
 | `ASFP8_DIT_EXT` | implied by native | DiT block-fusion kernels (all families) |
 | `ASFP8_INT8_EMBEDDING` | on | preserve already-dequantized INT8 embedding weights across CPU/MPS casts; compatibility repair independent of native kernels |

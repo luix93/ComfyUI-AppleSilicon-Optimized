@@ -34,7 +34,7 @@ def test_unified_defaults_match_validated_workflow_settings():
         "token_reduction_scale": 1.0,
         "token_early_evaluations": 10,
         "token_detail_restore_block": 30,
-        "token_coarse_restore_block": 40,
+        "token_coarse_restore_block": 33,
         "token_verbose": False,
         "sparse_attention": False,
         "sparse_mode": "corrected",
@@ -201,7 +201,7 @@ def test_new_optional_tuning_controls_keep_the_existing_widget_order():
     assert schema["optional"]["spectrum_blend_weight"][1]["default"] == 0.5
     assert list(schema["optional"])[10:15] == ["sparse_memory_budget_gib", "veda_predictor", "veda_sparsity", "veda_reference_sparsity", "veda_dense_steps"]
     assert schema["optional"]["sparse_memory_budget_gib"][1]["default"] == 0.0
-    assert list(schema["optional"])[15:] == ["sparse_topk_ratio", "token_start_percent", "token_end_percent"]
+    assert list(schema["optional"])[15:] == ["sparse_topk_ratio", "token_start_percent", "token_end_percent", "token_phase_policy", "token_early_step_fraction"]
 
 
 @pytest.mark.parametrize("backend", ["veda_metal", "veda_mlx"])

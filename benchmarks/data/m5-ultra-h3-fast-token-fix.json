@@ -1,0 +1,635 @@
+{
+  "date": "2026-10-11",
+  "rows": [
+    {
+      "series": "portrait-short",
+      "run_id": "portrait-short-1-exact",
+      "mode": "exact",
+      "sampling": 26.15397704206407,
+      "e2e": 28.839,
+      "peak_driver_gib": 53.12860107421875,
+      "frames": 22,
+      "restore": [
+        null,
+        null
+      ],
+      "tensor_hashes": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": "1adac371bd29458c56c4e65205d6249398bc28f7db3d7c0c7d144893fee55894",
+          "/positive/0/minimax_keyframes/0/latent": "22155238e968ccd9221869b9904b9d692e8a08346a69d53a3af8acba283942ce",
+          "/positive/0/cross_attn": "0ae73411baeb4902f47aa6d5702905541ddd6304e13d3a61e014a80fe85379a8"
+        },
+        "noise": {
+          "/": "ac335abcfbaf287ecc5ffba1b0730cbe030fb6f03e51bb0fe4b2a97631edd6e6"
+        },
+        "latents": {
+          "/0/samples/0": "fd50d0e7d4387dc106154cc9e1dc056e8b0fa5e7073d4dc52853a1b798e2e74f",
+          "/0/samples/1": "3f144ea25f32c78f698742a3ee5e612969cf132f3d18a74c560bd0a786efb07c",
+          "/1/samples/0": "17094e767713df10adb67bf67f0c8bd1e212ecd91c4fa1b780b7197f12aad271",
+          "/1/samples/1": "9458b3e8197b7b95a597ee3d559a590c8e48a5aac5c9df5827d8d6adfe3e565a"
+        },
+        "audio_decode": {
+          "/0/0/waveform": "580ce2a0e107fca98784aa7ee3472d60aaacb3b05f8e25d211a86783300e5e39"
+        },
+        "frames": {
+          "": "90d0cfdeee3d6de5ed8c9dd920c3222b8f004df2126aa1da1cc524573fbdd444"
+        }
+      }
+    },
+    {
+      "series": "portrait-short",
+      "run_id": "portrait-short-2-balanced",
+      "mode": "balanced",
+      "sampling": 21.527013041079044,
+      "e2e": 24.235,
+      "peak_driver_gib": 54.12078857421875,
+      "frames": 22,
+      "restore": [
+        null,
+        null
+      ],
+      "tensor_hashes": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": "1adac371bd29458c56c4e65205d6249398bc28f7db3d7c0c7d144893fee55894",
+          "/positive/0/minimax_keyframes/0/latent": "22155238e968ccd9221869b9904b9d692e8a08346a69d53a3af8acba283942ce",
+          "/positive/0/cross_attn": "0ae73411baeb4902f47aa6d5702905541ddd6304e13d3a61e014a80fe85379a8"
+        },
+        "noise": {
+          "/": "ac335abcfbaf287ecc5ffba1b0730cbe030fb6f03e51bb0fe4b2a97631edd6e6"
+        },
+        "latents": {
+          "/0/samples/0": "ab947ee1d437f89cf96027afeee8e83568971e8e695189a6bf074275c21f8804",
+          "/0/samples/1": "1af6e6e485507585a320edee15736a267c159b1bea000e6913f890c573e614c7",
+          "/1/samples/0": "789b9b6ea0770c7b3fcaaaaff2d0c08a82f5bc5a8e6517e9e3070c01f518a6c5",
+          "/1/samples/1": "25dcf3c7c5cf24370b77235ada9a814f07cf8662263adada0cdf0c880263b3d2"
+        },
+        "audio_decode": {
+          "/0/0/waveform": "a2a5e6ae7f7dc4a1593ec76088be88cdde37e71bc5535604df0558542450d715"
+        },
+        "frames": {
+          "": "b4dbedacf0e439bfb9447bd61e6e1b15a4f6ef89b2215d7a42c319113e9957fe"
+        }
+      }
+    },
+    {
+      "series": "portrait-short",
+      "run_id": "portrait-short-3-fast",
+      "mode": "fast",
+      "sampling": 18.110049249837175,
+      "e2e": 20.786,
+      "peak_driver_gib": 54.12860107421875,
+      "frames": 22,
+      "restore": [
+        null,
+        null
+      ],
+      "tensor_hashes": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": "1adac371bd29458c56c4e65205d6249398bc28f7db3d7c0c7d144893fee55894",
+          "/positive/0/minimax_keyframes/0/latent": "22155238e968ccd9221869b9904b9d692e8a08346a69d53a3af8acba283942ce",
+          "/positive/0/cross_attn": "0ae73411baeb4902f47aa6d5702905541ddd6304e13d3a61e014a80fe85379a8"
+        },
+        "noise": {
+          "/": "ac335abcfbaf287ecc5ffba1b0730cbe030fb6f03e51bb0fe4b2a97631edd6e6"
+        },
+        "latents": {
+          "/0/samples/0": "5ce9eadec8292410de39e2c177f3681ed5e9efca147ec9768155b2f00ad25313",
+          "/0/samples/1": "ea98b6b8a41688126a8f3e253b5b39c980f0d885e819d6d9387e25417fab73ba",
+          "/1/samples/0": "386893332ba5e969d0ceff110234b32dc29a78fc7e11e71edfe606781965b587",
+          "/1/samples/1": "e4d22c86c303e699f5d7e077c43320981747ce1e1177d3a5c3a75fa2e4f6aa2a"
+        },
+        "audio_decode": {
+          "/0/0/waveform": "38ff854f50c3c6eebbbf388751e56268e1a228213fe81f7d62740577d0969cc0"
+        },
+        "frames": {
+          "": "e24038b33968045cab171dcae7845536fb1955bc5f9380870c95f687fa9e735a"
+        }
+      }
+    },
+    {
+      "series": "portrait-short",
+      "run_id": "portrait-short-4-fast_nofuse",
+      "mode": "fast_nofuse",
+      "sampling": 19.18645462486893,
+      "e2e": 21.888,
+      "peak_driver_gib": 54.08172607421875,
+      "frames": 22,
+      "restore": [
+        null,
+        null
+      ],
+      "tensor_hashes": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": "1adac371bd29458c56c4e65205d6249398bc28f7db3d7c0c7d144893fee55894",
+          "/positive/0/minimax_keyframes/0/latent": "22155238e968ccd9221869b9904b9d692e8a08346a69d53a3af8acba283942ce",
+          "/positive/0/cross_attn": "0ae73411baeb4902f47aa6d5702905541ddd6304e13d3a61e014a80fe85379a8"
+        },
+        "noise": {
+          "/": "ac335abcfbaf287ecc5ffba1b0730cbe030fb6f03e51bb0fe4b2a97631edd6e6"
+        },
+        "latents": {
+          "/0/samples/0": "f881a6904f6c5903717c55bd99aea0f017274019bb6b91cd722046b426d00031",
+          "/0/samples/1": "d6768292990541f84f48ab05caa365171c0ce842d87b705ddab3e3b5d2af0ee3",
+          "/1/samples/0": "d21ad091f53d50ffe6d83ddb7e75a47e07d4a17f5eb5dfa2e60780c8a3f8310e",
+          "/1/samples/1": "f74fad1ac8d26e4579e668f0212183bc2183fe78061c58166d63c9f33ed869e3"
+        },
+        "audio_decode": {
+          "/0/0/waveform": "87c3d75092f4155a409c2c9d654bc6a4dde0e2b059f6318e86ed7a992ecd4b74"
+        },
+        "frames": {
+          "": "63863ddc6529afd66bdba8ba8f82d08246c9dabb4261c37327f6d067caeb1ae9"
+        }
+      }
+    },
+    {
+      "series": "portrait-short",
+      "run_id": "portrait-short-5-restore30",
+      "mode": "restore30",
+      "sampling": 20.498997791903093,
+      "e2e": 23.216,
+      "peak_driver_gib": 54.12860107421875,
+      "frames": 22,
+      "restore": [
+        null,
+        null
+      ],
+      "tensor_hashes": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": "1adac371bd29458c56c4e65205d6249398bc28f7db3d7c0c7d144893fee55894",
+          "/positive/0/minimax_keyframes/0/latent": "22155238e968ccd9221869b9904b9d692e8a08346a69d53a3af8acba283942ce",
+          "/positive/0/cross_attn": "0ae73411baeb4902f47aa6d5702905541ddd6304e13d3a61e014a80fe85379a8"
+        },
+        "noise": {
+          "/": "ac335abcfbaf287ecc5ffba1b0730cbe030fb6f03e51bb0fe4b2a97631edd6e6"
+        },
+        "latents": {
+          "/0/samples/0": "613a4ab36d205cea14cc2a214cbe25d3ecf8b07fcd0f46c0374e05612a969c85",
+          "/0/samples/1": "f9450f9486046d1caf95fc2a426c7212ade1872c0a0800c6ee9dfd5a549b59f4",
+          "/1/samples/0": "2050e598d8430181208a3cd0e892b6e8b2cc03b9ce8c4e26993575b7d6046996",
+          "/1/samples/1": "a1607b71221871a3360b0621001a60fe30c75827c55f68647fe41241799a9571"
+        },
+        "audio_decode": {
+          "/0/0/waveform": "d6539891dd04639cc7be3841fc90abb42e827b97632f130bd005fcb693a26e58"
+        },
+        "frames": {
+          "": "647166b4f222ff862fa699bd5c2884d9bc733679d4604ea04b8d3372b019a64b"
+        }
+      }
+    },
+    {
+      "series": "portrait-short",
+      "run_id": "portrait-short-6-protected40",
+      "mode": "protected40",
+      "sampling": 19.88483520806767,
+      "e2e": 22.587,
+      "peak_driver_gib": 54.12860107421875,
+      "frames": 22,
+      "restore": [
+        null,
+        null
+      ],
+      "tensor_hashes": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": "1adac371bd29458c56c4e65205d6249398bc28f7db3d7c0c7d144893fee55894",
+          "/positive/0/minimax_keyframes/0/latent": "22155238e968ccd9221869b9904b9d692e8a08346a69d53a3af8acba283942ce",
+          "/positive/0/cross_attn": "0ae73411baeb4902f47aa6d5702905541ddd6304e13d3a61e014a80fe85379a8"
+        },
+        "noise": {
+          "/": "ac335abcfbaf287ecc5ffba1b0730cbe030fb6f03e51bb0fe4b2a97631edd6e6"
+        },
+        "latents": {
+          "/0/samples/0": "175b84ba13a2fe9ced21732babdf1f4fb5d3968a269ee6fad1822ca3c57ea7ef",
+          "/0/samples/1": "0f4f37bec4d4b6249394cfe8ed1305f2cee980a5eea9c8c88d9577b0b81f21ae",
+          "/1/samples/0": "d7fc6d708afe309e5d1fd322041edbaeae6219f13704afb9d3150553347e95ea",
+          "/1/samples/1": "f9fa35d15cf0102a5158b8c5517d9c601c426a4d766b13b7537937b588a4469b"
+        },
+        "audio_decode": {
+          "/0/0/waveform": "46666e1d1b2b926b01a2fa8b0fa693c884eb74ddd7524549f2e545e352bf4d44"
+        },
+        "frames": {
+          "": "b2ba4527b205e59a4f8a5b93daaa0ffe2a9808781dceb114f2f39ccab223a9ec"
+        }
+      }
+    },
+    {
+      "series": "boundary-short",
+      "run_id": "boundary-short-1-restore32",
+      "mode": "restore32",
+      "sampling": 19.92329779197462,
+      "e2e": 22.567,
+      "peak_driver_gib": 54.12078857421875,
+      "frames": 22,
+      "restore": [
+        null,
+        null
+      ],
+      "tensor_hashes": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": "1adac371bd29458c56c4e65205d6249398bc28f7db3d7c0c7d144893fee55894",
+          "/positive/0/minimax_keyframes/0/latent": "22155238e968ccd9221869b9904b9d692e8a08346a69d53a3af8acba283942ce",
+          "/positive/0/cross_attn": "0ae73411baeb4902f47aa6d5702905541ddd6304e13d3a61e014a80fe85379a8"
+        },
+        "noise": {
+          "/": "ac335abcfbaf287ecc5ffba1b0730cbe030fb6f03e51bb0fe4b2a97631edd6e6"
+        },
+        "latents": {
+          "/0/samples/0": "f371d42f2987d1377bd5be6105174e876cb6d9ea626510d30f4090b5b9a4acbd",
+          "/0/samples/1": "d9256d0d07059bff2bcd48b7de02bf6605fb5c78ee4e33d4046534b1012806a4",
+          "/1/samples/0": "057dc8e917079941ace9455b718e720d3e9dd0524a5c5a82171ceaa3c286ce08",
+          "/1/samples/1": "98942ab7086e06c2bb5d3470ca74a4663739c81e6e707b05b50101d80cd9eca9"
+        },
+        "audio_decode": {
+          "/0/0/waveform": "9777dbf445b8136d6fe276edc46829c055b4756518d9d985470934a4af5b3859"
+        },
+        "frames": {
+          "": "facf75900bd8cf345e4e8989a10052b3e9f3d292c507e6357b9911bad791f8ea"
+        }
+      }
+    },
+    {
+      "series": "boundary-short",
+      "run_id": "boundary-short-2-restore33",
+      "mode": "restore33",
+      "sampling": 19.628435417078435,
+      "e2e": 22.328,
+      "peak_driver_gib": 54.12860107421875,
+      "frames": 22,
+      "restore": [
+        null,
+        null
+      ],
+      "tensor_hashes": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": "1adac371bd29458c56c4e65205d6249398bc28f7db3d7c0c7d144893fee55894",
+          "/positive/0/minimax_keyframes/0/latent": "22155238e968ccd9221869b9904b9d692e8a08346a69d53a3af8acba283942ce",
+          "/positive/0/cross_attn": "0ae73411baeb4902f47aa6d5702905541ddd6304e13d3a61e014a80fe85379a8"
+        },
+        "noise": {
+          "/": "ac335abcfbaf287ecc5ffba1b0730cbe030fb6f03e51bb0fe4b2a97631edd6e6"
+        },
+        "latents": {
+          "/0/samples/0": "a416511d209bc61456ed3ca8411769d0cc4139df6b06539fb9826bc05ea002bd",
+          "/0/samples/1": "6b82ae63d3381130959422539255a978a49d7e100df719b680c5ec17d02b6f44",
+          "/1/samples/0": "830db7ed7cd8a3275bb186262b572ec19c0929f232d93ccfe47dd72ee83388ab",
+          "/1/samples/1": "1c275b192b897e376a11e2d03a41b45f219ec112294546479eb10f5384b6847a"
+        },
+        "audio_decode": {
+          "/0/0/waveform": "9b464d97e561ef60df868a90cb2ee3d63499b7df5c66412646a36e0b955dcc78"
+        },
+        "frames": {
+          "": "f944b8ecbca55a08ffb114df1267e7205fa5676554ba734a79fb84226135376c"
+        }
+      }
+    },
+    {
+      "series": "boundary-short",
+      "run_id": "boundary-short-3-restore34",
+      "mode": "restore34",
+      "sampling": 19.486464750021696,
+      "e2e": 22.117,
+      "peak_driver_gib": 54.12860107421875,
+      "frames": 22,
+      "restore": [
+        null,
+        null
+      ],
+      "tensor_hashes": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": "1adac371bd29458c56c4e65205d6249398bc28f7db3d7c0c7d144893fee55894",
+          "/positive/0/minimax_keyframes/0/latent": "22155238e968ccd9221869b9904b9d692e8a08346a69d53a3af8acba283942ce",
+          "/positive/0/cross_attn": "0ae73411baeb4902f47aa6d5702905541ddd6304e13d3a61e014a80fe85379a8"
+        },
+        "noise": {
+          "/": "ac335abcfbaf287ecc5ffba1b0730cbe030fb6f03e51bb0fe4b2a97631edd6e6"
+        },
+        "latents": {
+          "/0/samples/0": "0a6221a2da75a06cca1f9bd937ed0da9eacb07d7fddf393e113b41eae35d117e",
+          "/0/samples/1": "79227b8c979f9b13837ae06d468ce11bd77e799b9a58be66aadbeddcef2bcfc1",
+          "/1/samples/0": "d43163a139fae06c037564a5e25038704f5bf365ac575dc7f6b8e193ed97db7f",
+          "/1/samples/1": "4df9498d7b4de7ed727726cf276aae7aa3cf1f34d9c9cd0986ed113674d9fd99"
+        },
+        "audio_decode": {
+          "/0/0/waveform": "9c3833241da5f3f4b712f38799fa9d968919324f5a682f16f11b6841380bd9fe"
+        },
+        "frames": {
+          "": "88f7ae7e72eca484773a1f7c712c3eda2d852ecb2298237047a1abed9578da30"
+        }
+      }
+    },
+    {
+      "series": "boundary-short",
+      "run_id": "boundary-short-4-restore36",
+      "mode": "restore36",
+      "sampling": 19.047581583959982,
+      "e2e": 21.693,
+      "peak_driver_gib": 54.12860107421875,
+      "frames": 22,
+      "restore": [
+        null,
+        null
+      ],
+      "tensor_hashes": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": "1adac371bd29458c56c4e65205d6249398bc28f7db3d7c0c7d144893fee55894",
+          "/positive/0/minimax_keyframes/0/latent": "22155238e968ccd9221869b9904b9d692e8a08346a69d53a3af8acba283942ce",
+          "/positive/0/cross_attn": "0ae73411baeb4902f47aa6d5702905541ddd6304e13d3a61e014a80fe85379a8"
+        },
+        "noise": {
+          "/": "ac335abcfbaf287ecc5ffba1b0730cbe030fb6f03e51bb0fe4b2a97631edd6e6"
+        },
+        "latents": {
+          "/0/samples/0": "b0ff7cea77eef240caf5b7135c669ead447c0619b5057a8367064ec1cc821c8a",
+          "/0/samples/1": "dd2c758b1d742205abb4d5d3f2125dee203737248caeefaebadfdb35c954401a",
+          "/1/samples/0": "66221a2f6fdefc4b0af35a970cfdc7974235a4e73c46f3459955f8de41cbbdb1",
+          "/1/samples/1": "26aad24fb6b1474a486e3a98fe5cde6d63b618bbf9a1407b957dffb2cfe2cc46"
+        },
+        "audio_decode": {
+          "/0/0/waveform": "5b373f9c2f65d865a959e86c3dc9459c86674449c9125bd1dc5fa7f7fd6765e1"
+        },
+        "frames": {
+          "": "5bad5c6a515393d09b75783671f120978e002d26fba374a2cf328da3f3b595c5"
+        }
+      }
+    },
+    {
+      "series": "boundary-short",
+      "run_id": "boundary-short-5-restore38",
+      "mode": "restore38",
+      "sampling": 18.522120667155832,
+      "e2e": 21.164,
+      "peak_driver_gib": 54.12860107421875,
+      "frames": 22,
+      "restore": [
+        null,
+        null
+      ],
+      "tensor_hashes": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": "1adac371bd29458c56c4e65205d6249398bc28f7db3d7c0c7d144893fee55894",
+          "/positive/0/minimax_keyframes/0/latent": "22155238e968ccd9221869b9904b9d692e8a08346a69d53a3af8acba283942ce",
+          "/positive/0/cross_attn": "0ae73411baeb4902f47aa6d5702905541ddd6304e13d3a61e014a80fe85379a8"
+        },
+        "noise": {
+          "/": "ac335abcfbaf287ecc5ffba1b0730cbe030fb6f03e51bb0fe4b2a97631edd6e6"
+        },
+        "latents": {
+          "/0/samples/0": "abc0b2744d99dc136ab0787c64894a8fb9ba3d0472e47dedc8fceacffcce3a2d",
+          "/0/samples/1": "2c59ea4556eb25a1b3689273dc02169ac6861e8c2c2c177f4b1fcef38af928af",
+          "/1/samples/0": "b9054fc1a5086c43253e5f70d00ab7b936dc480bd8e7c67ddb942fa1206bd3e9",
+          "/1/samples/1": "c479c95be45b7249eb24d6fa0b3895881b5405b41eb34282ba17f4c50d07118a"
+        },
+        "audio_decode": {
+          "/0/0/waveform": "11b97dd9d09050bc048c8954c3e56ae5be2f1a44de36b7ca483eb2fe9df71889"
+        },
+        "frames": {
+          "": "01b45e1c2d17fb5d82e7c9ffe6124c2826c7f1061edf33bfa26ee68f1ea53e48"
+        }
+      }
+    },
+    {
+      "series": "confirmation",
+      "run_id": "confirmation-1-fast",
+      "mode": "fast",
+      "sampling": 125.97375945793465,
+      "e2e": 147.453,
+      "peak_driver_gib": 61.371337890625,
+      "frames": 124,
+      "restore": [
+        null,
+        null
+      ],
+      "tensor_hashes": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": "1adac371bd29458c56c4e65205d6249398bc28f7db3d7c0c7d144893fee55894",
+          "/positive/0/minimax_keyframes/0/latent": "22155238e968ccd9221869b9904b9d692e8a08346a69d53a3af8acba283942ce",
+          "/positive/0/cross_attn": "0ae73411baeb4902f47aa6d5702905541ddd6304e13d3a61e014a80fe85379a8"
+        },
+        "noise": {
+          "/": "d3503bd7f12a7214452c1a8a75de87c584bbcd22dca95846c70fc9050c29a6a0"
+        },
+        "latents": {
+          "/0/samples/0": "d22c21d9f0fc03c79dc771b24b1511d0a3f412e96be7ef76b171a51e31a8e8c7",
+          "/0/samples/1": "1b90233807d6f72ae2873df26bcdc4e65501db90cdce7d4275a8d91c0fdad48e",
+          "/1/samples/0": "6af996380c24a1b2299a019a61c00d1130203f065cfd97a2cfa64933ab5182f7",
+          "/1/samples/1": "47edeb192cf8f35f64d1479595795e2e68b9953d998f922c7404fa40cffbd2b4"
+        },
+        "audio_decode": {
+          "/0/0/waveform": "447b34b06d465b722ffc1f6ac0299c89a532bc8ff82ed945952d0af05adbbc63"
+        },
+        "frames": {
+          "": "f3f5d3810cd68459f93ec2c1f8c28a47ba8e75aa628479f070d3d981d999ea0d"
+        }
+      }
+    },
+    {
+      "series": "confirmation",
+      "run_id": "confirmation-2-fixed",
+      "mode": "fixed",
+      "sampling": 150.3268724998925,
+      "e2e": 167.594,
+      "peak_driver_gib": 61.02899169921875,
+      "frames": 124,
+      "restore": [
+        null,
+        null
+      ],
+      "tensor_hashes": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": "1adac371bd29458c56c4e65205d6249398bc28f7db3d7c0c7d144893fee55894",
+          "/positive/0/minimax_keyframes/0/latent": "22155238e968ccd9221869b9904b9d692e8a08346a69d53a3af8acba283942ce",
+          "/positive/0/cross_attn": "0ae73411baeb4902f47aa6d5702905541ddd6304e13d3a61e014a80fe85379a8"
+        },
+        "noise": {
+          "/": "d3503bd7f12a7214452c1a8a75de87c584bbcd22dca95846c70fc9050c29a6a0"
+        },
+        "latents": {
+          "/0/samples/0": "508eb4e01c61f439d8fb51edf49b75bea61ad11b302025c2b88cd0d2612794f6",
+          "/0/samples/1": "8a093b5d763b2a3198b118f2e1afebacbaed3e9adda6d104d80064885fbbd811",
+          "/1/samples/0": "9669191d26130a426d614f75c8ad886e0c4953430448fb496e55da3cc6821e8b",
+          "/1/samples/1": "f2edf9e70ef9beea763f02a272b1decd05621964e9db21915a0a0eea2a4600b1"
+        },
+        "audio_decode": {
+          "/0/0/waveform": "672edba2c73bbdbf1776fb9e6c2ebf2db394dee8093bcb2863950f072268827a"
+        },
+        "frames": {
+          "": "b709300710c9c4c1ab31f594c392a0938d4c5c5cff1b47130174a6eda3821b4d"
+        }
+      }
+    },
+    {
+      "series": "confirmation",
+      "run_id": "confirmation-3-exact",
+      "mode": "exact",
+      "sampling": 26.09820408304222,
+      "e2e": 33.059,
+      "peak_driver_gib": 57.996337890625,
+      "frames": 22,
+      "restore": [
+        null,
+        null
+      ],
+      "tensor_hashes": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": "0d45cb2084a1df27ef2c53581bbef21d7b8b6340e8308843f5a0fd64609533f0",
+          "/positive/0/minimax_keyframes/0/latent": "7c5968edd469ce04bc62a99d62ee8b74bc1512dc55291e51c99f42632ec69d17",
+          "/positive/0/cross_attn": "c80ad57d8f4f04dd87c142a629a8725dd6c7cc43303f07e02d9ab92ede0919ab"
+        },
+        "noise": {
+          "/": "096a446c79ee173b07e73a392ffd88279ef916777f8f20adc6f21c342f88357b"
+        },
+        "latents": {
+          "/0/samples/0": "390d1fb7c61c552781957d2b3fee915d3f15a98ddb7c0a23d361e9b80d29dac2",
+          "/0/samples/1": "f72375a4b0184978778cb573eddea9fff9e59beeaffa2b53a7e509fa133df09a",
+          "/1/samples/0": "1b38b89e6fe6b3dca255b65d3c0bf8a04729ea8770353f79b1ffcc2f31a57198",
+          "/1/samples/1": "4701bcc5267007a00232d1203e1d1831c2f8637d7986ad03d935d3cb9df77a83"
+        },
+        "audio_decode": {
+          "/0/0/waveform": "98e016d9f75cd0622981e51cea2d0ae275384fcc2587c929a66c17416399f7d9"
+        },
+        "frames": {
+          "": "43d1bd86296e8e3d55694f5f27e279fed57a96fde9e4788155a9b5113c204ad7"
+        }
+      }
+    },
+    {
+      "series": "confirmation",
+      "run_id": "confirmation-4-fast",
+      "mode": "fast",
+      "sampling": 18.029097541002557,
+      "e2e": 20.692,
+      "peak_driver_gib": 54.12860107421875,
+      "frames": 22,
+      "restore": [
+        null,
+        null
+      ],
+      "tensor_hashes": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": "0d45cb2084a1df27ef2c53581bbef21d7b8b6340e8308843f5a0fd64609533f0",
+          "/positive/0/minimax_keyframes/0/latent": "7c5968edd469ce04bc62a99d62ee8b74bc1512dc55291e51c99f42632ec69d17",
+          "/positive/0/cross_attn": "c80ad57d8f4f04dd87c142a629a8725dd6c7cc43303f07e02d9ab92ede0919ab"
+        },
+        "noise": {
+          "/": "096a446c79ee173b07e73a392ffd88279ef916777f8f20adc6f21c342f88357b"
+        },
+        "latents": {
+          "/0/samples/0": "cf95745a5bf1fe3040f4b425f0de0d9eac17cf32dafa4b2aee3d3ea111979118",
+          "/0/samples/1": "5ba219e3858166565042e64700369a6a649bbd08ec1cd072ad572ae24770135a",
+          "/1/samples/0": "83eaade7aba0721ef9fa99aabbe4f7c681e3e17f2dd7a44e203d82f9df12fea2",
+          "/1/samples/1": "3411188253a36e157f1c36ee662d300bcea5ac3e0b312b084f69aeffba2769b3"
+        },
+        "audio_decode": {
+          "/0/0/waveform": "5d64aeb0c4e88524f7ee4619cea8efd6bc614d4d623a625ca9ece321b34149c6"
+        },
+        "frames": {
+          "": "df2f257014e3a5e1ad9ef99c1064612b9fb04e3a1107aa8c0d3c48a6ab8b69c2"
+        }
+      }
+    },
+    {
+      "series": "confirmation",
+      "run_id": "confirmation-5-fixed",
+      "mode": "fixed",
+      "sampling": 19.587833291850984,
+      "e2e": 22.25,
+      "peak_driver_gib": 54.12860107421875,
+      "frames": 22,
+      "restore": [
+        null,
+        null
+      ],
+      "tensor_hashes": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": "0d45cb2084a1df27ef2c53581bbef21d7b8b6340e8308843f5a0fd64609533f0",
+          "/positive/0/minimax_keyframes/0/latent": "7c5968edd469ce04bc62a99d62ee8b74bc1512dc55291e51c99f42632ec69d17",
+          "/positive/0/cross_attn": "c80ad57d8f4f04dd87c142a629a8725dd6c7cc43303f07e02d9ab92ede0919ab"
+        },
+        "noise": {
+          "/": "096a446c79ee173b07e73a392ffd88279ef916777f8f20adc6f21c342f88357b"
+        },
+        "latents": {
+          "/0/samples/0": "556f672dc7e200d2ed73627a8455697b0f80b763805f080f4d796e555526d1d0",
+          "/0/samples/1": "d8618c4d002365958dd4e789cc576c4cb21a23669ba10d12a71a9affe539ea42",
+          "/1/samples/0": "61455d4707b9649d22b540aa98e4caded40862aae80df5230b345d0de2cccae3",
+          "/1/samples/1": "9d20ef085a495cf27f9767833ecf48a0afce886d1320c9f62ca836035b39bf41"
+        },
+        "audio_decode": {
+          "/0/0/waveform": "be0e97b90dbd0b21797ba95b020f4c1263581cf2efdbb369dad2863d745f914b"
+        },
+        "frames": {
+          "": "bb8f17cd3d1c0cb4f62bd409281c2c54820445bdc723d8ca510962692f44a8ee"
+        }
+      }
+    },
+    {
+      "series": "confirmation",
+      "run_id": "confirmation-6-fixed",
+      "mode": "fixed",
+      "sampling": 19.5313268750906,
+      "e2e": 22.194,
+      "peak_driver_gib": 54.12860107421875,
+      "frames": 22,
+      "restore": [
+        null,
+        null
+      ],
+      "tensor_hashes": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": "0d45cb2084a1df27ef2c53581bbef21d7b8b6340e8308843f5a0fd64609533f0",
+          "/positive/0/minimax_keyframes/0/latent": "7c5968edd469ce04bc62a99d62ee8b74bc1512dc55291e51c99f42632ec69d17",
+          "/positive/0/cross_attn": "c80ad57d8f4f04dd87c142a629a8725dd6c7cc43303f07e02d9ab92ede0919ab"
+        },
+        "noise": {
+          "/": "096a446c79ee173b07e73a392ffd88279ef916777f8f20adc6f21c342f88357b"
+        },
+        "latents": {
+          "/0/samples/0": "556f672dc7e200d2ed73627a8455697b0f80b763805f080f4d796e555526d1d0",
+          "/0/samples/1": "d8618c4d002365958dd4e789cc576c4cb21a23669ba10d12a71a9affe539ea42",
+          "/1/samples/0": "61455d4707b9649d22b540aa98e4caded40862aae80df5230b345d0de2cccae3",
+          "/1/samples/1": "9d20ef085a495cf27f9767833ecf48a0afce886d1320c9f62ca836035b39bf41"
+        },
+        "audio_decode": {
+          "/0/0/waveform": "be0e97b90dbd0b21797ba95b020f4c1263581cf2efdbb369dad2863d745f914b"
+        },
+        "frames": {
+          "": "bb8f17cd3d1c0cb4f62bd409281c2c54820445bdc723d8ca510962692f44a8ee"
+        }
+      }
+    },
+    {
+      "series": "confirmation",
+      "run_id": "confirmation-7-balanced",
+      "mode": "balanced",
+      "sampling": 21.429332708008587,
+      "e2e": 24.156,
+      "peak_driver_gib": 54.12860107421875,
+      "frames": 22,
+      "restore": [
+        null,
+        null
+      ],
+      "tensor_hashes": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": "0d45cb2084a1df27ef2c53581bbef21d7b8b6340e8308843f5a0fd64609533f0",
+          "/positive/0/minimax_keyframes/0/latent": "7c5968edd469ce04bc62a99d62ee8b74bc1512dc55291e51c99f42632ec69d17",
+          "/positive/0/cross_attn": "c80ad57d8f4f04dd87c142a629a8725dd6c7cc43303f07e02d9ab92ede0919ab"
+        },
+        "noise": {
+          "/": "096a446c79ee173b07e73a392ffd88279ef916777f8f20adc6f21c342f88357b"
+        },
+        "latents": {
+          "/0/samples/0": "c93e86b4e911265ac4b3404b1f5f7aa1c2c34c69f8a2325bf5bf3ad8b9dc32d9",
+          "/0/samples/1": "f21459461a074421fe06fb20a3db2b610dec4539592840eb7c393a8ebff8781b",
+          "/1/samples/0": "de0903882ffc4b5c86fafdc1de8b29c8a4c3774bd1c723bb55ae43de5fcf03f4",
+          "/1/samples/1": "aa75c7c8ac49e70d38b81b20603ef6de4b231ddfed1da276f075964f111077bd"
+        },
+        "audio_decode": {
+          "/0/0/waveform": "14551909d5103b2093ac8f2e3d7dbca8102801abddac168e12c88b047ea54602"
+        },
+        "frames": {
+          "": "4d2e11b39b12d8cf304d048188583efe3f1061811c845d1637da9796e478190f"
+        }
+      }
+    }
+  ]
+}

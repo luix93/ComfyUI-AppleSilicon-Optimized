@@ -109,6 +109,8 @@ def apply_h3_acceleration(
     sparse_topk_ratio: float = 0.0,
     token_start_percent: float = 0.0,
     token_end_percent: float = 1.0,
+    token_phase_policy: str = "evaluation_count",
+    token_early_step_fraction: float = 0.5,
 ):
     """Attach the selected H3 mechanisms in their supported composition order."""
     if cache_mode not in CACHE_MODES:
@@ -149,6 +151,8 @@ def apply_h3_acceleration(
             verbose=bool(token_verbose),
             start_percent=float(token_start_percent),
             end_percent=float(token_end_percent),
+            phase_policy=token_phase_policy,
+            early_step_fraction=float(token_early_step_fraction),
         )
 
     if sparse_attention and sparse_backend in ("veda_mlx", "veda_metal"):
@@ -238,7 +242,8 @@ class AppleSiliconH3Acceleration:
                 "default": 30, "min": 8, "max": 44, "step": 1,
             }),
             "token_coarse_restore_block": ("INT", {
-                "default": 40, "min": 12, "max": 48, "step": 1,
+                "default": 33, "min": 12, "max": 48, "step": 1,
+                "tooltip": "Restore full tokens before the late blocks. Values above 33 can produce repeated edges/banding, especially with Turbo I2V.",
             }),
             "token_verbose": ("BOOLEAN", {"default": False}),
 
@@ -302,6 +307,10 @@ class AppleSiliconH3Acceleration:
                 "tooltip": "Fraction of sampler steps to protect at the start. 0 preserves the original token recipes. Protection rounds outward on short schedules."}),
             "token_end_percent": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "step": 0.05,
                 "tooltip": "Stop token reduction at this fraction of sampler steps; the remaining steps retain all tokens."}),
+            "token_phase_policy": (["evaluation_count", "capped_steps"], {"default": "evaluation_count",
+                "tooltip": "evaluation_count preserves saved recipes. capped_steps uses a fraction of actual sampler steps, capped by Early evaluations; CFG calls and cache skips do not move the boundary."}),
+            "token_early_step_fraction": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.05,
+                "tooltip": "capped_steps only: fraction of sampler steps using Early restore block, rounded down and capped by Early evaluations. Remaining steps use Later restore block."}),
         }}
 
     def apply(self, model, **settings):

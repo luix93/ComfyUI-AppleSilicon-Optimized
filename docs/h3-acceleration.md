@@ -13,7 +13,7 @@ node's implementation and keeps each selected mechanism independent.
 |---|---|
 | Temporal cache | Off; MotionCache protected / balanced; FirstBlockCache protected / fast; Spectrum protected / fast draft |
 | Attention acceleration | Off; SOL INT8 conservative / balanced / fast / top-k wide / top-k all-step draft / hybrid fast; Dense INT8 protected / full draft; Veda Metal protected / fast draft |
-| Token reduction | Off; Protected / Balanced / Light / Fast experimental |
+| Token reduction | Off; Protected / Balanced / Light / Fast protected / Fast aggressive (experimental) |
 
 Defaults: **MotionCache balanced**, **sparse Off**, **tokens Off**, **Detailed logs Off**.
 Use **one** Simple or advanced acceleration node between model/LoRA loader and
@@ -61,7 +61,8 @@ acceleration log output. ComfyUI's own progress/model-loading logs remain.
 | Veda fast draft | Same sparsity, every step/layer eligible |
 | Token Protected | Early/later restore at 12/8, step fraction 0.20–0.90 |
 | Token Balanced | Early/later restore at 30/20, step fraction 0.10–0.95 |
-| Token Light / Fast | Horizontal pairs after block 3; early/later restore at 20/12 or 40/30, scale 1, first ten evaluations considered early |
+| Token Light / Fast protected | Horizontal pairs after block 3; early/later restore at 20/12 or 33/30, scale 1, first ten evaluations considered early |
+| Token Fast aggressive | Horizontal pairs after block 3; restore at 40 for the first half of sampler steps, capped at ten steps, then at 30; scale 1 |
 
 SOL conservative/balanced/fast/top-k wide and protected Veda keep layers **0,1,33,34,35** dense, with two leading
 blocks dense; SOL top-k all-step draft and Veda fast draft have neither protection. Every sparse recipe keeps
@@ -71,7 +72,8 @@ attention only outside the reduced span. These thresholds can be changed in the
 advanced node. Sparse selection has overhead; enabling more mechanisms is not
 a guarantee of more speed.
 
-Recipes target **20 steps without Turbo**. Protected means more original work
+Cache/attention recipes target **20 steps without Turbo**. The Fast token recipes
+also have limited Turbo I2V screening described below. Protected means more original work
 is retained, not a quality guarantee. Fast draft and token recipes can alter
 identity, composition, detail, motion and audio. MotionCache protected and Token
 Light are newly screened on short authored clips; the other cache/sparse
@@ -118,8 +120,47 @@ identical output or guaranteed quality.
 
 The advanced token **Start/End step fraction** controls use actual sampler sigmas,
 keeping repeated CFG calls at the same timestep together. Protection rounds outward
-on short schedules. Existing Light/Fast retain start 0 / end 1 and their old restore
-blocks; their algorithms and saved-workflow meaning are unchanged. Defaults remain
+on short schedules. Light and both Fast recipes use start 0 / end 1.
+**Fast protected** retains the corrected Fast recipe: restore before block
+33 in its early phase, then before 30 after ten model evaluations.
+The old Fast recipe reproduced repeated outlines and banded edges in a 10-step
+Turbo I2V test. Endpoint protection alone did not remove it; earlier restoration did.
+Saved Simple nodes selecting the old Fast label map to **Fast protected**, including
+API workflows. Reload the browser for the renamed dropdown.
+Advanced nodes retain their explicit values: change **Early Restore Block** from
+40 to **33** there. Historical Fast benchmarks measured the old 40/30 recipe.
+See the [reproduction and fix report](../benchmarks/m5-ultra-h3-fast-token-fix.md).
+
+**Fast aggressive** opts into deeper reduction before block 40, but only for the
+first `min(10, floor(steps / 2))` sampler steps; remaining steps restore before
+block 30. It uses the actual supplied sigma schedule, so repeated CFG calls and
+cache-skipped evaluations do not extend the early phase. The block indices refer
+to layers inside each model call, not sampling steps. At one sampling step it uses
+only the gentler block-30 phase. With partial denoising, the supplied schedule
+determines the step count.
+
+| Sampling steps | Restore at 40 | Then restore at 30 |
+|---|---|---|
+| 4 | First 2 | Last 2 |
+| 8 | First 4 | Last 4 |
+| 10 | First 5 | Last 5 |
+| 20 | First 10 | Last 10 |
+| 40 | First 10 | Last 30 |
+
+The advanced node exposes **Early phase policy** (`evaluation_count` or
+`capped_steps`) and **Early step fraction**. In capped mode, **Early evaluations**
+acts as the maximum number of early sampler steps. Existing advanced workflows
+retain the original evaluation-count policy.
+
+The tested alternative, restoring at 40 while sigma remained at least 0.7,
+selected nine of ten steps on H3's shifted schedule and reproduced duplicated
+outlines. A noise threshold is not a reliable proxy for the percentage of steps.
+The capped policy limits this exposure; it does not guarantee identical quality.
+Both Fast modes remain optional and approximate. In the five-second test,
+Aggressive saved only 2.3% sampling time and added visible repeated ridges on
+objects; prefer Protected when detail matters. [Adaptive Fast tests and timings](../benchmarks/m5-ultra-h3-token-dynamic.md).
+
+Defaults remain
 MotionCache balanced alone, sparse Off and tokens Off. All three selectors remain
 independently combinable.
 

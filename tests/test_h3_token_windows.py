@@ -42,3 +42,49 @@ def test_empty_short_window_never_reduces():
     holder.prepare_timesteps(torch.tensor([1.,0.]))
     holder.begin_evaluation(None,None,{"sigmas":torch.tensor([1.])})
     assert not holder.eligible_evaluation
+
+
+@pytest.mark.parametrize('steps,coarse_steps', [(1,0),(4,2),(6,3),(8,4),(10,5),(20,10),(40,10)])
+def test_capped_phase_tracks_sampler_steps_not_cfg_calls(steps, coarse_steps):
+    sigmas = torch.linspace(1, 0, steps+1).square()
+    holder = token.H3StructureHolder(1,10,4,30,40,phase_policy='capped_steps')
+    holder.prepare_timesteps(sigmas)
+    assert holder.coarse_step_range == (0,coarse_steps,steps)
+    for index, sigma in enumerate(sigmas[:-1]):
+        for _ in range(2):
+            holder.begin_evaluation(None,None,{'sigmas':sigma.reshape(1)})
+            assert holder.coarse_evaluation == (index < coarse_steps)
+
+
+def test_cached_steps_do_not_extend_aggressive_phase():
+    sigmas = torch.linspace(1,0,21)
+    holder = token.H3StructureHolder(1,10,4,30,40,phase_policy='capped_steps')
+    holder.prepare_timesteps(sigmas)
+    for index in (0,3,8,12,18):
+        holder.begin_evaluation(None,None,{'sigmas':sigmas[index:index+1]})
+        assert holder.coarse_evaluation == (index < 10)
+    assert holder.evaluations == 5
+    assert not holder.coarse_evaluation
+
+
+def test_capped_phase_drives_actual_restore_boundary_and_clone():
+    holder = token.H3StructureHolder(1,10,4,30,40,phase_policy='capped_steps')
+    holder.prepare_timesteps(torch.linspace(1,0,11))
+    for sigma, restore in ((1.,40),(.2,30)):
+        holder.begin_evaluation(None,None,{'sigmas':torch.tensor([sigma])})
+        holder.current_geometry = (1,1,4,1)
+        args = {'img':torch.zeros(6,2), 'rope_freqs':torch.eye(2).reshape(1,1,1,1,2,2).repeat(1,6,1,1,1,1),
+                'mod_segments':[(0,2,0),(2,6,1)], 'transformer_options':{}}
+        holder.enter_reduction(args)
+        assert holder.reduction.restore_block == restore
+        holder.end_evaluation()
+    clone = holder.clone()
+    assert clone.phase_policy == 'capped_steps' and clone.early_step_fraction == .5
+    assert clone.coarse_step_range is None and not clone.coarse_evaluation
+
+
+def test_missing_current_sigma_never_enables_aggressive_phase():
+    holder = token.H3StructureHolder(1,10,4,30,40,phase_policy='capped_steps')
+    holder.prepare_timesteps(torch.linspace(1,0,11))
+    holder.begin_evaluation(None,None,{})
+    assert not holder.coarse_evaluation

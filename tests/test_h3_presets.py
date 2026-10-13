@@ -55,3 +55,29 @@ def test_unknown_recipe_fails_explicitly(field):
     values[field] = 'nonexistent'
     with pytest.raises(ValueError, match='Unknown H3'):
         presets.resolve_presets(**values)
+
+
+def test_legacy_fast_is_protected_without_a_duplicate_menu_entry():
+    old = presets.resolve_presets('Off','Off',presets.LEGACY_FAST)
+    protected = presets.resolve_presets('Off','Off',presets.FAST_PROTECTED)
+    assert old == protected
+    assert old['token_coarse_restore_block'] == 33
+    assert old['token_phase_policy'] == 'evaluation_count'
+    assert presets.LEGACY_FAST not in presets.TOKEN_PRESETS
+    assert presets.AppleSiliconH3QuickAcceleration.VALIDATE_INPUTS(presets.LEGACY_FAST) is True
+    assert isinstance(presets.AppleSiliconH3QuickAcceleration.VALIDATE_INPUTS('invalid'),str)
+
+
+def test_linked_preset_is_validated_when_its_value_is_available():
+    assert presets.AppleSiliconH3QuickAcceleration.VALIDATE_INPUTS(None) is True
+    with pytest.raises(ValueError, match='Unknown H3 tokens'):
+        presets.resolve_presets('Off', 'Off', 'invalid linked value')
+
+
+def test_aggressive_is_opt_in_and_bounds_the_deeper_phase():
+    cfg = presets.resolve_presets('Off','Off',presets.FAST_AGGRESSIVE)
+    assert cfg['token_coarse_restore_block'] == 40
+    assert cfg['token_detail_restore_block'] == 30
+    assert cfg['token_phase_policy'] == 'capped_steps'
+    assert cfg['token_early_evaluations'] == 10
+    assert cfg['token_early_step_fraction'] == .5

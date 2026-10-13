@@ -1,5 +1,25 @@
 # Release notes
 
+## October 13, 2026 update
+
+- Corrected H3 Fast token reduction restores full spatial tokens earlier to
+  address repeated outlines and horizontal banding observed in Turbo I2V.
+  Saved Fast selections migrate to **Fast protected**. The independently
+  selectable **Fast aggressive** recipe caps its deeper-reduction phase using
+  the actual sampler schedule. Both remain optional approximations.
+  [Correction](benchmarks/m5-ultra-h3-fast-token-fix.md) ·
+  [Preset validation](benchmarks/m5-ultra-h3-token-dynamic.md).
+- Added a narrowly gated exact attention schedule for long H3 sequences on
+  the validated M5 Ultra / PyTorch 2.14.1 stack. A matched 10-second, 20-step
+  workflow improves **412.03 → 399.21 s**, preserving video/audio latents and
+  decoded output bytes. [Report](benchmarks/m5-ultra-h3-long-exact.md).
+- Published attention pipeline, hardware-counter and matrix-execution research
+  with reproduction tools. Candidates without a repeatable complete-workflow
+  gain remain experiments; they are not enabled in production.
+  [Benchmark index](benchmarks/README.md).
+- Expanded token-policy, legacy-workflow and attention-routing regression
+  coverage, and documented latent-upscaler usage after the ComfyUI upgrade.
+
 ## 1.1.0 release candidate — October 10, 2026
 
 This candidate includes the automatic tested-runtime setup already on `main`,

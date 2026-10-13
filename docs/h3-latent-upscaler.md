@@ -28,3 +28,13 @@ The 2D checkpoint format runs its complete time sequence; its temporal chunk con
 ## Platform validation
 
 Measurements and numerical comparisons are recorded in [the H3 hybrid/upscaler benchmark report](../benchmarks/m5-ultra-h3-sol-hybrid.md).
+
+## Distorted output after refinement
+
+Decode the low-resolution latent and the upscaler's output separately before changing the upscaler. If both are intact but the refinement is damaged, check the refinement sampler, noise schedule and LoRA together. A high starting sigma gives the sampler much more freedom to redraw the scene; it is not just a sharpening control.
+
+The [TaoMate H3 three-step conversion](https://huggingface.co/CZMartin22/TaoMate-H3-3step-ComfyUI) recommends **Euler**, CFG 1 and LoRA strength 1. A tested three-step refinement using `res_multistep` and sigmas `0.9035, 0.6316, 0.3158, 0` produced broken textures even with cache, sparse attention and token reduction disabled. Switching only the refinement sampler to Euler removed that texture failure in the short comparison; a 124-frame, 1088×1600 confirmation also produced clean textures. Give the refinement its own sampler selector so the first pass stays unchanged. High-noise Euler refinement still redraws appearance and detail.
+
+For stronger source preservation, the tested alternative `0.3158, 0.1579, 0` made a gentler two-step refinement with `res_multistep`, also checked on the complete 124-frame clip. That changes both the noise schedule and step count: this sampler uses Euler updates for its first and final steps, so this two-step case never enters its multistep correction. This is a workflow-specific starting point, not a universal schedule for every distilled LoRA. Compare motion and detail on the complete clip before adopting either recipe. Keep optional approximations off when establishing a quality baseline.
+
+The October 12 regression check used identical saved input latents on the older ComfyUI/PyTorch 2.14.0 and updated ComfyUI/PyTorch 2.14.1 installs, with the same current patch pack. Both the damaged `res_multistep` refinement and the clean Euler refinement produced byte-identical video and audio sampler latents across those stacks. The upscaler also matched its earlier saved reference byte-for-byte. This case did not require a framework downgrade or an upscaler kernel change.

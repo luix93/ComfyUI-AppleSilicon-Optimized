@@ -6,9 +6,12 @@ and keeps the sparse-attention holder's reduced-sequence metadata synchronized.
 
 Token reduction follows h3.c's released policy: after block 3, adjacent target
 video tokens are averaged horizontally while the packed text/condition/audio
-prefix stays exact. The first ten evaluations restore before block 40; later
-evaluations restore before block 30. Expansion retains the original within-pair
-detail and adds each reduced token's update relative to its pooled baseline.
+prefix stays exact. Restoration blocks are configurable; Fast protected uses
+33/30 after unrestricted 40/30 produced repeated edges in Turbo I2V. Fast
+aggressive restricts block-40 restoration to the first half of sampler steps,
+capped at ten, then restores at 30. Expansion retains the
+original within-pair detail and adds each reduced token's update relative to
+its pooled baseline.
 
 The former gate-ranked layer-thinning experiment was removed after real H3
 renders showed broken audio. The legacy node signature is retained only so old
@@ -207,6 +210,11 @@ class H3StructureHolder:
     verbose: bool = False
     start_percent: float = 0.0
     end_percent: float = 1.0
+    phase_policy: str = "evaluation_count"
+    early_step_fraction: float = 0.5
+    coarse_step_range: tuple[int, int, int] | None = None
+    coarse_end_sigma: float | None = None
+    coarse_evaluation: bool = False
     step_range: tuple[int, int, int] | None = None
     start_sigma: float | None = None
     end_sigma: float | None = None
@@ -225,7 +233,8 @@ class H3StructureHolder:
             self.reduction_scale, self.early_evaluations,
             self.begin_block, self.detail_restore_block,
             self.coarse_restore_block, self.verbose,
-            start_percent=self.start_percent, end_percent=self.end_percent)
+            start_percent=self.start_percent, end_percent=self.end_percent,
+            phase_policy=self.phase_policy, early_step_fraction=self.early_step_fraction)
 
     def prepare_timesteps(self, sigmas):
         # Existing recipes keep their original all-evaluation path: no new
@@ -234,6 +243,12 @@ class H3StructureHolder:
             from .h3_schedule import step_window
             self.step_range, self.start_sigma, self.end_sigma = step_window(
                 sigmas, self.start_percent, self.end_percent)
+        if self.phase_policy == "capped_steps":
+            from .h3_schedule import step_window
+            span, _, lower = step_window(sigmas, 0.0, self.early_step_fraction)
+            if span[1] > self.early_evaluations:
+                span, _, lower = step_window(sigmas, 0.0, self.early_evaluations / span[2])
+            self.coarse_step_range, self.coarse_end_sigma = span, lower
         return self
 
     def begin_evaluation(self, video, audio, transformer_options):
@@ -242,13 +257,18 @@ class H3StructureHolder:
         self.reduction = None
         self.current_geometry = None
         self.eligible_evaluation = True
-        if self.step_range is not None:
+        if self.step_range is not None or self.coarse_step_range is not None:
             sigma = transformer_options.get("sigmas")
             if isinstance(sigma, torch.Tensor) and sigma.numel():
                 sigma = float(sigma.detach().reshape(-1)[0].item())
+        if self.step_range is not None:
             self.eligible_evaluation = (isinstance(sigma, (int, float))
                 and self.step_range[0] < self.step_range[1]
                 and self.end_sigma <= sigma <= self.start_sigma)
+        if self.coarse_step_range is not None:
+            self.coarse_evaluation = (isinstance(sigma, (int, float))
+                and self.coarse_step_range[1] > 0
+                and sigma >= self.coarse_end_sigma)
         if (isinstance(video, torch.Tensor) and video.dim() == 5
                 and isinstance(audio, torch.Tensor) and audio.dim() >= 3):
             frames = int(video.shape[-3])
@@ -332,9 +352,9 @@ class H3StructureHolder:
         reduced[video_start:].copy_(pooled_video)
         reduced_rope = _pool_rope(
             rope, video_start, frames, height, width)
-        restore = (self.coarse_restore_block
-                   if self.evaluations <= self.early_evaluations
-                   else self.detail_restore_block)
+        coarse = (self.coarse_evaluation if self.phase_policy == "capped_steps"
+                  else self.evaluations <= self.early_evaluations)
+        restore = self.coarse_restore_block if coarse else self.detail_restore_block
         self.reduction = _ReductionState(
             original=hidden.detach().clone(),
             baseline_video=pooled_video.detach().clone(),
@@ -470,6 +490,9 @@ def structure_sample_wrapper(executor, *args, **kwargs):
                 "%s enabled scale=%.3g early_evaluations=%d restore_blocks=%d/%d",
                 TAG, active.reduction_scale, active.early_evaluations,
                 active.coarse_restore_block, active.detail_restore_block)
+            if active.coarse_step_range is not None:
+                logging.info("%s early phase: first %d/%d sampler steps (capped_steps)",
+                             TAG, active.coarse_step_range[1], active.coarse_step_range[2])
         return executor(*args, **kwargs)
     finally:
         if active is not None:
@@ -524,7 +547,8 @@ def _make_block_wrapper(index, block, previous):
 
 def apply_h3_token_reduction(model, reduction_scale, early_evaluations,
                              detail_restore_block, coarse_restore_block,
-                             verbose, start_percent=0.0, end_percent=1.0):
+                             verbose, start_percent=0.0, end_percent=1.0,
+                             phase_policy="evaluation_count", early_step_fraction=0.5):
     """Attach only the supported H3 target-video token reduction."""
     import comfy.patcher_extension
 
@@ -536,6 +560,10 @@ def apply_h3_token_reduction(model, reduction_scale, early_evaluations,
         raise ValueError("reduction_scale must be in [0, 2]")
     if int(early_evaluations) < 1:
         raise ValueError("early_evaluations must be at least 1")
+    if phase_policy not in ("evaluation_count", "capped_steps"):
+        raise ValueError("token phase policy must be evaluation_count or capped_steps")
+    if not 0.0 <= float(early_step_fraction) <= 1.0:
+        raise ValueError("early_step_fraction must be in [0, 1]")
     if not 0 <= start_percent <= end_percent <= 1:
         raise ValueError("token step fractions must satisfy 0 <= start <= end <= 1")
     begin = 4
@@ -550,7 +578,8 @@ def apply_h3_token_reduction(model, reduction_scale, early_evaluations,
     options[STATE_KEY] = H3StructureHolder(
         float(reduction_scale), int(early_evaluations), begin, detail,
         coarse, bool(verbose), start_percent=float(start_percent),
-        end_percent=float(end_percent))
+        end_percent=float(end_percent), phase_policy=phase_policy,
+        early_step_fraction=float(early_step_fraction))
     patched.add_wrapper_with_key(
         comfy.patcher_extension.WrappersMP.OUTER_SAMPLE,
         WRAPPER_KEY, structure_sample_wrapper)

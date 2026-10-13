@@ -124,7 +124,7 @@ geometry. A model loading successfully does not prove that its fast path ran.
 
 ## Latest results — M5 Ultra (80 GPU cores)
 
-**README updated 2026-10-10 · measurements October 9–10 · 256 GB unified memory · macOS 27.0 · PyTorch 2.14.1**
+**README updated 2026-10-13 · stock/optimized table measured October 9–10 · 256 GB unified memory · macOS 27.0 · PyTorch 2.14.1**
 
 <!-- Canonical current benchmark table: update the date, measurements and linked report together after validated runs. -->
 
@@ -157,6 +157,12 @@ Latest exact follow-ups: Krea2 1MP **6.24 → 6.13 s** and Ideogram 4
 sampler/decoded bytes. These are separate comparisons from the stock column.
 [Krea2 report](benchmarks/m5-ultra-krea2-oct2026.md) ·
 [Ideogram/H3 report](benchmarks/m5-ultra-ideogram-h3-oct2026.md).
+
+October 13 long-H3 exact follow-up: **412.03 → 399.21 s** for a 10-second,
+864×480 / 20-step clip (**3.1% less time**, unchanged latent, frame and audio
+bytes). The 15-second two-step screen suggests about 20 seconds saved over
+20 steps, not the requested 200 seconds; that projection is not a full-clip
+measurement. [Long-clip report](benchmarks/m5-ultra-h3-long-exact.md).
 
 Optional H3 SOL INT8 Hybrid Fast measures **113.79 s at 864×480** and
 **371.75 s at 1344×768**, against matched exact-optimized controls of

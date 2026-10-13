@@ -6,6 +6,9 @@ Only one temporal cache and one sparse attention implementation are attached.
 from __future__ import annotations
 
 OFF = "Off"
+FAST_PROTECTED = "Fast protected · experimental"
+FAST_AGGRESSIVE = "Fast aggressive · experimental"
+LEGACY_FAST = "Fast · experimental"
 CACHE_PRESETS = {
     OFF: {},
     "MotionCache · protected": dict(cache_mode="motion_cache", motion_reuse_threshold=0.10,
@@ -54,14 +57,21 @@ TOKEN_PRESETS = {
         token_coarse_restore_block=30, token_start_percent=0.10, token_end_percent=0.95),
     "Light · experimental": dict(token_reduction=True, token_detail_restore_block=12,
         token_coarse_restore_block=20),
-    "Fast · experimental": dict(token_reduction=True, token_detail_restore_block=30,
-        token_coarse_restore_block=40),
+    # The old 40-block restoration produces repeated edges/bands in Turbo I2V.
+    # Restore before the protected late layers; keep the later 30-block phase.
+    FAST_PROTECTED: dict(token_reduction=True, token_detail_restore_block=30,
+        token_coarse_restore_block=33),
+    FAST_AGGRESSIVE: dict(token_reduction=True, token_detail_restore_block=30,
+        token_coarse_restore_block=40, token_phase_policy="capped_steps",
+        token_early_step_fraction=0.5),
 }
 
 
 def resolve_presets(cache, sparse, tokens, log_activity=False):
     """Resolve complete settings without mutating a recipe or the advanced node."""
     from .minimax_h3_unified import AppleSiliconH3Acceleration
+    if tokens == LEGACY_FAST:
+        tokens = FAST_PROTECTED
     settings = {key: spec[1].get("default", spec[0][0] if isinstance(spec[0], list) else None)
                 for group in AppleSiliconH3Acceleration.INPUT_TYPES().values()
                 for key, spec in group.items() if key != "model"}
@@ -93,8 +103,8 @@ class AppleSiliconH3QuickAcceleration:
         "Compact H3 acceleration: combine one cache recipe, one attention recipe and optional token reduction. "
         "Default: MotionCache balanced alone. All enabled recipes approximate inference. "
         "Protected recipes compute more of the original model; fast draft recipes can substantially change appearance/motion. "
-        "Use the advanced H3 Acceleration node for custom settings. Recipes target 20-step sampling; "
-        "4/6/8-step Turbo quality is not established. Dense INT8 retains all tokens but changes arithmetic; hybrid fast quantizes protected layers only within the sparse window. Veda needs its predictor in models/veda. "
+        "Use the advanced H3 Acceleration node for custom settings. Cache/attention recipes target 20-step sampling; "
+        "short-step Turbo combinations need separate quality checks. Fast token recipes have limited Turbo I2V screening, not a quality guarantee. Dense INT8 retains all tokens but changes arithmetic; hybrid fast quantizes protected layers only within the sparse window. Veda needs its predictor in models/veda. "
         "Temporary memory uses Auto, and unrelated nodes/environment options still apply when all three selectors are Off."
     )
 
@@ -107,8 +117,18 @@ class AppleSiliconH3QuickAcceleration:
             "sparse": (list(SPARSE_PRESETS), {"default": OFF,
                 "tooltip": "Dense INT8: protected keeps first 4/last 2 steps and protected layers exact; full quantizes video-query attention in every DiT call, retaining every token. Prefix queries stay exact, but video and audio outputs can change. Hybrid fast adds dense INT8 to protected layers inside the SOL window. SOL INT8: conservative tau 0.25 late sigma window, balanced tau 0.5 and fast tau 1.3 over steps 20–90%. Top-k wide: experimental, background morphing reported where INT8 Fast was stable; 15% video budget over steps 10–95%, protected layers; all-step draft: 10%, all steps/layers. Budgets also retain global/local blocks and pooled tail. Veda: 90% video sparsity, reference attention dense; protected steps/layers or all-step fast draft. Auto memory budget."}),
             "tokens": (list(TOKEN_PRESETS), {"default": OFF,
-                "tooltip": "Experimental horizontal pairing from block 4. Protected restores 12/8 over steps 20–90%; Balanced restores 30/20 over 10–95%. Light restores before blocks 20/12 in early/later evaluations; Fast before 40/30. Full spatial output is restored, but content/detail may change. Incompatible mask pairs run unreduced with a logged reason."}),
+                "tooltip": "Experimental horizontal pairing from block 4. Protected restores 12/8 over steps 20–90%; Balanced restores 30/20 over 10–95%; Light restores 20/12. Fast protected keeps the corrected 33/30 recipe. Fast aggressive restores at 40 for the first half of sampler steps (at most 10), then at 30; greater quality risk. Old Fast selections map to Fast protected. Full spatial output is restored, but content/detail may change. Incompatible mask pairs run unreduced."}),
         }, "optional": {"log_activity": ("BOOLEAN", {"default": False, "tooltip": "Detailed startup, routing and per-step diagnostics. Final work/speedup summaries remain enabled when off."})}}
+
+    @classmethod
+    def VALIDATE_INPUTS(cls, tokens):
+        # Keep API workflows saved under the former label executable without
+        # adding a redundant legacy entry to the visible dropdown.
+        # Linked widgets have no value during ComfyUI's pre-execution validation;
+        # resolve_presets validates their actual value when the node executes.
+        if tokens is None:
+            return True
+        return True if tokens in TOKEN_PRESETS or tokens == LEGACY_FAST else f"Unknown H3 tokens preset: {tokens!r}"
 
     def apply(self, model, cache="MotionCache · balanced", sparse=OFF, tokens=OFF, log_activity=False):
         from .minimax_h3_unified import apply_h3_acceleration

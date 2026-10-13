@@ -1,0 +1,4449 @@
+{
+  "date": "2026-10-13",
+  "device": "Apple M5 Ultra, 80 GPU cores, 256 GB",
+  "os": "macOS 27.0 (26A428)",
+  "torch": "2.14.1",
+  "shape": [
+    1,
+    56,
+    44600,
+    128
+  ],
+  "dtype": "bfloat16",
+  "reference": "Current exact optimized long-sequence query-cache schedule; not stock",
+  "production_source_sha256": "50e55b40756623f1b03220c577d577b793cc18d2938278db9c64a9a130e31fe4",
+  "captured_output_sha256": {
+    "baseline": "3dad4faf1ac08c28056e323b0f568bdecce315a281464b07cf59c998c769f4d3",
+    "packed": "3dad4faf1ac08c28056e323b0f568bdecce315a281464b07cf59c998c769f4d3",
+    "noqcache": "3dad4faf1ac08c28056e323b0f568bdecce315a281464b07cf59c998c769f4d3",
+    "m32row": "3dad4faf1ac08c28056e323b0f568bdecce315a281464b07cf59c998c769f4d3"
+  },
+  "profiles": {
+    "baseline_high": {
+      "frame": {
+        "Commands": "1",
+        "Consistent state": "yes",
+        "Cores": "1 sampled / 80 total",
+        "Encoders": "1",
+        "Frame begin": "0 ns",
+        "Frame duration": "530.2064 ms",
+        "Frame end": "530206374 ns",
+        "GPU time": "530.2064 ms",
+        "Overlap": "yes",
+        "Profiled state": "max"
+      },
+      "shader": {
+        "ALU": "1072",
+        "Branch": "49",
+        "Cost": "99.16%",
+        "Device atomics": "0",
+        "Device loads": "160",
+        "Device stores": "32",
+        "FP16": "0",
+        "FP32": "351",
+        "Instructions": "1778",
+        "INT16": "88",
+        "INT32": "158",
+        "Invocations": "1",
+        "SIMD groups": "343",
+        "Spilled bytes": "352",
+        "Stage": "compute",
+        "Temp registers": "126",
+        "Texture reads": "0",
+        "Texture writes": "0",
+        "Threadgroup atomics": "0",
+        "Threadgroup loads": "0",
+        "Threadgroup memory (bytes)": "0",
+        "Threadgroup stores": "0",
+        "Uniform registers": "92",
+        "Wait": "0"
+      },
+      "counters": {
+        "l1_cache--l1_cache_utilization": {
+          "average": 15.227035543703964,
+          "unit": "Percentage of Peak L1 Performance",
+          "min": 0.03370315532452067,
+          "max": 17.027514270842868,
+          "middle_80_percent_median": 15.563310292019802
+        },
+        "texture_filtering--texture_filtering_limiter": {
+          "average": 0.08055977204673104,
+          "unit": "Percentage of Peak Texture Filtering Performance",
+          "min": 0,
+          "max": 6.989121342295299,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_residency--l1_threadgroup_residency": {
+          "average": 0,
+          "unit": "% L1 Capacity",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0
+        },
+        "gpu_peak_bandwidth--gpu_peak_write_bandwidth": {
+          "average": 0,
+          "unit": "Percentage of Peak Memory Bandwidth",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_cache_reads--stack_l1_read_accesses": {
+          "average": 31.833857708833165,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0.13684352897184365,
+          "max": 32.08621374599577,
+          "middle_80_percent_median": 31.906475253117073
+        },
+        "l1_cache_reads--imageblock_l1_read_accesses": {
+          "average": 0.08290231204327722,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0,
+          "max": 28.227078882239205,
+          "middle_80_percent_median": 0
+        },
+        "integer_and_complex--integer_and_complex_limiter": {
+          "average": 5.090415753782365,
+          "unit": "Percentage of Peak Integer and Complex Performance",
+          "min": 0.02300100886427438,
+          "max": 7.484239505097783,
+          "middle_80_percent_median": 5.176860145154155
+        },
+        "alu--alu_utilization": {
+          "average": 16.12962199854539,
+          "unit": "Percentage of Peak ALU Performance",
+          "min": 0.07869415488069084,
+          "max": 19.829414185806034,
+          "middle_80_percent_median": 16.434745206982072
+        },
+        "instruction_throughput--instruction_throughput_limiter": {
+          "average": 72.91425033565987,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.21307387135098438,
+          "max": 75.45122832301051,
+          "middle_80_percent_median": 74.60125869744341
+        },
+        "l1_cache_reads--buffer_l1_read_accesses": {
+          "average": 49.700046520765746,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 18.20624470685991,
+          "max": 56.29380783031402,
+          "middle_80_percent_median": 49.796952437367445
+        },
+        "f16--f16_utilization": {
+          "average": 0.006513344502475324,
+          "unit": "Percentage of Peak F16 Performance",
+          "min": 0,
+          "max": 1.8633695933955994,
+          "middle_80_percent_median": 0
+        },
+        "l1_read_bandwidth--buffer_l1_read_bandwidth": {
+          "average": 6247.735633317803,
+          "unit": "GiB/s",
+          "min": 30.742599323059338,
+          "max": 6997.692423987397,
+          "middle_80_percent_median": 6392.73978032263
+        },
+        "control_flow--control_flow_limiter": {
+          "average": 5.696522341026819,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.028321541630115566,
+          "max": 6.628636985987903,
+          "middle_80_percent_median": 5.8153079710144935
+        },
+        "integer_and_conditional--integer_and_conditional_limiter": {
+          "average": 28.772165698711017,
+          "unit": "Percentage of Peak Integer and Conditional Performance",
+          "min": 0.16393414799728448,
+          "max": 30.62392247955572,
+          "middle_80_percent_median": 29.580803963077397
+        },
+        "l1_residency--l1_imageblock_residency": {
+          "average": 0.0690347661226193,
+          "unit": "% L1 Capacity",
+          "min": 0,
+          "max": 7.01197172341943,
+          "middle_80_percent_median": 0
+        },
+        "l1_cache_writes--buffer_l1_write_accesses": {
+          "average": 0.009242227910294625,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 0.23729589019050845,
+          "middle_80_percent_median": 0.005164007770015276
+        },
+        "integer_and_complex--integer_and_complex_utilization": {
+          "average": 2.7133218156847407,
+          "unit": "Percentage of Peak Integer and Complex Performance",
+          "min": 0.013178658606354171,
+          "max": 5.413477150683938,
+          "middle_80_percent_median": 2.7546720061022123
+        },
+        "l1_write_bandwidth--unclassified_l1_write_bandwidth": {
+          "average": 0.07750948764698834,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 13.796124809882699,
+          "middle_80_percent_median": 0
+        },
+        "shader_launch_limiter--vertex_shader_launch_limiter": {
+          "average": 1.5755585602858095,
+          "unit": "% Peak Performance",
+          "min": 0,
+          "max": 76.51229317486595,
+          "middle_80_percent_median": 0
+        },
+        "l1_write_bandwidth--register_l1_write_bandwidth": {
+          "average": 21.064939790197425,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 365.1747767268298,
+          "middle_80_percent_median": 11.84785588224063
+        },
+        "occupancy--fs_occupancy": {
+          "average": 0.39052861000074207,
+          "unit": "Percentage of Shader Core Resources",
+          "min": 0,
+          "max": 42.414117782370255,
+          "middle_80_percent_median": 0
+        },
+        "l1_cache_reads--threadgroup_l1_read_accesses": {
+          "average": 0,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0
+        },
+        "bandwidth--gpu_read_bandwidth": {
+          "average": 743.9881896785918,
+          "unit": "GiB / Second",
+          "min": 7.388996275746491,
+          "max": 1168.6424089982074,
+          "middle_80_percent_median": 868.8207546030459
+        },
+        "texture_write--texture_write_limiter": {
+          "average": 0.03168207796700439,
+          "unit": "Percentage of Peak Texture Write Performance",
+          "min": 0,
+          "max": 3.6490460501590958,
+          "middle_80_percent_median": 0.0
+        },
+        "top_occupancy_target_influence--memory_request_stalls_influence": {
+          "average": 0.8211294118091571,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 100,
+          "middle_80_percent_median": 0
+        },
+        "simd_groups_inflight_per_core--vertex_simd_groups_inflight": {
+          "average": 0.00023427043174728876,
+          "unit": "SIMD Groups",
+          "min": 0,
+          "max": 0.04625940681717574,
+          "middle_80_percent_median": 0
+        },
+        "l1_residency--l1_other_residency": {
+          "average": 0.017161139162531893,
+          "unit": "% L1 Capacity",
+          "min": 0,
+          "max": 0.4751100549164452,
+          "middle_80_percent_median": 0.0035810197370930706
+        },
+        "l1_cache_writes--other_l1_write_accesses": {
+          "average": 0.0017406970143243271,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 3.094692539640865,
+          "middle_80_percent_median": 0
+        },
+        "l1_cache_writes--threadgroup_l1_write_accesses": {
+          "average": 0,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0
+        },
+        "active_cores--active_cores": {
+          "average": 98.67348506146436,
+          "unit": "% GPU Cores",
+          "min": 1.25,
+          "max": 100.00000000000011,
+          "middle_80_percent_median": 100
+        },
+        "l1_cache_writes--imageblock_l1_write_accesses": {
+          "average": 0.10229962785776181,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 34.938559626723766,
+          "middle_80_percent_median": 0
+        },
+        "l1_read_bandwidth--rt_scratch_l1_read_bandwidth": {
+          "average": 0,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0
+        },
+        "shader_launch_limiter--compute_shader_launch_limiter": {
+          "average": 68.79498046349845,
+          "unit": "% Peak Performance",
+          "min": 0,
+          "max": 100.00213593714244,
+          "middle_80_percent_median": 87.50057217839759
+        },
+        "l1_cache_writes--stack_l1_write_accesses": {
+          "average": 18.26647451775361,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 7.587004888723039,
+          "max": 19.235689470579786,
+          "middle_80_percent_median": 18.28902875640197
+        },
+        "f32--f32_limiter": {
+          "average": 23.51534291024987,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.0671325848871892,
+          "max": 26.37726503157317,
+          "middle_80_percent_median": 23.991877426712335
+        },
+        "instruction_throughput--instruction_throughput_utilization": {
+          "average": 30.92031604323769,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.076522824673342,
+          "max": 34.56156153955416,
+          "middle_80_percent_median": 31.60101807387461
+        },
+        "l1_cache_reads--rt_scratch_l1_read_accesses": {
+          "average": 0,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0
+        },
+        "l1_residency--l1_total_residency": {
+          "average": 91.0835704977084,
+          "unit": "% L1 Capacity",
+          "min": 1.228262898845893,
+          "max": 94.00343122486132,
+          "middle_80_percent_median": 92.94845853008562
+        },
+        "l1_cache--l1_cache_limiter": {
+          "average": 23.36036377553692,
+          "unit": "Percentage of Peak L1 Performance",
+          "min": 0.1609268923964698,
+          "max": 31.328063613304348,
+          "middle_80_percent_median": 23.99534734779988
+        },
+        "l1_residency--l1_buffer_residency": {
+          "average": 25.032974904692267,
+          "unit": "% L1 Capacity",
+          "min": 0.9833829578062373,
+          "max": 53.25270791056999,
+          "middle_80_percent_median": 25.71084812040209
+        },
+        "last_level_cache--last_level_cache_utilization": {
+          "average": 14.390435360759103,
+          "unit": "Percentage of Peak Cache Performance",
+          "min": 0.08812046004842615,
+          "max": 17.046306120413128,
+          "middle_80_percent_median": 14.282402561034795
+        },
+        "neural_accelerator--neural_accelerator_limiter": {
+          "average": 82.4423367615649,
+          "unit": "Percentage of Peak Neural Accelerator Performance",
+          "min": 0,
+          "max": 91.98313714499253,
+          "middle_80_percent_median": 84.40304676654107
+        },
+        "l1_read_bandwidth--l1_read_bandwidth": {
+          "average": 10255.807729605578,
+          "unit": "GiB/s",
+          "min": 50.349087843568284,
+          "max": 11481.354182600873,
+          "middle_80_percent_median": 10489.969574500028
+        },
+        "l1_residency--l1_stack_residency": {
+          "average": 65.9643996877312,
+          "unit": "% L1 Capacity",
+          "min": 0.1056107340573529,
+          "max": 73.23790396393787,
+          "middle_80_percent_median": 66.94811419098615
+        },
+        "occupancy--total_occupancy": {
+          "average": 17.484779306713573,
+          "unit": "% Shader Core Resources",
+          "min": 0.05171984611903145,
+          "max": 53.443118360119854,
+          "middle_80_percent_median": 17.229271548436305
+        },
+        "l1_write_bandwidth--l1_write_bandwidth": {
+          "average": 2302.849127929242,
+          "unit": "GiB/s",
+          "min": 11.257689245141231,
+          "max": 2569.649796859053,
+          "middle_80_percent_median": 2350.0839765062824
+        },
+        "address_generation--address_generation_limiter": {
+          "average": 32.47182987091324,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.1533604887983707,
+          "max": 37.368293320211784,
+          "middle_80_percent_median": 33.148204123821436
+        },
+        "l1_residency--l1_register_residency": {
+          "average": 32.5323436887577,
+          "unit": "% L1 Capacity",
+          "min": 0,
+          "max": 86.06405065077742,
+          "middle_80_percent_median": 30.11910632931678
+        },
+        "f32--f32_utilization": {
+          "average": 9.859170796489085,
+          "unit": "Percentage of Peak F32 Performance",
+          "min": 0.04811157938899272,
+          "max": 11.561427379267807,
+          "middle_80_percent_median": 10.039117031177291
+        },
+        "integer_and_conditional--integer_and_conditional_utilization": {
+          "average": 19.673724695912,
+          "unit": "Percentage of Peak Integer and Conditional Performance",
+          "min": 0.09595653301598928,
+          "max": 21.92508856120924,
+          "middle_80_percent_median": 20.072026252746582
+        },
+        "top_occupancy_target_influence--l1_cache_pressure_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0
+        },
+        "texture_compression--compression_ratio_of_texture_memory_read": {
+          "average": 0.7392551866578423,
+          "unit": "Ratio of compressed to uncompressed memory",
+          "min": 0,
+          "max": 43,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_read_bandwidth--threadgroup_memory_l1_read_bandwidth": {
+          "average": 0,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0
+        },
+        "other_l1c_utilization--other_l1_read_accesses": {
+          "average": 0.0034363878216547425,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0,
+          "max": 1.0229451591601626,
+          "middle_80_percent_median": 6.6832220770670945e-06
+        },
+        "gpu_peak_bandwidth--gpu_peak_read_bandwidth": {
+          "average": 0,
+          "unit": "Percentage of Peak Memory Bandwidth",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "other_l1c_utilization--other_l1_write_accesses": {
+          "average": 0.0017406970143243271,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 3.094692539640865,
+          "middle_80_percent_median": 0
+        },
+        "l1_write_bandwidth--buffer_l1_write_bandwidth": {
+          "average": 1.1275331346177861,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 31.826664436375033,
+          "middle_80_percent_median": 0.6380293300794826
+        },
+        "top_occupancy_target_influence--register_pressure_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0
+        },
+        "l1_read_bandwidth--register_l1_read_bandwidth": {
+          "average": 21.241860028195493,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 256.2498602812516,
+          "middle_80_percent_median": 14.564310857994448
+        },
+        "active_cores--rt_unit_active": {
+          "average": 0,
+          "unit": "% GPU Cores",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0
+        },
+        "occupancy--kernel_occupancy": {
+          "average": 17.094006665013115,
+          "unit": "Percentage of Shader Core Resources",
+          "min": 0.05171984611903145,
+          "max": 23.32294717679603,
+          "middle_80_percent_median": 17.14894809170398
+        },
+        "l1_read_bandwidth--stack_l1_read_bandwidth": {
+          "average": 4002.986220835314,
+          "unit": "GiB/s",
+          "min": 0.1268058443173262,
+          "max": 4483.661758613475,
+          "middle_80_percent_median": 4097.1957540100275
+        },
+        "l1_write_bandwidth--rt_scratch_l1_write_bandwidth": {
+          "average": 0,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0
+        },
+        "last_level_cache--last_level_cache_limiter": {
+          "average": 14.450228233796334,
+          "unit": "Percentage of Peak Cache Performance",
+          "min": 0.08812046004842615,
+          "max": 17.401356548792254,
+          "middle_80_percent_median": 14.367437961196968
+        },
+        "shader_launch_limiter--fragment_shader_launch_limiter": {
+          "average": 0.22124757928193745,
+          "unit": "% Peak Performance",
+          "min": 0,
+          "max": 18.481951817962745,
+          "middle_80_percent_median": 0
+        },
+        "address_generation--address_generation_utilization": {
+          "average": 10.154276071156083,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.04974446012433732,
+          "max": 11.321330381928558,
+          "middle_80_percent_median": 10.348896539884791
+        },
+        "f16--f16_limiter": {
+          "average": 0.008794973194296401,
+          "unit": "Percentage of Peak Performance",
+          "min": 0,
+          "max": 2.5216850659782826,
+          "middle_80_percent_median": 0
+        },
+        "bandwidth--gpu_bandwidth": {
+          "average": 760.3533808265324,
+          "unit": "GiB / Second",
+          "min": 10.439313997113283,
+          "max": 1173.8968562283176,
+          "middle_80_percent_median": 893.0023971080411
+        },
+        "gpu_peak_bandwidth--gpu_peak_bandwidth": {
+          "average": 0,
+          "unit": "Percentage of Peak Memory Bandwidth",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "texture_read_cache--texture_read_cache_limiter": {
+          "average": 0.08502415447161814,
+          "unit": "Percentage of Peak Texture Read Cache Performance",
+          "min": 0,
+          "max": 17.627490660024904,
+          "middle_80_percent_median": 0.0
+        },
+        "occupancy_target_influences--memory_request_stalls_influence": {
+          "average": 0.8211294118091571,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 100,
+          "middle_80_percent_median": 0
+        },
+        "l1_cache_reads--other_l1_read_accesses": {
+          "average": 0.0034363878216547425,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0,
+          "max": 1.0229451591601626,
+          "middle_80_percent_median": 6.6832220770670945e-06
+        },
+        "control_flow--control_flow_utilization": {
+          "average": 5.467118446184881,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.025563242935847746,
+          "max": 6.102877810316952,
+          "middle_80_percent_median": 5.588315922162723
+        },
+        "occupancy_target_influences--l1_cache_pressure_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0
+        },
+        "top_occupancy_target_influence--texture_decompression_stalls_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0
+        },
+        "occupancy--vs_occupancy": {
+          "average": 0.0002440316997367588,
+          "unit": "Percentage of Shader Core Resources",
+          "min": 0,
+          "max": 0.04818688210122473,
+          "middle_80_percent_median": 0
+        },
+        "occupancy_manager--occupancy_manager_target": {
+          "average": 18.31634833659203,
+          "unit": "% Shader Core Resources",
+          "min": 1.5515727540167459,
+          "max": 93.27150180802856,
+          "middle_80_percent_median": 17.211258257937537
+        },
+        "l1_read_bandwidth--unclassified_l1_read_bandwidth": {
+          "average": 0.2064849907132907,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 34.323926439536336,
+          "middle_80_percent_median": 0.0009205976124306613
+        },
+        "l1_cache_writes--rt_scratch_l1_write_accesses": {
+          "average": 0,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0
+        },
+        "simd_groups_inflight_per_core--total_simd_groups_inflight": {
+          "average": 16.78538813444502,
+          "unit": "SIMD Groups",
+          "min": 0.0496510522742702,
+          "max": 51.30539362571507,
+          "middle_80_percent_median": 16.540100686498857
+        },
+        "l1_read_bandwidth--imageblock_l1_read_bandwidth": {
+          "average": 4.879390461756201,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 1059.2088356896638,
+          "middle_80_percent_median": 0
+        },
+        "texture_read_cache--texture_read_cache_utilization": {
+          "average": 0.012402950677888934,
+          "unit": "Percentage of Peak Texture Read Cache Performance",
+          "min": 0,
+          "max": 1.0692131070983812,
+          "middle_80_percent_median": 0.0
+        },
+        "simd_groups_inflight_per_core--compute_simd_groups_inflight": {
+          "average": 16.410246398412642,
+          "unit": "SIMD Groups",
+          "min": 0.0496510522742702,
+          "max": 22.39002928972419,
+          "middle_80_percent_median": 16.46299016803582
+        },
+        "occupancy_target_influences--register_pressure_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0
+        },
+        "mmu--mmu_utilization": {
+          "average": 6.173641728023674,
+          "unit": "Percentage of Peak MMU Performance",
+          "min": 0.08446125907990315,
+          "max": 9.500257453808477,
+          "middle_80_percent_median": 7.25300269521326
+        },
+        "texture_read--texture_read_limiter": {
+          "average": 0.0811354566885398,
+          "unit": "Percentage of Peak Texture Read Performance",
+          "min": 0,
+          "max": 17.603518057285182,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_residency--l1_rt_scratch_residency": {
+          "average": 0,
+          "unit": "% L1 Capacity",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0
+        },
+        "texture_write--texture_write_utilization": {
+          "average": 0.030779402456686183,
+          "unit": "Percentage of Peak Texture Write Performance",
+          "min": 0,
+          "max": 3.6489364367499313,
+          "middle_80_percent_median": 0.0
+        },
+        "simd_groups_inflight_per_core--fragment_simd_groups_inflight": {
+          "average": 0.3749074656007112,
+          "unit": "SIMD Groups",
+          "min": 0,
+          "max": 40.71755307107544,
+          "middle_80_percent_median": 0
+        },
+        "l1_write_bandwidth--imageblock_l1_write_bandwidth": {
+          "average": 5.948392119127517,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 1311.0542262373929,
+          "middle_80_percent_median": 0
+        },
+        "mmu--mmu_limiter": {
+          "average": 6.913680505000915,
+          "unit": "Percentage of Peak MMU Performance",
+          "min": 0.08638317191283293,
+          "max": 11.064444574658495,
+          "middle_80_percent_median": 8.085700848104388
+        },
+        "l1_write_bandwidth--stack_l1_write_bandwidth": {
+          "average": 2295.695693187843,
+          "unit": "GiB/s",
+          "min": 11.257689245141231,
+          "max": 2569.649796859053,
+          "middle_80_percent_median": 2348.319541513253
+        },
+        "texture_read--texture_read_utilization": {
+          "average": 0.03902236568450448,
+          "unit": "Percentage of Peak Texture Read Performance",
+          "min": -2.421204326401587e-05,
+          "max": 4.695199037072299,
+          "middle_80_percent_median": 0.0
+        },
+        "occupancy_target_influences--texture_decompression_stalls_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0
+        },
+        "l2_bandwidth--last_level_cache_bandwidth": {
+          "average": 1772.3331024489867,
+          "unit": "GB/s",
+          "min": 10.89158700730858,
+          "max": 2106.9282204024776,
+          "middle_80_percent_median": 1759.2550340808218
+        },
+        "l1_write_bandwidth--threadgroup_memory_l1_write_bandwidth": {
+          "average": 0,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0
+        },
+        "neural_accelerator--neural_accelerator_utilization": {
+          "average": 80.87776369409717,
+          "unit": "Percentage of Peak Neural Accelerator Performance",
+          "min": 0,
+          "max": 90.58520703685062,
+          "middle_80_percent_median": 82.78597231014469
+        },
+        "bandwidth--gpu_write_bandwidth": {
+          "average": 16.365191147941548,
+          "unit": "GiB / Second",
+          "min": 2.90517137897161,
+          "max": 286.7833604655983,
+          "middle_80_percent_median": 9.68253293869725
+        }
+      }
+    },
+    "baseline_medium": {
+      "frame": {
+        "Commands": "1",
+        "Consistent state": "yes",
+        "Cores": "1 sampled / 80 total",
+        "Encoders": "1",
+        "Frame begin": "0 ns",
+        "Frame duration": "780.6459 ms",
+        "Frame end": "780645916 ns",
+        "GPU time": "780.6459 ms",
+        "Overlap": "yes",
+        "Profiled state": "default"
+      },
+      "shader": {
+        "ALU": "1072",
+        "Branch": "49",
+        "Cost": "99.16%",
+        "Device atomics": "0",
+        "Device loads": "160",
+        "Device stores": "32",
+        "FP16": "0",
+        "FP32": "351",
+        "Instructions": "1778",
+        "INT16": "88",
+        "INT32": "158",
+        "Invocations": "1",
+        "SIMD groups": "635",
+        "Spilled bytes": "352",
+        "Stage": "compute",
+        "Temp registers": "126",
+        "Texture reads": "0",
+        "Texture writes": "0",
+        "Threadgroup atomics": "0",
+        "Threadgroup loads": "0",
+        "Threadgroup memory (bytes)": "0",
+        "Threadgroup stores": "0",
+        "Uniform registers": "92",
+        "Wait": "0"
+      },
+      "counters": {
+        "l1_cache--l1_cache_utilization": {
+          "average": 15.437312924864168,
+          "unit": "Percentage of Peak L1 Performance",
+          "min": 0.09863263367515106,
+          "max": 17.04128428883684,
+          "middle_80_percent_median": 16.224353212006278
+        },
+        "texture_filtering--texture_filtering_limiter": {
+          "average": 0.15562144139012074,
+          "unit": "Percentage of Peak Texture Filtering Performance",
+          "min": 0,
+          "max": 11.019461791120913,
+          "middle_80_percent_median": 0
+        },
+        "l1_residency--l1_threadgroup_residency": {
+          "average": 0,
+          "unit": "% L1 Capacity",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "gpu_peak_bandwidth--gpu_peak_write_bandwidth": {
+          "average": 0,
+          "unit": "Percentage of Peak Memory Bandwidth",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0
+        },
+        "l1_cache_reads--stack_l1_read_accesses": {
+          "average": 31.7750291427082,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0.7653049254480702,
+          "max": 32.09039509082607,
+          "middle_80_percent_median": 31.906834934207055
+        },
+        "l1_cache_reads--imageblock_l1_read_accesses": {
+          "average": 0.16041780512823783,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0,
+          "max": 26.287949492957985,
+          "middle_80_percent_median": 0.0
+        },
+        "integer_and_complex--integer_and_complex_limiter": {
+          "average": 5.2256414524703745,
+          "unit": "Percentage of Peak Integer and Complex Performance",
+          "min": 0.030480099417078674,
+          "max": 7.509331062472822,
+          "middle_80_percent_median": 5.440003565910935
+        },
+        "alu--alu_utilization": {
+          "average": 16.432515019340595,
+          "unit": "Percentage of Peak ALU Performance",
+          "min": 0.10458630897881953,
+          "max": 18.728655254193974,
+          "middle_80_percent_median": 17.135761779821593
+        },
+        "instruction_throughput--instruction_throughput_limiter": {
+          "average": 71.95473429945939,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.24422705701031555,
+          "max": 75.62467152327356,
+          "middle_80_percent_median": 74.5956468417991
+        },
+        "l1_cache_reads--buffer_l1_read_accesses": {
+          "average": 49.60095627969376,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 19.440733623676454,
+          "max": 58.54997161192643,
+          "middle_80_percent_median": 49.79885964476188
+        },
+        "f16--f16_utilization": {
+          "average": 0.014736585432574594,
+          "unit": "Percentage of Peak F16 Performance",
+          "min": 0,
+          "max": 2.144033254774392,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_read_bandwidth--buffer_l1_read_bandwidth": {
+          "average": 4232.0098348876145,
+          "unit": "GiB/s",
+          "min": 25.619458141097862,
+          "max": 4685.66215783142,
+          "middle_80_percent_median": 4458.827735543342
+        },
+        "control_flow--control_flow_limiter": {
+          "average": 5.7791857564844245,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.03819221906854667,
+          "max": 6.824399177802184,
+          "middle_80_percent_median": 6.062200742183528
+        },
+        "integer_and_conditional--integer_and_conditional_limiter": {
+          "average": 27.889611217530796,
+          "unit": "Percentage of Peak Integer and Conditional Performance",
+          "min": 0.15925664179332236,
+          "max": 30.95676604979709,
+          "middle_80_percent_median": 28.73327457757493
+        },
+        "l1_residency--l1_imageblock_residency": {
+          "average": 0.12362221599173691,
+          "unit": "% L1 Capacity",
+          "min": 0,
+          "max": 8.31855986259589,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_cache_writes--buffer_l1_write_accesses": {
+          "average": 0.009310264619868825,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 0.31172296137901634,
+          "middle_80_percent_median": 0.0025783218799495288
+        },
+        "integer_and_complex--integer_and_complex_utilization": {
+          "average": 2.783895494353173,
+          "unit": "Percentage of Peak Integer and Complex Performance",
+          "min": 0.017493838887871573,
+          "max": 5.641930051192399,
+          "middle_80_percent_median": 2.8759886540233217
+        },
+        "l1_write_bandwidth--unclassified_l1_write_bandwidth": {
+          "average": 0.1441207178712039,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 9.18392177063887,
+          "middle_80_percent_median": 0.0
+        },
+        "shader_launch_limiter--vertex_shader_launch_limiter": {
+          "average": 2.701868934084898,
+          "unit": "% Peak Performance",
+          "min": 0,
+          "max": 104.89860070498833,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_write_bandwidth--register_l1_write_bandwidth": {
+          "average": 20.138971845811735,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 205.6870535274945,
+          "middle_80_percent_median": 13.348009513728865
+        },
+        "occupancy--fs_occupancy": {
+          "average": 0.7367492902951223,
+          "unit": "Percentage of Shader Core Resources",
+          "min": 0,
+          "max": 58.619878549862534,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_cache_reads--threadgroup_l1_read_accesses": {
+          "average": 0,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "bandwidth--gpu_read_bandwidth": {
+          "average": 405.9920056594224,
+          "unit": "GiB / Second",
+          "min": 0.050127755647922656,
+          "max": 874.0946338765292,
+          "middle_80_percent_median": 363.6531750028602
+        },
+        "texture_write--texture_write_limiter": {
+          "average": 0.06918931406317176,
+          "unit": "Percentage of Peak Texture Write Performance",
+          "min": 0,
+          "max": 3.8746896793898116,
+          "middle_80_percent_median": 0
+        },
+        "top_occupancy_target_influence--memory_request_stalls_influence": {
+          "average": 1.8188618922079183,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 100,
+          "middle_80_percent_median": 0.0
+        },
+        "simd_groups_inflight_per_core--vertex_simd_groups_inflight": {
+          "average": 0.0005718076554112757,
+          "unit": "SIMD Groups",
+          "min": 0,
+          "max": 0.08275098408582984,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_residency--l1_other_residency": {
+          "average": 0.037998761495219996,
+          "unit": "% L1 Capacity",
+          "min": 0,
+          "max": 0.7216951828551341,
+          "middle_80_percent_median": 0.011016317734469734
+        },
+        "l1_cache_writes--other_l1_write_accesses": {
+          "average": 0.0033376096043158973,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 0.5942726475045867,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_cache_writes--threadgroup_l1_write_accesses": {
+          "average": 0,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "active_cores--active_cores": {
+          "average": 97.77893903013694,
+          "unit": "% GPU Cores",
+          "min": 1.25,
+          "max": 100.00000000000013,
+          "middle_80_percent_median": 100.0
+        },
+        "l1_cache_writes--imageblock_l1_write_accesses": {
+          "average": 0.20252389048873065,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 34.466531240511344,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_read_bandwidth--rt_scratch_l1_read_bandwidth": {
+          "average": 0,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "shader_launch_limiter--compute_shader_launch_limiter": {
+          "average": 56.30999186072279,
+          "unit": "% Peak Performance",
+          "min": 0,
+          "max": 100.00164030730967,
+          "middle_80_percent_median": 61.2482260307921
+        },
+        "l1_cache_writes--stack_l1_write_accesses": {
+          "average": 18.238487257416743,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 7.1998408693982245,
+          "max": 39.87773577350853,
+          "middle_80_percent_median": 18.287720178266593
+        },
+        "f32--f32_limiter": {
+          "average": 23.9433566659897,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.012938763830599009,
+          "max": 26.383195275188065,
+          "middle_80_percent_median": 25.082438423446842
+        },
+        "instruction_throughput--instruction_throughput_utilization": {
+          "average": 31.360375714661423,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.19162369443914537,
+          "max": 34.59051548409677,
+          "middle_80_percent_median": 32.94484922346262
+        },
+        "l1_cache_reads--rt_scratch_l1_read_accesses": {
+          "average": 0,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_residency--l1_total_residency": {
+          "average": 89.52035171661295,
+          "unit": "% L1 Capacity",
+          "min": 1.3425895459470185,
+          "max": 93.43903969268132,
+          "middle_80_percent_median": 92.97592183646466
+        },
+        "l1_cache--l1_cache_limiter": {
+          "average": 20.952042147283677,
+          "unit": "Percentage of Peak L1 Performance",
+          "min": 0.11542965173503021,
+          "max": 30.637404813985597,
+          "middle_80_percent_median": 20.50112484850145
+        },
+        "l1_residency--l1_buffer_residency": {
+          "average": 24.118958819031125,
+          "unit": "% L1 Capacity",
+          "min": 1.049883469780667,
+          "max": 49.33500878183654,
+          "middle_80_percent_median": 24.56096763783954
+        },
+        "last_level_cache--last_level_cache_utilization": {
+          "average": 15.024266415634829,
+          "unit": "Percentage of Peak Cache Performance",
+          "min": 0.15875661561036736,
+          "max": 17.552585368593967,
+          "middle_80_percent_median": 15.258913253865334
+        },
+        "neural_accelerator--neural_accelerator_limiter": {
+          "average": 83.33852373655877,
+          "unit": "Percentage of Peak Neural Accelerator Performance",
+          "min": 0,
+          "max": 92.06367443200025,
+          "middle_80_percent_median": 87.832504874183
+        },
+        "l1_read_bandwidth--l1_read_bandwidth": {
+          "average": 6951.218668301876,
+          "unit": "GiB/s",
+          "min": 42.10789443647681,
+          "max": 7688.463466248194,
+          "middle_80_percent_median": 7316.696593548786
+        },
+        "l1_residency--l1_stack_residency": {
+          "average": 65.23977192009485,
+          "unit": "% L1 Capacity",
+          "min": 0.2105102278276262,
+          "max": 74.64972732670195,
+          "middle_80_percent_median": 67.64136330883903
+        },
+        "occupancy--total_occupancy": {
+          "average": 17.773697691915824,
+          "unit": "% Shader Core Resources",
+          "min": 0.057493381096258324,
+          "max": 67.02674351709055,
+          "middle_80_percent_median": 17.53428036723747
+        },
+        "l1_write_bandwidth--l1_write_bandwidth": {
+          "average": 1565.0531664775556,
+          "unit": "GiB/s",
+          "min": 9.445026267978365,
+          "max": 1721.2894917894955,
+          "middle_80_percent_median": 1639.2882362418318
+        },
+        "address_generation--address_generation_limiter": {
+          "average": 30.902447902967666,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.12074730665934201,
+          "max": 37.30696285814543,
+          "middle_80_percent_median": 31.234402054192472
+        },
+        "l1_residency--l1_register_residency": {
+          "average": 34.925459806821074,
+          "unit": "% L1 Capacity",
+          "min": 0,
+          "max": 86.9122588634491,
+          "middle_80_percent_median": 32.302885317478285
+        },
+        "f32--f32_utilization": {
+          "average": 10.058145538403894,
+          "unit": "Percentage of Peak F32 Performance",
+          "min": 0.010278758107592522,
+          "max": 11.775087498829748,
+          "middle_80_percent_median": 10.471985344212332
+        },
+        "integer_and_conditional--integer_and_conditional_utilization": {
+          "average": 19.99351583505889,
+          "unit": "Percentage of Peak Integer and Conditional Performance",
+          "min": 0.12776439373130685,
+          "max": 21.945406316279357,
+          "middle_80_percent_median": 20.924941644376705
+        },
+        "top_occupancy_target_influence--l1_cache_pressure_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "texture_compression--compression_ratio_of_texture_memory_read": {
+          "average": 1.7511311758900219,
+          "unit": "Ratio of compressed to uncompressed memory",
+          "min": 0,
+          "max": 1032,
+          "middle_80_percent_median": 0
+        },
+        "l1_read_bandwidth--threadgroup_memory_l1_read_bandwidth": {
+          "average": 0,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "other_l1c_utilization--other_l1_read_accesses": {
+          "average": 0.009937750340287566,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0,
+          "max": 1.3029231687051743,
+          "middle_80_percent_median": 9.880753912941194e-06
+        },
+        "gpu_peak_bandwidth--gpu_peak_read_bandwidth": {
+          "average": 0,
+          "unit": "Percentage of Peak Memory Bandwidth",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0
+        },
+        "other_l1c_utilization--other_l1_write_accesses": {
+          "average": 0.0033376096043158973,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 0.5942726475045867,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_write_bandwidth--buffer_l1_write_bandwidth": {
+          "average": 0.7658749910009512,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 27.88191721771172,
+          "middle_80_percent_median": 0.2165196556888513
+        },
+        "top_occupancy_target_influence--register_pressure_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_read_bandwidth--register_l1_read_bandwidth": {
+          "average": 20.279966613735127,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 185.25639868377618,
+          "middle_80_percent_median": 15.754937739143369
+        },
+        "active_cores--rt_unit_active": {
+          "average": 0,
+          "unit": "% GPU Cores",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "occupancy--kernel_occupancy": {
+          "average": 17.0363527686463,
+          "unit": "Percentage of Shader Core Resources",
+          "min": 0.057493381096258324,
+          "max": 23.219508214332937,
+          "middle_80_percent_median": 17.320592002025332
+        },
+        "l1_read_bandwidth--stack_l1_read_bandwidth": {
+          "average": 2711.749200186868,
+          "unit": "GiB/s",
+          "min": 1.2061935021547059,
+          "max": 3002.801308416775,
+          "middle_80_percent_median": 2858.0852700964847
+        },
+        "l1_write_bandwidth--rt_scratch_l1_write_bandwidth": {
+          "average": 0,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "last_level_cache--last_level_cache_limiter": {
+          "average": 15.16300732463578,
+          "unit": "Percentage of Peak Cache Performance",
+          "min": 0.15875661561036736,
+          "max": 18.811555200693558,
+          "middle_80_percent_median": 15.410523839397742
+        },
+        "shader_launch_limiter--fragment_shader_launch_limiter": {
+          "average": 0.5028665758316941,
+          "unit": "% Peak Performance",
+          "min": 0,
+          "max": 20.934851401889844,
+          "middle_80_percent_median": 0.0
+        },
+        "address_generation--address_generation_utilization": {
+          "average": 10.3267724659366,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.06559295458707197,
+          "max": 11.329978676167661,
+          "middle_80_percent_median": 10.787191298880398
+        },
+        "f16--f16_limiter": {
+          "average": 0.01984631157554722,
+          "unit": "Percentage of Peak Performance",
+          "min": 0,
+          "max": 2.9076271171401395,
+          "middle_80_percent_median": 0.0
+        },
+        "bandwidth--gpu_bandwidth": {
+          "average": 425.58513392807106,
+          "unit": "GiB / Second",
+          "min": 1.1803714800080494,
+          "max": 878.3118495382524,
+          "middle_80_percent_median": 387.8424357170839
+        },
+        "gpu_peak_bandwidth--gpu_peak_bandwidth": {
+          "average": 0,
+          "unit": "Percentage of Peak Memory Bandwidth",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0
+        },
+        "texture_read_cache--texture_read_cache_limiter": {
+          "average": 0.1379620132904274,
+          "unit": "Percentage of Peak Texture Read Cache Performance",
+          "min": 0,
+          "max": 5.682454570457145,
+          "middle_80_percent_median": 0
+        },
+        "occupancy_target_influences--memory_request_stalls_influence": {
+          "average": 1.8188618922079183,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 100,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_cache_reads--other_l1_read_accesses": {
+          "average": 0.009937750340287566,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0,
+          "max": 1.3029231687051743,
+          "middle_80_percent_median": 9.880753912941194e-06
+        },
+        "control_flow--control_flow_utilization": {
+          "average": 5.540831249873276,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.03566005920771532,
+          "max": 6.1389025083561,
+          "middle_80_percent_median": 5.827622447001603
+        },
+        "occupancy_target_influences--l1_cache_pressure_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "top_occupancy_target_influence--texture_decompression_stalls_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "occupancy--vs_occupancy": {
+          "average": 0.0005956329743867437,
+          "unit": "Percentage of Shader Core Resources",
+          "min": 0,
+          "max": 0.08619894175607275,
+          "middle_80_percent_median": 0.0
+        },
+        "occupancy_manager--occupancy_manager_target": {
+          "average": 18.683610373753506,
+          "unit": "% Shader Core Resources",
+          "min": 1.7251368288266293,
+          "max": 90.88803943003441,
+          "middle_80_percent_median": 17.4743461130382
+        },
+        "l1_read_bandwidth--unclassified_l1_read_bandwidth": {
+          "average": 0.4277330052580744,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 38.411906971499825,
+          "middle_80_percent_median": 0.0008626566460483281
+        },
+        "l1_cache_writes--rt_scratch_l1_write_accesses": {
+          "average": 0,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "simd_groups_inflight_per_core--total_simd_groups_inflight": {
+          "average": 17.062749784239255,
+          "unit": "SIMD Groups",
+          "min": 0.05519364585240799,
+          "max": 64.34567377640693,
+          "middle_80_percent_median": 16.832909152547973
+        },
+        "l1_read_bandwidth--imageblock_l1_read_bandwidth": {
+          "average": 7.03190022210787,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 792.301061775143,
+          "middle_80_percent_median": 0.0
+        },
+        "texture_read_cache--texture_read_cache_utilization": {
+          "average": 0.024625701608880272,
+          "unit": "Percentage of Peak Texture Read Cache Performance",
+          "min": 0,
+          "max": 0.7774686525747677,
+          "middle_80_percent_median": 0
+        },
+        "simd_groups_inflight_per_core--compute_simd_groups_inflight": {
+          "average": 16.354898657900517,
+          "unit": "SIMD Groups",
+          "min": 0.05519364585240799,
+          "max": 22.29072788575962,
+          "middle_80_percent_median": 16.62776832194432
+        },
+        "occupancy_target_influences--register_pressure_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "mmu--mmu_utilization": {
+          "average": 5.17606837992719,
+          "unit": "Percentage of Peak MMU Performance",
+          "min": 0.030488998713974806,
+          "max": 10.621161425681727,
+          "middle_80_percent_median": 4.771962230000656
+        },
+        "texture_read--texture_read_limiter": {
+          "average": 0.12442028750986792,
+          "unit": "Percentage of Peak Texture Read Performance",
+          "min": 0,
+          "max": 5.674520095024374,
+          "middle_80_percent_median": 0
+        },
+        "l1_residency--l1_rt_scratch_residency": {
+          "average": 0,
+          "unit": "% L1 Capacity",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "texture_write--texture_write_utilization": {
+          "average": 0.0659013436212101,
+          "unit": "Percentage of Peak Texture Write Performance",
+          "min": 0,
+          "max": 3.87370461561076,
+          "middle_80_percent_median": 0
+        },
+        "simd_groups_inflight_per_core--fragment_simd_groups_inflight": {
+          "average": 0.7072793186833178,
+          "unit": "SIMD Groups",
+          "min": 0,
+          "max": 56.27508340786803,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_write_bandwidth--imageblock_l1_write_bandwidth": {
+          "average": 8.858506882248639,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 971.5866362826874,
+          "middle_80_percent_median": 0.0
+        },
+        "mmu--mmu_limiter": {
+          "average": 5.84875442915206,
+          "unit": "Percentage of Peak MMU Performance",
+          "min": 0.0326916259974939,
+          "max": 13.170666780068983,
+          "middle_80_percent_median": 5.2059363892651636
+        },
+        "l1_write_bandwidth--stack_l1_write_bandwidth": {
+          "average": 1555.2846638864335,
+          "unit": "GiB/s",
+          "min": 9.415572948935976,
+          "max": 1721.285794689584,
+          "middle_80_percent_median": 1637.708549640848
+        },
+        "texture_read--texture_read_utilization": {
+          "average": 0.07295639951102763,
+          "unit": "Percentage of Peak Texture Read Performance",
+          "min": 0,
+          "max": 4.649711622894547,
+          "middle_80_percent_median": 0
+        },
+        "occupancy_target_influences--texture_decompression_stalls_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "l2_bandwidth--last_level_cache_bandwidth": {
+          "average": 1236.0926508226241,
+          "unit": "GB/s",
+          "min": 6.147508341896983,
+          "max": 1446.266054608333,
+          "middle_80_percent_median": 1254.4682833938919
+        },
+        "l1_write_bandwidth--threadgroup_memory_l1_write_bandwidth": {
+          "average": 0,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "neural_accelerator--neural_accelerator_utilization": {
+          "average": 81.87225533712237,
+          "unit": "Percentage of Peak Neural Accelerator Performance",
+          "min": 0,
+          "max": 90.66067641179792,
+          "middle_80_percent_median": 86.30420547698851
+        },
+        "bandwidth--gpu_write_bandwidth": {
+          "average": 19.593128268650496,
+          "unit": "GiB / Second",
+          "min": 1.1302437243601267,
+          "max": 217.3808828058602,
+          "middle_80_percent_median": 8.530197781997742
+        }
+      }
+    },
+    "packed_high_unstable": {
+      "frame": {
+        "Commands": "1",
+        "Consistent state": "no",
+        "Cores": "1 sampled / 80 total",
+        "Encoders": "1",
+        "Frame begin": "0 ns",
+        "Frame duration": "426.4686 ms",
+        "Frame end": "426468583 ns",
+        "GPU time": "426.4686 ms",
+        "Overlap": "yes",
+        "Profiled state": "max"
+      },
+      "shader": {
+        "ALU": "1045",
+        "Branch": "47",
+        "Cost": "99.85%",
+        "Device atomics": "0",
+        "Device loads": "160",
+        "Device stores": "32",
+        "FP16": "0",
+        "FP32": "351",
+        "Instructions": "1756",
+        "INT16": "89",
+        "INT32": "146",
+        "Invocations": "1",
+        "SIMD groups": "804",
+        "Spilled bytes": "352",
+        "Stage": "compute",
+        "Temp registers": "126",
+        "Texture reads": "0",
+        "Texture writes": "0",
+        "Threadgroup atomics": "0",
+        "Threadgroup loads": "0",
+        "Threadgroup memory (bytes)": "0",
+        "Threadgroup stores": "0",
+        "Uniform registers": "68",
+        "Wait": "0"
+      },
+      "counters": {
+        "l1_cache--l1_cache_utilization": {
+          "average": 13.211578222159421,
+          "unit": "Percentage of Peak L1 Performance",
+          "min": 0.09950415635087279,
+          "max": 14.192127386728922,
+          "middle_80_percent_median": 13.72577677341207
+        },
+        "texture_filtering--texture_filtering_limiter": {
+          "average": 0.09267065136150177,
+          "unit": "Percentage of Peak Texture Filtering Performance",
+          "min": 0,
+          "max": 8.897555990647659,
+          "middle_80_percent_median": 0
+        },
+        "l1_residency--l1_threadgroup_residency": {
+          "average": 1.8561522405088962e-06,
+          "unit": "% L1 Capacity",
+          "min": 0,
+          "max": 0.007303287915207887,
+          "middle_80_percent_median": 0.0
+        },
+        "gpu_peak_bandwidth--gpu_peak_write_bandwidth": {
+          "average": 0,
+          "unit": "Percentage of Peak Memory Bandwidth",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0
+        },
+        "l1_cache_reads--stack_l1_read_accesses": {
+          "average": 32.339836423026256,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0.5947231106278953,
+          "max": 32.61119329663383,
+          "middle_80_percent_median": 32.4219832762883
+        },
+        "l1_cache_reads--imageblock_l1_read_accesses": {
+          "average": 0.09568015566108105,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0,
+          "max": 42.409677020878576,
+          "middle_80_percent_median": 0.0
+        },
+        "integer_and_complex--integer_and_complex_limiter": {
+          "average": 2.4086134106413644,
+          "unit": "Percentage of Peak Integer and Complex Performance",
+          "min": 0.016999840692803494,
+          "max": 7.064626305683201,
+          "middle_80_percent_median": 2.4783594900057224
+        },
+        "alu--alu_utilization": {
+          "average": 16.37435601322038,
+          "unit": "Percentage of Peak ALU Performance",
+          "min": 0.1251663258537299,
+          "max": 17.69193857965451,
+          "middle_80_percent_median": 16.95793990238311
+        },
+        "instruction_throughput--instruction_throughput_limiter": {
+          "average": 71.99475465874156,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.2935724769396304,
+          "max": 74.99536926386233,
+          "middle_80_percent_median": 74.18224577199864
+        },
+        "l1_cache_reads--buffer_l1_read_accesses": {
+          "average": 49.87471502504365,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 1.867280123200798,
+          "max": 50.06464090860771,
+          "middle_80_percent_median": 49.99202805042111
+        },
+        "f16--f16_utilization": {
+          "average": 0.00658711906049923,
+          "unit": "Percentage of Peak F16 Performance",
+          "min": 0,
+          "max": 2.327855046754546,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_read_bandwidth--buffer_l1_read_bandwidth": {
+          "average": 7774.82615488242,
+          "unit": "GiB/s",
+          "min": 30.856004028257278,
+          "max": 8822329.774042564,
+          "middle_80_percent_median": 6782.771267522374
+        },
+        "control_flow--control_flow_limiter": {
+          "average": 6.096619585637039,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.049714944581988364,
+          "max": 6.738220221677134,
+          "middle_80_percent_median": 6.3237038186079255
+        },
+        "integer_and_conditional--integer_and_conditional_limiter": {
+          "average": 26.296055574370754,
+          "unit": "Percentage of Peak Integer and Conditional Performance",
+          "min": 0.19277150124834164,
+          "max": 27.576048226293786,
+          "middle_80_percent_median": 27.155566421954315
+        },
+        "l1_residency--l1_imageblock_residency": {
+          "average": 0.07151384097173676,
+          "unit": "% L1 Capacity",
+          "min": 0,
+          "max": 6.311606248666044,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_cache_writes--buffer_l1_write_accesses": {
+          "average": 0.009417201623276276,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 0.25315175729279293,
+          "middle_80_percent_median": 0.004235468118858269
+        },
+        "integer_and_complex--integer_and_complex_utilization": {
+          "average": 2.0049059002308454,
+          "unit": "Percentage of Peak Integer and Complex Performance",
+          "min": 0.015256602108078181,
+          "max": 5.66768239462535,
+          "middle_80_percent_median": 2.062151221438449
+        },
+        "l1_write_bandwidth--unclassified_l1_write_bandwidth": {
+          "average": 0.10363032787137977,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 158.4259371714804,
+          "middle_80_percent_median": 0.0
+        },
+        "shader_launch_limiter--vertex_shader_launch_limiter": {
+          "average": 0.9997905550317941,
+          "unit": "% Peak Performance",
+          "min": 0,
+          "max": 64.85168564479858,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_write_bandwidth--register_l1_write_bandwidth": {
+          "average": 21.886388246406728,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 34800.251429173724,
+          "middle_80_percent_median": 7.231116898428134
+        },
+        "occupancy--fs_occupancy": {
+          "average": 0.3444086122873217,
+          "unit": "Percentage of Shader Core Resources",
+          "min": 0,
+          "max": 44.993092153868886,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_cache_reads--threadgroup_l1_read_accesses": {
+          "average": 6.873075706752262e-05,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0,
+          "max": 0.31920474939605586,
+          "middle_80_percent_median": 0.0
+        },
+        "bandwidth--gpu_read_bandwidth": {
+          "average": 744.0509182317497,
+          "unit": "GiB / Second",
+          "min": 0.4162168338530885,
+          "max": 1332.7373520020278,
+          "middle_80_percent_median": 858.3293531079835
+        },
+        "texture_write--texture_write_limiter": {
+          "average": 0.03559350706091296,
+          "unit": "Percentage of Peak Texture Write Performance",
+          "min": 0,
+          "max": 5.48705693145508,
+          "middle_80_percent_median": 0
+        },
+        "top_occupancy_target_influence--memory_request_stalls_influence": {
+          "average": 0.8868386621946243,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 100,
+          "middle_80_percent_median": 0.0
+        },
+        "simd_groups_inflight_per_core--vertex_simd_groups_inflight": {
+          "average": 0.0002699996768481622,
+          "unit": "SIMD Groups",
+          "min": 0,
+          "max": 0.12314704837317902,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_residency--l1_other_residency": {
+          "average": 0.02275891685365327,
+          "unit": "% L1 Capacity",
+          "min": 0,
+          "max": 0.5899452908116714,
+          "middle_80_percent_median": 0.007313619311673972
+        },
+        "l1_cache_writes--other_l1_write_accesses": {
+          "average": 0.0015780106348312103,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 0.47388111353680307,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_cache_writes--threadgroup_l1_write_accesses": {
+          "average": 1.2055852105571228e-05,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 0.05643175572530477,
+          "middle_80_percent_median": 0.0
+        },
+        "active_cores--active_cores": {
+          "average": 98.31199993956164,
+          "unit": "% GPU Cores",
+          "min": 1.6677930341042082,
+          "max": 100.00000000000006,
+          "middle_80_percent_median": 100.0
+        },
+        "l1_cache_writes--imageblock_l1_write_accesses": {
+          "average": 0.11774936012083277,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 52.437003305926545,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_read_bandwidth--rt_scratch_l1_read_bandwidth": {
+          "average": 0,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "shader_launch_limiter--compute_shader_launch_limiter": {
+          "average": 69.69234962621049,
+          "unit": "% Peak Performance",
+          "min": 0,
+          "max": 100.00178060866291,
+          "middle_80_percent_median": 93.74906515765184
+        },
+        "l1_cache_writes--stack_l1_write_accesses": {
+          "average": 17.556917758023527,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0.6456181813462686,
+          "max": 19.964567611953363,
+          "middle_80_percent_median": 17.579243696222434
+        },
+        "f32--f32_limiter": {
+          "average": 27.642379224060655,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.205486696543295,
+          "max": 29.754519275796078,
+          "middle_80_percent_median": 28.710419522056142
+        },
+        "instruction_throughput--instruction_throughput_utilization": {
+          "average": 31.99689459280542,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.24193678703500582,
+          "max": 34.353131453196205,
+          "middle_80_percent_median": 33.24764686420292
+        },
+        "l1_cache_reads--rt_scratch_l1_read_accesses": {
+          "average": 0,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_residency--l1_total_residency": {
+          "average": 90.97543299037163,
+          "unit": "% L1 Capacity",
+          "min": 1.683304148777252,
+          "max": 94.55127581597293,
+          "middle_80_percent_median": 93.08996872653532
+        },
+        "l1_cache--l1_cache_limiter": {
+          "average": 17.000285156468685,
+          "unit": "Percentage of Peak L1 Performance",
+          "min": 0.10213941730128386,
+          "max": 28.497937775302383,
+          "middle_80_percent_median": 16.97226759575623
+        },
+        "l1_residency--l1_buffer_residency": {
+          "average": 24.75047674074016,
+          "unit": "% L1 Capacity",
+          "min": 1.3594404530592206,
+          "max": 51.44512510891196,
+          "middle_80_percent_median": 25.04212441215387
+        },
+        "last_level_cache--last_level_cache_utilization": {
+          "average": 15.005399241885423,
+          "unit": "Percentage of Peak Cache Performance",
+          "min": 0.16320184504396254,
+          "max": 17.39167810367113,
+          "middle_80_percent_median": 15.157406574727553
+        },
+        "neural_accelerator--neural_accelerator_limiter": {
+          "average": 85.54271978826266,
+          "unit": "Percentage of Peak Neural Accelerator Performance",
+          "min": 0.12758663585184213,
+          "max": 91.79482460021973,
+          "middle_80_percent_median": 88.97139214759582
+        },
+        "l1_read_bandwidth--l1_read_bandwidth": {
+          "average": 12824.143499954676,
+          "unit": "GiB/s",
+          "min": 80.74024058539868,
+          "max": 14556760.37129267,
+          "middle_80_percent_median": 11182.750733814508
+        },
+        "l1_residency--l1_stack_residency": {
+          "average": 66.1306816356537,
+          "unit": "% L1 Capacity",
+          "min": 0.2815335755150933,
+          "max": 74.40286631630002,
+          "middle_80_percent_median": 67.72076342329625
+        },
+        "occupancy--total_occupancy": {
+          "average": 17.11881202838306,
+          "unit": "% Shader Core Resources",
+          "min": 0.07073283051455354,
+          "max": 58.19060914643156,
+          "middle_80_percent_median": 17.0626910927643
+        },
+        "l1_write_bandwidth--l1_write_bandwidth": {
+          "average": 2745.1070086328227,
+          "unit": "GiB/s",
+          "min": 17.364975860941218,
+          "max": 3121631.4915170916,
+          "middle_80_percent_median": 2387.1875661273134
+        },
+        "address_generation--address_generation_limiter": {
+          "average": 28.022096643716036,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.15002951100525452,
+          "max": 30.8558075975652,
+          "middle_80_percent_median": 28.679808691738188
+        },
+        "l1_residency--l1_register_residency": {
+          "average": 29.43683209119269,
+          "unit": "% L1 Capacity",
+          "min": 0,
+          "max": 82.11382682274451,
+          "middle_80_percent_median": 26.856314484396307
+        },
+        "f32--f32_utilization": {
+          "average": 10.285926588185294,
+          "unit": "Percentage of Peak F32 Performance",
+          "min": 0.07859590293229705,
+          "max": 11.209645761343612,
+          "middle_80_percent_median": 10.64699887203638
+        },
+        "integer_and_conditional--integer_and_conditional_utilization": {
+          "average": 20.444705299903593,
+          "unit": "Percentage of Peak Integer and Conditional Performance",
+          "min": 0.15648014666708454,
+          "max": 21.927690505981445,
+          "middle_80_percent_median": 21.205897855076078
+        },
+        "top_occupancy_target_influence--l1_cache_pressure_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "texture_compression--compression_ratio_of_texture_memory_read": {
+          "average": 0.596465599362298,
+          "unit": "Ratio of compressed to uncompressed memory",
+          "min": 0,
+          "max": 165.3,
+          "middle_80_percent_median": 0
+        },
+        "l1_read_bandwidth--threadgroup_memory_l1_read_bandwidth": {
+          "average": 0.007028913902251178,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 38.255972095708636,
+          "middle_80_percent_median": 0.0
+        },
+        "other_l1c_utilization--other_l1_read_accesses": {
+          "average": 0.004025279257477352,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0,
+          "max": 1.571817144483121,
+          "middle_80_percent_median": 3.5672443002454215e-06
+        },
+        "gpu_peak_bandwidth--gpu_peak_read_bandwidth": {
+          "average": 0,
+          "unit": "Percentage of Peak Memory Bandwidth",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0
+        },
+        "other_l1c_utilization--other_l1_write_accesses": {
+          "average": 0.0015780106348312103,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 0.47388111353680307,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_write_bandwidth--buffer_l1_write_bandwidth": {
+          "average": 1.400702688587565,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 1509.7756841383132,
+          "middle_80_percent_median": 0.5460315579579658
+        },
+        "top_occupancy_target_influence--register_pressure_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_read_bandwidth--register_l1_read_bandwidth": {
+          "average": 22.091195803114584,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 34196.499916426335,
+          "middle_80_percent_median": 9.602882967228226
+        },
+        "active_cores--rt_unit_active": {
+          "average": 0,
+          "unit": "% GPU Cores",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "occupancy--kernel_occupancy": {
+          "average": 16.774122166432306,
+          "unit": "Percentage of Shader Core Resources",
+          "min": 0.07073283051455354,
+          "max": 24.755384652319385,
+          "middle_80_percent_median": 16.936645489977213
+        },
+        "l1_read_bandwidth--stack_l1_read_bandwidth": {
+          "average": 5042.404946488022,
+          "unit": "GiB/s",
+          "min": 9.827544603096856,
+          "max": 5721450.159189645,
+          "middle_80_percent_median": 4399.562101243105
+        },
+        "l1_write_bandwidth--rt_scratch_l1_write_bandwidth": {
+          "average": 0,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "last_level_cache--last_level_cache_limiter": {
+          "average": 15.23549711094855,
+          "unit": "Percentage of Peak Cache Performance",
+          "min": 0.16320184504396254,
+          "max": 17.778000667859736,
+          "middle_80_percent_median": 15.308461171217136
+        },
+        "shader_launch_limiter--fragment_shader_launch_limiter": {
+          "average": 0.3527452211254554,
+          "unit": "% Peak Performance",
+          "min": 0,
+          "max": 20.568886288793063,
+          "middle_80_percent_median": 0.0
+        },
+        "address_generation--address_generation_utilization": {
+          "average": 10.59483267821085,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.07941855484868428,
+          "max": 11.356569925944012,
+          "middle_80_percent_median": 10.979530000414943
+        },
+        "f16--f16_limiter": {
+          "average": 0.008912685735660458,
+          "unit": "Percentage of Peak Performance",
+          "min": 0,
+          "max": 3.1502644391813472,
+          "middle_80_percent_median": 0.0
+        },
+        "bandwidth--gpu_bandwidth": {
+          "average": 760.3024059766335,
+          "unit": "GiB / Second",
+          "min": 2.360096781339526,
+          "max": 1338.3677896803347,
+          "middle_80_percent_median": 886.8802624930099
+        },
+        "gpu_peak_bandwidth--gpu_peak_bandwidth": {
+          "average": 0,
+          "unit": "Percentage of Peak Memory Bandwidth",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0
+        },
+        "texture_read_cache--texture_read_cache_limiter": {
+          "average": 0.0945411791184888,
+          "unit": "Percentage of Peak Texture Read Cache Performance",
+          "min": 0,
+          "max": 7.7622085602026365,
+          "middle_80_percent_median": 0
+        },
+        "occupancy_target_influences--memory_request_stalls_influence": {
+          "average": 0.8868386621946243,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 100,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_cache_reads--other_l1_read_accesses": {
+          "average": 0.004025279257477352,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0,
+          "max": 1.571817144483121,
+          "middle_80_percent_median": 3.5672443002454215e-06
+        },
+        "control_flow--control_flow_utilization": {
+          "average": 5.539718780798983,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.02856633960184725,
+          "max": 5.944948196411134,
+          "middle_80_percent_median": 5.756096219694502
+        },
+        "occupancy_target_influences--l1_cache_pressure_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "top_occupancy_target_influence--texture_decompression_stalls_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "occupancy--vs_occupancy": {
+          "average": 0.0002812496633835022,
+          "unit": "Percentage of Shader Core Resources",
+          "min": 0,
+          "max": 0.12827817538872816,
+          "middle_80_percent_median": 0.0
+        },
+        "occupancy_manager--occupancy_manager_target": {
+          "average": 18.572281109871657,
+          "unit": "% Shader Core Resources",
+          "min": 2.121345075057194,
+          "max": 95.51931937226024,
+          "middle_80_percent_median": 17.050807149724076
+        },
+        "l1_read_bandwidth--unclassified_l1_read_bandwidth": {
+          "average": 0.2557456807056965,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 321.1634863691654,
+          "middle_80_percent_median": 0.0004911796025990163
+        },
+        "l1_cache_writes--rt_scratch_l1_write_accesses": {
+          "average": 0,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "simd_groups_inflight_per_core--total_simd_groups_inflight": {
+          "average": 16.4340595472477,
+          "unit": "SIMD Groups",
+          "min": 0.0679035172939714,
+          "max": 55.862984780574294,
+          "middle_80_percent_median": 16.380183449053728
+        },
+        "l1_read_bandwidth--imageblock_l1_read_bandwidth": {
+          "average": 6.649623989484651,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 12621.018601995836,
+          "middle_80_percent_median": 0.0
+        },
+        "texture_read_cache--texture_read_cache_utilization": {
+          "average": 0.013358101331128474,
+          "unit": "Percentage of Peak Texture Read Cache Performance",
+          "min": 0,
+          "max": 0.9353980285506522,
+          "middle_80_percent_median": 0
+        },
+        "simd_groups_inflight_per_core--compute_simd_groups_inflight": {
+          "average": 16.103157279775036,
+          "unit": "SIMD Groups",
+          "min": 0.0679035172939714,
+          "max": 23.76516926622661,
+          "middle_80_percent_median": 16.259179670378124
+        },
+        "occupancy_target_influences--register_pressure_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "mmu--mmu_utilization": {
+          "average": 6.1747106771959785,
+          "unit": "Percentage of Peak MMU Performance",
+          "min": 0.028414335825717712,
+          "max": 10.826620208145616,
+          "middle_80_percent_median": 7.20661486322174
+        },
+        "texture_read--texture_read_limiter": {
+          "average": 0.09137059697420735,
+          "unit": "Percentage of Peak Texture Read Performance",
+          "min": 0,
+          "max": 7.723628313289057,
+          "middle_80_percent_median": 0
+        },
+        "l1_residency--l1_rt_scratch_residency": {
+          "average": 0,
+          "unit": "% L1 Capacity",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "texture_write--texture_write_utilization": {
+          "average": 0.03416133692614747,
+          "unit": "Percentage of Peak Texture Write Performance",
+          "min": 0,
+          "max": 5.4869109669748735,
+          "middle_80_percent_median": 0
+        },
+        "simd_groups_inflight_per_core--fragment_simd_groups_inflight": {
+          "average": 0.33063226779583005,
+          "unit": "SIMD Groups",
+          "min": 0,
+          "max": 43.19336846771413,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_write_bandwidth--imageblock_l1_write_bandwidth": {
+          "average": 8.14289301691766,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 15458.63881712844,
+          "middle_80_percent_median": 0.0
+        },
+        "mmu--mmu_limiter": {
+          "average": 7.880038665164466,
+          "unit": "Percentage of Peak MMU Performance",
+          "min": 0.029618145055350816,
+          "max": 14.959345069532839,
+          "middle_80_percent_median": 9.154186451465266
+        },
+        "l1_write_bandwidth--stack_l1_write_bandwidth": {
+          "average": 2735.458550263272,
+          "unit": "GiB/s",
+          "min": 10.668563841502625,
+          "max": 3104497.9415870938,
+          "middle_80_percent_median": 2385.6665719393095
+        },
+        "texture_read--texture_read_utilization": {
+          "average": 0.039777252974935104,
+          "unit": "Percentage of Peak Texture Read Performance",
+          "min": 0,
+          "max": 7.930061119308713,
+          "middle_80_percent_median": 0
+        },
+        "occupancy_target_influences--texture_decompression_stalls_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "l2_bandwidth--last_level_cache_bandwidth": {
+          "average": 1847.8916601582828,
+          "unit": "GB/s",
+          "min": 14.265555730203642,
+          "max": 2148.9408652721922,
+          "middle_80_percent_median": 1871.556747602244
+        },
+        "l1_write_bandwidth--threadgroup_memory_l1_write_bandwidth": {
+          "average": 0.0012323361782710764,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 6.709491559929987,
+          "middle_80_percent_median": 0.0
+        },
+        "neural_accelerator--neural_accelerator_utilization": {
+          "average": 84.40173122487712,
+          "unit": "Percentage of Peak Neural Accelerator Performance",
+          "min": 0.10405143663153393,
+          "max": 90.74299494425456,
+          "middle_80_percent_median": 87.82565261929291
+        },
+        "bandwidth--gpu_write_bandwidth": {
+          "average": 16.251487744884212,
+          "unit": "GiB / Second",
+          "min": 1.9438799474864374,
+          "max": 383.61978117613626,
+          "middle_80_percent_median": 8.203247045089029
+        }
+      }
+    },
+    "packed_medium": {
+      "frame": {
+        "Commands": "1",
+        "Consistent state": "yes",
+        "Cores": "1 sampled / 80 total",
+        "Encoders": "1",
+        "Frame begin": "0 ns",
+        "Frame duration": "760.0146 ms",
+        "Frame end": "760014625 ns",
+        "GPU time": "760.0146 ms",
+        "Overlap": "yes",
+        "Profiled state": "medium"
+      },
+      "shader": {
+        "ALU": "1045",
+        "Branch": "47",
+        "Cost": "99.46%",
+        "Device atomics": "0",
+        "Device loads": "160",
+        "Device stores": "32",
+        "FP16": "0",
+        "FP32": "351",
+        "Instructions": "1756",
+        "INT16": "89",
+        "INT32": "146",
+        "Invocations": "1",
+        "SIMD groups": "1199",
+        "Spilled bytes": "352",
+        "Stage": "compute",
+        "Temp registers": "126",
+        "Texture reads": "0",
+        "Texture writes": "0",
+        "Threadgroup atomics": "0",
+        "Threadgroup loads": "0",
+        "Threadgroup memory (bytes)": "0",
+        "Threadgroup stores": "0",
+        "Uniform registers": "68",
+        "Wait": "0"
+      },
+      "counters": {
+        "l1_cache--l1_cache_utilization": {
+          "average": 13.174788124645639,
+          "unit": "Percentage of Peak L1 Performance",
+          "min": 0.0012488760115895693,
+          "max": 14.195049860402314,
+          "middle_80_percent_median": 13.769129005419593
+        },
+        "texture_filtering--texture_filtering_limiter": {
+          "average": 0.12210037590151354,
+          "unit": "Percentage of Peak Texture Filtering Performance",
+          "min": 0,
+          "max": 10.792828758067454,
+          "middle_80_percent_median": 0
+        },
+        "l1_residency--l1_threadgroup_residency": {
+          "average": 0,
+          "unit": "% L1 Capacity",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "gpu_peak_bandwidth--gpu_peak_write_bandwidth": {
+          "average": 0,
+          "unit": "Percentage of Peak Memory Bandwidth",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0
+        },
+        "l1_cache_reads--stack_l1_read_accesses": {
+          "average": 32.33976378452632,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 2.7187765505522514,
+          "max": 32.60801452394548,
+          "middle_80_percent_median": 32.42222569533605
+        },
+        "l1_cache_reads--imageblock_l1_read_accesses": {
+          "average": 0.09342655860357935,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0,
+          "max": 18.335367056300434,
+          "middle_80_percent_median": 0.0
+        },
+        "integer_and_complex--integer_and_complex_limiter": {
+          "average": 2.4079362963935598,
+          "unit": "Percentage of Peak Integer and Complex Performance",
+          "min": 0.0007146346066318091,
+          "max": 4.052570934415802,
+          "middle_80_percent_median": 2.487436682542156
+        },
+        "alu--alu_utilization": {
+          "average": 16.3401288161067,
+          "unit": "Percentage of Peak ALU Performance",
+          "min": 0.00298299239018217,
+          "max": 17.531730886605175,
+          "middle_80_percent_median": 17.016286056515177
+        },
+        "instruction_throughput--instruction_throughput_limiter": {
+          "average": 71.57147335824835,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.00446364764767265,
+          "max": 75.00946677081188,
+          "middle_80_percent_median": 74.20509477141458
+        },
+        "l1_cache_reads--buffer_l1_read_accesses": {
+          "average": 49.86768943454104,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 21.75021240441801,
+          "max": 50.19297687288987,
+          "middle_80_percent_median": 49.991303065130424
+        },
+        "f16--f16_utilization": {
+          "average": 0.008107587410030717,
+          "unit": "Percentage of Peak F16 Performance",
+          "min": 0,
+          "max": 1.8667571404316332,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_read_bandwidth--buffer_l1_read_bandwidth": {
+          "average": 4347.291489657735,
+          "unit": "GiB/s",
+          "min": 0.15776772042189155,
+          "max": 4697.677979017563,
+          "middle_80_percent_median": 4552.5222436987715
+        },
+        "control_flow--control_flow_limiter": {
+          "average": 6.082114904666339,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.0008325840077263796,
+          "max": 7.777468639596857,
+          "middle_80_percent_median": 6.3500870230085305
+        },
+        "integer_and_conditional--integer_and_conditional_limiter": {
+          "average": 26.058006469569293,
+          "unit": "Percentage of Peak Integer and Conditional Performance",
+          "min": 0.009761180215583752,
+          "max": 27.562653540393523,
+          "middle_80_percent_median": 27.190643644545748
+        },
+        "l1_residency--l1_imageblock_residency": {
+          "average": 0.0984421816250438,
+          "unit": "% L1 Capacity",
+          "min": 0,
+          "max": 6.102321426325586,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_cache_writes--buffer_l1_write_accesses": {
+          "average": 0.009294918759735841,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 0.29708087500976826,
+          "middle_80_percent_median": 0.00394425874041834
+        },
+        "integer_and_complex--integer_and_complex_utilization": {
+          "average": 2.004255994767261,
+          "unit": "Percentage of Peak Integer and Complex Performance",
+          "min": 0.0003122190028973923,
+          "max": 3.36597888125902,
+          "middle_80_percent_median": 2.0701568283590897
+        },
+        "l1_write_bandwidth--unclassified_l1_write_bandwidth": {
+          "average": 0.08813268917411071,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 11.813812400008402,
+          "middle_80_percent_median": 0.0
+        },
+        "shader_launch_limiter--vertex_shader_launch_limiter": {
+          "average": 2.252132634387081,
+          "unit": "% Peak Performance",
+          "min": 0,
+          "max": 72.43591308593751,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_write_bandwidth--register_l1_write_bandwidth": {
+          "average": 15.174200127607039,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 246.68830791516996,
+          "middle_80_percent_median": 4.9382578758959905
+        },
+        "occupancy--fs_occupancy": {
+          "average": 0.4746543267527423,
+          "unit": "Percentage of Shader Core Resources",
+          "min": 0,
+          "max": 41.84412337131502,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_cache_reads--threadgroup_l1_read_accesses": {
+          "average": 0,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "bandwidth--gpu_read_bandwidth": {
+          "average": 467.94578115675205,
+          "unit": "GiB / Second",
+          "min": 1.4604427437860128,
+          "max": 984.2252067826304,
+          "middle_80_percent_median": 482.8733252455549
+        },
+        "texture_write--texture_write_limiter": {
+          "average": 0.047674243771379674,
+          "unit": "Percentage of Peak Texture Write Performance",
+          "min": 0,
+          "max": 3.1428947335446766,
+          "middle_80_percent_median": 0
+        },
+        "top_occupancy_target_influence--memory_request_stalls_influence": {
+          "average": 1.7314680309365458,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 100,
+          "middle_80_percent_median": 0.0
+        },
+        "simd_groups_inflight_per_core--vertex_simd_groups_inflight": {
+          "average": 0.0006420566510974009,
+          "unit": "SIMD Groups",
+          "min": 0,
+          "max": 0.4555307119166155,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_residency--l1_other_residency": {
+          "average": 0.033699170198912894,
+          "unit": "% L1 Capacity",
+          "min": 0,
+          "max": 0.627718593908112,
+          "middle_80_percent_median": 0.016900032641154063
+        },
+        "l1_cache_writes--other_l1_write_accesses": {
+          "average": 0.013548363493331488,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 72.8122344944775,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_cache_writes--threadgroup_l1_write_accesses": {
+          "average": 0,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "active_cores--active_cores": {
+          "average": 97.90003296976867,
+          "unit": "% GPU Cores",
+          "min": 1.25,
+          "max": 100.00000000000007,
+          "middle_80_percent_median": 100.0
+        },
+        "l1_cache_writes--imageblock_l1_write_accesses": {
+          "average": 0.11669799965678594,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 23.619587233784994,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_read_bandwidth--rt_scratch_l1_read_bandwidth": {
+          "average": 0,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "shader_launch_limiter--compute_shader_launch_limiter": {
+          "average": 61.27112660772485,
+          "unit": "% Peak Performance",
+          "min": 0,
+          "max": 100.02200811668499,
+          "middle_80_percent_median": 67.38595810470201
+        },
+        "l1_cache_writes--stack_l1_write_accesses": {
+          "average": 17.55424767686139,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 2.7187765505522514,
+          "max": 18.903382181269095,
+          "middle_80_percent_median": 17.578118282127164
+        },
+        "f32--f32_limiter": {
+          "average": 27.57762890517959,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.00016651680154527594,
+          "max": 29.77248628815098,
+          "middle_80_percent_median": 28.812687617558346
+        },
+        "instruction_throughput--instruction_throughput_utilization": {
+          "average": 31.89840793378351,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.0018384061983104097,
+          "max": 34.37929061443959,
+          "middle_80_percent_median": 33.353946168876746
+        },
+        "l1_cache_reads--rt_scratch_l1_read_accesses": {
+          "average": 0,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_residency--l1_total_residency": {
+          "average": 89.80398920913022,
+          "unit": "% L1 Capacity",
+          "min": 0.0017147472367461877,
+          "max": 93.48529604393033,
+          "middle_80_percent_median": 93.08207862586039
+        },
+        "l1_cache--l1_cache_limiter": {
+          "average": 16.01614935453489,
+          "unit": "Percentage of Peak L1 Performance",
+          "min": 0.0012488760115895693,
+          "max": 24.82778933084467,
+          "middle_80_percent_median": 15.866403241173456
+        },
+        "l1_residency--l1_buffer_residency": {
+          "average": 23.97799237409242,
+          "unit": "% L1 Capacity",
+          "min": 0.001189034036034236,
+          "max": 44.55159868382575,
+          "middle_80_percent_median": 24.7121219279921
+        },
+        "last_level_cache--last_level_cache_utilization": {
+          "average": 15.233767191310998,
+          "unit": "Percentage of Peak Cache Performance",
+          "min": 0.09147318075376662,
+          "max": 17.70751525841002,
+          "middle_80_percent_median": 15.32924491534641
+        },
+        "neural_accelerator--neural_accelerator_limiter": {
+          "average": 85.19596491212778,
+          "unit": "Percentage of Peak Neural Accelerator Performance",
+          "min": 0,
+          "max": 91.86482338604482,
+          "middle_80_percent_median": 89.25188854676439
+        },
+        "l1_read_bandwidth--l1_read_bandwidth": {
+          "average": 7171.31070662582,
+          "unit": "GiB/s",
+          "min": 0.17748868547462798,
+          "max": 7742.842383535151,
+          "middle_80_percent_median": 7506.076582072497
+        },
+        "l1_residency--l1_stack_residency": {
+          "average": 65.6938554832136,
+          "unit": "% L1 Capacity",
+          "min": 0.00010710846349396655,
+          "max": 74.00334159076695,
+          "middle_80_percent_median": 67.64235966701295
+        },
+        "occupancy--total_occupancy": {
+          "average": 17.324383408640283,
+          "unit": "% Shader Core Resources",
+          "min": 0.0062839856166487205,
+          "max": 52.24985536774324,
+          "middle_80_percent_median": 17.10987193264231
+        },
+        "l1_write_bandwidth--l1_write_bandwidth": {
+          "average": 1535.8243132736006,
+          "unit": "GiB/s",
+          "min": 0.5478730603713343,
+          "max": 1652.5490788975876,
+          "middle_80_percent_median": 1602.4804530965494
+        },
+        "address_generation--address_generation_limiter": {
+          "average": 27.62834441263871,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.0059651175053562905,
+          "max": 35.01156789549143,
+          "middle_80_percent_median": 28.66899265971771
+        },
+        "l1_residency--l1_register_residency": {
+          "average": 30.17825007469949,
+          "unit": "% L1 Capacity",
+          "min": 0,
+          "max": 84.894415299504,
+          "middle_80_percent_median": 27.096730359530884
+        },
+        "f32--f32_utilization": {
+          "average": 10.26773391525345,
+          "unit": "Percentage of Peak F32 Performance",
+          "min": 6.938200064386496e-05,
+          "max": 12.240773481796605,
+          "middle_80_percent_median": 10.686250290414748
+        },
+        "integer_and_conditional--integer_and_conditional_utilization": {
+          "average": 20.392052547372746,
+          "unit": "Percentage of Peak Integer and Conditional Performance",
+          "min": 0.005584383776823082,
+          "max": 21.943540050201037,
+          "middle_80_percent_median": 21.276841339831403
+        },
+        "top_occupancy_target_influence--l1_cache_pressure_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "texture_compression--compression_ratio_of_texture_memory_read": {
+          "average": 1.20152616145976,
+          "unit": "Ratio of compressed to uncompressed memory",
+          "min": 0,
+          "max": 273.625,
+          "middle_80_percent_median": 0
+        },
+        "l1_read_bandwidth--threadgroup_memory_l1_read_bandwidth": {
+          "average": 0,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "other_l1c_utilization--other_l1_read_accesses": {
+          "average": 0.005331263557787551,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0,
+          "max": 1.1015019978720229,
+          "middle_80_percent_median": 9.382037607957028e-06
+        },
+        "gpu_peak_bandwidth--gpu_peak_read_bandwidth": {
+          "average": 0,
+          "unit": "Percentage of Peak Memory Bandwidth",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0
+        },
+        "other_l1c_utilization--other_l1_write_accesses": {
+          "average": 0.013548363493331488,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 72.8122344944775,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_write_bandwidth--buffer_l1_write_bandwidth": {
+          "average": 0.7858744292257746,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 21.7625131899528,
+          "middle_80_percent_median": 0.33520233922002285
+        },
+        "top_occupancy_target_influence--register_pressure_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_read_bandwidth--register_l1_read_bandwidth": {
+          "average": 15.24689428206654,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 180.55782401623833,
+          "middle_80_percent_median": 7.471561599173858
+        },
+        "active_cores--rt_unit_active": {
+          "average": 0,
+          "unit": "% GPU Cores",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "occupancy--kernel_occupancy": {
+          "average": 16.849060272876006,
+          "unit": "Percentage of Shader Core Resources",
+          "min": 0.0062839856166487205,
+          "max": 23.61576495716713,
+          "middle_80_percent_median": 16.911274956449034
+        },
+        "l1_read_bandwidth--stack_l1_read_bandwidth": {
+          "average": 2819.647085590104,
+          "unit": "GiB/s",
+          "min": 0.019720965052736444,
+          "max": 3045.164404517589,
+          "middle_80_percent_median": 2953.547940108229
+        },
+        "l1_write_bandwidth--rt_scratch_l1_write_bandwidth": {
+          "average": 0,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "last_level_cache--last_level_cache_limiter": {
+          "average": 15.486930163870419,
+          "unit": "Percentage of Peak Cache Performance",
+          "min": 0.09147318075376662,
+          "max": 19.4840605132824,
+          "middle_80_percent_median": 15.52099905350706
+        },
+        "shader_launch_limiter--fragment_shader_launch_limiter": {
+          "average": 0.3030567537846406,
+          "unit": "% Peak Performance",
+          "min": 0,
+          "max": 18.410089043163296,
+          "middle_80_percent_median": 0.0
+        },
+        "address_generation--address_generation_utilization": {
+          "average": 10.576372594080393,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.0022202240206036787,
+          "max": 11.35637648656277,
+          "middle_80_percent_median": 11.014295373012432
+        },
+        "f16--f16_limiter": {
+          "average": 0.011062464787221794,
+          "unit": "Percentage of Peak Performance",
+          "min": 0,
+          "max": 2.8153698498339876,
+          "middle_80_percent_median": 0.0
+        },
+        "bandwidth--gpu_bandwidth": {
+          "average": 484.49535865104457,
+          "unit": "GiB / Second",
+          "min": 2.0688738084637923,
+          "max": 988.3621736924604,
+          "middle_80_percent_median": 498.4911104960135
+        },
+        "gpu_peak_bandwidth--gpu_peak_bandwidth": {
+          "average": 0,
+          "unit": "Percentage of Peak Memory Bandwidth",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0
+        },
+        "texture_read_cache--texture_read_cache_limiter": {
+          "average": 0.08301802066306763,
+          "unit": "Percentage of Peak Texture Read Cache Performance",
+          "min": 0,
+          "max": 8.96758965818658,
+          "middle_80_percent_median": 0
+        },
+        "occupancy_target_influences--memory_request_stalls_influence": {
+          "average": 1.7314680309365458,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 100,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_cache_reads--other_l1_read_accesses": {
+          "average": 0.005331263557787551,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0,
+          "max": 1.1015019978720229,
+          "middle_80_percent_median": 9.382037607957028e-06
+        },
+        "control_flow--control_flow_utilization": {
+          "average": 5.52406856191106,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.00027752800257545984,
+          "max": 5.979028896465455,
+          "middle_80_percent_median": 5.776973358468294
+        },
+        "occupancy_target_influences--l1_cache_pressure_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "top_occupancy_target_influence--texture_decompression_stalls_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "occupancy--vs_occupancy": {
+          "average": 0.0006688090115597924,
+          "unit": "Percentage of Shader Core Resources",
+          "min": 0,
+          "max": 0.47451115824647444,
+          "middle_80_percent_median": 0.0
+        },
+        "occupancy_manager--occupancy_manager_target": {
+          "average": 18.156051466259797,
+          "unit": "% Shader Core Resources",
+          "min": 0.39174002656868073,
+          "max": 86.66433984335266,
+          "middle_80_percent_median": 17.02689164892515
+        },
+        "l1_read_bandwidth--unclassified_l1_read_bandwidth": {
+          "average": 0.23618954160467656,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 28.77447924160554,
+          "middle_80_percent_median": 0.0008626495117017896
+        },
+        "l1_cache_writes--rt_scratch_l1_write_accesses": {
+          "average": 0,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "simd_groups_inflight_per_core--total_simd_groups_inflight": {
+          "average": 16.63140807229473,
+          "unit": "SIMD Groups",
+          "min": 0.006032626191982772,
+          "max": 50.1598611530335,
+          "middle_80_percent_median": 16.425477055336618
+        },
+        "l1_read_bandwidth--imageblock_l1_read_bandwidth": {
+          "average": 4.135941836315376,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 700.3422649296297,
+          "middle_80_percent_median": 0.0
+        },
+        "texture_read_cache--texture_read_cache_utilization": {
+          "average": 0.01613306884798358,
+          "unit": "Percentage of Peak Texture Read Cache Performance",
+          "min": 0,
+          "max": 1.119564321150265,
+          "middle_80_percent_median": 0
+        },
+        "simd_groups_inflight_per_core--compute_simd_groups_inflight": {
+          "average": 16.175097861960957,
+          "unit": "SIMD Groups",
+          "min": 0.006032626191982772,
+          "max": 22.671134358880444,
+          "middle_80_percent_median": 16.234823958191075
+        },
+        "occupancy_target_influences--register_pressure_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "mmu--mmu_utilization": {
+          "average": 5.884881537217502,
+          "unit": "Percentage of Peak MMU Performance",
+          "min": 0.09147318075376662,
+          "max": 11.952904390586795,
+          "middle_80_percent_median": 6.055859655058525
+        },
+        "texture_read--texture_read_limiter": {
+          "average": 0.07567087984669793,
+          "unit": "Percentage of Peak Texture Read Performance",
+          "min": 0,
+          "max": 8.557455497143614,
+          "middle_80_percent_median": 0
+        },
+        "l1_residency--l1_rt_scratch_residency": {
+          "average": 0,
+          "unit": "% L1 Capacity",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "texture_write--texture_write_utilization": {
+          "average": 0.04491461224879889,
+          "unit": "Percentage of Peak Texture Write Performance",
+          "min": 0,
+          "max": 2.8569914502069573,
+          "middle_80_percent_median": 0
+        },
+        "simd_groups_inflight_per_core--fragment_simd_groups_inflight": {
+          "average": 0.4556681536826343,
+          "unit": "SIMD Groups",
+          "min": 0,
+          "max": 40.17035843646242,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_write_bandwidth--imageblock_l1_write_bandwidth": {
+          "average": 5.201047181452178,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 936.1680605111809,
+          "middle_80_percent_median": 0.0
+        },
+        "mmu--mmu_limiter": {
+          "average": 7.629322511681166,
+          "unit": "Percentage of Peak MMU Performance",
+          "min": 0.09315306558270371,
+          "max": 16.9957114285369,
+          "middle_80_percent_median": 7.285624149159833
+        },
+        "l1_write_bandwidth--stack_l1_write_bandwidth": {
+          "average": 1529.7492589737494,
+          "unit": "GiB/s",
+          "min": 0.019720965052736444,
+          "max": 1652.5490788975876,
+          "middle_80_percent_median": 1601.2450858781397
+        },
+        "texture_read--texture_read_utilization": {
+          "average": 0.04495523445018363,
+          "unit": "Percentage of Peak Texture Read Performance",
+          "min": -2.013847213439611e-05,
+          "max": 4.049409405396691,
+          "middle_80_percent_median": 0
+        },
+        "occupancy_target_influences--texture_decompression_stalls_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "l2_bandwidth--last_level_cache_bandwidth": {
+          "average": 1253.8834042855551,
+          "unit": "GB/s",
+          "min": 2.0688738084637923,
+          "max": 1462.674264906463,
+          "middle_80_percent_median": 1263.2998886953478
+        },
+        "l1_write_bandwidth--threadgroup_memory_l1_write_bandwidth": {
+          "average": 0,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "neural_accelerator--neural_accelerator_utilization": {
+          "average": 84.10111924396928,
+          "unit": "Percentage of Peak Neural Accelerator Performance",
+          "min": 0,
+          "max": 90.84191277433234,
+          "middle_80_percent_median": 88.10601067608447
+        },
+        "bandwidth--gpu_write_bandwidth": {
+          "average": 16.549577494293715,
+          "unit": "GiB / Second",
+          "min": 0.6084310646777795,
+          "max": 216.80964758463176,
+          "middle_80_percent_median": 6.411166684945158
+        }
+      }
+    },
+    "no_query_cache_high": {
+      "frame": {
+        "Commands": "1",
+        "Consistent state": "yes",
+        "Cores": "1 sampled / 80 total",
+        "Encoders": "1",
+        "Frame begin": "0 ns",
+        "Frame duration": "605.8483 ms",
+        "Frame end": "605848250 ns",
+        "GPU time": "605.8483 ms",
+        "Overlap": "yes",
+        "Profiled state": "max"
+      },
+      "shader": {
+        "ALU": "1094",
+        "Branch": "49",
+        "Cost": "99.70%",
+        "Device atomics": "0",
+        "Device loads": "160",
+        "Device stores": "32",
+        "FP16": "0",
+        "FP32": "351",
+        "Instructions": "1833",
+        "INT16": "94",
+        "INT32": "164",
+        "Invocations": "1",
+        "SIMD groups": "384",
+        "Spilled bytes": "368",
+        "Stage": "compute",
+        "Temp registers": "126",
+        "Texture reads": "0",
+        "Texture writes": "0",
+        "Threadgroup atomics": "0",
+        "Threadgroup loads": "0",
+        "Threadgroup memory (bytes)": "0",
+        "Threadgroup stores": "0",
+        "Uniform registers": "88",
+        "Wait": "0"
+      },
+      "counters": {
+        "l1_cache--l1_cache_utilization": {
+          "average": 17.5480368536904,
+          "unit": "Percentage of Peak L1 Performance",
+          "min": 0.06305580959977894,
+          "max": 19.72030222415924,
+          "middle_80_percent_median": 18.167182163411844
+        },
+        "texture_filtering--texture_filtering_limiter": {
+          "average": 0.07878576283452064,
+          "unit": "Percentage of Peak Texture Filtering Performance",
+          "min": 0,
+          "max": 9.988917356107885,
+          "middle_80_percent_median": 0
+        },
+        "l1_residency--l1_threadgroup_residency": {
+          "average": 0,
+          "unit": "% L1 Capacity",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "gpu_peak_bandwidth--gpu_peak_write_bandwidth": {
+          "average": 0,
+          "unit": "Percentage of Peak Memory Bandwidth",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0
+        },
+        "l1_cache_reads--stack_l1_read_accesses": {
+          "average": 28.976203458745246,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 1.4430970140260662,
+          "max": 29.15005184852875,
+          "middle_80_percent_median": 29.024677801213535
+        },
+        "l1_cache_reads--imageblock_l1_read_accesses": {
+          "average": 0.06854600364511983,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0,
+          "max": 41.68457402656748,
+          "middle_80_percent_median": 0.0
+        },
+        "integer_and_complex--integer_and_complex_limiter": {
+          "average": 3.632827061056973,
+          "unit": "Percentage of Peak Integer and Complex Performance",
+          "min": 0.01815116762538336,
+          "max": 4.522235821767119,
+          "middle_80_percent_median": 3.745949258382758
+        },
+        "alu--alu_utilization": {
+          "average": 15.512564879402154,
+          "unit": "Percentage of Peak ALU Performance",
+          "min": 0.08157773901798929,
+          "max": 17.35575831711877,
+          "middle_80_percent_median": 16.009881203471153
+        },
+        "instruction_throughput--instruction_throughput_limiter": {
+          "average": 73.9305714142873,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.20757559430262898,
+          "max": 76.80820135153179,
+          "middle_80_percent_median": 76.07170893693842
+        },
+        "l1_cache_reads--buffer_l1_read_accesses": {
+          "average": 45.892134674462426,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 2.2078834802074265,
+          "max": 46.111249068785696,
+          "middle_80_percent_median": 45.969868597342774
+        },
+        "f16--f16_utilization": {
+          "average": 0.005605665489169708,
+          "unit": "Percentage of Peak F16 Performance",
+          "min": 0,
+          "max": 1.4517336948803523,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_read_bandwidth--buffer_l1_read_bandwidth": {
+          "average": 6822.621882936248,
+          "unit": "GiB/s",
+          "min": 4.216809510212517,
+          "max": 7676.774334175872,
+          "middle_80_percent_median": 7068.447966312628
+        },
+        "control_flow--control_flow_limiter": {
+          "average": 7.621615546559503,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.028591020530789765,
+          "max": 8.611195353627833,
+          "middle_80_percent_median": 7.883144680134928
+        },
+        "integer_and_conditional--integer_and_conditional_limiter": {
+          "average": 33.3555187864715,
+          "unit": "Percentage of Peak Integer and Conditional Performance",
+          "min": 0.14762202657959383,
+          "max": 37.52839976955888,
+          "middle_80_percent_median": 34.25757347317332
+        },
+        "l1_residency--l1_imageblock_residency": {
+          "average": 0.07253859413471422,
+          "unit": "% L1 Capacity",
+          "min": 0,
+          "max": 5.973427546726275,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_cache_writes--buffer_l1_write_accesses": {
+          "average": 0.006901962668513429,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 0.22543281564434614,
+          "middle_80_percent_median": 0.0036672206430329738
+        },
+        "integer_and_complex--integer_and_complex_utilization": {
+          "average": 2.3708878090547603,
+          "unit": "Percentage of Peak Integer and Complex Performance",
+          "min": 0.01237931803964052,
+          "max": 3.4720108492680013,
+          "middle_80_percent_median": 2.437363053286611
+        },
+        "l1_write_bandwidth--unclassified_l1_write_bandwidth": {
+          "average": 0.08763114457927311,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 12.152363690351507,
+          "middle_80_percent_median": 0.0
+        },
+        "shader_launch_limiter--vertex_shader_launch_limiter": {
+          "average": 1.7934120235647169,
+          "unit": "% Peak Performance",
+          "min": 0,
+          "max": 59.95560810037757,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_write_bandwidth--register_l1_write_bandwidth": {
+          "average": 9.056245353990928,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 403.18334611137897,
+          "middle_80_percent_median": 1.0621523337955803
+        },
+        "occupancy--fs_occupancy": {
+          "average": 0.37872597116126855,
+          "unit": "Percentage of Shader Core Resources",
+          "min": 0,
+          "max": 42.749923259767655,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_cache_reads--threadgroup_l1_read_accesses": {
+          "average": 0,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "bandwidth--gpu_read_bandwidth": {
+          "average": 709.9518618328451,
+          "unit": "GiB / Second",
+          "min": 1.7370302063945704,
+          "max": 1154.9716716356838,
+          "middle_80_percent_median": 872.5413968258541
+        },
+        "texture_write--texture_write_limiter": {
+          "average": 0.03117468239713156,
+          "unit": "Percentage of Peak Texture Write Performance",
+          "min": 0,
+          "max": 4.100184142191027,
+          "middle_80_percent_median": 0
+        },
+        "top_occupancy_target_influence--memory_request_stalls_influence": {
+          "average": 0.8692447344496935,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 100,
+          "middle_80_percent_median": 0.0
+        },
+        "simd_groups_inflight_per_core--vertex_simd_groups_inflight": {
+          "average": 0.00029940978477991113,
+          "unit": "SIMD Groups",
+          "min": 0,
+          "max": 0.1226612504309505,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_residency--l1_other_residency": {
+          "average": 0.02901607500970823,
+          "unit": "% L1 Capacity",
+          "min": 0,
+          "max": 0.8431844026483645,
+          "middle_80_percent_median": 0.010536884298606573
+        },
+        "l1_cache_writes--other_l1_write_accesses": {
+          "average": 0.0014871869282251163,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 1.7344350577421976,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_cache_writes--threadgroup_l1_write_accesses": {
+          "average": 0,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "active_cores--active_cores": {
+          "average": 98.38730517744203,
+          "unit": "% GPU Cores",
+          "min": 1.25,
+          "max": 100.00000000000006,
+          "middle_80_percent_median": 100.0
+        },
+        "l1_cache_writes--imageblock_l1_write_accesses": {
+          "average": 0.0844569993178872,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 42.036069230865635,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_read_bandwidth--rt_scratch_l1_read_bandwidth": {
+          "average": 0,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "shader_launch_limiter--compute_shader_launch_limiter": {
+          "average": 65.45004692663198,
+          "unit": "% Peak Performance",
+          "min": 0,
+          "max": 100.00221309849051,
+          "middle_80_percent_median": 81.25072466990845
+        },
+        "l1_cache_writes--stack_l1_write_accesses": {
+          "average": 24.966775169789287,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 9.927763204448544,
+          "max": 25.83640069712719,
+          "middle_80_percent_median": 24.998884050728716
+        },
+        "f32--f32_limiter": {
+          "average": 22.25360968102978,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.10869005477654525,
+          "max": 25.045342445373535,
+          "middle_80_percent_median": 23.020488510249493
+        },
+        "instruction_throughput--instruction_throughput_utilization": {
+          "average": 28.556038637989573,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.15124314101145883,
+          "max": 32.06931799650192,
+          "middle_80_percent_median": 29.55443979969713
+        },
+        "l1_cache_reads--rt_scratch_l1_read_accesses": {
+          "average": 0,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_residency--l1_total_residency": {
+          "average": 85.38214911184325,
+          "unit": "% L1 Capacity",
+          "min": 0.16437882940706147,
+          "max": 88.4903386076191,
+          "middle_80_percent_median": 87.53153110996519
+        },
+        "l1_cache--l1_cache_limiter": {
+          "average": 24.434024589164327,
+          "unit": "Percentage of Peak L1 Performance",
+          "min": 0.06309886156055852,
+          "max": 30.56917531616845,
+          "middle_80_percent_median": 24.866523472374418
+        },
+        "l1_residency--l1_buffer_residency": {
+          "average": 41.90780368302247,
+          "unit": "% L1 Capacity",
+          "min": 0.01896754754074481,
+          "max": 56.30719843727358,
+          "middle_80_percent_median": 43.282107384916
+        },
+        "last_level_cache--last_level_cache_utilization": {
+          "average": 21.509892493273814,
+          "unit": "Percentage of Peak Cache Performance",
+          "min": 0.12475450500763245,
+          "max": 26.45081901635336,
+          "middle_80_percent_median": 21.699092712336633
+        },
+        "neural_accelerator--neural_accelerator_limiter": {
+          "average": 72.05630815613956,
+          "unit": "Percentage of Peak Neural Accelerator Performance",
+          "min": 0,
+          "max": 80.83113193511964,
+          "middle_80_percent_median": 74.71012994898578
+        },
+        "l1_read_bandwidth--l1_read_bandwidth": {
+          "average": 11135.07430388929,
+          "unit": "GiB/s",
+          "min": 59.025033526602364,
+          "max": 12522.808165697035,
+          "middle_80_percent_median": 11532.94896233298
+        },
+        "l1_residency--l1_stack_residency": {
+          "average": 43.37279075967644,
+          "unit": "% L1 Capacity",
+          "min": 0.06693764047741839,
+          "max": 53.02074355776908,
+          "middle_80_percent_median": 44.07627116332985
+        },
+        "occupancy--total_occupancy": {
+          "average": 16.928200054695438,
+          "unit": "% Shader Core Resources",
+          "min": 0.0520849227177711,
+          "max": 56.64092130256378,
+          "middle_80_percent_median": 16.81027011949564
+        },
+        "l1_write_bandwidth--l1_write_bandwidth": {
+          "average": 3717.435088948605,
+          "unit": "GiB/s",
+          "min": 19.701541449905488,
+          "max": 4173.58097116208,
+          "middle_80_percent_median": 3846.2495683874313
+        },
+        "address_generation--address_generation_limiter": {
+          "average": 33.29137367147943,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.15761130777094554,
+          "max": 38.009963415657644,
+          "middle_80_percent_median": 33.93459217864754
+        },
+        "l1_residency--l1_register_residency": {
+          "average": 28.307287633065336,
+          "unit": "% L1 Capacity",
+          "min": 0,
+          "max": 92.31084992941895,
+          "middle_80_percent_median": 24.27638618199952
+        },
+        "f32--f32_utilization": {
+          "average": 8.616725677138628,
+          "unit": "Percentage of Peak F32 Performance",
+          "min": 0.04511149849707808,
+          "max": 9.90795188055212,
+          "middle_80_percent_median": 8.884829884851747
+        },
+        "integer_and_conditional--integer_and_conditional_utilization": {
+          "average": 20.02630494163274,
+          "unit": "Percentage of Peak Integer and Conditional Performance",
+          "min": 0.10566466149925999,
+          "max": 22.465832570294918,
+          "middle_80_percent_median": 20.69387291658837
+        },
+        "top_occupancy_target_influence--l1_cache_pressure_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "texture_compression--compression_ratio_of_texture_memory_read": {
+          "average": 1.2392535075172135,
+          "unit": "Ratio of compressed to uncompressed memory",
+          "min": 0,
+          "max": 576.7777777777778,
+          "middle_80_percent_median": 0
+        },
+        "l1_read_bandwidth--threadgroup_memory_l1_read_bandwidth": {
+          "average": 0,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "other_l1c_utilization--other_l1_read_accesses": {
+          "average": 0.003494544443314358,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0,
+          "max": 0.981286651236792,
+          "middle_80_percent_median": 3.3865048494468097e-06
+        },
+        "gpu_peak_bandwidth--gpu_peak_read_bandwidth": {
+          "average": 0,
+          "unit": "Percentage of Peak Memory Bandwidth",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0
+        },
+        "other_l1c_utilization--other_l1_write_accesses": {
+          "average": 0.0014871869282251163,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 1.7344350577421976,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_write_bandwidth--buffer_l1_write_bandwidth": {
+          "average": 0.9851734060336563,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 15.192286533336716,
+          "middle_80_percent_median": 0.5324967448768861
+        },
+        "top_occupancy_target_influence--register_pressure_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_read_bandwidth--register_l1_read_bandwidth": {
+          "average": 9.293036139962284,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 280.16561360338545,
+          "middle_80_percent_median": 3.1432122132515055
+        },
+        "active_cores--rt_unit_active": {
+          "average": 0,
+          "unit": "% GPU Cores",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "occupancy--kernel_occupancy": {
+          "average": 16.54916219834171,
+          "unit": "Percentage of Shader Core Resources",
+          "min": 0.0520849227177711,
+          "max": 23.183099342070516,
+          "middle_80_percent_median": 16.71296653658644
+        },
+        "l1_read_bandwidth--stack_l1_read_bandwidth": {
+          "average": 4307.985318007546,
+          "unit": "GiB/s",
+          "min": 2.7561532424404493,
+          "max": 4846.033831521164,
+          "middle_80_percent_median": 4464.6436321324345
+        },
+        "l1_write_bandwidth--rt_scratch_l1_write_bandwidth": {
+          "average": 0,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "last_level_cache--last_level_cache_limiter": {
+          "average": 21.557270496095832,
+          "unit": "Percentage of Peak Cache Performance",
+          "min": 0.12475450500763245,
+          "max": 26.45081901635336,
+          "middle_80_percent_median": 21.723920954982873
+        },
+        "shader_launch_limiter--fragment_shader_launch_limiter": {
+          "average": 0.37656327216478114,
+          "unit": "% Peak Performance",
+          "min": 0,
+          "max": 18.083080983363974,
+          "middle_80_percent_median": 0.0
+        },
+        "address_generation--address_generation_utilization": {
+          "average": 11.084134962314328,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.05864375889046942,
+          "max": 12.422513961791992,
+          "middle_80_percent_median": 11.445354331288609
+        },
+        "f16--f16_limiter": {
+          "average": 0.007596539555388238,
+          "unit": "Percentage of Peak Performance",
+          "min": 0,
+          "max": 2.191980135624512,
+          "middle_80_percent_median": 0.0
+        },
+        "bandwidth--gpu_bandwidth": {
+          "average": 721.7317636541029,
+          "unit": "GiB / Second",
+          "min": 2.3056445557856113,
+          "max": 1161.6356427974667,
+          "middle_80_percent_median": 885.4906829455595
+        },
+        "gpu_peak_bandwidth--gpu_peak_bandwidth": {
+          "average": 0,
+          "unit": "Percentage of Peak Memory Bandwidth",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0
+        },
+        "texture_read_cache--texture_read_cache_limiter": {
+          "average": 0.05920955223323138,
+          "unit": "Percentage of Peak Texture Read Cache Performance",
+          "min": 0,
+          "max": 9.972339304531086,
+          "middle_80_percent_median": 0
+        },
+        "occupancy_target_influences--memory_request_stalls_influence": {
+          "average": 0.8692447344496935,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 100,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_cache_reads--other_l1_read_accesses": {
+          "average": 0.003494544443314358,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0,
+          "max": 0.981286651236792,
+          "middle_80_percent_median": 3.3865048494468097e-06
+        },
+        "control_flow--control_flow_utilization": {
+          "average": 6.987692622171547,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.007429036310852127,
+          "max": 7.861017320972111,
+          "middle_80_percent_median": 7.236330319602729
+        },
+        "occupancy_target_influences--l1_cache_pressure_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "top_occupancy_target_influence--texture_decompression_stalls_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "occupancy--vs_occupancy": {
+          "average": 0.0003118851924790739,
+          "unit": "Percentage of Shader Core Resources",
+          "min": 0,
+          "max": 0.12777213586557343,
+          "middle_80_percent_median": 0.0
+        },
+        "occupancy_manager--occupancy_manager_target": {
+          "average": 17.816597424320374,
+          "unit": "% Shader Core Resources",
+          "min": 1.5621543695318878,
+          "max": 92.65917960303044,
+          "middle_80_percent_median": 16.742971197752425
+        },
+        "l1_read_bandwidth--unclassified_l1_read_bandwidth": {
+          "average": 0.23852243312714355,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 44.63200078311908,
+          "middle_80_percent_median": 0.0005523722177380819
+        },
+        "l1_cache_writes--rt_scratch_l1_write_accesses": {
+          "average": 0,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "simd_groups_inflight_per_core--total_simd_groups_inflight": {
+          "average": 16.251072052507567,
+          "unit": "SIMD Groups",
+          "min": 0.050001525809060254,
+          "max": 54.37528445046124,
+          "middle_80_percent_median": 16.13785931471581
+        },
+        "l1_read_bandwidth--imageblock_l1_read_bandwidth": {
+          "average": 4.228580512362844,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 816.7525667635164,
+          "middle_80_percent_median": 0.0
+        },
+        "texture_read_cache--texture_read_cache_utilization": {
+          "average": 0.01053873406319195,
+          "unit": "Percentage of Peak Texture Read Cache Performance",
+          "min": 0,
+          "max": 1.320565765821608,
+          "middle_80_percent_median": 0
+        },
+        "simd_groups_inflight_per_core--compute_simd_groups_inflight": {
+          "average": 15.887195710407974,
+          "unit": "SIMD Groups",
+          "min": 0.050001525809060254,
+          "max": 22.255775368387695,
+          "middle_80_percent_median": 16.044447875122984
+        },
+        "occupancy_target_influences--register_pressure_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "mmu--mmu_utilization": {
+          "average": 5.8713846302087065,
+          "unit": "Percentage of Peak MMU Performance",
+          "min": 0.10644418537547937,
+          "max": 9.415750858243323,
+          "middle_80_percent_median": 7.19094435189392
+        },
+        "texture_read--texture_read_limiter": {
+          "average": 0.054258841588192996,
+          "unit": "Percentage of Peak Texture Read Performance",
+          "min": 0,
+          "max": 9.887885080270255,
+          "middle_80_percent_median": 0
+        },
+        "l1_residency--l1_rt_scratch_residency": {
+          "average": 0,
+          "unit": "% L1 Capacity",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "texture_write--texture_write_utilization": {
+          "average": 0.030555011948620984,
+          "unit": "Percentage of Peak Texture Write Performance",
+          "min": 0,
+          "max": 3.672102312018058,
+          "middle_80_percent_median": 0
+        },
+        "simd_groups_inflight_per_core--fragment_simd_groups_inflight": {
+          "average": 0.3635769323148178,
+          "unit": "SIMD Groups",
+          "min": 0,
+          "max": 41.039926329376954,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_write_bandwidth--imageblock_l1_write_bandwidth": {
+          "average": 5.254468786395276,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 1223.4954995312503,
+          "middle_80_percent_median": 0.0
+        },
+        "mmu--mmu_limiter": {
+          "average": 6.280547118752421,
+          "unit": "Percentage of Peak MMU Performance",
+          "min": 0.10843665065713541,
+          "max": 10.612862391954305,
+          "middle_80_percent_median": 7.681827802027874
+        },
+        "l1_write_bandwidth--stack_l1_write_bandwidth": {
+          "average": 3711.10781561159,
+          "unit": "GiB/s",
+          "min": 18.96091287014998,
+          "max": 4173.58097116208,
+          "middle_80_percent_median": 3844.3757324354065
+        },
+        "texture_read--texture_read_utilization": {
+          "average": 0.029126227612257187,
+          "unit": "Percentage of Peak Texture Read Performance",
+          "min": 0,
+          "max": 3.4684189940036947,
+          "middle_80_percent_median": 0
+        },
+        "occupancy_target_influences--texture_decompression_stalls_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "l2_bandwidth--last_level_cache_bandwidth": {
+          "average": 2638.720587858118,
+          "unit": "GB/s",
+          "min": 2.702257002258365,
+          "max": 3107.2096508918544,
+          "middle_80_percent_median": 2675.774379601353
+        },
+        "l1_write_bandwidth--threadgroup_memory_l1_write_bandwidth": {
+          "average": 0,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "neural_accelerator--neural_accelerator_utilization": {
+          "average": 70.66926468982506,
+          "unit": "Percentage of Peak Neural Accelerator Performance",
+          "min": 0,
+          "max": 79.51722621917725,
+          "middle_80_percent_median": 73.25776205220595
+        },
+        "bandwidth--gpu_write_bandwidth": {
+          "average": 11.779901821257791,
+          "unit": "GiB / Second",
+          "min": 0.5686143493910409,
+          "max": 228.57446286659257,
+          "middle_80_percent_median": 5.41648483292488
+        }
+      }
+    },
+    "m32row_medium_partial": {
+      "frame": {
+        "Commands": "1",
+        "Consistent state": "yes",
+        "Cores": "80 sampled / 80 total",
+        "Encoders": "1",
+        "Frame begin": "0 ns",
+        "Frame duration": "3162.2504 ms",
+        "Frame end": "3162250416 ns",
+        "GPU time": "3162.2504 ms",
+        "Overlap": "yes",
+        "Profiled state": "medium"
+      },
+      "shader": null,
+      "counters": {
+        "l1_cache--l1_cache_utilization": {
+          "average": 3.663346067787581,
+          "unit": "Percentage of Peak L1 Performance",
+          "min": 0.039069811393347496,
+          "max": 5.408536453645625,
+          "middle_80_percent_median": 3.71107816696167
+        },
+        "texture_filtering--texture_filtering_limiter": {
+          "average": 0.12217539142912534,
+          "unit": "Percentage of Peak Texture Filtering Performance",
+          "min": 0,
+          "max": 3.337109657841085,
+          "middle_80_percent_median": 0.006306319533348189
+        },
+        "l1_residency--l1_threadgroup_residency": {
+          "average": 0,
+          "unit": "% L1 Capacity",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "gpu_peak_bandwidth--gpu_peak_write_bandwidth": {
+          "average": 0,
+          "unit": "Percentage of Peak Memory Bandwidth",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_cache_reads--stack_l1_read_accesses": {
+          "average": 43.612210021046366,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0.045146587576152725,
+          "max": 43.931444518790315,
+          "middle_80_percent_median": 43.84330322963666
+        },
+        "l1_cache_reads--imageblock_l1_read_accesses": {
+          "average": 0.21735888698623804,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0,
+          "max": 28.093571700068342,
+          "middle_80_percent_median": 0.0
+        },
+        "integer_and_complex--integer_and_complex_limiter": {
+          "average": 0.5831325375729407,
+          "unit": "Percentage of Peak Integer and Complex Performance",
+          "min": 0.008932689052083456,
+          "max": 1.96408680160329,
+          "middle_80_percent_median": 0.565864008359196
+        },
+        "alu--alu_utilization": {
+          "average": 4.339401856512803,
+          "unit": "Percentage of Peak ALU Performance",
+          "min": 0.05072912166816499,
+          "max": 7.117187807890338,
+          "middle_80_percent_median": 4.359814282193694
+        },
+        "instruction_throughput--instruction_throughput_limiter": {
+          "average": 31.24869707623593,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.12607613308659563,
+          "max": 38.061038850045,
+          "middle_80_percent_median": 31.80744932622503
+        },
+        "l1_cache_reads--buffer_l1_read_accesses": {
+          "average": 20.909267726408952,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 11.139977454420388,
+          "max": 31.999057989197727,
+          "middle_80_percent_median": 20.999298109154378
+        },
+        "f16--f16_utilization": {
+          "average": 0.009617064528941009,
+          "unit": "Percentage of Peak F16 Performance",
+          "min": 0,
+          "max": 0.8472974900171135,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_read_bandwidth--buffer_l1_read_bandwidth": {
+          "average": 521.4227691138622,
+          "unit": "GiB/s",
+          "min": 2.875851280238133,
+          "max": 781.4577553400032,
+          "middle_80_percent_median": 531.806666025835
+        },
+        "control_flow--control_flow_limiter": {
+          "average": 0.8010399755911052,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.005316195340673235,
+          "max": 1.6332733224561462,
+          "middle_80_percent_median": 0.7974395958853489
+        },
+        "integer_and_conditional--integer_and_conditional_limiter": {
+          "average": 29.310073184234522,
+          "unit": "Percentage of Peak Integer and Conditional Performance",
+          "min": 0.15363414593567118,
+          "max": 36.363225541183795,
+          "middle_80_percent_median": 30.57371891595917
+        },
+        "l1_residency--l1_imageblock_residency": {
+          "average": 0.06261125431161263,
+          "unit": "% L1 Capacity",
+          "min": 0,
+          "max": 2.5538100601027414,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_cache_writes--buffer_l1_write_accesses": {
+          "average": 0.007921432902248633,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 0.14805780472239616,
+          "middle_80_percent_median": 0.006535273618751161
+        },
+        "integer_and_complex--integer_and_complex_utilization": {
+          "average": 0.5442309758126047,
+          "unit": "Percentage of Peak Integer and Complex Performance",
+          "min": 0.00824859020910439,
+          "max": 1.5974303399920717,
+          "middle_80_percent_median": 0.5323951527691692
+        },
+        "l1_write_bandwidth--unclassified_l1_write_bandwidth": {
+          "average": 0.09345714453495335,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 5.349025017292605,
+          "middle_80_percent_median": 0.0
+        },
+        "shader_launch_limiter--vertex_shader_launch_limiter": {
+          "average": 1.2907628520311394,
+          "unit": "% Peak Performance",
+          "min": 0,
+          "max": 125.7310410670345,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_write_bandwidth--register_l1_write_bandwidth": {
+          "average": 7.013319015555061,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 58.31924076068611,
+          "middle_80_percent_median": 0.2563457962828102
+        },
+        "occupancy--fs_occupancy": {
+          "average": 0.4428827568379388,
+          "unit": "Percentage of Shader Core Resources",
+          "min": 0,
+          "max": 18.69522063254553,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_cache_reads--threadgroup_l1_read_accesses": {
+          "average": 0,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "bandwidth--gpu_read_bandwidth": {
+          "average": 775.6440389767873,
+          "unit": "GiB / Second",
+          "min": 7.2646630938105305,
+          "max": 882.2636537130704,
+          "middle_80_percent_median": 786.1910754225635
+        },
+        "texture_write--texture_write_limiter": {
+          "average": 0.056766579070458,
+          "unit": "Percentage of Peak Texture Write Performance",
+          "min": 0,
+          "max": 0.975977802720501,
+          "middle_80_percent_median": 0.002734824632716114
+        },
+        "top_occupancy_target_influence--memory_request_stalls_influence": {
+          "average": 18.5124776385013,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 19.554755784770794,
+          "middle_80_percent_median": 19.481341980430855
+        },
+        "simd_groups_inflight_per_core--vertex_simd_groups_inflight": {
+          "average": 0.0005699736304873558,
+          "unit": "SIMD Groups",
+          "min": 0,
+          "max": 0.06429168393181962,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_residency--l1_other_residency": {
+          "average": 0.00825234278607769,
+          "unit": "% L1 Capacity",
+          "min": 0,
+          "max": 0.3823691907814458,
+          "middle_80_percent_median": 0.00037392141017780723
+        },
+        "l1_cache_writes--other_l1_write_accesses": {
+          "average": 0.004642272178430458,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 1.7902318827463934,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_cache_writes--threadgroup_l1_write_accesses": {
+          "average": 0,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "active_cores--active_cores": {
+          "average": 95.37440368610405,
+          "unit": "% GPU Cores",
+          "min": 1.25,
+          "max": 100.00000000000003,
+          "middle_80_percent_median": 100.0
+        },
+        "l1_cache_writes--imageblock_l1_write_accesses": {
+          "average": 0.264865028613193,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 32.894224392776984,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_read_bandwidth--rt_scratch_l1_read_bandwidth": {
+          "average": 0,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "shader_launch_limiter--compute_shader_launch_limiter": {
+          "average": 37.3105146657242,
+          "unit": "% Peak Performance",
+          "min": 0,
+          "max": 100.05655487160708,
+          "middle_80_percent_median": 28.750297851284405
+        },
+        "l1_cache_writes--stack_l1_write_accesses": {
+          "average": 34.972216378442496,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 10.880944643496218,
+          "max": 37.615677951129555,
+          "middle_80_percent_median": 35.132805892573636
+        },
+        "f32--f32_limiter": {
+          "average": 3.8756180955333,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.04578317824660542,
+          "max": 7.350352255524929,
+          "middle_80_percent_median": 3.8899438123387373
+        },
+        "instruction_throughput--instruction_throughput_utilization": {
+          "average": 7.561471480665156,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.0747875926499765,
+          "max": 11.174776334720896,
+          "middle_80_percent_median": 7.664462710291718
+        },
+        "l1_cache_reads--rt_scratch_l1_read_accesses": {
+          "average": 0,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_residency--l1_total_residency": {
+          "average": 87.6462232584507,
+          "unit": "% L1 Capacity",
+          "min": 0.6575063465060595,
+          "max": 92.48436313981423,
+          "middle_80_percent_median": 92.30892052581683
+        },
+        "l1_cache--l1_cache_limiter": {
+          "average": 6.865521671252521,
+          "unit": "Percentage of Peak L1 Performance",
+          "min": 0.039069811393347496,
+          "max": 8.245739344791831,
+          "middle_80_percent_median": 7.074752761651296
+        },
+        "l1_residency--l1_buffer_residency": {
+          "average": 5.489909718692287,
+          "unit": "% L1 Capacity",
+          "min": 0.209699973510877,
+          "max": 8.350057518922899,
+          "middle_80_percent_median": 5.634483130425588
+        },
+        "last_level_cache--last_level_cache_utilization": {
+          "average": 27.20773452298744,
+          "unit": "Percentage of Peak Cache Performance",
+          "min": 0.1801744937851329,
+          "max": 41.53003669288437,
+          "middle_80_percent_median": 27.29710424073854
+        },
+        "neural_accelerator--neural_accelerator_limiter": {
+          "average": 22.132012702785115,
+          "unit": "Percentage of Peak Neural Accelerator Performance",
+          "min": 0,
+          "max": 32.83682702880128,
+          "middle_80_percent_median": 22.60709778251124
+        },
+        "l1_read_bandwidth--l1_read_bandwidth": {
+          "average": 1614.119020840468,
+          "unit": "GiB/s",
+          "min": 11.193137827892546,
+          "max": 2414.129604255501,
+          "middle_80_percent_median": 1642.602340516013
+        },
+        "l1_residency--l1_stack_residency": {
+          "average": 82.08544994266094,
+          "unit": "% L1 Capacity",
+          "min": 0.16652667785537315,
+          "max": 86.92196937061087,
+          "middle_80_percent_median": 86.6444763696002
+        },
+        "occupancy--total_occupancy": {
+          "average": 16.715173740758015,
+          "unit": "% Shader Core Resources",
+          "min": 0.04515903686666434,
+          "max": 32.24262686840388,
+          "middle_80_percent_median": 16.666682928506347
+        },
+        "l1_write_bandwidth--l1_write_bandwidth": {
+          "average": 878.1938400161641,
+          "unit": "GiB/s",
+          "min": 7.012457379504127,
+          "max": 1309.336375788152,
+          "middle_80_percent_median": 891.3724318467619
+        },
+        "address_generation--address_generation_limiter": {
+          "average": 7.444364907467573,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.04944775892867568,
+          "max": 12.082289872206854,
+          "middle_80_percent_median": 7.562846601754213
+        },
+        "l1_residency--l1_register_residency": {
+          "average": 4.935429206439799,
+          "unit": "% L1 Capacity",
+          "min": 0,
+          "max": 34.58197723724676,
+          "middle_80_percent_median": 3.5925823065310203
+        },
+        "f32--f32_utilization": {
+          "average": 2.5252601914435533,
+          "unit": "Percentage of Peak F32 Performance",
+          "min": 0.030724976941308338,
+          "max": 5.448131851827812,
+          "middle_80_percent_median": 2.524070541970934
+        },
+        "integer_and_conditional--integer_and_conditional_utilization": {
+          "average": 5.590078416711543,
+          "unit": "Percentage of Peak Integer and Conditional Performance",
+          "min": 0.06248467618591727,
+          "max": 8.199987618652168,
+          "middle_80_percent_median": 5.641821849691167
+        },
+        "top_occupancy_target_influence--l1_cache_pressure_influence": {
+          "average": 49.658536654704626,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 80.85382058271716,
+          "middle_80_percent_median": 51.393097263285284
+        },
+        "texture_compression--compression_ratio_of_texture_memory_read": {
+          "average": 487.55472975891416,
+          "unit": "Ratio of compressed to uncompressed memory",
+          "min": 0,
+          "max": 905616.9497487437,
+          "middle_80_percent_median": 1.3780509526174636
+        },
+        "l1_read_bandwidth--threadgroup_memory_l1_read_bandwidth": {
+          "average": 0,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "other_l1c_utilization--other_l1_read_accesses": {
+          "average": 0.011518253422144784,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0,
+          "max": 1.85716155159168,
+          "middle_80_percent_median": 0.00011630459954687337
+        },
+        "gpu_peak_bandwidth--gpu_peak_read_bandwidth": {
+          "average": 0,
+          "unit": "Percentage of Peak Memory Bandwidth",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "other_l1c_utilization--other_l1_write_accesses": {
+          "average": 0.004642272178430458,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 1.7902318827463934,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_write_bandwidth--buffer_l1_write_bandwidth": {
+          "average": 0.1933702155848937,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 0.9690434093422727,
+          "middle_80_percent_median": 0.1621582652108717
+        },
+        "top_occupancy_target_influence--register_pressure_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_read_bandwidth--register_l1_read_bandwidth": {
+          "average": 7.01007055176226,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 59.5299168381928,
+          "middle_80_percent_median": 0.4435135748867886
+        },
+        "active_cores--rt_unit_active": {
+          "average": 0,
+          "unit": "% GPU Cores",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "occupancy--kernel_occupancy": {
+          "average": 16.271697261388283,
+          "unit": "Percentage of Shader Core Resources",
+          "min": 0.013558247823609417,
+          "max": 18.53642495519557,
+          "middle_80_percent_median": 16.666658597275777
+        },
+        "l1_read_bandwidth--stack_l1_read_bandwidth": {
+          "average": 1087.8828578989664,
+          "unit": "GiB/s",
+          "min": 0.016653368712861487,
+          "max": 1631.5414357813902,
+          "middle_80_percent_median": 1110.0110673822983
+        },
+        "l1_write_bandwidth--rt_scratch_l1_write_bandwidth": {
+          "average": 0,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "last_level_cache--last_level_cache_limiter": {
+          "average": 28.797985462991637,
+          "unit": "Percentage of Peak Cache Performance",
+          "min": 0.18692889310856053,
+          "max": 42.584805599780665,
+          "middle_80_percent_median": 28.94823068251905
+        },
+        "shader_launch_limiter--fragment_shader_launch_limiter": {
+          "average": 0.3114873203458102,
+          "unit": "% Peak Performance",
+          "min": 0,
+          "max": 6.628686280464483,
+          "middle_80_percent_median": 0.0
+        },
+        "address_generation--address_generation_utilization": {
+          "average": 1.3289728839384527,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.017294018750510794,
+          "max": 3.3366522212651772,
+          "middle_80_percent_median": 1.307365778628477
+        },
+        "f16--f16_limiter": {
+          "average": 0.013042807190849461,
+          "unit": "Percentage of Peak Performance",
+          "min": 0,
+          "max": 1.1509253367852914,
+          "middle_80_percent_median": 0.0
+        },
+        "bandwidth--gpu_bandwidth": {
+          "average": 1292.520704420704,
+          "unit": "GiB / Second",
+          "min": 11.495331599569006,
+          "max": 1480.439642608732,
+          "middle_80_percent_median": 1312.585530324629
+        },
+        "gpu_peak_bandwidth--gpu_peak_bandwidth": {
+          "average": 0,
+          "unit": "Percentage of Peak Memory Bandwidth",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "texture_read_cache--texture_read_cache_limiter": {
+          "average": 0.09389748358110973,
+          "unit": "Percentage of Peak Texture Read Cache Performance",
+          "min": 0,
+          "max": 2.3196150739112644,
+          "middle_80_percent_median": 0.0034940853965575707
+        },
+        "occupancy_target_influences--memory_request_stalls_influence": {
+          "average": 18.5124776385013,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 19.554755784770794,
+          "middle_80_percent_median": 19.481341980430855
+        },
+        "l1_cache_reads--other_l1_read_accesses": {
+          "average": 0.011518253422144784,
+          "unit": "Percentage of Total L1 Read Accesses",
+          "min": 0,
+          "max": 1.85716155159168,
+          "middle_80_percent_median": 0.00011630459954687337
+        },
+        "control_flow--control_flow_utilization": {
+          "average": 0.7432660848092478,
+          "unit": "Percentage of Peak Performance",
+          "min": 0.004109977913742976,
+          "max": 1.151894134369041,
+          "middle_80_percent_median": 0.7502665882359217
+        },
+        "occupancy_target_influences--l1_cache_pressure_influence": {
+          "average": 49.658536654704626,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 80.85382058271716,
+          "middle_80_percent_median": 51.393097263285284
+        },
+        "top_occupancy_target_influence--texture_decompression_stalls_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "occupancy--vs_occupancy": {
+          "average": 0.0005937225317576634,
+          "unit": "Percentage of Shader Core Resources",
+          "min": 0,
+          "max": 0.06697050409564544,
+          "middle_80_percent_median": 0.0
+        },
+        "occupancy_manager--occupancy_manager_target": {
+          "average": 17.20391581245465,
+          "unit": "% Shader Core Resources",
+          "min": 1.44076432591163,
+          "max": 38.98070178231271,
+          "middle_80_percent_median": 16.66668231722109
+        },
+        "l1_read_bandwidth--unclassified_l1_read_bandwidth": {
+          "average": 0.240010358960828,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 17.54105748502092,
+          "middle_80_percent_median": 0.002995707533043781
+        },
+        "l1_cache_writes--rt_scratch_l1_write_accesses": {
+          "average": 0,
+          "unit": "Percentage of Total L1 Write Accesses",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "simd_groups_inflight_per_core--total_simd_groups_inflight": {
+          "average": 16.04656679112768,
+          "unit": "SIMD Groups",
+          "min": 0.04335267539199776,
+          "max": 30.952921793667723,
+          "middle_80_percent_median": 16.00001561136609
+        },
+        "l1_read_bandwidth--imageblock_l1_read_bandwidth": {
+          "average": 4.57338346867301,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 216.460427760901,
+          "middle_80_percent_median": 0.0
+        },
+        "texture_read_cache--texture_read_cache_utilization": {
+          "average": 0.019970117773384782,
+          "unit": "Percentage of Peak Texture Read Cache Performance",
+          "min": 0,
+          "max": 0.3316969461506204,
+          "middle_80_percent_median": 0.0009749405334440713
+        },
+        "simd_groups_inflight_per_core--compute_simd_groups_inflight": {
+          "average": 15.620829370932796,
+          "unit": "SIMD Groups",
+          "min": 0.013015917910665042,
+          "max": 17.794967956987747,
+          "middle_80_percent_median": 15.999992253384743
+        },
+        "occupancy_target_influences--register_pressure_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "mmu--mmu_utilization": {
+          "average": 15.708145929652188,
+          "unit": "Percentage of Peak MMU Performance",
+          "min": 0.13988785155547087,
+          "max": 17.900759650332425,
+          "middle_80_percent_median": 15.946699689572764
+        },
+        "texture_read--texture_read_limiter": {
+          "average": 0.7029903419230797,
+          "unit": "Percentage of Peak Texture Read Performance",
+          "min": 0,
+          "max": 1355.5624998805872,
+          "middle_80_percent_median": 0.0028251047302719494
+        },
+        "l1_residency--l1_rt_scratch_residency": {
+          "average": 0,
+          "unit": "% L1 Capacity",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "texture_write--texture_write_utilization": {
+          "average": 0.05600884779639325,
+          "unit": "Percentage of Peak Texture Write Performance",
+          "min": 0,
+          "max": 0.8840356009984016,
+          "middle_80_percent_median": 0.0027094386601958734
+        },
+        "simd_groups_inflight_per_core--fragment_simd_groups_inflight": {
+          "average": 0.4251674465644206,
+          "unit": "SIMD Groups",
+          "min": 0,
+          "max": 17.94741180724371,
+          "middle_80_percent_median": 0.0
+        },
+        "l1_write_bandwidth--imageblock_l1_write_bandwidth": {
+          "average": 5.619659134787166,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 288.3925650863408,
+          "middle_80_percent_median": 0.0
+        },
+        "mmu--mmu_limiter": {
+          "average": 20.55245769873594,
+          "unit": "Percentage of Peak MMU Performance",
+          "min": 0.14181691401968624,
+          "max": 24.787951114141578,
+          "middle_80_percent_median": 20.90293691689759
+        },
+        "l1_write_bandwidth--stack_l1_write_bandwidth": {
+          "average": 872.2873535212558,
+          "unit": "GiB/s",
+          "min": 4.013689468483621,
+          "max": 1307.717951475493,
+          "middle_80_percent_median": 889.5343188627179
+        },
+        "texture_read--texture_read_utilization": {
+          "average": 0.05736195734000299,
+          "unit": "Percentage of Peak Texture Read Performance",
+          "min": 0,
+          "max": 0.9889027394291116,
+          "middle_80_percent_median": 0.002656145699725646
+        },
+        "occupancy_target_influences--texture_decompression_stalls_influence": {
+          "average": 0,
+          "unit": "Percentage Influence on Occupancy",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "l2_bandwidth--last_level_cache_bandwidth": {
+          "average": 2238.583111331585,
+          "unit": "GB/s",
+          "min": 14.759123392372084,
+          "max": 3011.20785743722,
+          "middle_80_percent_median": 2248.051806768337
+        },
+        "l1_write_bandwidth--threadgroup_memory_l1_write_bandwidth": {
+          "average": 0,
+          "unit": "GiB/s",
+          "min": 0,
+          "max": 0,
+          "middle_80_percent_median": 0.0
+        },
+        "neural_accelerator--neural_accelerator_utilization": {
+          "average": 20.15932968285656,
+          "unit": "Percentage of Peak Neural Accelerator Performance",
+          "min": 0,
+          "max": 30.04608355061101,
+          "middle_80_percent_median": 20.581395980678877
+        },
+        "bandwidth--gpu_write_bandwidth": {
+          "average": 516.8766654439178,
+          "unit": "GiB / Second",
+          "min": 1.9741047207926705,
+          "max": 650.3201828613971,
+          "middle_80_percent_median": 527.1473889252078
+        }
+      }
+    }
+  },
+  "contractions": {
+    "baseline": {
+      "byte_equal": true,
+      "max_abs": 0.0,
+      "mismatched_elements": 0,
+      "samples_ms": [
+        533.2732910756022,
+        534.0137919411063,
+        531.6899169702083,
+        535.8027908951044,
+        529.3519168626517,
+        534.6645831596106,
+        533.8419580366462,
+        532.9147919546813,
+        533.4822081495076,
+        534.1664999723434
+      ],
+      "median_ms": 533.662083093077
+    },
+    "qk32": {
+      "byte_equal": true,
+      "max_abs": 0.0,
+      "mismatched_elements": 0,
+      "samples_ms": [
+        532.8228750731796,
+        530.407290905714,
+        527.7688328642398,
+        528.8837079424411,
+        536.0255830455571,
+        530.3089160006493,
+        535.903082927689,
+        533.4534998983145,
+        537.3987499624491,
+        528.5879999864846
+      ],
+      "median_ms": 531.6150829894468
+    },
+    "pv32": {
+      "byte_equal": true,
+      "max_abs": 0.0,
+      "mismatched_elements": 0,
+      "samples_ms": [
+        536.341791972518,
+        534.3450421933085,
+        538.1317920982838,
+        535.749957896769,
+        535.9632500912994,
+        531.249666120857,
+        536.456166068092,
+        533.9084998704493,
+        535.4206669144332,
+        538.3435420226306
+      ],
+      "median_ms": 535.8566039940342
+    },
+    "qk32_pv32": {
+      "byte_equal": true,
+      "max_abs": 0.0,
+      "mismatched_elements": 0,
+      "samples_ms": [
+        534.03783403337,
+        532.7192079275846,
+        539.9417500011623,
+        539.358041016385,
+        537.4670000746846,
+        540.9549169708043,
+        537.4533340800554,
+        535.4107080493122,
+        536.7432918865234,
+        537.4062499031425
+      ],
+      "median_ms": 537.4297919915989
+    }
+  },
+  "accepted_production_changes": [],
+  "limitations": [
+    "Isolated authored attention dispatch, not full model/clip profiling.",
+    "Baseline, packed and no-query-cache shader profiles report 1 sampled / 80 total cores.",
+    "32-row medium profile has timeline counters on 80/80 cores but no per-shader statistics; exporter correctly reported partial failure.",
+    "Packed high requested state was not sustained; exclude its replay time from comparisons.",
+    "m32col2 was mistakenly selected first, failed byte equality, was excluded and replaced by byte-identical m32row2.",
+    "Profiler replay timings exclude allocations/layout conversion and are not clip performance."
+  ]
+}

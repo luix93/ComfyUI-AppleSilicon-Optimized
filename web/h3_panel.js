@@ -30,6 +30,7 @@ const FIELDS = {
     veda_reference_sparsity: "Reference sparsity (%)", veda_dense_steps: "Additional dense steps",
     token_reduction_scale: "Update scale", token_early_evaluations: "Early evaluations", token_detail_restore_block: "Later restore block",
     token_coarse_restore_block: "Early restore block", token_start_percent: "Start step fraction", token_end_percent: "End step fraction", token_verbose: "Log token activity",
+    token_phase_policy: "Early phase policy", token_early_step_fraction: "Early step fraction",
 };
 function element(tag, className, text) {
     const el = document.createElement(tag);
@@ -142,7 +143,7 @@ export function buildH3Panel(controls, presets, specs, properties, resized) {
         "sparse_dense_layers","sparse_dense_leading_blocks","sparse_min_sequence_tokens","sparse_memory_budget_gib","sparse_verbose",
         "veda_predictor","veda_sparsity","veda_reference_sparsity","veda_dense_steps"]);
     groups.tokens = card("tokens", "Token reduction", "Experimental · reduces spatial detail during computation.", "token_reduction");
-    tune(groups.tokens.box,"tokens",["token_reduction_scale","token_early_evaluations","token_detail_restore_block","token_coarse_restore_block","token_start_percent","token_end_percent","token_verbose"]);
+    tune(groups.tokens.box,"tokens",["token_reduction_scale","token_early_evaluations","token_detail_restore_block","token_coarse_restore_block","token_start_percent","token_end_percent","token_phase_policy","token_early_step_fraction","token_verbose"]);
     const footer = element("div", "h3-footer");
     const status = element("p", "h3-status"); status.setAttribute("aria-live","polite");
     const note = element("p", "h3-note");
