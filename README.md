@@ -35,7 +35,13 @@ compiler/toolchain; our current measurements use **macOS 27 / M5 Ultra**.
 Older Apple Silicon attempts the enabled routes with existing fallbacks, but
 M1–M4 performance and parity are not yet validated.
 
-**Tested ComfyUI core:** `v0.39.0-33-g1d2ea294` — package version **0.39.0**,
+**Latest tested ComfyUI core: v0.40.0**, commit
+[`3541246a`](https://github.com/Comfy-Org/ComfyUI/commit/3541246a9c997f4b8c32f9f88f3c985d02021c79).
+All 23 workflow/mode cases passed a two-run regression check on October 14;
+matched warm times remained within −2.6% to +3.6% of the preceding stack.
+[Results and validation scope](benchmarks/m5-ultra-comfy040-smoke.md).
+
+**Stock/optimized benchmark core:** `v0.39.0-33-g1d2ea294` — package version **0.39.0**,
 33 commits after the v0.39.0 tag, at
 [`1d2ea2948d33dfda4d7cfe58c6d234968aa62cf8`](https://github.com/Comfy-Org/ComfyUI/commit/1d2ea2948d33dfda4d7cfe58c6d234968aa62cf8).
 This is the checkout used for the current benchmarks, not the tagged v0.39.2
@@ -120,7 +126,7 @@ are downloaded by the main installer; their separate setup is documented in
 
 | Configuration | Validation status |
 |---|---|
-| M5 Ultra, 80 GPU cores / 256 GB, macOS 27, PyTorch 2.14.1 + torchvision 0.29.1 | Current workflow and native-kernel benchmark platform. ComfyUI core `v0.39.0-33-g1d2ea294`. |
+| M5 Ultra, 80 GPU cores / 256 GB, macOS 27, PyTorch 2.14.1 + torchvision 0.29.1 | Benchmarked on ComfyUI `v0.39.0-33-g1d2ea294`; v0.40.0 passed the [two-run workflow regression check](benchmarks/m5-ultra-comfy040-smoke.md). |
 | PyTorch 2.14.0 + torchvision 0.29.0 | Reviewed build retained by setup; earlier workflow evidence is linked in the reports. |
 | M5 Max | Historical measurements exist; the current release stack was not retested on a Max. |
 | M1–M4 / older macOS / other framework builds | Experimental. Available routes are attempted with existing fallbacks; full native acceleration, performance and parity are not established. |
@@ -131,10 +137,15 @@ geometry. A model loading successfully does not prove that its fast path ran.
 
 ## Latest results — M5 Ultra (80 GPU cores)
 
-**README updated 2026-10-13 · stock/optimized table measured October 9–10 · 256 GB unified memory · macOS 27.0 · PyTorch 2.14.1**
+**README updated 2026-10-14 · stock/optimized table measured October 9–10 · 256 GB unified memory · macOS 27.0 · PyTorch 2.14.1**
 
 **ComfyUI core used for this table:** `v0.39.0-33-g1d2ea294` (package version
 0.39.0). [Recorded test environment](benchmarks/m5-ultra-torch2141-retest.md).
+
+The [v0.40.0 regression check](benchmarks/m5-ultra-comfy040-smoke.md) passed
+all 23 cases with no substantial timing regression or captured tensor changes
+against available references. Its single warm observations do not replace the
+benchmark averages below.
 
 <!-- Canonical current benchmark table: update the date, measurements and linked report together after validated runs. -->
 

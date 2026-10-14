@@ -1,0 +1,522 @@
+{
+  "date": "2026-10-14",
+  "comfy_version": "0.40.0",
+  "comfy_commit": "3541246a9c997f4b8c32f9f88f3c985d02021c79",
+  "previous_comfy": "v0.39.0-33-g1d2ea294",
+  "torch": "2.14.1",
+  "torchvision": "0.29.1",
+  "pyav": "18.1.0",
+  "frontend": "1.55.17",
+  "torch_git": "5c4886908584029761b579af026dcfb627c84070",
+  "pack_commit": "14ad34358f95982232bd8ed4933efa268381d962",
+  "hardware": "M5 Ultra, 80 GPU cores, 256 GB",
+  "completed_runs": 46,
+  "elapsed_minutes": 58.19726314942042,
+  "rows": [
+    {
+      "label": "sdxl",
+      "mode": "baseline",
+      "first": 6.37,
+      "warm": 2.486,
+      "previous": 2.4,
+      "repeat_mismatches": [],
+      "timings": {
+        "sampling_loop": 2.234574999893084,
+        "sampling": 2.240585417021066,
+        "video_decode": 0.1984842501115054,
+        "save_image": 0.04519491596147418
+      },
+      "change_percent": 3.5833333333333384,
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 5,
+      "workflow": "SDXL \u00b7 896\u00d71152 \u00b7 12 steps"
+    },
+    {
+      "label": "zimage",
+      "mode": "baseline",
+      "first": 9.923,
+      "warm": 3.5,
+      "previous": 3.44,
+      "repeat_mismatches": [],
+      "timings": {
+        "sampling_loop": 3.2401705840602517,
+        "sampling": 3.2595303340349346,
+        "video_decode": 0.1969871250912547,
+        "save_image": 0.04236100008711219
+      },
+      "change_percent": 1.744186046511631,
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 5,
+      "workflow": "Z-Image Turbo \u00b7 1024\u00b2 \u00b7 8 steps"
+    },
+    {
+      "label": "krea2",
+      "mode": "baseline",
+      "first": 25.139,
+      "warm": 13.654,
+      "previous": 13.63,
+      "repeat_mismatches": [],
+      "timings": {
+        "sampling_loop": 12.975758667103946,
+        "sampling": 13.023621832951903,
+        "video_decode": 0.5610084580257535,
+        "save_image": 0.06840616604313254
+      },
+      "change_percent": 0.1760821716801031,
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 4,
+      "workflow": "Krea2 \u00b7 1448\u00b2 \u00b7 8 steps \u00b7 LoKr"
+    },
+    {
+      "label": "krea2-no-lokr",
+      "mode": "baseline",
+      "first": 16.618,
+      "warm": 13.602,
+      "previous": 13.96,
+      "repeat_mismatches": [],
+      "timings": {
+        "sampling_loop": 12.9081718751695,
+        "sampling": 12.966475125169381,
+        "video_decode": 0.5527505839709193,
+        "save_image": 0.08137458306737244
+      },
+      "change_percent": -2.564469914040113,
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 4,
+      "workflow": "Krea2 \u00b7 1448\u00b2 \u00b7 no LoKr"
+    },
+    {
+      "label": "flux2-t2i",
+      "mode": "baseline",
+      "first": 12.342,
+      "warm": 2.328,
+      "previous": 2.27,
+      "repeat_mismatches": [],
+      "timings": {
+        "sampling_loop": 2.050415791803971,
+        "sampling": 2.0798188750632107,
+        "video_decode": 0.19885033299215138,
+        "save_image": 0.04788820818066597
+      },
+      "change_percent": 2.555066079295143,
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 9,
+      "workflow": "Flux.2 Klein 9B \u00b7 T2I \u00b7 4 steps"
+    },
+    {
+      "label": "flux2-edit",
+      "mode": "baseline",
+      "first": 8.268,
+      "warm": 4.651,
+      "previous": 4.64,
+      "repeat_mismatches": [],
+      "timings": {
+        "sampling_loop": 4.372622416121885,
+        "sampling": 4.380285665858537,
+        "video_decode": 0.22823395812883973,
+        "save_image": 0.04041083296760917
+      },
+      "change_percent": 0.23706896551725087,
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 11,
+      "workflow": "Flux.2 Klein 9B \u00b7 edit \u00b7 4 steps"
+    },
+    {
+      "label": "ideogram4",
+      "mode": "baseline",
+      "first": 31.088,
+      "warm": 17.32,
+      "previous": 17.78,
+      "repeat_mismatches": [],
+      "timings": {
+        "sampling_loop": 17.027951708063483,
+        "sampling": 17.03697366709821,
+        "vae_decode": 0.23390483297407627,
+        "save_image": 0.046113291988149285
+      },
+      "change_percent": -2.5871766029246346,
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 9,
+      "workflow": "Ideogram 4 \u00b7 1024\u00b2 \u00b7 12 steps"
+    },
+    {
+      "label": "qwen21-t2i",
+      "mode": "baseline",
+      "first": 21.676,
+      "warm": 12.702,
+      "previous": 12.66,
+      "repeat_mismatches": [],
+      "timings": {
+        "sampling_loop": 11.965638125082478,
+        "sampling": 12.015418292023242,
+        "video_decode": 0.5037644158583134,
+        "save_image": 0.18133012508042157
+      },
+      "change_percent": 0.33175355450236754,
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 4,
+      "workflow": "Qwen-Image 2.1 \u00b7 T2I \u00b7 25 steps"
+    },
+    {
+      "label": "qwen21-edit",
+      "mode": "baseline",
+      "first": 29.109,
+      "warm": 23.208,
+      "previous": 23.0,
+      "repeat_mismatches": [],
+      "timings": {
+        "sampling_loop": 22.420188332907856,
+        "sampling": 22.440733749885112,
+        "video_decode": 0.4610538328997791,
+        "save_image": 0.30321254092268646
+      },
+      "change_percent": 0.9043478260869486,
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 5,
+      "workflow": "Qwen-Image 2.1 \u00b7 edit \u00b7 40 steps"
+    },
+    {
+      "label": "yue2-8s",
+      "mode": "baseline",
+      "first": 7.754,
+      "warm": 5.935,
+      "previous": 5.78,
+      "repeat_mismatches": [],
+      "timings": {
+        "abc": {
+          "seconds": 1.7794623749796301,
+          "tokens": 128,
+          "truncated": true,
+          "dtype": "torch.bfloat16",
+          "tokens_per_second": 71.93183840229567
+        },
+        "semantic": {
+          "seconds": 2.230650667101145,
+          "tokens": 200,
+          "truncated": true,
+          "dtype": "torch.bfloat16",
+          "tokens_per_second": 89.6599377704942
+        },
+        "conditioning": {
+          "seconds": 0.20091816713102162
+        }
+      },
+      "change_percent": 2.6816608996539593,
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 3,
+      "workflow": "YuE2 \u00b7 controlled 8 s"
+    },
+    {
+      "label": "ltx-diffusion",
+      "mode": "baseline",
+      "first": 70.583,
+      "warm": 47.048,
+      "previous": 46.16,
+      "repeat_mismatches": [],
+      "timings": {
+        "stage1_loop": 10.050536417169496,
+        "stage1": 10.382422165945172,
+        "latent_upscale": 0.1557285829912871,
+        "stage2_loop": 14.904741375008598,
+        "stage2": 15.096116333035752,
+        "audio_decode": 0.686701541999355,
+        "video_decode": 19.667033333098516,
+        "create_video": 8.358294144272804e-05,
+        "save_video": 1.0485229168552905
+      },
+      "change_percent": 1.9237435008665704,
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 21,
+      "workflow": "LTX 2.5 \u00b7 diffusion VAE \u00b7 1280\u00d7704 \u00b7 121 frames"
+    },
+    {
+      "label": "ltx-conv",
+      "mode": "baseline",
+      "first": 43.267,
+      "warm": 32.4,
+      "previous": 32.05,
+      "repeat_mismatches": [],
+      "timings": {
+        "stage1_loop": 9.977915666997433,
+        "stage1": 10.332902000052854,
+        "latent_upscale": 0.1377292920369655,
+        "stage2_loop": 14.76402624999173,
+        "stage2": 14.95323941600509,
+        "audio_decode": 0.5722591248340905,
+        "video_decode": 5.3704058330040425,
+        "create_video": 8.354103192687035e-05,
+        "save_video": 1.0202365841250867
+      },
+      "change_percent": 1.0920436817472678,
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 21,
+      "workflow": "LTX 2.5 \u00b7 convolutional VAE \u00b7 same clip"
+    },
+    {
+      "label": "h3-exact",
+      "mode": "baseline",
+      "first": 166.48,
+      "warm": 144.275,
+      "previous": 141.65,
+      "repeat_mismatches": [],
+      "timings": {
+        "sampling_loop": 132.77677720808424,
+        "sampling": 132.8838638330344,
+        "audio_decode": 0.39306404115632176,
+        "video_decode": 10.28006204101257,
+        "create_video": 8.558295667171478e-05,
+        "save_video": 0.7175430420320481
+      },
+      "change_percent": 1.8531591951994386,
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 9,
+      "workflow": "H3 exact \u00b7 864\u00d7480 \u00b7 124 frames \u00b7 20 steps"
+    },
+    {
+      "label": "h3-attention-smoke",
+      "mode": "attention_3",
+      "first": 123.714,
+      "warm": 114.338,
+      "previous": 114.259,
+      "repeat_mismatches": [],
+      "timings": {
+        "sampling_loop": 103.03602574998513,
+        "sampling": 103.18806404201314,
+        "audio_decode": 0.34464233415201306,
+        "video_decode": 10.197185666998848,
+        "create_video": 8.13750084489584e-05,
+        "save_video": 0.6008374171797186
+      },
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 9,
+      "change_percent": 0.06914116174654428,
+      "workflow": "H3 SOL INT8 Fast \u00b7 480p"
+    },
+    {
+      "label": "h3-attention-smoke",
+      "mode": "attention_8",
+      "first": 113.296,
+      "warm": 112.303,
+      "previous": 113.7865,
+      "repeat_mismatches": [],
+      "timings": {
+        "sampling_loop": 101.03550904104486,
+        "sampling": 101.15190900000744,
+        "audio_decode": 0.3375845418777317,
+        "video_decode": 10.223430332960561,
+        "create_video": 8.454220369458199e-05,
+        "save_video": 0.5831725830212235
+      },
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 9,
+      "change_percent": -1.3037574756232129,
+      "workflow": "H3 SOL INT8 Hybrid Fast \u00b7 480p"
+    },
+    {
+      "label": "h3-attention-smoke",
+      "mode": "attention_9",
+      "first": 121.342,
+      "warm": 120.868,
+      "previous": null,
+      "repeat_mismatches": [],
+      "timings": {
+        "sampling_loop": 109.52582699991763,
+        "sampling": 109.6628266251646,
+        "audio_decode": 0.3417805419303477,
+        "video_decode": 10.216265458846465,
+        "create_video": 8.25000461190939e-05,
+        "save_video": 0.5816969159059227
+      },
+      "workflow": "H3 Veda Metal Protected \u00b7 480p"
+    },
+    {
+      "label": "wan-turbo",
+      "mode": "baseline",
+      "first": 55.92,
+      "warm": 31.913,
+      "previous": 31.9,
+      "repeat_mismatches": [],
+      "timings": {
+        "high_noise_loop": 14.429397540865466,
+        "high_noise": 14.493130542105064,
+        "low_noise_loop": 14.367354749934748,
+        "low_noise": 14.381800833856687,
+        "video_decode": 2.7701307910028845,
+        "create_video": 8.929194882512093e-05,
+        "save_video": 0.26208216696977615
+      },
+      "change_percent": 0.04075235109717301,
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 19,
+      "workflow": "Wan 2.2 I2V \u00b7 512\u00b2 \u00b7 81 frames \u00b7 4-step LoRA / CFG 1"
+    },
+    {
+      "label": "wan-20step",
+      "mode": "baseline",
+      "first": 310.322,
+      "warm": 304.336,
+      "previous": 304.33,
+      "repeat_mismatches": [],
+      "timings": {
+        "high_noise_loop": 150.49950341694057,
+        "high_noise": 150.5610620409716,
+        "low_noise_loop": 150.67783145792782,
+        "low_noise": 150.69743704097345,
+        "video_decode": 2.7930164160206914,
+        "create_video": 8.991686627268791e-05,
+        "save_video": 0.27751812478527427
+      },
+      "change_percent": 0.001971544047596474,
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 19,
+      "workflow": "Wan 2.2 I2V \u00b7 same clip \u00b7 20 steps / CFG 3.5"
+    },
+    {
+      "label": "krea2-1024",
+      "mode": "baseline",
+      "first": 14.528,
+      "warm": 6.204,
+      "previous": 6.13,
+      "repeat_mismatches": [],
+      "timings": {
+        "sampling_loop": 5.907456582877785,
+        "sampling": 5.930493749910966,
+        "video_decode": 0.23217966710217297,
+        "save_image": 0.04057912481948733
+      },
+      "change_percent": 1.2071778140293699,
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 4,
+      "workflow": "Krea2 \u00b7 1024\u00b2 \u00b7 8 steps \u00b7 no LoKr"
+    },
+    {
+      "label": "yue2-full",
+      "mode": "baseline",
+      "first": 36.463,
+      "warm": 34.904,
+      "previous": 34.12,
+      "repeat_mismatches": [],
+      "timings": {
+        "abc": {
+          "seconds": 6.03596349991858,
+          "tokens": 504,
+          "truncated": false,
+          "dtype": "torch.bfloat16",
+          "tokens_per_second": 83.49951089114414
+        },
+        "semantic": {
+          "seconds": 21.94369833287783,
+          "tokens": 2080,
+          "truncated": false,
+          "dtype": "torch.bfloat16",
+          "tokens_per_second": 94.78803292166914
+        },
+        "conditioning": {
+          "seconds": 0.33992766705341637
+        }
+      },
+      "change_percent": 2.297772567409173,
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 3,
+      "workflow": "YuE2 \u00b7 saved full-song workflow"
+    },
+    {
+      "label": "yue2-mothersuperior",
+      "mode": "baseline",
+      "first": 24.062,
+      "warm": 21.777,
+      "previous": 21.94,
+      "repeat_mismatches": [],
+      "timings": {
+        "abc": {
+          "seconds": 13.776006209198385,
+          "tokens": 1254,
+          "truncated": false,
+          "dtype": "torch.bfloat16",
+          "tokens_per_second": 91.0278335358684
+        },
+        "semantic": {
+          "seconds": 5.35659758397378,
+          "tokens": 500,
+          "truncated": true,
+          "dtype": "torch.bfloat16",
+          "tokens_per_second": 93.34283417069312
+        },
+        "conditioning": {
+          "seconds": 0.25210083299316466
+        }
+      },
+      "change_percent": -0.7429352780309983,
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 3,
+      "workflow": "YuE2 \u00b7 Mothersuperior \u00b7 20 s"
+    },
+    {
+      "label": "seedvr-image",
+      "mode": "baseline",
+      "first": 49.41598237515427,
+      "warm": 45.395714208018035,
+      "previous": 45.15,
+      "change_percent": 0.5442175149901196,
+      "repeat_mismatches": [],
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 3,
+      "timings": {
+        "resize": 0.2981910409871489,
+        "preprocess": 0.018128166906535625,
+        "encode": 9.515249916119501,
+        "sample": 12.021669541019946,
+        "decode": 21.60318991681561,
+        "postprocess": 0.014722875086590648,
+        "save_image": 1.9192824577912688
+      },
+      "memory": {
+        "stage": "verification",
+        "max_driver_gib": 31.831756591796875,
+        "max_live_gib": 8.61825704574585,
+        "max_rss_gib": 6.016632080078125,
+        "torch_version": "2.14.1",
+        "torch_git": "5c4886908584029761b579af026dcfb627c84070",
+        "completed": true
+      },
+      "finite": true,
+      "workflow": "SeedVR2 7B INT8 \u00b7 2400\u00d71600 \u2192 7200\u00d74800"
+    },
+    {
+      "label": "seedvr-video-120f",
+      "mode": "baseline",
+      "first": 125.63026137487032,
+      "warm": 124.1683733749669,
+      "previous": 124.66,
+      "change_percent": -0.3943739972991245,
+      "repeat_mismatches": [],
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 3,
+      "timings": {
+        "resize": 1.305138209136203,
+        "preprocess": 0.10402308311313391,
+        "encode": 30.9468194169458,
+        "sample": 14.50998166599311,
+        "decode": 76.06820654193871,
+        "postprocess": 3.595813177525997e-05,
+        "save_image": 0.07202362501993775,
+        "export_video": 1.1528649998363107
+      },
+      "memory": {
+        "stage": "verification",
+        "max_driver_gib": 33.57781982421875,
+        "max_live_gib": 11.298547267913818,
+        "max_rss_gib": 12.999252319335938,
+        "video_sync": "production",
+        "tile_calls": 32,
+        "conv_calls": 62288,
+        "torch_version": "2.14.1",
+        "torch_git": "5c4886908584029761b579af026dcfb627c84070",
+        "last_progress": 240.58239612495527,
+        "completed": true
+      },
+      "finite": true,
+      "workflow": "SeedVR2 7B INT8 \u00b7 416\u00d7736 \u2192 832\u00d71472 \u00b7 120 frames"
+    }
+  ]
+}

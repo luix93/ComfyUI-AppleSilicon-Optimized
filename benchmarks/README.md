@@ -9,6 +9,7 @@ preceding optimized output without matching stock ComfyUI.
 
 | Model / area | Reports |
 |---|---|
+| ComfyUI v0.40.0 regression check | [23 cases, two runs each, prior-stack timing and tensor comparisons](m5-ultra-comfy040-smoke.md) |
 | Full PyTorch 2.14.1 retest | [Models, compatibility and timings](m5-ultra-torch2141-retest.md) |
 | SDXL / Z-Image | [2.14 production workflows](m5-ultra-torch214-production.md), [SDXL investigation](m5-ultra-sdxl-investigation.md) |
 | Krea2 | [October exact tile and rejected attention experiments](m5-ultra-krea2-oct2026.md), [earlier exact work](m5-ultra-krea2-exact.md) |
