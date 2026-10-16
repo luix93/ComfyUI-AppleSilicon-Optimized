@@ -579,9 +579,9 @@ class H3SparseHolder:
         self.block_size = int(block_size)
         self.verbose = bool(verbose)
         self.temporal_taps = int(temporal_taps)
-        if backend not in ("bf16", "int8", "dense_int8", "int8_hybrid"):
-            raise ValueError("H3 attention backend must be bf16, int8, dense_int8 or int8_hybrid")
-        if backend in ("int8", "dense_int8", "int8_hybrid") and (self.router != ROUTER_DIAG64 or mode not in ("corrected", "dense_reference")):
+        if backend not in ("bf16", "int8", "dense_int8", "dense_floatpv", "int8_hybrid"):
+            raise ValueError("H3 attention backend must be bf16, int8, dense_int8, dense_floatpv or int8_hybrid")
+        if backend in ("int8", "dense_int8", "dense_floatpv", "int8_hybrid") and (self.router != ROUTER_DIAG64 or mode not in ("corrected", "dense_reference")):
             raise ValueError("INT8 SOL supports diag64 corrected/dense_reference modes only")
         self.backend = backend
         self.dense_layers = parse_dense_layers(dense_layers)
@@ -603,7 +603,7 @@ class H3SparseHolder:
             raise ValueError("topk_ratio must be zero or in (0, 1)")
         # Switching the advanced picker from Top-k to dense leaves the hidden
         # fraction serialized. Dense retains every key and must ignore it.
-        if backend == "dense_int8":
+        if backend in ("dense_int8", "dense_floatpv"):
             topk_ratio = 0.0
         if topk_ratio and backend not in ("int8", "int8_hybrid"):
             raise ValueError("Top-k requires the INT8 SOL backend")
@@ -1038,8 +1038,12 @@ def oracle_block_report(holder) -> list[str]:
 
 def _run_dense_int8(holder: H3SparseHolder, q, k, v, scale):
     from . import h3_dense_mps
+    implementation = h3_dense_mps
+    if holder.backend == "dense_floatpv":
+        from . import h3_floatpv_mps
+        implementation = h3_floatpv_mps
     try:
-        out, selected, total = h3_dense_mps.attention(
+        out, selected, total = implementation.attention(
             q,k,v,tau=0.0,video_start=_video_row_start(holder,q.shape[2]),
             scale=scale,memory_budget_gib=holder.memory_budget_gib)
         return out[0],selected,total
@@ -1056,7 +1060,7 @@ def _run_sparse(holder: H3SparseHolder, q, k, v, scale):
     slots). The counts are NEVER read here — the caller accumulates them and one
     synchronization at the end of the run turns them into a density.
     """
-    if holder.backend == "dense_int8":
+    if holder.backend in ("dense_int8", "dense_floatpv"):
         return _run_dense_int8(holder,q,k,v,scale)
     if holder.backend in ("int8", "int8_hybrid"):
         from . import h3_sol_mps
@@ -1155,8 +1159,8 @@ def h3_sparse_sample_wrapper(executor, *args, **kwargs):
         if active is not None:
             stats = active.stats
             if stats.calls and not active.verbose:
-                if active.backend == "dense_int8":
-                    logging.info("MiniMax H3 dense INT8 - %d/%d attention calls quantized (speedup not measured)",stats.sparse_calls,stats.calls)
+                if active.backend in ("dense_int8", "dense_floatpv"):
+                    logging.info("MiniMax H3 %s - %d/%d attention calls quantized (speedup not measured)", "dense INT8 QK / BF16 PV" if active.backend == "dense_floatpv" else "dense INT8", stats.sparse_calls,stats.calls)
                 elif active.backend == "int8_hybrid" and stats.sparse_calls:
                     logging.info("MiniMax H3 SOL hybrid - %.1f%% attention blocks omitted within %d/%d calls, %d protected-layer calls quantized (speedup not measured)",100*(1-stats.mean_density()),stats.sparse_calls,stats.calls,stats.quantized_dense_calls)
                 elif stats.sparse_calls and active.mode != "dense_reference":
@@ -1214,7 +1218,7 @@ def apply_h3_sparse(
         from . import h3_sol_mps
         if not h3_sol_mps.supported():
             raise ValueError("H3 INT8 SOL requires an M5 GPU and torch.mps.compile_shader")
-    elif backend == "dense_int8":
+    elif backend in ("dense_int8", "dense_floatpv"):
         from . import h3_dense_mps
         if not h3_dense_mps.supported():
             raise ValueError("H3 dense INT8 requires an M5 GPU and torch.mps.compile_shader")

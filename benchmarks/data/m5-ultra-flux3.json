@@ -1,0 +1,365 @@
+{
+  "date": "2026-10-16",
+  "hardware": "M5 Ultra 80 GPU / 256 GB",
+  "comfyui": "v0.41.2",
+  "comfy_commit": "b53f77a74e21091cbdebfdf7b85fc80326932646",
+  "torch": "2.14.1",
+  "torch_git": "5c4886908584029761b579af026dcfb627c84070",
+  "comfy_kitchen": "0.2.37",
+  "cases": [
+    {
+      "variant": "distilled",
+      "task": "t2i",
+      "steps": 16,
+      "cfg": 1,
+      "shape": [
+        1,
+        1024,
+        1024,
+        3
+      ],
+      "stock_e2e": [
+        14.389,
+        12.115
+      ],
+      "previous_pack_e2e": [
+        10.006,
+        7.904
+      ],
+      "new_e2e": [
+        8.342,
+        6.166
+      ],
+      "stock_sampling": 11.766417707993241,
+      "previous_sampling": 7.647583500001929,
+      "new_sampling": [
+        5.99300970799959,
+        5.927187084002071
+      ],
+      "speedup": 1.9648070061628284,
+      "parity": {
+        "conditioning": true,
+        "noise": true,
+        "latents": true,
+        "frames": true
+      },
+      "peak_driver_gib": 15.18328857421875,
+      "cache": {
+        "hits": 570,
+        "misses": 38,
+        "bytes": 2151677952,
+        "budget": 4294967296,
+        "rope_calls": 608,
+        "activation_calls": 608
+      }
+    },
+    {
+      "variant": "base",
+      "task": "t2i",
+      "steps": 50,
+      "cfg": 3.5,
+      "shape": [
+        1,
+        1024,
+        1024,
+        3
+      ],
+      "stock_e2e": [
+        74.231,
+        69.154
+      ],
+      "previous_pack_e2e": [
+        48.059,
+        45.442
+      ],
+      "new_e2e": [
+        37.782,
+        35.47
+      ],
+      "stock_sampling": 68.65860916599922,
+      "previous_sampling": 45.12245079200511,
+      "new_sampling": [
+        35.067858916998375,
+        35.155190083998605
+      ],
+      "speedup": 1.9496475895122638,
+      "parity": {
+        "conditioning": true,
+        "noise": true,
+        "latents": true,
+        "frames": true
+      },
+      "peak_driver_gib": 14.78289794921875,
+      "cache": {
+        "hits": 3272,
+        "misses": 38,
+        "bytes": 2151677952,
+        "budget": 4294967296,
+        "rope_calls": 3310,
+        "activation_calls": 3310
+      }
+    },
+    {
+      "variant": "distilled",
+      "task": "edit",
+      "steps": 16,
+      "cfg": 1,
+      "shape": [
+        1,
+        752,
+        1376,
+        3
+      ],
+      "stock_e2e": [
+        24.752,
+        21.939
+      ],
+      "previous_pack_e2e": [
+        18.493,
+        16.073
+      ],
+      "new_e2e": [
+        15.616,
+        13.347
+      ],
+      "stock_sampling": 21.578838834000635,
+      "previous_sampling": 15.821780416001275,
+      "new_sampling": [
+        13.198732374999963,
+        13.115391749997798
+      ],
+      "speedup": 1.6437401663295124,
+      "parity": {
+        "conditioning": true,
+        "noise": true,
+        "latents": true,
+        "frames": true
+      },
+      "peak_driver_gib": 17.699325561523438,
+      "cache": {
+        "hits": 645,
+        "misses": 43,
+        "bytes": 2434793472,
+        "budget": 4294967296,
+        "rope_calls": 688,
+        "activation_calls": 688
+      }
+    },
+    {
+      "variant": "base",
+      "task": "edit",
+      "steps": 50,
+      "cfg": 3.5,
+      "shape": [
+        1,
+        1152,
+        896,
+        3
+      ],
+      "stock_e2e": [
+        123.687,
+        118.772
+      ],
+      "previous_pack_e2e": [
+        90.617,
+        87.894
+      ],
+      "new_e2e": [
+        79.072,
+        75.353
+      ],
+      "stock_sampling": 118.07855937499698,
+      "previous_sampling": 87.41077754200523,
+      "new_sampling": [
+        76.06510491699737,
+        74.89269254199462
+      ],
+      "speedup": 1.5762079811022789,
+      "parity": {
+        "conditioning": true,
+        "noise": true,
+        "latents": true,
+        "frames": true
+      },
+      "peak_driver_gib": 17.68572998046875,
+      "cache": {
+        "hits": 3277,
+        "misses": 43,
+        "bytes": 2434793472,
+        "budget": 4294967296,
+        "rope_calls": 3320,
+        "activation_calls": 3320
+      }
+    }
+  ],
+  "complete_edit_with_fresh_prompt": [
+    {
+      "variant": "distilled",
+      "e2e": [
+        27.044,
+        24.005
+      ],
+      "prompt_seconds": [
+        9.981231709003623,
+        9.967699958004232
+      ],
+      "peak_driver_gib": 52.3948974609375,
+      "repeat_byte_identical": true
+    },
+    {
+      "variant": "base",
+      "e2e": [
+        88.354,
+        85.947
+      ],
+      "prompt_seconds": [
+        9.919784749996325,
+        9.988778583996464
+      ],
+      "peak_driver_gib": 52.24067687988281,
+      "repeat_byte_identical": true
+    }
+  ],
+  "operation_validation": [
+    {
+      "kind": "rope",
+      "shape": [
+        1,
+        37,
+        24,
+        128
+      ],
+      "pe_batch": 1,
+      "byte_identical": true
+    },
+    {
+      "kind": "rope",
+      "shape": [
+        2,
+        37,
+        24,
+        128
+      ],
+      "pe_batch": 1,
+      "byte_identical": true
+    },
+    {
+      "kind": "rope",
+      "shape": [
+        2,
+        37,
+        24,
+        128
+      ],
+      "pe_batch": 2,
+      "byte_identical": true
+    },
+    {
+      "kind": "rope",
+      "shape": [
+        1,
+        19,
+        8,
+        128
+      ],
+      "pe_batch": 1,
+      "byte_identical": true
+    },
+    {
+      "kind": "swiglu",
+      "shape": [
+        1,
+        37,
+        18432
+      ],
+      "byte_identical": true
+    },
+    {
+      "kind": "swiglu",
+      "shape": [
+        2,
+        17,
+        18432
+      ],
+      "byte_identical": true
+    }
+  ],
+  "patch_sha256": "c9cda18be6767809e8643d114efeb975774f0281dbeea702364b256236dadad1",
+  "scoped_final_validation": [
+    {
+      "label": "scoped-final-distilled-t2i",
+      "e2e": [
+        8.342,
+        6.166
+      ],
+      "byte_identical": true,
+      "cast_restored": true
+    },
+    {
+      "label": "scoped-final-base-t2i",
+      "e2e": [
+        37.782,
+        35.47
+      ],
+      "byte_identical": true,
+      "cast_restored": true
+    },
+    {
+      "label": "scoped-final-distilled-edit",
+      "e2e": [
+        15.616,
+        13.347
+      ],
+      "byte_identical": true,
+      "cast_restored": true
+    },
+    {
+      "label": "scoped-final-base-edit",
+      "e2e": [
+        79.072,
+        75.353
+      ],
+      "byte_identical": true,
+      "cast_restored": true
+    },
+    {
+      "label": "scoped-final-base-prompt",
+      "e2e": [
+        17.257,
+        14.06
+      ],
+      "byte_identical": true,
+      "cast_restored": true
+    }
+  ],
+  "fresh_prompt_full_workflow_patch_sha256": "65c0241b85d243c1e03a7636f98c74673ace5599593e2fe68d5aa8c6873da57d",
+  "unit_tests_passed": 19,
+  "final_postinstall": [
+    {
+      "model": "yue2-8s",
+      "e2e": [
+        6.785,
+        5.875
+      ],
+      "byte_identical": [
+        {
+          "abc_ids": true,
+          "YuE2GenerateABC": true,
+          "semantic_ids": true,
+          "YuE2GenerateMusic": true,
+          "KSampler": true,
+          "VAEDecodeAudio": true
+        },
+        {
+          "abc_ids": true,
+          "YuE2GenerateABC": true,
+          "semantic_ids": true,
+          "YuE2GenerateMusic": true,
+          "KSampler": true,
+          "VAEDecodeAudio": true
+        }
+      ],
+      "cast_hook_absent": true
+    }
+  ]
+}

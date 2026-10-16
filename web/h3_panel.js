@@ -14,7 +14,7 @@ const CACHE_HELP = {
     oracle: "Measures cache error without skipping model work.",
     block_oracle: "Measures block error without skipping model work.",
 };
-const ATTENTION_NAMES = {bf16: "SOL · BF16", int8: "SOL · INT8 (M5)", dense_int8: "Dense · INT8 (M5)", int8_hybrid: "SOL + dense INT8 (M5)",
+const ATTENTION_NAMES = {bf16: "SOL · BF16", int8: "SOL · INT8 (M5)", dense_int8: "Dense · INT8 (M5)", dense_floatpv: "Dense · INT8 QK / BF16 PV (M5)", int8_hybrid: "SOL + dense INT8 (M5)",
     veda_metal: "Veda · Metal (experimental)", veda_mlx: "Veda · MLX (experimental)"};
 const FIELDS = {
     cache_reuse_threshold: "Reuse threshold", cache_start_percent: "Start fraction", cache_end_percent: "End fraction",
@@ -168,6 +168,7 @@ export function buildH3Panel(controls, presets, specs, properties, resized) {
             : "Built in · no extra nodes. Presets tested at 20 steps without Turbo LoRA. Combinations need a quality check.";
         groups.sparse.help.textContent = veda
             ? "Learned tile selection. Video sparsity controls skipped connections; 0% reference sparsity keeps references dense. Predictor required in models/veda."
+            : attention === "dense_floatpv" ? "Every key is retained. INT8 QK with BF16 PV and FP32 accumulation; approximate, opt-in M5 kernel."
             : attention === "dense_int8" ? "Every token is retained. INT8 QK/PV changes arithmetic; protected steps and layers use the exact backend."
             : attention === "int8_hybrid" ? "SOL in the active window, with dense INT8 in protected layers. Protected sampling steps stay exact."
             : "SOL attention on computed evaluations. Adds approximation.";
@@ -179,9 +180,9 @@ export function buildH3Panel(controls, presets, specs, properties, resized) {
             else if (key.startsWith("cache_") && key !== "cache_verbose") label.hidden = !(mode?.startsWith("first_block_cache") || ["oracle","block_oracle"].includes(mode));
             else if (key.startsWith("veda_")) label.hidden = !veda;
             else if (key === "sparse_topk_ratio") label.hidden = !["int8","int8_hybrid"].includes(attention);
-            else if (key === "sparse_tau") label.hidden = Boolean(veda) || attention === "dense_int8" || (["int8","int8_hybrid"].includes(attention) && controls.get("sparse_topk_ratio") > 0);
+            else if (key === "sparse_tau") label.hidden = Boolean(veda) || ["dense_int8","dense_floatpv"].includes(attention) || (["int8","int8_hybrid"].includes(attention) && controls.get("sparse_topk_ratio") > 0);
             else if (key === "sparse_mode") label.hidden = Boolean(veda);
-            else if (key === "sparse_memory_budget_gib") label.hidden = !["int8","int8_hybrid","dense_int8"].includes(attention) && !veda;
+            else if (key === "sparse_memory_budget_gib") label.hidden = !["int8","int8_hybrid","dense_int8","dense_floatpv"].includes(attention) && !veda;
         }
         details.get("cache").hidden = !cacheActive;
         for (const [group,key] of [["sparse","sparse_attention"],["tokens","token_reduction"]]) {
@@ -190,7 +191,7 @@ export function buildH3Panel(controls, presets, specs, properties, resized) {
         }
         const active = [];
         if (cacheActive) active.push(CACHE_NAMES[mode] || mode);
-        if (controls.get("sparse_attention")) active.push(veda ? "Veda" : attention === "dense_int8" ? "Dense INT8" : attention === "int8_hybrid" ? "SOL hybrid" : "SOL");
+        if (controls.get("sparse_attention")) active.push(veda ? "Veda" : attention === "dense_floatpv" ? "Dense floating PV" : attention === "dense_int8" ? "Dense INT8" : attention === "int8_hybrid" ? "SOL hybrid" : "SOL");
         if (controls.get("token_reduction")) active.push("token reduction");
         badge.textContent = active.length ? "APPROXIMATE" : "EXACT";
         badge.dataset.exact = String(!active.length);

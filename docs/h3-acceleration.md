@@ -12,7 +12,7 @@ node's implementation and keeps each selected mechanism independent.
 | Selector | Recipes |
 |---|---|
 | Temporal cache | Off; MotionCache protected / balanced; FirstBlockCache protected / fast; Spectrum protected / fast draft |
-| Attention acceleration | Off; SOL INT8 conservative / balanced / fast / top-k wide / top-k all-step draft / hybrid fast; Dense INT8 protected / full draft; Veda Metal protected / fast draft |
+| Attention acceleration | Off; SOL INT8 conservative / balanced / fast / top-k wide / top-k all-step draft / hybrid fast; Dense INT8 protected / full draft; Dense QK INT8 / PV BF16 protected / full experimental; Veda Metal protected / fast draft |
 | Token reduction | Off; Protected / Balanced / Light / Fast protected / Fast aggressive (experimental) |
 
 Defaults: **MotionCache balanced**, **sparse Off**, **tokens Off**, **Detailed logs Off**.
@@ -260,6 +260,30 @@ an exact implementation improvement **within SOL**, whose arithmetic remains
 approximate relative to native attention. No token-rescue or cumulative-mass
 router is enabled by these presets; both remain screened research experiments.
 [Matched clip timings, numerical errors and per-preset temporal assessment](../benchmarks/m5-ultra-h3-kitchen-attention.md).
+
+### Dense INT8 QK with floating PV
+
+Two additional opt-in M5 recipes retain every key and use **INT8 QK, BF16 P/V,
+and FP32 PV accumulation**. Hadamard rotation and K centering reduce Q/K
+quantization error. This is still approximate attention, even with INT8 model
+weights; final video and audio can change.
+
+- **Dense QK INT8 / PV BF16 · protected:** exact first four / final two steps
+  at 20 steps, plus exact layers 0,1,33,34,35. Intended for closer agreement.
+- **Dense QK INT8 / PV BF16 · full experimental:** applies in every step and
+  layer. Faster, with greater accumulated differences.
+
+Both keep exact packed-prefix query attention (rounded outward to 64 rows),
+Auto memory limits and the 8192-token eligibility gate. The native kernel
+supports BF16 `[1,56,S,128]`, at most 65,536 tokens. Unsupported or over-budget
+calls fall back to the existing dense route. Prefix protection does not make
+final audio exact: altered video information feeds later layers.
+
+Select these in **H3 Acceleration Presets → Attention acceleration**. For an
+attention-only comparison, choose cache **Off** and tokens **Off** as well.
+The advanced panel calls this method **Dense · INT8 QK / BF16 PV (M5)**.
+No environment flag is required. Exact/default dispatch and existing presets
+are unchanged. [1024×512 speed and quality measurements](../benchmarks/m5-ultra-h3-floatpv.md).
 
 ### Existing sparse implementations
 

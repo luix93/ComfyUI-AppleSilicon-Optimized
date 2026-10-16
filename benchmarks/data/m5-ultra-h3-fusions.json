@@ -1,0 +1,2989 @@
+{
+  "date": "2026-10-14",
+  "hardware": "M5 Ultra, 80 GPU cores, 256 GB",
+  "stack": {
+    "comfyui": "0.40.0",
+    "pytorch": "2.14.1",
+    "macos": "27"
+  },
+  "shape": {
+    "tokens": 19508,
+    "hidden": 5376,
+    "qkv_width": 21504,
+    "fc1_width": 28672
+  },
+  "microbenchmarks": {
+    "screen": {
+      "qkv": {
+        "current": {
+          "exact": true,
+          "times_ms": [
+            22.899930365383625,
+            22.983041669552524,
+            23.002360947430134,
+            22.944472342108686,
+            22.95863861218095,
+            22.884639057641227,
+            23.15543033182621
+          ],
+          "median_ms": 22.95863861218095
+        },
+        "32": {
+          "exact": true,
+          "times_ms": [
+            25.651264004409313,
+            25.62974998727441,
+            25.712652675186593,
+            25.645611031601828,
+            25.782569622000057,
+            25.756944669410586,
+            25.777778044963878
+          ],
+          "median_ms": 25.712652675186593
+        },
+        "64": {
+          "exact": true,
+          "times_ms": [
+            35.077764031787716,
+            22.952152648940682,
+            23.010222318892676,
+            22.95102768888076,
+            22.8671389631927,
+            22.879152713964384,
+            23.07205538575848
+          ],
+          "median_ms": 22.952152648940682
+        },
+        "512": {
+          "exact": true,
+          "times_ms": [
+            24.340596981346607,
+            24.4516806366543,
+            24.26926395855844,
+            24.4151526906838,
+            24.326055621107418,
+            24.32348602451384,
+            24.3446109816432
+          ],
+          "median_ms": 24.340596981346607
+        }
+      },
+      "mlp": {
+        "current": {
+          "exact": true,
+          "times_ms": [
+            33.79422232198218,
+            33.88709730158249,
+            33.71434728614986,
+            33.8533193183442,
+            33.66268061411878,
+            33.89326405401031,
+            33.97604163425664
+          ],
+          "median_ms": 33.8533193183442
+        },
+        "chunk4096": {
+          "exact": true,
+          "times_ms": [
+            34.31019435326258,
+            34.482930709297456,
+            34.53675005584955,
+            34.15401365297536,
+            34.33790298489233,
+            34.284291711325444,
+            34.413819356511034
+          ],
+          "median_ms": 34.33790298489233
+        },
+        "chunk16384": {
+          "exact": true,
+          "times_ms": [
+            33.44838903285563,
+            33.76352794778844,
+            33.417361012349524,
+            33.40895830964049,
+            33.507944317534566,
+            33.75369434555372,
+            33.42129165927569
+          ],
+          "median_ms": 33.44838903285563
+        },
+        "chunk0": {
+          "exact": true,
+          "times_ms": [
+            33.56826398521662,
+            33.6290136910975,
+            33.30679167993367,
+            33.19891666372617,
+            33.192166670536004,
+            33.27341664892932,
+            33.211888978257775
+          ],
+          "median_ms": 33.27341664892932
+        },
+        "fused16": {
+          "exact": true,
+          "times_ms": [
+            55.60030570874611,
+            55.46516668982804,
+            55.55634736083448,
+            55.37486099638045,
+            55.4259999965628,
+            55.48187500486771,
+            55.47081935219467
+          ],
+          "median_ms": 55.47081935219467
+        },
+        "fused32": {
+          "exact": true,
+          "times_ms": [
+            37.634763633832335,
+            37.71630565946301,
+            37.81956938716272,
+            37.567403012265764,
+            37.67987503670156,
+            37.63115266337991,
+            37.622986283774175
+          ],
+          "median_ms": 37.634763633832335
+        }
+      }
+    },
+    "screen2": {
+      "qkv": {
+        "current": {
+          "exact": true,
+          "times_ms": [
+            23.130083379025262,
+            22.99458331738909,
+            22.898500009129446,
+            22.83683333856364,
+            23.027902624259394,
+            22.9607083213826,
+            23.05930565732221
+          ],
+          "median_ms": 22.99458331738909
+        },
+        "32": {
+          "exact": true,
+          "times_ms": [
+            25.761291695137817,
+            25.71790269576013,
+            25.65023636755844,
+            25.72231972590089,
+            25.705666669333976,
+            25.79155572069188,
+            25.797124952077866
+          ],
+          "median_ms": 25.72231972590089
+        },
+        "64": {
+          "exact": true,
+          "times_ms": [
+            34.5026389695704,
+            22.938236050928634,
+            22.98212501530846,
+            22.97659730538726,
+            23.03088898770511,
+            23.04493038294216,
+            23.141333367675543
+          ],
+          "median_ms": 23.03088898770511
+        },
+        "512": {
+          "exact": true,
+          "times_ms": [
+            24.446903029456735,
+            24.31858330965042,
+            24.503874980534118,
+            24.276777636259794,
+            24.54911102540791,
+            24.299514014273882,
+            24.349874972055357
+          ],
+          "median_ms": 24.349874972055357
+        }
+      },
+      "mlp": {
+        "current": {
+          "exact": true,
+          "times_ms": [
+            34.955305668214955,
+            33.90277766933044,
+            33.9736802658687,
+            33.89216664557656,
+            33.63822198783358,
+            33.77809740292529,
+            33.76736134911577
+          ],
+          "median_ms": 33.89216664557656
+        },
+        "chunk4096": {
+          "exact": true,
+          "times_ms": [
+            35.82868065374593,
+            34.59533335020145,
+            34.648610977455974,
+            34.28095835261047,
+            34.19395831103126,
+            34.44401368809243,
+            34.28508333551387
+          ],
+          "median_ms": 34.44401368809243
+        },
+        "chunk16384": {
+          "exact": true,
+          "times_ms": [
+            36.01599996909499,
+            33.560138661414385,
+            33.390958327800035,
+            33.49429167186221,
+            33.27187499962747,
+            33.55218066523472,
+            33.26545826469859
+          ],
+          "median_ms": 33.49429167186221
+        },
+        "chunk0": {
+          "exact": true,
+          "times_ms": [
+            33.828513929620385,
+            33.96541664066414,
+            33.50304168028136,
+            33.01762502330045,
+            33.39725003267328,
+            33.404069331785045,
+            33.269499971841775
+          ],
+          "median_ms": 33.404069331785045
+        },
+        "fused16": {
+          "exact": true,
+          "times_ms": [
+            56.00630538538098,
+            55.38586131297052,
+            55.432930666332446,
+            55.45955531609555,
+            55.539305321872234,
+            55.49934731485943,
+            55.33245834521949
+          ],
+          "median_ms": 55.45955531609555
+        },
+        "fused32": {
+          "exact": true,
+          "times_ms": [
+            38.40013903876146,
+            37.87649997199575,
+            37.79879165813327,
+            37.57823600123326,
+            37.50419430434704,
+            37.55244465234379,
+            37.572319308916725
+          ],
+          "median_ms": 37.57823600123326
+        },
+        "fused128": {
+          "exact": true,
+          "times_ms": [
+            34.511375008150935,
+            34.1560416854918,
+            34.176833384359874,
+            33.35601401825746,
+            33.506916680683695,
+            33.293027974044286,
+            33.789888955652714
+          ],
+          "median_ms": 33.789888955652714
+        }
+      }
+    },
+    "screen3": {
+      "qkv": {
+        "current": {
+          "exact": true,
+          "times_ms": [
+            22.83126402956744,
+            22.72115267502765,
+            22.810750020047028,
+            22.949166673546035,
+            22.801986041789252,
+            22.739110980182886,
+            22.767444296429556
+          ],
+          "median_ms": 22.801986041789252
+        },
+        "32": {
+          "exact": true,
+          "times_ms": [
+            25.7183196178327,
+            25.58475003267328,
+            25.602708337828517,
+            25.61037498526275,
+            25.663874965781968,
+            25.623805277670424,
+            25.582611017550033
+          ],
+          "median_ms": 25.61037498526275
+        },
+        "64": {
+          "exact": true,
+          "times_ms": [
+            32.65320827874044,
+            22.85491667377452,
+            22.760653014605243,
+            22.841083351522684,
+            22.952305618673563,
+            22.83652770953874,
+            22.82295833962659
+          ],
+          "median_ms": 22.841083351522684
+        },
+        "512": {
+          "exact": true,
+          "times_ms": [
+            24.342638983701665,
+            24.163763970136642,
+            24.19795833217601,
+            24.091041646897793,
+            24.232069340844948,
+            24.16990262766679,
+            24.282458315913875
+          ],
+          "median_ms": 24.19795833217601
+        }
+      },
+      "mlp": {
+        "current": {
+          "exact": true,
+          "times_ms": [
+            33.62536135440072,
+            33.59576400058965,
+            33.61963899806142,
+            33.6069583427161,
+            33.749555703252554,
+            33.82626369905969,
+            33.66113865437607
+          ],
+          "median_ms": 33.62536135440072
+        },
+        "chunk4096": {
+          "exact": true,
+          "times_ms": [
+            34.200805627430476,
+            34.45409703999758,
+            34.33352801948786,
+            34.119430696591735,
+            34.226375011106335,
+            34.266333328559995,
+            34.27705564536154
+          ],
+          "median_ms": 34.266333328559995
+        },
+        "chunk16384": {
+          "exact": true,
+          "times_ms": [
+            33.21686130948365,
+            33.29408331774175,
+            33.52608329926928,
+            33.382013983403645,
+            33.41554167370001,
+            33.32211131540438,
+            33.40773633681238
+          ],
+          "median_ms": 33.382013983403645
+        },
+        "chunk0": {
+          "exact": true,
+          "times_ms": [
+            33.135138995324574,
+            33.089263985554375,
+            33.292736004417144,
+            33.32359731818239,
+            33.31124999870857,
+            33.101111029585205,
+            33.11784736191233
+          ],
+          "median_ms": 33.135138995324574
+        },
+        "fused128": {
+          "exact": true,
+          "times_ms": [
+            33.420277681822576,
+            34.00755564992627,
+            33.39061102208992,
+            33.416958370556436,
+            34.08362506888807,
+            33.67138902346293,
+            33.546347015847765
+          ],
+          "median_ms": 33.546347015847765
+        },
+        "fused129": {
+          "exact": true,
+          "times_ms": [
+            37.13804165211817,
+            37.19973602953056,
+            37.06665298280617,
+            37.01959697840115,
+            37.60672236482302,
+            37.555097291866936,
+            37.03004168346524
+          ],
+          "median_ms": 37.13804165211817
+        },
+        "fused65": {
+          "exact": true,
+          "times_ms": [
+            34.45254165368775,
+            34.418791687736906,
+            34.41765268022815,
+            34.54638870122532,
+            34.77527767730256,
+            34.45219434797764,
+            34.49104167521
+          ],
+          "median_ms": 34.45254165368775
+        }
+      }
+    }
+  },
+  "prototype_hashes": {
+    "build.py": "7b3b9aa34fede056fb5c61b5e3f29578c0f42005a85ef8b95969920528d1a2c1",
+    "fc1_pair.metal": "460701b30427e1c30a5013e2095c6d3dfe13c17594a0422215423fdd75c2b185",
+    "fc1_dual.metal": "1dfee4802b4178ca7aaef6978ded60507661a8ba33691d27331324df31caa22b",
+    "fc1.metal": "8410c68addb6255bf0b0f9b6dbbfb054e749f7a5cf016eb9c43b4b71691db18a",
+    "fc1_host.cpp": "980b4988e57da4b0a5918d77ba6e500fca64cc83bcef808876ef2e2559d634a0",
+    "candidate.py": "188f07544a183d740e80d953645815ec09e60e0763e0a52e97e5f3f0a4afa71b"
+  },
+  "floatpv_short_run_routed_attention_calls": 100,
+  "source_revision": "ab44cb917",
+  "status": "diagnostic candidates; no production default changes",
+  "source_context": "Working tree includes preceding optional INT8-QK/floating-PV implementation.",
+  "production_source_hashes": {
+    "_patches/int8_ext/int8_gemm.mm": "ee511ddaf57f6c42e8e8f7debd693fe9454d988a5e9a852b86fa35ff1e8248ff",
+    "_patches/int8_linear_kernel_mps.py": "c70a7577b6689c3a9dbff20bea54c3e3bb3e83e77905060481e8f3195dcb0776",
+    "_patches/h3_floatpv_mps.py": "6d87e6960186df44ddb3bc83e33ea372bed23c172335684bdd5f5d32f372263c"
+  },
+  "qkv_control": {
+    "current_fused": {
+      "exact": true,
+      "times_ms": [
+        22.93352798248331,
+        23.077472345903516,
+        22.853388683870435,
+        22.834513646860916,
+        23.06497236713767,
+        22.921902981276315,
+        22.830486375217635
+      ],
+      "median_ms": 22.921902981276315
+    },
+    "separate_norm_rope": {
+      "exact": true,
+      "times_ms": [
+        38.52391669837137,
+        26.215861008192103,
+        26.224569339926045,
+        26.118208343784016,
+        26.65818071303268,
+        26.196013980855543,
+        26.25565300695598
+      ],
+      "median_ms": 26.224569339926045
+    }
+  },
+  "short_runs": [
+    {
+      "mode": "exact",
+      "timings": {
+        "sampling_loop": 18.953003625152633,
+        "sampling": 21.308895207941532,
+        "audio_decode": 0.5139440831262618,
+        "video_decode": 10.537485958077013,
+        "create_video": 0.0001777498982846737,
+        "save_video": 0.6386190410703421
+      },
+      "steps": [
+        9.535449041984975,
+        9.407373750116676
+      ],
+      "peak_driver_gib": 50.27703857421875,
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "b29f00e8a4e67703038921af2188948b3afc00da5d0fb45a016c2121cd6b139a",
+            "shape": [
+              150
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "988608a161ac4c89bd5bca24eb6715cb9838b0a701bf8dee6ae14b44d251c742",
+            "shape": [
+              1,
+              150,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "99927a9025abb6c5578c35f0ca710cf9fb6d18746c37b33addee74095a6ef788",
+            "shape": [
+              1,
+              1,
+              1831872
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "1a6c7aa6850066996e7bde4e027145704e183e603e008068d22378540a0b7d26",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "1ae60ccf8f0cb91b51bef838b45adb42b528ce6029bb1781c753bf8030335bc9",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "a9d334494b508d9b2ae4d049dadba1d2056f8393d68a8674eab082542632bef6",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "3a73a9e3f1f630396a8d42dd8fb97835e1e92ba9bd8e845f4b106c9cfe38c246",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "025b8f125d1fee3c7f3aeebce1993a32d5c9ff34f430c33c99908e11e5cb627c",
+            "shape": [
+              1,
+              2,
+              165600
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "6fa3cff3f4b22e7933bbc971fe4ab57e755d30f3eec364167e9d26024ce2821b",
+            "shape": [
+              124,
+              512,
+              1024,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      },
+      "candidate_stats": {
+        "eligible_calls": 100
+      },
+      "e2e": 44.636,
+      "warmup": false,
+      "job": {
+        "mode": "exact",
+        "warmup": false,
+        "steps": 2,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a quiet sunlit study. The camera slowly dollies forward toward a wooden desk, producing a gentle steady push-in with clear natural parallax. On the desk stand a single red ceramic vase and a small brass globe. In the background, a round white wall clock with dark hands hangs above a wooden bookshelf containing upright blue, green and red books. Three distinct rectangular framed landscape photographs hang in a straight horizontal row on the wall. A leafy potted plant stands beside the bookshelf. The square checkerboard floor and all furniture remain rigid and stationary throughout. No people, no object movement, no scene cuts. Natural daylight, realistic fine detail, stable geometry and consistent colors. Quiet room ambience, no music.",
+        "seed": 812764035
+      }
+    },
+    {
+      "mode": "chunk_verify",
+      "timings": {
+        "sampling_loop": 22.903183000162244,
+        "sampling": 23.0182180411648,
+        "audio_decode": 0.36490616714581847,
+        "video_decode": 10.299121666001156,
+        "create_video": 8.825003169476986e-05,
+        "save_video": 0.6255724590737373
+      },
+      "steps": [
+        11.525800125207752,
+        11.376490499824286
+      ],
+      "peak_driver_gib": 55.36297607421875,
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "b29f00e8a4e67703038921af2188948b3afc00da5d0fb45a016c2121cd6b139a",
+            "shape": [
+              150
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "988608a161ac4c89bd5bca24eb6715cb9838b0a701bf8dee6ae14b44d251c742",
+            "shape": [
+              1,
+              150,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "99927a9025abb6c5578c35f0ca710cf9fb6d18746c37b33addee74095a6ef788",
+            "shape": [
+              1,
+              1,
+              1831872
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "1a6c7aa6850066996e7bde4e027145704e183e603e008068d22378540a0b7d26",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "1ae60ccf8f0cb91b51bef838b45adb42b528ce6029bb1781c753bf8030335bc9",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "a9d334494b508d9b2ae4d049dadba1d2056f8393d68a8674eab082542632bef6",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "3a73a9e3f1f630396a8d42dd8fb97835e1e92ba9bd8e845f4b106c9cfe38c246",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "025b8f125d1fee3c7f3aeebce1993a32d5c9ff34f430c33c99908e11e5cb627c",
+            "shape": [
+              1,
+              2,
+              165600
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "6fa3cff3f4b22e7933bbc971fe4ab57e755d30f3eec364167e9d26024ce2821b",
+            "shape": [
+              124,
+              512,
+              1024,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      },
+      "candidate_stats": {
+        "eligible_calls": 100,
+        "changed_calls": 100,
+        "verified_calls": 100
+      },
+      "e2e": 34.313,
+      "warmup": false,
+      "job": {
+        "mode": "chunk_verify",
+        "warmup": false,
+        "steps": 2,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a quiet sunlit study. The camera slowly dollies forward toward a wooden desk, producing a gentle steady push-in with clear natural parallax. On the desk stand a single red ceramic vase and a small brass globe. In the background, a round white wall clock with dark hands hangs above a wooden bookshelf containing upright blue, green and red books. Three distinct rectangular framed landscape photographs hang in a straight horizontal row on the wall. A leafy potted plant stands beside the bookshelf. The square checkerboard floor and all furniture remain rigid and stationary throughout. No people, no object movement, no scene cuts. Natural daylight, realistic fine detail, stable geometry and consistent colors. Quiet room ambience, no music.",
+        "seed": 812764035
+      }
+    },
+    {
+      "mode": "pair_verify",
+      "timings": {
+        "sampling_loop": 22.955129749840125,
+        "sampling": 23.067039124900475,
+        "audio_decode": 0.3505360409617424,
+        "video_decode": 10.341969750123098,
+        "create_video": 8.25000461190939e-05,
+        "save_video": 0.6676502500195056
+      },
+      "steps": [
+        11.52751712501049,
+        11.42393899988383
+      ],
+      "peak_driver_gib": 54.83172607421875,
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "b29f00e8a4e67703038921af2188948b3afc00da5d0fb45a016c2121cd6b139a",
+            "shape": [
+              150
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "988608a161ac4c89bd5bca24eb6715cb9838b0a701bf8dee6ae14b44d251c742",
+            "shape": [
+              1,
+              150,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "99927a9025abb6c5578c35f0ca710cf9fb6d18746c37b33addee74095a6ef788",
+            "shape": [
+              1,
+              1,
+              1831872
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "1a6c7aa6850066996e7bde4e027145704e183e603e008068d22378540a0b7d26",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "1ae60ccf8f0cb91b51bef838b45adb42b528ce6029bb1781c753bf8030335bc9",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "a9d334494b508d9b2ae4d049dadba1d2056f8393d68a8674eab082542632bef6",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "3a73a9e3f1f630396a8d42dd8fb97835e1e92ba9bd8e845f4b106c9cfe38c246",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "025b8f125d1fee3c7f3aeebce1993a32d5c9ff34f430c33c99908e11e5cb627c",
+            "shape": [
+              1,
+              2,
+              165600
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "6fa3cff3f4b22e7933bbc971fe4ab57e755d30f3eec364167e9d26024ce2821b",
+            "shape": [
+              124,
+              512,
+              1024,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      },
+      "candidate_stats": {
+        "eligible_calls": 100,
+        "changed_calls": 100,
+        "verified_calls": 100
+      },
+      "e2e": 34.432,
+      "warmup": false,
+      "job": {
+        "mode": "pair_verify",
+        "warmup": false,
+        "steps": 2,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a quiet sunlit study. The camera slowly dollies forward toward a wooden desk, producing a gentle steady push-in with clear natural parallax. On the desk stand a single red ceramic vase and a small brass globe. In the background, a round white wall clock with dark hands hangs above a wooden bookshelf containing upright blue, green and red books. Three distinct rectangular framed landscape photographs hang in a straight horizontal row on the wall. A leafy potted plant stands beside the bookshelf. The square checkerboard floor and all furniture remain rigid and stationary throughout. No people, no object movement, no scene cuts. Natural daylight, realistic fine detail, stable geometry and consistent colors. Quiet room ambience, no music.",
+        "seed": 812764035
+      }
+    },
+    {
+      "mode": "exact",
+      "timings": {
+        "sampling_loop": 19.043708957964554,
+        "sampling": 19.166392916115,
+        "audio_decode": 0.3775723341386765,
+        "video_decode": 10.284077750053257,
+        "create_video": 9.574997238814831e-05,
+        "save_video": 0.6204964169301093
+      },
+      "steps": [
+        9.572785082971677,
+        9.467079875059426
+      ],
+      "peak_driver_gib": 55.30047607421875,
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "b29f00e8a4e67703038921af2188948b3afc00da5d0fb45a016c2121cd6b139a",
+            "shape": [
+              150
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "988608a161ac4c89bd5bca24eb6715cb9838b0a701bf8dee6ae14b44d251c742",
+            "shape": [
+              1,
+              150,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "99927a9025abb6c5578c35f0ca710cf9fb6d18746c37b33addee74095a6ef788",
+            "shape": [
+              1,
+              1,
+              1831872
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "1a6c7aa6850066996e7bde4e027145704e183e603e008068d22378540a0b7d26",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "1ae60ccf8f0cb91b51bef838b45adb42b528ce6029bb1781c753bf8030335bc9",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "a9d334494b508d9b2ae4d049dadba1d2056f8393d68a8674eab082542632bef6",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "3a73a9e3f1f630396a8d42dd8fb97835e1e92ba9bd8e845f4b106c9cfe38c246",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "025b8f125d1fee3c7f3aeebce1993a32d5c9ff34f430c33c99908e11e5cb627c",
+            "shape": [
+              1,
+              2,
+              165600
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "6fa3cff3f4b22e7933bbc971fe4ab57e755d30f3eec364167e9d26024ce2821b",
+            "shape": [
+              124,
+              512,
+              1024,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      },
+      "candidate_stats": {
+        "eligible_calls": 100
+      },
+      "e2e": 30.455,
+      "warmup": false,
+      "job": {
+        "mode": "exact",
+        "warmup": false,
+        "steps": 2,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a quiet sunlit study. The camera slowly dollies forward toward a wooden desk, producing a gentle steady push-in with clear natural parallax. On the desk stand a single red ceramic vase and a small brass globe. In the background, a round white wall clock with dark hands hangs above a wooden bookshelf containing upright blue, green and red books. Three distinct rectangular framed landscape photographs hang in a straight horizontal row on the wall. A leafy potted plant stands beside the bookshelf. The square checkerboard floor and all furniture remain rigid and stationary throughout. No people, no object movement, no scene cuts. Natural daylight, realistic fine detail, stable geometry and consistent colors. Quiet room ambience, no music.",
+        "seed": 812764035
+      }
+    },
+    {
+      "mode": "chunk",
+      "timings": {
+        "sampling_loop": 19.295965832890943,
+        "sampling": 19.418589582899585,
+        "audio_decode": 0.3564461248461157,
+        "video_decode": 10.372245583916083,
+        "create_video": 8.433288894593716e-05,
+        "save_video": 0.6742010000161827
+      },
+      "steps": [
+        9.533261082833633,
+        9.75866033299826
+      ],
+      "peak_driver_gib": 56.36297607421875,
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "b29f00e8a4e67703038921af2188948b3afc00da5d0fb45a016c2121cd6b139a",
+            "shape": [
+              150
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "988608a161ac4c89bd5bca24eb6715cb9838b0a701bf8dee6ae14b44d251c742",
+            "shape": [
+              1,
+              150,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "99927a9025abb6c5578c35f0ca710cf9fb6d18746c37b33addee74095a6ef788",
+            "shape": [
+              1,
+              1,
+              1831872
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "1a6c7aa6850066996e7bde4e027145704e183e603e008068d22378540a0b7d26",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "1ae60ccf8f0cb91b51bef838b45adb42b528ce6029bb1781c753bf8030335bc9",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "a9d334494b508d9b2ae4d049dadba1d2056f8393d68a8674eab082542632bef6",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "3a73a9e3f1f630396a8d42dd8fb97835e1e92ba9bd8e845f4b106c9cfe38c246",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "025b8f125d1fee3c7f3aeebce1993a32d5c9ff34f430c33c99908e11e5cb627c",
+            "shape": [
+              1,
+              2,
+              165600
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "6fa3cff3f4b22e7933bbc971fe4ab57e755d30f3eec364167e9d26024ce2821b",
+            "shape": [
+              124,
+              512,
+              1024,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      },
+      "candidate_stats": {
+        "eligible_calls": 100,
+        "changed_calls": 100
+      },
+      "e2e": 30.827,
+      "warmup": false,
+      "job": {
+        "mode": "chunk",
+        "warmup": false,
+        "steps": 2,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a quiet sunlit study. The camera slowly dollies forward toward a wooden desk, producing a gentle steady push-in with clear natural parallax. On the desk stand a single red ceramic vase and a small brass globe. In the background, a round white wall clock with dark hands hangs above a wooden bookshelf containing upright blue, green and red books. Three distinct rectangular framed landscape photographs hang in a straight horizontal row on the wall. A leafy potted plant stands beside the bookshelf. The square checkerboard floor and all furniture remain rigid and stationary throughout. No people, no object movement, no scene cuts. Natural daylight, realistic fine detail, stable geometry and consistent colors. Quiet room ambience, no music.",
+        "seed": 812764035
+      }
+    },
+    {
+      "mode": "pair",
+      "timings": {
+        "sampling_loop": 19.231737416936085,
+        "sampling": 19.35311987483874,
+        "audio_decode": 0.35771858412772417,
+        "video_decode": 10.337131917010993,
+        "create_video": 8.379179053008556e-05,
+        "save_video": 0.6401110000442713
+      },
+      "steps": [
+        9.5789357079193,
+        9.649950667051598
+      ],
+      "peak_driver_gib": 55.83172607421875,
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "b29f00e8a4e67703038921af2188948b3afc00da5d0fb45a016c2121cd6b139a",
+            "shape": [
+              150
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "988608a161ac4c89bd5bca24eb6715cb9838b0a701bf8dee6ae14b44d251c742",
+            "shape": [
+              1,
+              150,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "99927a9025abb6c5578c35f0ca710cf9fb6d18746c37b33addee74095a6ef788",
+            "shape": [
+              1,
+              1,
+              1831872
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "1a6c7aa6850066996e7bde4e027145704e183e603e008068d22378540a0b7d26",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "1ae60ccf8f0cb91b51bef838b45adb42b528ce6029bb1781c753bf8030335bc9",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "a9d334494b508d9b2ae4d049dadba1d2056f8393d68a8674eab082542632bef6",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "3a73a9e3f1f630396a8d42dd8fb97835e1e92ba9bd8e845f4b106c9cfe38c246",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "025b8f125d1fee3c7f3aeebce1993a32d5c9ff34f430c33c99908e11e5cb627c",
+            "shape": [
+              1,
+              2,
+              165600
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "6fa3cff3f4b22e7933bbc971fe4ab57e755d30f3eec364167e9d26024ce2821b",
+            "shape": [
+              124,
+              512,
+              1024,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      },
+      "candidate_stats": {
+        "eligible_calls": 100,
+        "changed_calls": 100
+      },
+      "e2e": 30.694,
+      "warmup": false,
+      "job": {
+        "mode": "pair",
+        "warmup": false,
+        "steps": 2,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a quiet sunlit study. The camera slowly dollies forward toward a wooden desk, producing a gentle steady push-in with clear natural parallax. On the desk stand a single red ceramic vase and a small brass globe. In the background, a round white wall clock with dark hands hangs above a wooden bookshelf containing upright blue, green and red books. Three distinct rectangular framed landscape photographs hang in a straight horizontal row on the wall. A leafy potted plant stands beside the bookshelf. The square checkerboard floor and all furniture remain rigid and stationary throughout. No people, no object movement, no scene cuts. Natural daylight, realistic fine detail, stable geometry and consistent colors. Quiet room ambience, no music.",
+        "seed": 812764035
+      }
+    },
+    {
+      "mode": "float",
+      "timings": {
+        "sampling_loop": 17.53240983420983,
+        "sampling": 17.65889058308676,
+        "audio_decode": 0.3633870000485331,
+        "video_decode": 10.332053292077035,
+        "create_video": 0.0001127920113503933,
+        "save_video": 0.6314653339795768
+      },
+      "steps": [
+        8.816918750060722,
+        8.713071750011295
+      ],
+      "peak_driver_gib": 56.30047607421875,
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "b29f00e8a4e67703038921af2188948b3afc00da5d0fb45a016c2121cd6b139a",
+            "shape": [
+              150
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "988608a161ac4c89bd5bca24eb6715cb9838b0a701bf8dee6ae14b44d251c742",
+            "shape": [
+              1,
+              150,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "99927a9025abb6c5578c35f0ca710cf9fb6d18746c37b33addee74095a6ef788",
+            "shape": [
+              1,
+              1,
+              1831872
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "919e9736a4f3fad32d9c39f44d94126ce0a4a66eef7daa481431e668727b85f8",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "d198cae4175295f3797923297021e2d01f005fa031e9d8675e640df8995b38cc",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "8ae25d247a9dec920ae66a4ebb1ffd614d827174258092440b455c52ea0fb578",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "a14d24f9d6dc5b26b43aa3ac346d0227d86562d7eaaf092f6497f347b833b27d",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "a129dd92154d5169136f126874f76822223e777c5b0b5ef790f91f0c1f957103",
+            "shape": [
+              1,
+              2,
+              165600
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "a8aa421e58a44b968589fe19099a25fb1167a37c413d422e71dc7da49a927585",
+            "shape": [
+              124,
+              512,
+              1024,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      },
+      "candidate_stats": {
+        "eligible_calls": 100
+      },
+      "e2e": 29.025,
+      "warmup": false,
+      "job": {
+        "mode": "float",
+        "warmup": false,
+        "steps": 2,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a quiet sunlit study. The camera slowly dollies forward toward a wooden desk, producing a gentle steady push-in with clear natural parallax. On the desk stand a single red ceramic vase and a small brass globe. In the background, a round white wall clock with dark hands hangs above a wooden bookshelf containing upright blue, green and red books. Three distinct rectangular framed landscape photographs hang in a straight horizontal row on the wall. A leafy potted plant stands beside the bookshelf. The square checkerboard floor and all furniture remain rigid and stationary throughout. No people, no object movement, no scene cuts. Natural daylight, realistic fine detail, stable geometry and consistent colors. Quiet room ambience, no music.",
+        "seed": 812764035
+      }
+    },
+    {
+      "mode": "float_chunk",
+      "timings": {
+        "sampling_loop": 17.447993458015844,
+        "sampling": 17.569954416016117,
+        "audio_decode": 0.3728182080667466,
+        "video_decode": 10.286556416889653,
+        "create_video": 8.395896293222904e-05,
+        "save_video": 0.6554404171183705
+      },
+      "steps": [
+        8.769551540957764,
+        8.675707334186882
+      ],
+      "peak_driver_gib": 56.36297607421875,
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "b29f00e8a4e67703038921af2188948b3afc00da5d0fb45a016c2121cd6b139a",
+            "shape": [
+              150
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "988608a161ac4c89bd5bca24eb6715cb9838b0a701bf8dee6ae14b44d251c742",
+            "shape": [
+              1,
+              150,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "99927a9025abb6c5578c35f0ca710cf9fb6d18746c37b33addee74095a6ef788",
+            "shape": [
+              1,
+              1,
+              1831872
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "919e9736a4f3fad32d9c39f44d94126ce0a4a66eef7daa481431e668727b85f8",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "d198cae4175295f3797923297021e2d01f005fa031e9d8675e640df8995b38cc",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "8ae25d247a9dec920ae66a4ebb1ffd614d827174258092440b455c52ea0fb578",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "a14d24f9d6dc5b26b43aa3ac346d0227d86562d7eaaf092f6497f347b833b27d",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "a129dd92154d5169136f126874f76822223e777c5b0b5ef790f91f0c1f957103",
+            "shape": [
+              1,
+              2,
+              165600
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "a8aa421e58a44b968589fe19099a25fb1167a37c413d422e71dc7da49a927585",
+            "shape": [
+              124,
+              512,
+              1024,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      },
+      "candidate_stats": {
+        "eligible_calls": 100,
+        "changed_calls": 100
+      },
+      "e2e": 28.89,
+      "warmup": false,
+      "job": {
+        "mode": "float_chunk",
+        "warmup": false,
+        "steps": 2,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a quiet sunlit study. The camera slowly dollies forward toward a wooden desk, producing a gentle steady push-in with clear natural parallax. On the desk stand a single red ceramic vase and a small brass globe. In the background, a round white wall clock with dark hands hangs above a wooden bookshelf containing upright blue, green and red books. Three distinct rectangular framed landscape photographs hang in a straight horizontal row on the wall. A leafy potted plant stands beside the bookshelf. The square checkerboard floor and all furniture remain rigid and stationary throughout. No people, no object movement, no scene cuts. Natural daylight, realistic fine detail, stable geometry and consistent colors. Quiet room ambience, no music.",
+        "seed": 812764035
+      }
+    },
+    {
+      "mode": "float",
+      "timings": {
+        "sampling_loop": 17.44371254206635,
+        "sampling": 17.56117220898159,
+        "audio_decode": 0.3620784590020776,
+        "video_decode": 10.292002125177532,
+        "create_video": 8.220784366130829e-05,
+        "save_video": 0.6224696249701083
+      },
+      "steps": [
+        8.788474583067,
+        8.652442374965176
+      ],
+      "peak_driver_gib": 56.30047607421875,
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "b29f00e8a4e67703038921af2188948b3afc00da5d0fb45a016c2121cd6b139a",
+            "shape": [
+              150
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "988608a161ac4c89bd5bca24eb6715cb9838b0a701bf8dee6ae14b44d251c742",
+            "shape": [
+              1,
+              150,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "99927a9025abb6c5578c35f0ca710cf9fb6d18746c37b33addee74095a6ef788",
+            "shape": [
+              1,
+              1,
+              1831872
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "919e9736a4f3fad32d9c39f44d94126ce0a4a66eef7daa481431e668727b85f8",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "d198cae4175295f3797923297021e2d01f005fa031e9d8675e640df8995b38cc",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "8ae25d247a9dec920ae66a4ebb1ffd614d827174258092440b455c52ea0fb578",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "a14d24f9d6dc5b26b43aa3ac346d0227d86562d7eaaf092f6497f347b833b27d",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "a129dd92154d5169136f126874f76822223e777c5b0b5ef790f91f0c1f957103",
+            "shape": [
+              1,
+              2,
+              165600
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "a8aa421e58a44b968589fe19099a25fb1167a37c413d422e71dc7da49a927585",
+            "shape": [
+              124,
+              512,
+              1024,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      },
+      "candidate_stats": {
+        "eligible_calls": 100
+      },
+      "e2e": 28.843,
+      "warmup": false,
+      "job": {
+        "mode": "float",
+        "warmup": false,
+        "steps": 2,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a quiet sunlit study. The camera slowly dollies forward toward a wooden desk, producing a gentle steady push-in with clear natural parallax. On the desk stand a single red ceramic vase and a small brass globe. In the background, a round white wall clock with dark hands hangs above a wooden bookshelf containing upright blue, green and red books. Three distinct rectangular framed landscape photographs hang in a straight horizontal row on the wall. A leafy potted plant stands beside the bookshelf. The square checkerboard floor and all furniture remain rigid and stationary throughout. No people, no object movement, no scene cuts. Natural daylight, realistic fine detail, stable geometry and consistent colors. Quiet room ambience, no music.",
+        "seed": 812764035
+      }
+    },
+    {
+      "mode": "float_chunk",
+      "timings": {
+        "sampling_loop": 17.405382958007976,
+        "sampling": 17.523498083930463,
+        "audio_decode": 0.37790079205296934,
+        "video_decode": 10.279498792020604,
+        "create_video": 8.295802399516106e-05,
+        "save_video": 0.6210597918834537
+      },
+      "steps": [
+        8.764020666014403,
+        8.63719120901078
+      ],
+      "peak_driver_gib": 56.36297607421875,
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "b29f00e8a4e67703038921af2188948b3afc00da5d0fb45a016c2121cd6b139a",
+            "shape": [
+              150
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "988608a161ac4c89bd5bca24eb6715cb9838b0a701bf8dee6ae14b44d251c742",
+            "shape": [
+              1,
+              150,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "99927a9025abb6c5578c35f0ca710cf9fb6d18746c37b33addee74095a6ef788",
+            "shape": [
+              1,
+              1,
+              1831872
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "919e9736a4f3fad32d9c39f44d94126ce0a4a66eef7daa481431e668727b85f8",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "d198cae4175295f3797923297021e2d01f005fa031e9d8675e640df8995b38cc",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "8ae25d247a9dec920ae66a4ebb1ffd614d827174258092440b455c52ea0fb578",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "a14d24f9d6dc5b26b43aa3ac346d0227d86562d7eaaf092f6497f347b833b27d",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "a129dd92154d5169136f126874f76822223e777c5b0b5ef790f91f0c1f957103",
+            "shape": [
+              1,
+              2,
+              165600
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "a8aa421e58a44b968589fe19099a25fb1167a37c413d422e71dc7da49a927585",
+            "shape": [
+              124,
+              512,
+              1024,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      },
+      "candidate_stats": {
+        "eligible_calls": 100,
+        "changed_calls": 100
+      },
+      "e2e": 28.808,
+      "warmup": false,
+      "job": {
+        "mode": "float_chunk",
+        "warmup": false,
+        "steps": 2,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a quiet sunlit study. The camera slowly dollies forward toward a wooden desk, producing a gentle steady push-in with clear natural parallax. On the desk stand a single red ceramic vase and a small brass globe. In the background, a round white wall clock with dark hands hangs above a wooden bookshelf containing upright blue, green and red books. Three distinct rectangular framed landscape photographs hang in a straight horizontal row on the wall. A leafy potted plant stands beside the bookshelf. The square checkerboard floor and all furniture remain rigid and stationary throughout. No people, no object movement, no scene cuts. Natural daylight, realistic fine detail, stable geometry and consistent colors. Quiet room ambience, no music.",
+        "seed": 812764035
+      }
+    }
+  ],
+  "full_runs": [
+    {
+      "mode": "exact",
+      "timings": {
+        "sampling_loop": 18.884832124924287,
+        "sampling": 21.07987929112278,
+        "audio_decode": 0.5119019160047174,
+        "video_decode": 10.513945874990895,
+        "create_video": 0.00016783387400209904,
+        "save_video": 0.6274973750114441
+      },
+      "steps": [
+        9.484207875095308,
+        9.390665999846533
+      ],
+      "peak_driver_gib": 50.27703857421875,
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "b29f00e8a4e67703038921af2188948b3afc00da5d0fb45a016c2121cd6b139a",
+            "shape": [
+              150
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "988608a161ac4c89bd5bca24eb6715cb9838b0a701bf8dee6ae14b44d251c742",
+            "shape": [
+              1,
+              150,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "99927a9025abb6c5578c35f0ca710cf9fb6d18746c37b33addee74095a6ef788",
+            "shape": [
+              1,
+              1,
+              1831872
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "1a6c7aa6850066996e7bde4e027145704e183e603e008068d22378540a0b7d26",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "1ae60ccf8f0cb91b51bef838b45adb42b528ce6029bb1781c753bf8030335bc9",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "a9d334494b508d9b2ae4d049dadba1d2056f8393d68a8674eab082542632bef6",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "3a73a9e3f1f630396a8d42dd8fb97835e1e92ba9bd8e845f4b106c9cfe38c246",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "025b8f125d1fee3c7f3aeebce1993a32d5c9ff34f430c33c99908e11e5cb627c",
+            "shape": [
+              1,
+              2,
+              165600
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "6fa3cff3f4b22e7933bbc971fe4ab57e755d30f3eec364167e9d26024ce2821b",
+            "shape": [
+              124,
+              512,
+              1024,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      },
+      "candidate_stats": {
+        "eligible_calls": 100
+      },
+      "e2e": 44.039,
+      "warmup": true,
+      "job": {
+        "mode": "exact",
+        "warmup": true,
+        "steps": 2,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a quiet sunlit study. The camera slowly dollies forward toward a wooden desk, producing a gentle steady push-in with clear natural parallax. On the desk stand a single red ceramic vase and a small brass globe. In the background, a round white wall clock with dark hands hangs above a wooden bookshelf containing upright blue, green and red books. Three distinct rectangular framed landscape photographs hang in a straight horizontal row on the wall. A leafy potted plant stands beside the bookshelf. The square checkerboard floor and all furniture remain rigid and stationary throughout. No people, no object movement, no scene cuts. Natural daylight, realistic fine detail, stable geometry and consistent colors. Quiet room ambience, no music.",
+        "seed": 812764035
+      }
+    },
+    {
+      "mode": "chunk",
+      "timings": {
+        "sampling_loop": 18.862491166917607,
+        "sampling": 18.97064199997112,
+        "audio_decode": 0.3596076248213649,
+        "video_decode": 10.242086083162576,
+        "create_video": 9.474996477365494e-05,
+        "save_video": 0.6286076249089092
+      },
+      "steps": [
+        9.489864042028785,
+        9.369582416024059
+      ],
+      "peak_driver_gib": 56.36297607421875,
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "b29f00e8a4e67703038921af2188948b3afc00da5d0fb45a016c2121cd6b139a",
+            "shape": [
+              150
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "988608a161ac4c89bd5bca24eb6715cb9838b0a701bf8dee6ae14b44d251c742",
+            "shape": [
+              1,
+              150,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "99927a9025abb6c5578c35f0ca710cf9fb6d18746c37b33addee74095a6ef788",
+            "shape": [
+              1,
+              1,
+              1831872
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "1a6c7aa6850066996e7bde4e027145704e183e603e008068d22378540a0b7d26",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "1ae60ccf8f0cb91b51bef838b45adb42b528ce6029bb1781c753bf8030335bc9",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "a9d334494b508d9b2ae4d049dadba1d2056f8393d68a8674eab082542632bef6",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "3a73a9e3f1f630396a8d42dd8fb97835e1e92ba9bd8e845f4b106c9cfe38c246",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "025b8f125d1fee3c7f3aeebce1993a32d5c9ff34f430c33c99908e11e5cb627c",
+            "shape": [
+              1,
+              2,
+              165600
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "6fa3cff3f4b22e7933bbc971fe4ab57e755d30f3eec364167e9d26024ce2821b",
+            "shape": [
+              124,
+              512,
+              1024,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      },
+      "candidate_stats": {
+        "eligible_calls": 100,
+        "changed_calls": 100
+      },
+      "e2e": 30.206,
+      "warmup": true,
+      "job": {
+        "mode": "chunk",
+        "warmup": true,
+        "steps": 2,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a quiet sunlit study. The camera slowly dollies forward toward a wooden desk, producing a gentle steady push-in with clear natural parallax. On the desk stand a single red ceramic vase and a small brass globe. In the background, a round white wall clock with dark hands hangs above a wooden bookshelf containing upright blue, green and red books. Three distinct rectangular framed landscape photographs hang in a straight horizontal row on the wall. A leafy potted plant stands beside the bookshelf. The square checkerboard floor and all furniture remain rigid and stationary throughout. No people, no object movement, no scene cuts. Natural daylight, realistic fine detail, stable geometry and consistent colors. Quiet room ambience, no music.",
+        "seed": 812764035
+      }
+    },
+    {
+      "mode": "exact",
+      "timings": {
+        "sampling_loop": 191.65912070893683,
+        "sampling": 191.7569292089902,
+        "audio_decode": 0.38012112490832806,
+        "video_decode": 10.275443208869547,
+        "create_video": 8.308305405080318e-05,
+        "save_video": 0.6184163340367377
+      },
+      "steps": [
+        9.503109625075012,
+        9.381314624799415,
+        9.391755584161729,
+        9.404529999941587,
+        9.404698750004172,
+        9.426001499872655,
+        9.454784875037149,
+        9.630457666004077,
+        9.623419292038307,
+        9.641587583115324,
+        9.67302199988626,
+        9.703348584007472,
+        9.714270000113174,
+        9.7026750408113,
+        9.70081725018099,
+        9.663891833974048,
+        9.672875500051305,
+        9.684987290995196,
+        9.630332791944966,
+        9.648075749864802
+      ],
+      "peak_driver_gib": 55.30047607421875,
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "b29f00e8a4e67703038921af2188948b3afc00da5d0fb45a016c2121cd6b139a",
+            "shape": [
+              150
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "988608a161ac4c89bd5bca24eb6715cb9838b0a701bf8dee6ae14b44d251c742",
+            "shape": [
+              1,
+              150,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "99927a9025abb6c5578c35f0ca710cf9fb6d18746c37b33addee74095a6ef788",
+            "shape": [
+              1,
+              1,
+              1831872
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "9358631ea4b7478157173fdf892302da50052ed812b2348a2773dc1adb455d7d",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "73aa4da4d25440ef8b2379fdc699399b05e7fec15381fd06fb0576b3c4648e5f",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "ec2fb16cbe4701d7e57fbbafda19f04711b8e8c02bda871ae4cb65638c8feadf",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "f3c7e6e2b954f00ea02e4f25c8bcf4520a4855afa807b988638158a6e2dc749b",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "f849ae991dc26e4d3aeaf1da2744a47409b06610a373814dc4844cdd9ddaac5c",
+            "shape": [
+              1,
+              2,
+              165600
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "73b1acd9726a62b8e7e20625c52f6c29ee30224c7471051cf58bc194fe8b658c",
+            "shape": [
+              124,
+              512,
+              1024,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      },
+      "candidate_stats": {
+        "eligible_calls": 1000
+      },
+      "e2e": 203.044,
+      "warmup": false,
+      "job": {
+        "mode": "exact",
+        "warmup": false,
+        "steps": 20,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a quiet sunlit study. The camera slowly dollies forward toward a wooden desk, producing a gentle steady push-in with clear natural parallax. On the desk stand a single red ceramic vase and a small brass globe. In the background, a round white wall clock with dark hands hangs above a wooden bookshelf containing upright blue, green and red books. Three distinct rectangular framed landscape photographs hang in a straight horizontal row on the wall. A leafy potted plant stands beside the bookshelf. The square checkerboard floor and all furniture remain rigid and stationary throughout. No people, no object movement, no scene cuts. Natural daylight, realistic fine detail, stable geometry and consistent colors. Quiet room ambience, no music.",
+        "seed": 812764035
+      }
+    },
+    {
+      "mode": "chunk",
+      "timings": {
+        "sampling_loop": 190.93382529192604,
+        "sampling": 191.03744783299044,
+        "audio_decode": 0.3606417910195887,
+        "video_decode": 10.233794375089929,
+        "create_video": 8.100015111267567e-05,
+        "save_video": 0.6002748338505626
+      },
+      "steps": [
+        9.500065333908424,
+        9.504526416072622,
+        9.523757999995723,
+        9.504773624939844,
+        9.502740292111412,
+        9.523478041868657,
+        9.51738508301787,
+        9.542340375017375,
+        9.525750207947567,
+        9.562699125148356,
+        9.57144445902668,
+        9.593531915917993,
+        9.573146709008142,
+        9.558121500071138,
+        9.574028166010976,
+        9.579726083902642,
+        9.555177540984005,
+        9.559431709116325,
+        9.600568166002631,
+        9.556927749887109
+      ],
+      "peak_driver_gib": 56.36297607421875,
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "b29f00e8a4e67703038921af2188948b3afc00da5d0fb45a016c2121cd6b139a",
+            "shape": [
+              150
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "988608a161ac4c89bd5bca24eb6715cb9838b0a701bf8dee6ae14b44d251c742",
+            "shape": [
+              1,
+              150,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "99927a9025abb6c5578c35f0ca710cf9fb6d18746c37b33addee74095a6ef788",
+            "shape": [
+              1,
+              1,
+              1831872
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "9358631ea4b7478157173fdf892302da50052ed812b2348a2773dc1adb455d7d",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "73aa4da4d25440ef8b2379fdc699399b05e7fec15381fd06fb0576b3c4648e5f",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "ec2fb16cbe4701d7e57fbbafda19f04711b8e8c02bda871ae4cb65638c8feadf",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "f3c7e6e2b954f00ea02e4f25c8bcf4520a4855afa807b988638158a6e2dc749b",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "f849ae991dc26e4d3aeaf1da2744a47409b06610a373814dc4844cdd9ddaac5c",
+            "shape": [
+              1,
+              2,
+              165600
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "73b1acd9726a62b8e7e20625c52f6c29ee30224c7471051cf58bc194fe8b658c",
+            "shape": [
+              124,
+              512,
+              1024,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      },
+      "candidate_stats": {
+        "eligible_calls": 1000,
+        "changed_calls": 1000
+      },
+      "e2e": 202.237,
+      "warmup": false,
+      "job": {
+        "mode": "chunk",
+        "warmup": false,
+        "steps": 20,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a quiet sunlit study. The camera slowly dollies forward toward a wooden desk, producing a gentle steady push-in with clear natural parallax. On the desk stand a single red ceramic vase and a small brass globe. In the background, a round white wall clock with dark hands hangs above a wooden bookshelf containing upright blue, green and red books. Three distinct rectangular framed landscape photographs hang in a straight horizontal row on the wall. A leafy potted plant stands beside the bookshelf. The square checkerboard floor and all furniture remain rigid and stationary throughout. No people, no object movement, no scene cuts. Natural daylight, realistic fine detail, stable geometry and consistent colors. Quiet room ambience, no music.",
+        "seed": 812764035
+      }
+    },
+    {
+      "mode": "chunk",
+      "timings": {
+        "sampling_loop": 191.53687954088673,
+        "sampling": 191.6357927089557,
+        "audio_decode": 0.3682054579257965,
+        "video_decode": 10.260071499971673,
+        "create_video": 7.970817387104034e-05,
+        "save_video": 0.6109659168869257
+      },
+      "steps": [
+        9.726040582871065,
+        9.567217499949038,
+        9.542149625020102,
+        9.536574708065018,
+        9.520247916923836,
+        9.529513833113015,
+        9.509590291883796,
+        9.542131083086133,
+        9.54539008392021,
+        9.544491708045825,
+        9.574544792063534,
+        9.574319165898487,
+        9.609634459018707,
+        9.587145708035678,
+        9.590438292128965,
+        9.604699999792501,
+        9.637473000213504,
+        9.60308454092592,
+        9.60003620898351,
+        9.589024499990046
+      ],
+      "peak_driver_gib": 56.36297607421875,
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "b29f00e8a4e67703038921af2188948b3afc00da5d0fb45a016c2121cd6b139a",
+            "shape": [
+              150
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "988608a161ac4c89bd5bca24eb6715cb9838b0a701bf8dee6ae14b44d251c742",
+            "shape": [
+              1,
+              150,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "99927a9025abb6c5578c35f0ca710cf9fb6d18746c37b33addee74095a6ef788",
+            "shape": [
+              1,
+              1,
+              1831872
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "9358631ea4b7478157173fdf892302da50052ed812b2348a2773dc1adb455d7d",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "73aa4da4d25440ef8b2379fdc699399b05e7fec15381fd06fb0576b3c4648e5f",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "ec2fb16cbe4701d7e57fbbafda19f04711b8e8c02bda871ae4cb65638c8feadf",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "f3c7e6e2b954f00ea02e4f25c8bcf4520a4855afa807b988638158a6e2dc749b",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "f849ae991dc26e4d3aeaf1da2744a47409b06610a373814dc4844cdd9ddaac5c",
+            "shape": [
+              1,
+              2,
+              165600
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "73b1acd9726a62b8e7e20625c52f6c29ee30224c7471051cf58bc194fe8b658c",
+            "shape": [
+              124,
+              512,
+              1024,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      },
+      "candidate_stats": {
+        "eligible_calls": 1000,
+        "changed_calls": 1000
+      },
+      "e2e": 202.881,
+      "warmup": false,
+      "job": {
+        "mode": "chunk",
+        "warmup": false,
+        "steps": 20,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a quiet sunlit study. The camera slowly dollies forward toward a wooden desk, producing a gentle steady push-in with clear natural parallax. On the desk stand a single red ceramic vase and a small brass globe. In the background, a round white wall clock with dark hands hangs above a wooden bookshelf containing upright blue, green and red books. Three distinct rectangular framed landscape photographs hang in a straight horizontal row on the wall. A leafy potted plant stands beside the bookshelf. The square checkerboard floor and all furniture remain rigid and stationary throughout. No people, no object movement, no scene cuts. Natural daylight, realistic fine detail, stable geometry and consistent colors. Quiet room ambience, no music.",
+        "seed": 812764035
+      }
+    },
+    {
+      "mode": "exact",
+      "timings": {
+        "sampling_loop": 191.93548725009896,
+        "sampling": 192.03806270915084,
+        "audio_decode": 0.3661777919624001,
+        "video_decode": 10.269524666946381,
+        "create_video": 8.370820432901382e-05,
+        "save_video": 0.6009457078762352
+      },
+      "steps": [
+        9.511230750009418,
+        9.536270000040531,
+        9.551444166107103,
+        9.620983541943133,
+        9.556957958033308,
+        9.543384124990553,
+        9.607335374923423,
+        9.536399249918759,
+        9.543741500005126,
+        9.611699334112927,
+        9.611308957915753,
+        9.643997417064384,
+        9.628840875113383,
+        9.598157915985212,
+        9.651073249988258,
+        9.646472458960488,
+        9.65592012484558,
+        9.63743883301504,
+        9.638871083036065,
+        9.601041959133
+      ],
+      "peak_driver_gib": 55.30047607421875,
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "b29f00e8a4e67703038921af2188948b3afc00da5d0fb45a016c2121cd6b139a",
+            "shape": [
+              150
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "988608a161ac4c89bd5bca24eb6715cb9838b0a701bf8dee6ae14b44d251c742",
+            "shape": [
+              1,
+              150,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "99927a9025abb6c5578c35f0ca710cf9fb6d18746c37b33addee74095a6ef788",
+            "shape": [
+              1,
+              1,
+              1831872
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "9358631ea4b7478157173fdf892302da50052ed812b2348a2773dc1adb455d7d",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "73aa4da4d25440ef8b2379fdc699399b05e7fec15381fd06fb0576b3c4648e5f",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "ec2fb16cbe4701d7e57fbbafda19f04711b8e8c02bda871ae4cb65638c8feadf",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "f3c7e6e2b954f00ea02e4f25c8bcf4520a4855afa807b988638158a6e2dc749b",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "f849ae991dc26e4d3aeaf1da2744a47409b06610a373814dc4844cdd9ddaac5c",
+            "shape": [
+              1,
+              2,
+              165600
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "73b1acd9726a62b8e7e20625c52f6c29ee30224c7471051cf58bc194fe8b658c",
+            "shape": [
+              124,
+              512,
+              1024,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      },
+      "candidate_stats": {
+        "eligible_calls": 1000
+      },
+      "e2e": 203.281,
+      "warmup": false,
+      "job": {
+        "mode": "exact",
+        "warmup": false,
+        "steps": 20,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a quiet sunlit study. The camera slowly dollies forward toward a wooden desk, producing a gentle steady push-in with clear natural parallax. On the desk stand a single red ceramic vase and a small brass globe. In the background, a round white wall clock with dark hands hangs above a wooden bookshelf containing upright blue, green and red books. Three distinct rectangular framed landscape photographs hang in a straight horizontal row on the wall. A leafy potted plant stands beside the bookshelf. The square checkerboard floor and all furniture remain rigid and stationary throughout. No people, no object movement, no scene cuts. Natural daylight, realistic fine detail, stable geometry and consistent colors. Quiet room ambience, no music.",
+        "seed": 812764035
+      }
+    }
+  ],
+  "guards": {
+    "short": {
+      "peak_rss_gib": 11.297271728515625,
+      "seconds": 338.07139333407395,
+      "child_exit": -15
+    },
+    "full": {
+      "peak_rss_gib": 11.811721801757812,
+      "seconds": 904.1429221672006,
+      "child_exit": -15
+    }
+  },
+  "means": {
+    "baseline": {
+      "sampling": 191.7973039795179,
+      "e2e": 203.16250000000002
+    },
+    "maximum_chunk": {
+      "sampling": 191.23535241640639,
+      "e2e": 202.559
+    }
+  },
+  "prior_attention_study_exact_hashes_match": true,
+  "archived_script_reproduction": {
+    "qkv": {
+      "current": {
+        "exact": true,
+        "times_ms": [
+          22.887833261241514,
+          23.458944400772452,
+          23.35772228737672,
+          23.420194319138925,
+          22.94511130700509,
+          22.83008334537347,
+          22.867986001074314
+        ],
+        "median_ms": 22.94511130700509
+      },
+      "32": {
+        "exact": true,
+        "times_ms": [
+          25.782721970851224,
+          26.111235997329157,
+          26.007041645546753,
+          25.75758332386613,
+          25.784000055864453,
+          25.659680366516113,
+          25.78879171051085
+        ],
+        "median_ms": 25.784000055864453
+      },
+      "64": {
+        "exact": true,
+        "times_ms": [
+          35.97824997268617,
+          23.38093038027485,
+          23.57787499204278,
+          23.366652661934495,
+          22.970125001544755,
+          22.96623634174466,
+          22.99624999674658
+        ],
+        "median_ms": 23.366652661934495
+      },
+      "512": {
+        "exact": true,
+        "times_ms": [
+          24.71866668201983,
+          25.07105570596953,
+          24.894249935944874,
+          25.193264009431005,
+          24.35193071141839,
+          24.371208390221,
+          24.562347292279203
+        ],
+        "median_ms": 24.71866668201983
+      }
+    },
+    "mlp": {
+      "current": {
+        "exact": true,
+        "times_ms": [
+          33.7985276710242,
+          33.786152955144644,
+          33.97958337639769,
+          33.78059699510535,
+          33.73720830616852,
+          33.7899859684209,
+          33.90930538686613
+        ],
+        "median_ms": 33.7899859684209
+      },
+      "chunk4096": {
+        "exact": true,
+        "times_ms": [
+          34.54587499921521,
+          34.41772237420082,
+          34.46066666704913,
+          34.609541685009994,
+          34.54811102710664,
+          34.514889043445386,
+          34.70884698132674
+        ],
+        "median_ms": 34.54587499921521
+      },
+      "chunk16384": {
+        "exact": true,
+        "times_ms": [
+          33.49370827587942,
+          33.443888649344444,
+          33.53275001669923,
+          33.49983335162202,
+          33.58175000175834,
+          33.80801396754881,
+          33.43358333222568
+        ],
+        "median_ms": 33.49983335162202
+      },
+      "chunk0": {
+        "exact": true,
+        "times_ms": [
+          33.24563894420862,
+          33.580597334851824,
+          33.496736005569495,
+          33.367361330116786,
+          33.35368066715697,
+          33.335861361896,
+          33.272722037509084
+        ],
+        "median_ms": 33.35368066715697
+      },
+      "fused16": {
+        "exact": true,
+        "times_ms": [
+          55.58369432886442,
+          55.56208329896132,
+          55.55506935343146,
+          55.59320833223561,
+          55.504485964775085,
+          55.55343061375121,
+          55.55541665914158
+        ],
+        "median_ms": 55.55541665914158
+      },
+      "fused32": {
+        "exact": true,
+        "times_ms": [
+          38.001138949766755,
+          38.18552770341436,
+          38.03906970036527,
+          38.036680314689875,
+          37.907235945264496,
+          37.87926398217678,
+          37.88216668181121
+        ],
+        "median_ms": 38.001138949766755
+      },
+      "fused128": {
+        "exact": true,
+        "times_ms": [
+          34.03040262249609,
+          33.94718033572038,
+          33.695152727887034,
+          33.94561136762301,
+          33.82998604016999,
+          33.60581933520734,
+          34.02381972409785
+        ],
+        "median_ms": 33.94561136762301
+      },
+      "fused129": {
+        "exact": true,
+        "times_ms": [
+          37.94881934300065,
+          38.04908335829774,
+          38.26454165391624,
+          37.61509736068547,
+          37.992625031620264,
+          38.08199994576474,
+          37.810319336131215
+        ],
+        "median_ms": 37.992625031620264
+      },
+      "fused65": {
+        "exact": true,
+        "times_ms": [
+          34.75691665274402,
+          34.717736300081015,
+          34.918263632183276,
+          34.85133328164617,
+          35.03426366175214,
+          34.738541658346854,
+          34.65605565967659
+        ],
+        "median_ms": 34.75691665274402
+      }
+    }
+  }
+}

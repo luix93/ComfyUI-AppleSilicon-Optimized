@@ -1,0 +1,525 @@
+{
+  "date": "2026-10-16",
+  "comfy_version": "0.41.2",
+  "comfy_commit": "b53f77a74e21091cbdebfdf7b85fc80326932646",
+  "previous_comfy": "0.40.0",
+  "torch": "2.14.1",
+  "torchvision": "0.29.1",
+  "pyav": "18.1.0",
+  "frontend": "1.55.17",
+  "torch_git": "5c4886908584029761b579af026dcfb627c84070",
+  "hardware": "M5 Ultra, 80 GPU cores, 256 GB",
+  "completed_runs": 44,
+  "elapsed_minutes": 51.88764377037684,
+  "pack_note": "Unchanged installed production patches relative to the 0.40.0 comparison instance.",
+  "rows": [
+    {
+      "label": "sdxl",
+      "mode": "baseline",
+      "first": 7.191,
+      "warm": 2.46,
+      "previous": 2.486,
+      "repeat_mismatches": [],
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 5,
+      "timings": {
+        "sampling_loop": 2.2247057079948718,
+        "sampling": 2.2319152080017375,
+        "video_decode": 0.18311112499941373,
+        "save_image": 0.0438341249973746
+      },
+      "peak_driver_gib": null,
+      "change_percent": -1.0458567980692002,
+      "workflow": "SDXL \u00b7 896\u00d71152 \u00b7 12 steps"
+    },
+    {
+      "label": "zimage",
+      "mode": "baseline",
+      "first": 9.953,
+      "warm": 3.45,
+      "previous": 3.5,
+      "repeat_mismatches": [],
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 5,
+      "timings": {
+        "sampling_loop": 3.207493832996988,
+        "sampling": 3.2240495840014773,
+        "video_decode": 0.18194045800191816,
+        "save_image": 0.04262966699752724
+      },
+      "peak_driver_gib": null,
+      "change_percent": -1.4285714285714235,
+      "workflow": "Z-Image Turbo \u00b7 1024\u00b2 \u00b7 8 steps"
+    },
+    {
+      "label": "krea2",
+      "mode": "baseline",
+      "first": 27.699,
+      "warm": 13.485,
+      "previous": 13.654,
+      "repeat_mismatches": [],
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 4,
+      "timings": {
+        "sampling_loop": 12.887036500003887,
+        "sampling": 12.922145458993327,
+        "video_decode": 0.4947000409956672,
+        "save_image": 0.06617945800098823
+      },
+      "peak_driver_gib": null,
+      "change_percent": -1.2377325325911848,
+      "workflow": "Krea2 \u00b7 1448\u00b2 \u00b7 8 steps \u00b7 LoKr"
+    },
+    {
+      "label": "krea2-no-lokr",
+      "mode": "baseline",
+      "first": 16.076,
+      "warm": 13.522,
+      "previous": 13.602,
+      "repeat_mismatches": [],
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 4,
+      "timings": {
+        "sampling_loop": 12.878994334001618,
+        "sampling": 12.931419042004563,
+        "video_decode": 0.5188749590015505,
+        "save_image": 0.07012254200526513
+      },
+      "peak_driver_gib": null,
+      "change_percent": -0.588148801646815,
+      "workflow": "Krea2 \u00b7 1448\u00b2 \u00b7 no LoKr"
+    },
+    {
+      "label": "flux2-t2i",
+      "mode": "baseline",
+      "first": 12.174,
+      "warm": 2.299,
+      "previous": 2.328,
+      "repeat_mismatches": [],
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 9,
+      "timings": {
+        "sampling_loop": 2.0435303330013994,
+        "sampling": 2.0624903329953668,
+        "video_decode": 0.19094125000265194,
+        "save_image": 0.044876125000882894
+      },
+      "peak_driver_gib": null,
+      "change_percent": -1.2457044673539475,
+      "workflow": "Flux.2 Klein 9B \u00b7 T2I \u00b7 4 steps"
+    },
+    {
+      "label": "flux2-edit",
+      "mode": "baseline",
+      "first": 8.06,
+      "warm": 4.588,
+      "previous": 4.651,
+      "repeat_mismatches": [],
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 11,
+      "timings": {
+        "sampling_loop": 4.357348709003418,
+        "sampling": 4.36531270800333,
+        "video_decode": 0.1867992499974207,
+        "save_image": 0.033379833002982195
+      },
+      "peak_driver_gib": null,
+      "change_percent": -1.3545474091593124,
+      "workflow": "Flux.2 Klein 9B \u00b7 edit \u00b7 4 steps"
+    },
+    {
+      "label": "ideogram4",
+      "mode": "baseline",
+      "first": 32.819,
+      "warm": 17.317,
+      "previous": 17.32,
+      "repeat_mismatches": [],
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 9,
+      "timings": {
+        "sampling_loop": 17.0620905830001,
+        "sampling": 17.069551667002088,
+        "vae_decode": 0.19478416699712398,
+        "save_image": 0.04915020800399361
+      },
+      "peak_driver_gib": null,
+      "change_percent": -0.0173210161662829,
+      "workflow": "Ideogram 4 \u00b7 1024\u00b2 \u00b7 12 steps"
+    },
+    {
+      "label": "qwen21-t2i",
+      "mode": "baseline",
+      "first": 21.574,
+      "warm": 12.573,
+      "previous": 12.702,
+      "repeat_mismatches": [],
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 4,
+      "timings": {
+        "sampling_loop": 11.903826415997173,
+        "sampling": 11.923767624997708,
+        "video_decode": 0.4703561249989434,
+        "save_image": 0.17750554200029
+      },
+      "peak_driver_gib": null,
+      "change_percent": -1.015588096362774,
+      "workflow": "Qwen-Image 2.1 \u00b7 T2I \u00b7 25 steps"
+    },
+    {
+      "label": "qwen21-edit",
+      "mode": "baseline",
+      "first": 28.445,
+      "warm": 23.181,
+      "previous": 23.208,
+      "repeat_mismatches": [],
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 5,
+      "timings": {
+        "sampling_loop": 22.4201236670051,
+        "sampling": 22.43758345900278,
+        "video_decode": 0.458274791999429,
+        "save_image": 0.2827313329980825
+      },
+      "peak_driver_gib": null,
+      "change_percent": -0.11633919338158716,
+      "workflow": "Qwen-Image 2.1 \u00b7 edit \u00b7 40 steps"
+    },
+    {
+      "label": "yue2-8s",
+      "mode": "baseline",
+      "first": 7.023,
+      "warm": 5.907,
+      "previous": 5.935,
+      "repeat_mismatches": [],
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 3,
+      "timings": {
+        "abc": {
+          "seconds": 1.8287605829973472,
+          "tokens": 128,
+          "truncated": true,
+          "dtype": "torch.bfloat16",
+          "tokens_per_second": 69.9927596810991
+        },
+        "semantic": {
+          "seconds": 2.191185999996378,
+          "tokens": 200,
+          "truncated": true,
+          "dtype": "torch.bfloat16",
+          "tokens_per_second": 91.27477083202001
+        },
+        "conditioning": {
+          "seconds": 0.1984459169980255
+        }
+      },
+      "peak_driver_gib": null,
+      "change_percent": -0.47177759056443724,
+      "workflow": "YuE2 \u00b7 controlled 8 s"
+    },
+    {
+      "label": "ltx-diffusion",
+      "mode": "baseline",
+      "first": 69.869,
+      "warm": 46.519,
+      "previous": 47.048,
+      "repeat_mismatches": [],
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 21,
+      "timings": {
+        "stage1_loop": 9.939828667003894,
+        "stage1": 10.247680708998814,
+        "latent_upscale": 0.14721654199820478,
+        "stage2_loop": 14.77320137499919,
+        "stage2": 14.964697875002457,
+        "audio_decode": 0.5769707500003278,
+        "video_decode": 19.585633000002417,
+        "create_video": 8.204199548345059e-05,
+        "save_video": 0.9848637500035693
+      },
+      "peak_driver_gib": null,
+      "change_percent": -1.1243836082298952,
+      "workflow": "LTX 2.5 \u00b7 diffusion VAE \u00b7 1280\u00d7704 \u00b7 121 frames"
+    },
+    {
+      "label": "ltx-conv",
+      "mode": "baseline",
+      "first": 42.98,
+      "warm": 32.211,
+      "previous": 32.4,
+      "repeat_mismatches": [],
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 21,
+      "timings": {
+        "stage1_loop": 9.985656250006286,
+        "stage1": 10.303520708999713,
+        "latent_upscale": 0.12234237499797018,
+        "stage2_loop": 14.65641041699564,
+        "stage2": 14.849464541002817,
+        "audio_decode": 0.5181931249971967,
+        "video_decode": 5.388831374999427,
+        "create_video": 8.09580014902167e-05,
+        "save_video": 1.0160994580000988
+      },
+      "peak_driver_gib": null,
+      "change_percent": -0.5833333333333357,
+      "workflow": "LTX 2.5 \u00b7 convolutional VAE \u00b7 same clip"
+    },
+    {
+      "label": "h3-exact",
+      "mode": "baseline",
+      "first": 166.416,
+      "warm": 144.525,
+      "previous": 144.275,
+      "repeat_mismatches": [],
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 9,
+      "timings": {
+        "sampling_loop": 133.06652508300613,
+        "sampling": 133.16363004099549,
+        "audio_decode": 0.34901904199796263,
+        "video_decode": 10.292879541004368,
+        "create_video": 8.900000102585182e-05,
+        "save_video": 0.7149322920013219
+      },
+      "peak_driver_gib": null,
+      "change_percent": 0.17328019407381046,
+      "workflow": "H3 exact \u00b7 864\u00d7480 \u00b7 124 frames \u00b7 20 steps"
+    },
+    {
+      "label": "h3-attention-smoke",
+      "mode": "attention_3",
+      "first": 122.998,
+      "warm": 115.165,
+      "previous": 114.338,
+      "repeat_mismatches": [],
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 9,
+      "timings": {
+        "sampling_loop": 103.96008541699848,
+        "sampling": 104.00528729100188,
+        "audio_decode": 0.2974777080016793,
+        "video_decode": 10.266766499997175,
+        "create_video": 8.454199996776879e-05,
+        "save_video": 0.5888106249985867
+      },
+      "peak_driver_gib": 55.30047607421875,
+      "change_percent": 0.7232940929524867,
+      "workflow": "H3 SOL INT8 Fast \u00b7 480p"
+    },
+    {
+      "label": "h3-attention-smoke",
+      "mode": "attention_8",
+      "first": 113.231,
+      "warm": 112.504,
+      "previous": 112.303,
+      "repeat_mismatches": [],
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 9,
+      "timings": {
+        "sampling_loop": 101.22272854200128,
+        "sampling": 101.3378664999982,
+        "audio_decode": 0.3209092499964754,
+        "video_decode": 10.226842042000499,
+        "create_video": 0.0001277920018765144,
+        "save_video": 0.6106300829997053
+      },
+      "peak_driver_gib": 55.30047607421875,
+      "change_percent": 0.1789800806746067,
+      "workflow": "H3 SOL INT8 Hybrid Fast \u00b7 480p"
+    },
+    {
+      "label": "wan-turbo",
+      "mode": "baseline",
+      "first": 58.574,
+      "warm": 31.942,
+      "previous": 31.913,
+      "repeat_mismatches": [],
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 19,
+      "timings": {
+        "high_noise_loop": 14.442990292001923,
+        "high_noise": 14.48734633300046,
+        "low_noise_loop": 14.356259874999523,
+        "low_noise": 14.372490875000949,
+        "video_decode": 2.8155095420006546,
+        "create_video": 8.895800419850275e-05,
+        "save_video": 0.2606488340024953
+      },
+      "peak_driver_gib": null,
+      "change_percent": 0.09087205840880852,
+      "workflow": "Wan 2.2 I2V \u00b7 512\u00b2 \u00b7 81 frames \u00b7 4-step LoRA / CFG 1"
+    },
+    {
+      "label": "wan-20step",
+      "mode": "baseline",
+      "first": 312.286,
+      "warm": 308.01,
+      "previous": 304.336,
+      "repeat_mismatches": [],
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 19,
+      "timings": {
+        "high_noise_loop": 152.41882375000569,
+        "high_noise": 152.50167724999483,
+        "low_noise_loop": 152.38187708300393,
+        "low_noise": 152.40559441599908,
+        "video_decode": 2.803834874997847,
+        "create_video": 9.39170058700256e-05,
+        "save_video": 0.2918124159987201
+      },
+      "peak_driver_gib": null,
+      "change_percent": 1.2072183376268253,
+      "workflow": "Wan 2.2 I2V \u00b7 same clip \u00b7 20 steps / CFG 3.5"
+    },
+    {
+      "label": "seedvr-image",
+      "mode": "baseline",
+      "first": 49.61883183399914,
+      "warm": 45.29296770799556,
+      "previous": 45.395714208018035,
+      "change_percent": -0.22633524290786022,
+      "repeat_mismatches": [],
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 3,
+      "timings": {
+        "resize": 0.2949358330006362,
+        "preprocess": 0.017308292000961956,
+        "encode": 9.512084542002412,
+        "sample": 11.891815999995742,
+        "decode": 21.648515999993833,
+        "postprocess": 0.013568874994234648,
+        "save_image": 1.9096077079957468
+      },
+      "memory": {
+        "stage": "verification",
+        "max_driver_gib": 31.727203369140625,
+        "max_live_gib": 8.61825704574585,
+        "max_rss_gib": 6.018218994140625,
+        "torch_version": "2.14.1",
+        "torch_git": "5c4886908584029761b579af026dcfb627c84070",
+        "completed": true
+      },
+      "finite": true,
+      "workflow": "SeedVR2 7B INT8 \u00b7 2400\u00d71600 \u2192 7200\u00d74800"
+    },
+    {
+      "label": "krea2-1024",
+      "mode": "baseline",
+      "first": 16.623,
+      "warm": 6.174,
+      "previous": 6.204,
+      "repeat_mismatches": [],
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 4,
+      "timings": {
+        "sampling_loop": 5.87520675000269,
+        "sampling": 5.898452458997781,
+        "video_decode": 0.23403395799687132,
+        "save_image": 0.04067537499940954
+      },
+      "peak_driver_gib": null,
+      "change_percent": -0.4835589941972862,
+      "workflow": "Krea2 \u00b7 1024\u00b2 \u00b7 8 steps \u00b7 no LoKr"
+    },
+    {
+      "label": "seedvr-video-120f",
+      "mode": "baseline",
+      "first": 124.83194312499836,
+      "warm": 124.34493995799858,
+      "previous": 124.1683733749669,
+      "change_percent": 0.14219932035226535,
+      "repeat_mismatches": [],
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 3,
+      "timings": {
+        "resize": 1.2974877910019131,
+        "preprocess": 0.10154187499574618,
+        "encode": 31.059296916995663,
+        "sample": 14.45999341699644,
+        "decode": 76.21254770900123,
+        "postprocess": 3.237499913666397e-05,
+        "save_image": 0.07135079100407893,
+        "export_video": 1.1332775829941966
+      },
+      "memory": {
+        "stage": "verification",
+        "max_driver_gib": 33.57781982421875,
+        "max_live_gib": 11.298875331878662,
+        "max_rss_gib": 12.99176025390625,
+        "video_sync": "production",
+        "tile_calls": 32,
+        "conv_calls": 62288,
+        "torch_version": "2.14.1",
+        "torch_git": "5c4886908584029761b579af026dcfb627c84070",
+        "last_progress": 240.39079358399613,
+        "completed": true
+      },
+      "finite": true,
+      "workflow": "SeedVR2 7B INT8 \u00b7 416\u00d7736 \u2192 832\u00d71472 \u00b7 120 frames"
+    },
+    {
+      "label": "yue2-full",
+      "mode": "baseline",
+      "first": 37.086,
+      "warm": 33.984,
+      "previous": 34.904,
+      "repeat_mismatches": [],
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 3,
+      "timings": {
+        "abc": {
+          "seconds": 5.727705500001321,
+          "tokens": 504,
+          "truncated": false,
+          "dtype": "torch.bfloat16",
+          "tokens_per_second": 87.99335091510619
+        },
+        "semantic": {
+          "seconds": 21.415340042003663,
+          "tokens": 2080,
+          "truncated": false,
+          "dtype": "torch.bfloat16",
+          "tokens_per_second": 97.1266389382716
+        },
+        "conditioning": {
+          "seconds": 0.29013379200478084
+        }
+      },
+      "peak_driver_gib": null,
+      "change_percent": -2.63580105432043,
+      "workflow": "YuE2 \u00b7 saved full-song workflow"
+    },
+    {
+      "label": "yue2-mothersuperior",
+      "mode": "baseline",
+      "first": 24.113,
+      "warm": 21.932,
+      "previous": 21.777,
+      "repeat_mismatches": [],
+      "previous_hash_mismatches": [],
+      "previous_hash_compared": 3,
+      "timings": {
+        "abc": {
+          "seconds": 13.731495041996823,
+          "tokens": 1254,
+          "truncated": false,
+          "dtype": "torch.bfloat16",
+          "tokens_per_second": 91.32290374534806
+        },
+        "semantic": {
+          "seconds": 5.511254709002969,
+          "tokens": 500,
+          "truncated": true,
+          "dtype": "torch.bfloat16",
+          "tokens_per_second": 90.72344255532586
+        },
+        "conditioning": {
+          "seconds": 0.24142545799986692
+        }
+      },
+      "peak_driver_gib": null,
+      "change_percent": 0.7117601138816099,
+      "workflow": "YuE2 \u00b7 Mothersuperior \u00b7 20 s"
+    }
+  ]
+}

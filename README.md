@@ -35,17 +35,22 @@ compiler/toolchain; our current measurements use **macOS 27 / M5 Ultra**.
 Older Apple Silicon attempts the enabled routes with existing fallbacks, but
 M1–M4 performance and parity are not yet validated.
 
-**Latest tested ComfyUI core: v0.40.0**, commit
-[`3541246a`](https://github.com/Comfy-Org/ComfyUI/commit/3541246a9c997f4b8c32f9f88f3c985d02021c79).
-All 23 workflow/mode cases passed a two-run regression check on October 14;
-matched warm times remained within −2.6% to +3.6% of the preceding stack.
-[Results and validation scope](benchmarks/m5-ultra-comfy040-smoke.md).
+**Latest tested ComfyUI core: v0.41.2**, commit
+[`b53f77a7`](https://github.com/Comfy-Org/ComfyUI/commit/b53f77a74e21091cbdebfdf7b85fc80326932646).
+All 22 workflow/mode cases passed a two-run regression check on October 16;
+captured outputs matched v0.40.0 and warm times remained within −2.6% to +1.2%.
+[Results and validation scope](benchmarks/m5-ultra-comfy0412-smoke.md).
+
+**Optional H3 attention:** new INT8 QK / BF16 PV presets measured **8.51 s/step**
+full or **8.76 s/step** protected, versus **9.29 s/step exact**, at 1024×512,
+124 frames, 20 steps. These are approximate, opt-in modes; exact defaults are
+unchanged. [Speed, quality and comparison with SOL](benchmarks/m5-ultra-h3-floatpv.md).
 
 **Stock/optimized benchmark core:** `v0.39.0-33-g1d2ea294` — package version **0.39.0**,
 33 commits after the v0.39.0 tag, at
 [`1d2ea2948d33dfda4d7cfe58c6d234968aa62cf8`](https://github.com/Comfy-Org/ComfyUI/commit/1d2ea2948d33dfda4d7cfe58c6d234968aa62cf8).
-This is the checkout used for the current benchmarks, not the tagged v0.39.2
-release. The installer manages the tested Torch profile; it does not pin or
+This is the checkout used for the established model table, not the tagged v0.39.2
+release. New Flux.3 measurements use **v0.41.2** and are listed separately. The installer manages the tested Torch profile; it does not pin or
 update ComfyUI core.
 
 ### ComfyUI-Manager
@@ -126,7 +131,7 @@ are downloaded by the main installer; their separate setup is documented in
 
 | Configuration | Validation status |
 |---|---|
-| M5 Ultra, 80 GPU cores / 256 GB, macOS 27, PyTorch 2.14.1 + torchvision 0.29.1 | Benchmarked on ComfyUI `v0.39.0-33-g1d2ea294`; v0.40.0 passed the [two-run workflow regression check](benchmarks/m5-ultra-comfy040-smoke.md). |
+| M5 Ultra, 80 GPU cores / 256 GB, macOS 27, PyTorch 2.14.1 + torchvision 0.29.1 | Benchmarked on ComfyUI `v0.39.0-33-g1d2ea294`; v0.41.2 passed the [two-run workflow regression check](benchmarks/m5-ultra-comfy0412-smoke.md), with new Flux.3 benchmarks on v0.41.2. |
 | PyTorch 2.14.0 + torchvision 0.29.0 | Reviewed build retained by setup; earlier workflow evidence is linked in the reports. |
 | M5 Max | Historical measurements exist; the current release stack was not retested on a Max. |
 | M1–M4 / older macOS / other framework builds | Experimental. Available routes are attempted with existing fallbacks; full native acceleration, performance and parity are not established. |
@@ -137,15 +142,40 @@ geometry. A model loading successfully does not prove that its fast path ran.
 
 ## Latest results — M5 Ultra (80 GPU cores)
 
-**README updated 2026-10-14 · stock/optimized table measured October 9–10 · 256 GB unified memory · macOS 27.0 · PyTorch 2.14.1**
+**Updated 2026-10-16 · 256 GB unified memory · macOS 27.0 · PyTorch 2.14.1**
+
+### New: Flux.3 on ComfyUI v0.41.2
+
+Warm diffusion workflow time, including VAE decode and PNG export. Edit rows use
+the same frozen expanded prompt in both configurations; prompt generation is
+measured separately below. Base uses **50 steps / CFG 3.5**, distilled uses
+**16 steps / CFG 1**, both Euler/simple and INT8 ConvRot checkpoints.
+
+| Workflow | Stock | Optimized | Speedup |
+|---|---:|---:|---:|
+| Flux.3 distilled, text-to-image, 1024×1024 | 12.12 s | **6.17 s** | **1.96×** |
+| Flux.3 base, text-to-image, 1024×1024 | 69.15 s | **35.47 s** | **1.95×** |
+| Flux.3 distilled, image edit, 1376×752 | 21.94 s | **13.35 s** | **1.64×** |
+| Flux.3 base, image edit, 896×1152 | 118.77 s | **75.35 s** | **1.58×** |
+
+The new refinements also cut **14–22%** from the preceding optimized pack,
+with byte-identical tested latents and decoded tensors. Prompt expansion drops
+from **116–117 s to about 10 s** by reusing prepared Qwen3.5 weights within
+each generation. These exact incremental changes do not make the existing
+W8A8 path identical to stock. With fresh prompt expansion and reference encoding,
+the complete edit workflows measured **24.01 s distilled / 85.95 s base** warm.
+[Measurements and rejected experiments](benchmarks/m5-ultra-flux3.md)
+· [Controls and temporary memory budgets](docs/flux3.md).
+
+### Established model benchmarks
 
 **ComfyUI core used for this table:** `v0.39.0-33-g1d2ea294` (package version
 0.39.0). [Recorded test environment](benchmarks/m5-ultra-torch2141-retest.md).
 
-The [v0.40.0 regression check](benchmarks/m5-ultra-comfy040-smoke.md) passed
-all 23 cases with no substantial timing regression or captured tensor changes
-against available references. Its single warm observations do not replace the
-benchmark averages below.
+The [v0.41.2 regression check](benchmarks/m5-ultra-comfy0412-smoke.md) passed
+all 22 cases twice, with byte-identical captured outputs against v0.40.0 and
+warm timing changes of −2.6% to +1.2%. These single warm observations do not
+replace the benchmark averages below.
 
 <!-- Canonical current benchmark table: update the date, measurements and linked report together after validated runs. -->
 
@@ -288,6 +318,9 @@ Most workflows need none. The main controls are `ASFP8_NATIVE=0` (automatic nati
 groups), `ASFP8_SETUP_KEEP_TORCH=1` (installer opt-out) and `ASFP8_AUTOFIX=0`
 (prerequisite helper). Per-model switches and experimental modes are documented
 in the [complete settings reference](docs/settings.md).
+For the new Flux.3 paths, `ASFP8_FLUX3_FAST=0` restores the preceding pack;
+[Flux.3 controls](docs/flux3.md) also separate prompt caching, sampling caching
+and each fusion.
 
 ## Documentation and release checks
 

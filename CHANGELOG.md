@@ -1,5 +1,30 @@
 # Release notes
 
+## October 16, 2026 update
+
+- Latest tested ComfyUI core is **v0.41.2**, with PyTorch **2.14.1** and
+  Comfy Kitchen **0.2.37** on M5 Ultra. All 22 regression cases completed twice;
+  captured outputs matched v0.40.0 and warm timing changes stayed between
+  −2.6% and +1.2%. [Regression report](benchmarks/m5-ultra-comfy0412-smoke.md).
+- Added automatic Flux.3 acceleration: phase-local prepared-weight reuse,
+  exact RoPE and SwiGLU fusion, and Qwen3.5 prompt-expander weight reuse.
+  Warm stock-to-optimized results are **12.12 → 6.17 s** distilled T2I,
+  **69.15 → 35.47 s** base T2I, **21.94 → 13.35 s** distilled edit and
+  **118.77 → 75.35 s** base edit. Edit comparisons use identical frozen
+  expanded prompts; prompt generation separately improves from 116–117 s
+  to about 10 s. Base uses 50 steps / CFG 3.5; distilled uses 16 steps / CFG 1.
+  [Full benchmark and numerical scope](benchmarks/m5-ultra-flux3.md).
+- New Flux.3 refinements preserve the preceding optimized implementation's
+  tested latents and decoded bytes; this does not claim stock equivalence.
+  Cache budgets, cleanup and independent switches are documented in the
+  [Flux.3 guide](docs/flux3.md). The cast hook exists only during relevant phases.
+- Added optional H3 INT8 QK / BF16 PV attention presets and their quality,
+  timing and memory measurements. Existing exact defaults remain unchanged.
+  [Attention report](benchmarks/m5-ultra-h3-floatpv.md).
+- Published H3 QKV/FC1/SwiGLU experiments without enabling inconclusive or
+  rejected candidates in production. [Fusion report](benchmarks/m5-ultra-h3-fusions.md).
+- Updated third-party provenance, benchmark data and reproduction tools.
+
 ## October 13, 2026 update
 
 - Corrected H3 Fast token reduction restores full spatial tokens earlier to

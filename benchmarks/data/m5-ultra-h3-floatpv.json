@@ -1,0 +1,2356 @@
+{
+  "date": "2026-10-14",
+  "hardware": "M5 Ultra 80 GPU cores / 256 GB",
+  "core": "3541246a9c997f4b8c32f9f88f3c985d02021c79",
+  "torch": "2.14.1",
+  "primary": {
+    "exact": {
+      "runs": 2,
+      "e2e": [
+        196.336,
+        197.176
+      ],
+      "sampling": [
+        185.0644831249956,
+        185.83506025001407
+      ],
+      "mean_e2e": 196.756,
+      "mean_sampling": 185.44977168750484,
+      "mean_step": 9.272488584375242,
+      "peak_driver_gib": 55.30047607421875,
+      "repeat_hashes_match": {
+        "conditioning": true,
+        "noise": true,
+        "latents": true,
+        "audio_decode": true,
+        "frames": true
+      },
+      "floatpv_calls": [
+        0,
+        0
+      ],
+      "hashes": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "b29f00e8a4e67703038921af2188948b3afc00da5d0fb45a016c2121cd6b139a",
+            "shape": [
+              150
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "988608a161ac4c89bd5bca24eb6715cb9838b0a701bf8dee6ae14b44d251c742",
+            "shape": [
+              1,
+              150,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "99927a9025abb6c5578c35f0ca710cf9fb6d18746c37b33addee74095a6ef788",
+            "shape": [
+              1,
+              1,
+              1831872
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "9358631ea4b7478157173fdf892302da50052ed812b2348a2773dc1adb455d7d",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "73aa4da4d25440ef8b2379fdc699399b05e7fec15381fd06fb0576b3c4648e5f",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "ec2fb16cbe4701d7e57fbbafda19f04711b8e8c02bda871ae4cb65638c8feadf",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "f3c7e6e2b954f00ea02e4f25c8bcf4520a4855afa807b988638158a6e2dc749b",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "f849ae991dc26e4d3aeaf1da2744a47409b06610a373814dc4844cdd9ddaac5c",
+            "shape": [
+              1,
+              2,
+              165600
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "73b1acd9726a62b8e7e20625c52f6c29ee30224c7471051cf58bc194fe8b658c",
+            "shape": [
+              124,
+              512,
+              1024,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      }
+    },
+    "dense_protected": {
+      "runs": 2,
+      "e2e": [
+        186.085,
+        186.723
+      ],
+      "sampling": [
+        174.79973754216917,
+        175.30260562500916
+      ],
+      "mean_e2e": 186.404,
+      "mean_sampling": 175.05117158358917,
+      "mean_step": 8.752558579179459,
+      "peak_driver_gib": 56.30047607421875,
+      "repeat_hashes_match": {
+        "conditioning": true,
+        "noise": true,
+        "latents": true,
+        "audio_decode": true,
+        "frames": true
+      },
+      "floatpv_calls": [
+        0,
+        0
+      ],
+      "hashes": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "b29f00e8a4e67703038921af2188948b3afc00da5d0fb45a016c2121cd6b139a",
+            "shape": [
+              150
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "988608a161ac4c89bd5bca24eb6715cb9838b0a701bf8dee6ae14b44d251c742",
+            "shape": [
+              1,
+              150,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "99927a9025abb6c5578c35f0ca710cf9fb6d18746c37b33addee74095a6ef788",
+            "shape": [
+              1,
+              1,
+              1831872
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "f678e9b17e407e320c14411ddc5050b4156fd6d33a5957965a2a18127d5203e6",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "b17e7de9f738b4f351fc65f9edc36121bed17bfc5b2a81636bf3a59e25f2e7cd",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "cc80f4645451379378099cd9b2b8a76cbd65f5bbf7fc44013f752e4d0f9e7aec",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "94e5471a1f3978b64c06b8cceaa81469e59602605ef7f32405e29c1757b2cbf5",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "5e79de20d4153f51d39d9e891b1f70365efeaf5c022373e571b66e56d33e23a9",
+            "shape": [
+              1,
+              2,
+              165600
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "8bb8f7e14edd7b86ba0715137ca98c4893c64305383b4df14e83b7ef0d223a0f",
+            "shape": [
+              124,
+              512,
+              1024,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      }
+    },
+    "sol_fast": {
+      "runs": 2,
+      "e2e": [
+        148.221,
+        148.469
+      ],
+      "sampling": [
+        136.90814837510698,
+        137.15011454210617
+      ],
+      "mean_e2e": 148.345,
+      "mean_sampling": 137.02913145860657,
+      "mean_step": 6.851456572930328,
+      "peak_driver_gib": 56.30047607421875,
+      "repeat_hashes_match": {
+        "conditioning": true,
+        "noise": true,
+        "latents": true,
+        "audio_decode": true,
+        "frames": true
+      },
+      "floatpv_calls": [
+        0,
+        0
+      ],
+      "hashes": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "b29f00e8a4e67703038921af2188948b3afc00da5d0fb45a016c2121cd6b139a",
+            "shape": [
+              150
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "988608a161ac4c89bd5bca24eb6715cb9838b0a701bf8dee6ae14b44d251c742",
+            "shape": [
+              1,
+              150,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "99927a9025abb6c5578c35f0ca710cf9fb6d18746c37b33addee74095a6ef788",
+            "shape": [
+              1,
+              1,
+              1831872
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "b8f40b4b8d8f247e20e96e239cd0795173448c9e312478b1b0438d72472b68ae",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "bee5a9f146aa3a39672f9d6fb6bdd97981e9175d4c98349d98e300c87dd01058",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "ce37a90d79ebbf31d94525a24d8c5428dd3df52aa0c022b57bb267fb2150f100",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "0ed9b017616d84ba2cec6f58318a7dd4370f60525b628912fd1f44523ea78830",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "23e281394a46609bd5fa7c114102476a0970518476ba627d909c74e3ba3adbe9",
+            "shape": [
+              1,
+              2,
+              165600
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "2a5888787861bf1efe5cb19e87bf493b8b85b1b0f9e0d065c0c580abfba21d20",
+            "shape": [
+              124,
+              512,
+              1024,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      }
+    },
+    "sol_hybrid": {
+      "runs": 2,
+      "e2e": [
+        147.098,
+        147.281
+      ],
+      "sampling": [
+        135.76664320891723,
+        135.98606141703203
+      ],
+      "mean_e2e": 147.1895,
+      "mean_sampling": 135.87635231297463,
+      "mean_step": 6.793817615648732,
+      "peak_driver_gib": 56.30047607421875,
+      "repeat_hashes_match": {
+        "conditioning": true,
+        "noise": true,
+        "latents": true,
+        "audio_decode": true,
+        "frames": true
+      },
+      "floatpv_calls": [
+        0,
+        0
+      ],
+      "hashes": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "b29f00e8a4e67703038921af2188948b3afc00da5d0fb45a016c2121cd6b139a",
+            "shape": [
+              150
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "988608a161ac4c89bd5bca24eb6715cb9838b0a701bf8dee6ae14b44d251c742",
+            "shape": [
+              1,
+              150,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "99927a9025abb6c5578c35f0ca710cf9fb6d18746c37b33addee74095a6ef788",
+            "shape": [
+              1,
+              1,
+              1831872
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "788fe575cbfdd4d527bd1346cd81f22114d1990fa24842968ad8718d31cd8113",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "bb1b00478bdf414483a8a2a78ccc1dbd2262371c9fba3f4f13d3e2d6163d65cf",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "19e3fc0158c32f02d7e8ed71d4e4060737e6b53e970d0db0cb9b58187351d49a",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "f12e0c242d22db6be366a2848bd98903dfadfec40aef23f90c438280a8c8d066",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "7a93d5d2ca03118388b2dd30acc9520ec48d808547bc41b694c789c0451fb17f",
+            "shape": [
+              1,
+              2,
+              165600
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "6c60f3a72adcae57fc148efb840e18f5e68dce97b1eac8b225574ccfad376929",
+            "shape": [
+              124,
+              512,
+              1024,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      }
+    },
+    "floatpv_protected": {
+      "runs": 2,
+      "e2e": [
+        189.377,
+        186.58
+      ],
+      "sampling": [
+        178.05168137489818,
+        175.28549050004221
+      ],
+      "mean_e2e": 187.9785,
+      "mean_sampling": 176.6685859374702,
+      "mean_step": 8.833429296873511,
+      "peak_driver_gib": 56.30047607421875,
+      "repeat_hashes_match": {
+        "conditioning": true,
+        "noise": true,
+        "latents": true,
+        "audio_decode": true,
+        "frames": true
+      },
+      "floatpv_calls": [
+        630,
+        630
+      ],
+      "hashes": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "b29f00e8a4e67703038921af2188948b3afc00da5d0fb45a016c2121cd6b139a",
+            "shape": [
+              150
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "988608a161ac4c89bd5bca24eb6715cb9838b0a701bf8dee6ae14b44d251c742",
+            "shape": [
+              1,
+              150,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "99927a9025abb6c5578c35f0ca710cf9fb6d18746c37b33addee74095a6ef788",
+            "shape": [
+              1,
+              1,
+              1831872
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "2901ff18944edf17810314618c45dd9e06504470c39542ea65ed2f401d612563",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "b5110baa1b048d1df35f0dd638ab92807272df5c700df01dec45910f9547bb67",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "2c8e85bdd4769b3100eafd93f5d2ce20886647db872901ac332bc8c454370be6",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "82635483434ec45785aa9a4e1dc9ea41cf68d108169aca2c64f0494284738cf0",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "ced3876530240f20d09049ebc2b74c73990b9b92b373c8e48afa0416badf428a",
+            "shape": [
+              1,
+              2,
+              165600
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "4fdc7662ddce5358e0780b6ab8cde5310a7f30a6596fd18fa61fa97393b9c25f",
+            "shape": [
+              124,
+              512,
+              1024,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      }
+    },
+    "floatpv_full": {
+      "runs": 2,
+      "e2e": [
+        181.473,
+        181.472
+      ],
+      "sampling": [
+        170.17949833301827,
+        170.1438132089097
+      ],
+      "mean_e2e": 181.47250000000003,
+      "mean_sampling": 170.161655770964,
+      "mean_step": 8.508082788548199,
+      "peak_driver_gib": 56.30047607421875,
+      "repeat_hashes_match": {
+        "conditioning": true,
+        "noise": true,
+        "latents": true,
+        "audio_decode": true,
+        "frames": true
+      },
+      "floatpv_calls": [
+        1000,
+        1000
+      ],
+      "hashes": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "b29f00e8a4e67703038921af2188948b3afc00da5d0fb45a016c2121cd6b139a",
+            "shape": [
+              150
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "988608a161ac4c89bd5bca24eb6715cb9838b0a701bf8dee6ae14b44d251c742",
+            "shape": [
+              1,
+              150,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "99927a9025abb6c5578c35f0ca710cf9fb6d18746c37b33addee74095a6ef788",
+            "shape": [
+              1,
+              1,
+              1831872
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "1838bfc266ce92f3ed7c41e67ba30ed2f9237090e39924738b80b3a2e1bf81b0",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "99df989a2023ac1a8588c7d4d0401b2fd05d877fe8dfa285b9563debf37cb5ea",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "feca5abadbed5c8f9b0b5b2e3f5ce915be8f07cd0544ffadc7f3d24a774a8c00",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "dd7bdd588cf85a8a416a138f6b94aaf8f52668dac52351c8d8aa7ce7f33eb7b7",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "51f295518983f82503a12bd241699dc1b2e6da1c426188c3dbafec02e275977c",
+            "shape": [
+              1,
+              2,
+              165600
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "7a8026f56cec8d1b53509ac0f22010c8d1cb61b53762ab0f7b4393eb5b98924a",
+            "shape": [
+              124,
+              512,
+              1024,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      }
+    }
+  },
+  "quality": {
+    "exact": {
+      "e2e": 197.176,
+      "sampling": 185.83506025001407,
+      "step_mean": 9.291753012500703,
+      "tensor_errors": {
+        "latents": {
+          "/0/samples/0": {
+            "rmse": 0.0,
+            "relative_rmse": 0.0,
+            "max_abs": 0.0,
+            "cosine": 1.0
+          },
+          "/0/samples/1": {
+            "rmse": 0.0,
+            "relative_rmse": 0.0,
+            "max_abs": 0.0,
+            "cosine": 1.0
+          },
+          "/1/samples/0": {
+            "rmse": 0.0,
+            "relative_rmse": 0.0,
+            "max_abs": 0.0,
+            "cosine": 1.0
+          },
+          "/1/samples/1": {
+            "rmse": 0.0,
+            "relative_rmse": 0.0,
+            "max_abs": 0.0,
+            "cosine": 1.0
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "rmse": 0.0,
+            "relative_rmse": 0.0,
+            "max_abs": 0.0,
+            "cosine": 1.0
+          }
+        }
+      },
+      "temporal": {
+        "mean_p90_residual_px": 0.07821562489904538,
+        "max_p90_residual_px": 0.13965708793360834,
+        "mean_track_loss": 0.0001067545009968048,
+        "estimated_zoom": 1.17845542541942,
+        "not_quality_proof": true
+      },
+      "audio_stats": {
+        "/0/0/waveform": {
+          "rms": 0.028901157900691032,
+          "peak": 0.13252653181552887,
+          "finite": true
+        }
+      }
+    },
+    "dense_protected": {
+      "e2e": 186.723,
+      "sampling": 175.30260562500916,
+      "step_mean": 8.765130281250459,
+      "tensor_errors": {
+        "latents": {
+          "/0/samples/0": {
+            "rmse": 0.1192296458223695,
+            "relative_rmse": 0.11062610533965231,
+            "max_abs": 2.8080509901046753,
+            "cosine": 0.993870954595157
+          },
+          "/0/samples/1": {
+            "rmse": 0.07137786963226901,
+            "relative_rmse": 0.1329053096987794,
+            "max_abs": 0.8318875283002853,
+            "cosine": 0.991158939558466
+          },
+          "/1/samples/0": {
+            "rmse": 0.11922964582188686,
+            "relative_rmse": 0.11062610534220112,
+            "max_abs": 2.8080509901046753,
+            "cosine": 0.9938709545948778
+          },
+          "/1/samples/1": {
+            "rmse": 0.07137786961084146,
+            "relative_rmse": 0.13290530965855948,
+            "max_abs": 0.8318875283002853,
+            "cosine": 0.9911589395638524
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "rmse": 0.004209215355200431,
+            "relative_rmse": 0.14564174913835148,
+            "max_abs": 0.057103877887129784,
+            "cosine": 0.989681246790762
+          }
+        },
+        "frames": {
+          "rmse": 0.03506131902646465,
+          "relative_rmse": 0.08382621732879583,
+          "max_abs": 0.7594302892684937,
+          "cosine": 0.996580854716606
+        }
+      },
+      "temporal": {
+        "mean_p90_residual_px": 0.07711994860244074,
+        "max_p90_residual_px": 0.12867213449733253,
+        "mean_track_loss": 5.01351408557985e-05,
+        "estimated_zoom": 1.180133250364207,
+        "not_quality_proof": true
+      },
+      "audio_stats": {
+        "/0/0/waveform": {
+          "rms": 0.02784901298582554,
+          "peak": 0.12484998255968094,
+          "finite": true
+        }
+      }
+    },
+    "sol_fast": {
+      "e2e": 148.469,
+      "sampling": 137.15011454210617,
+      "step_mean": 6.857505727105308,
+      "tensor_errors": {
+        "latents": {
+          "/0/samples/0": {
+            "rmse": 0.3926052740804159,
+            "relative_rmse": 0.3642751105042241,
+            "max_abs": 3.4881171584129333,
+            "cosine": 0.9335776012959336
+          },
+          "/0/samples/1": {
+            "rmse": 0.15478405430043599,
+            "relative_rmse": 0.28820729421058494,
+            "max_abs": 1.1043995320796967,
+            "cosine": 0.9586653093270344
+          },
+          "/1/samples/0": {
+            "rmse": 0.3926052740675816,
+            "relative_rmse": 0.3642751105021834,
+            "max_abs": 3.4881171584129333,
+            "cosine": 0.9335776012958593
+          },
+          "/1/samples/1": {
+            "rmse": 0.15478405427385925,
+            "relative_rmse": 0.2882072941604012,
+            "max_abs": 1.1043995320796967,
+            "cosine": 0.9586653093393681
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "rmse": 0.014323623114580106,
+            "relative_rmse": 0.495607220910804,
+            "max_abs": 0.07974575459957123,
+            "cosine": 0.9455822233082702
+          }
+        },
+        "frames": {
+          "rmse": 0.10630082324094904,
+          "relative_rmse": 0.25414890707619253,
+          "max_abs": 0.9477975368499756,
+          "cosine": 0.9687712765795207
+        }
+      },
+      "temporal": {
+        "mean_p90_residual_px": 0.06900833362213113,
+        "max_p90_residual_px": 0.12018494888949315,
+        "mean_track_loss": 6.744131368254296e-05,
+        "estimated_zoom": 1.18039227826985,
+        "not_quality_proof": true
+      },
+      "audio_stats": {
+        "/0/0/waveform": {
+          "rms": 0.016524169594049454,
+          "peak": 0.07330919802188873,
+          "finite": true
+        }
+      }
+    },
+    "sol_hybrid": {
+      "e2e": 147.281,
+      "sampling": 135.98606141703203,
+      "step_mean": 6.799303070851602,
+      "tensor_errors": {
+        "latents": {
+          "/0/samples/0": {
+            "rmse": 0.37037846119821954,
+            "relative_rmse": 0.34365217124854724,
+            "max_abs": 3.586105227470398,
+            "cosine": 0.9408498294078685
+          },
+          "/0/samples/1": {
+            "rmse": 0.1650997921785631,
+            "relative_rmse": 0.30741515715924456,
+            "max_abs": 1.035340204834938,
+            "cosine": 0.9531459598199358
+          },
+          "/1/samples/0": {
+            "rmse": 0.3703784611859077,
+            "relative_rmse": 0.3436521712464326,
+            "max_abs": 3.586105227470398,
+            "cosine": 0.9408498294087198
+          },
+          "/1/samples/1": {
+            "rmse": 0.16509979219573195,
+            "relative_rmse": 0.30741515719046836,
+            "max_abs": 1.035340204834938,
+            "cosine": 0.9531459598095122
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "rmse": 0.015160941863469493,
+            "relative_rmse": 0.5245790260772754,
+            "max_abs": 0.08074101433157921,
+            "cosine": 0.935778998959489
+          }
+        },
+        "frames": {
+          "rmse": 0.10127909617053654,
+          "relative_rmse": 0.2421427305700389,
+          "max_abs": 0.9484566450119019,
+          "cosine": 0.9714752813105537
+        }
+      },
+      "temporal": {
+        "mean_p90_residual_px": 0.06754061082577102,
+        "max_p90_residual_px": 0.12383125516587999,
+        "mean_track_loss": 4.158609361029653e-05,
+        "estimated_zoom": 1.1775367701584984,
+        "not_quality_proof": true
+      },
+      "audio_stats": {
+        "/0/0/waveform": {
+          "rms": 0.015819480642676353,
+          "peak": 0.07136276364326477,
+          "finite": true
+        }
+      }
+    },
+    "floatpv_protected": {
+      "e2e": 186.58,
+      "sampling": 175.28549050004221,
+      "step_mean": 8.764274525002111,
+      "tensor_errors": {
+        "latents": {
+          "/0/samples/0": {
+            "rmse": 0.03794174004763393,
+            "relative_rmse": 0.03520388660327432,
+            "max_abs": 1.2660861015319824,
+            "cosine": 0.9993804118074807
+          },
+          "/0/samples/1": {
+            "rmse": 0.026194305445854493,
+            "relative_rmse": 0.04877369268039678,
+            "max_abs": 0.4123202711343765,
+            "cosine": 0.9988104559733412
+          },
+          "/1/samples/0": {
+            "rmse": 0.03794174004657862,
+            "relative_rmse": 0.03520388660324876,
+            "max_abs": 1.2660861015319824,
+            "cosine": 0.9993804118074805
+          },
+          "/1/samples/1": {
+            "rmse": 0.026194305439591784,
+            "relative_rmse": 0.04877369266861752,
+            "max_abs": 0.4123202711343765,
+            "cosine": 0.9988104559738568
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "rmse": 0.0015807212126470634,
+            "relative_rmse": 0.05469404221040431,
+            "max_abs": 0.018375666812062263,
+            "cosine": 0.9989401406136892
+          }
+        },
+        "frames": {
+          "rmse": 0.012111869251878293,
+          "relative_rmse": 0.028957615182690546,
+          "max_abs": 0.895339846611023,
+          "cosine": 0.9995816449663767
+        }
+      },
+      "temporal": {
+        "mean_p90_residual_px": 0.07865238226231487,
+        "max_p90_residual_px": 0.12996583688246752,
+        "mean_track_loss": 2.4414658561000377e-05,
+        "estimated_zoom": 1.1781084336931487,
+        "not_quality_proof": true
+      },
+      "audio_stats": {
+        "/0/0/waveform": {
+          "rms": 0.029724380001425743,
+          "peak": 0.136204794049263,
+          "finite": true
+        }
+      }
+    },
+    "floatpv_full": {
+      "e2e": 181.472,
+      "sampling": 170.1438132089097,
+      "step_mean": 8.507190660445485,
+      "tensor_errors": {
+        "latents": {
+          "/0/samples/0": {
+            "rmse": 0.20988181285386004,
+            "relative_rmse": 0.19473686579795366,
+            "max_abs": 3.4776147603988647,
+            "cosine": 0.98115253533789
+          },
+          "/0/samples/1": {
+            "rmse": 0.06937816980480103,
+            "relative_rmse": 0.1291818765640634,
+            "max_abs": 0.8875339962542057,
+            "cosine": 0.9916376934200569
+          },
+          "/1/samples/0": {
+            "rmse": 0.209881812840206,
+            "relative_rmse": 0.19473686579055985,
+            "max_abs": 3.4776147603988647,
+            "cosine": 0.9811525353393097
+          },
+          "/1/samples/1": {
+            "rmse": 0.06937816980299741,
+            "relative_rmse": 0.12918187656039223,
+            "max_abs": 0.8875339962542057,
+            "cosine": 0.991637693420413
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "rmse": 0.004127739646907674,
+            "relative_rmse": 0.14282263353919766,
+            "max_abs": 0.03612172231078148,
+            "cosine": 0.9923084971301123
+          }
+        },
+        "frames": {
+          "rmse": 0.049085120121776564,
+          "relative_rmse": 0.11735496727411576,
+          "max_abs": 0.9950523376464844,
+          "cosine": 0.993099533926904
+        }
+      },
+      "temporal": {
+        "mean_p90_residual_px": 0.07760170997283687,
+        "max_p90_residual_px": 0.13466249332283514,
+        "mean_track_loss": 0.0,
+        "estimated_zoom": 1.1783451135812506,
+        "not_quality_proof": true
+      },
+      "audio_stats": {
+        "/0/0/waveform": {
+          "rms": 0.03073764778673649,
+          "peak": 0.13940715789794922,
+          "finite": true
+        }
+      }
+    }
+  },
+  "secondary": {
+    "exact": {
+      "e2e": 207.357,
+      "sampling": 186.51671937503852,
+      "step_mean": 9.325835968751926,
+      "tensor_errors": {
+        "latents": {
+          "/0/samples/0": {
+            "rmse": 0.0,
+            "relative_rmse": 0.0,
+            "max_abs": 0.0,
+            "cosine": 1.0
+          },
+          "/0/samples/1": {
+            "rmse": 0.0,
+            "relative_rmse": 0.0,
+            "max_abs": 0.0,
+            "cosine": 1.0
+          },
+          "/1/samples/0": {
+            "rmse": 0.0,
+            "relative_rmse": 0.0,
+            "max_abs": 0.0,
+            "cosine": 1.0
+          },
+          "/1/samples/1": {
+            "rmse": 0.0,
+            "relative_rmse": 0.0,
+            "max_abs": 0.0,
+            "cosine": 1.0
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "rmse": 0.0,
+            "relative_rmse": 0.0,
+            "max_abs": 0.0,
+            "cosine": 1.0
+          }
+        }
+      },
+      "temporal": {
+        "mean_p90_residual_px": 0.11891112441646588,
+        "max_p90_residual_px": 0.19860351478617724,
+        "mean_track_loss": 0.00022357723577235477,
+        "estimated_zoom": 1.1947299941946303,
+        "not_quality_proof": true
+      },
+      "audio_stats": {
+        "/0/0/waveform": {
+          "rms": 0.008655674755573273,
+          "peak": 0.0855887234210968,
+          "finite": true
+        }
+      }
+    },
+    "floatpv_full": {
+      "e2e": 181.264,
+      "sampling": 169.89599524997175,
+      "step_mean": 8.494799762498587,
+      "tensor_errors": {
+        "latents": {
+          "/0/samples/0": {
+            "rmse": 0.41250572640330957,
+            "relative_rmse": 0.3924076145112089,
+            "max_abs": 5.1518895626068115,
+            "cosine": 0.9233771750323692
+          },
+          "/0/samples/1": {
+            "rmse": 0.09638341995589483,
+            "relative_rmse": 0.183390253110727,
+            "max_abs": 0.8738700151443481,
+            "cosine": 0.9832000612993251
+          },
+          "/1/samples/0": {
+            "rmse": 0.4125057263937471,
+            "relative_rmse": 0.39240761451141926,
+            "max_abs": 5.1518895626068115,
+            "cosine": 0.9233771750314022
+          },
+          "/1/samples/1": {
+            "rmse": 0.096383419955318,
+            "relative_rmse": 0.18339025310948015,
+            "max_abs": 0.8738700151443481,
+            "cosine": 0.9832000612993934
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "rmse": 0.00608172169962096,
+            "relative_rmse": 0.7026282160876,
+            "max_abs": 0.09987828135490417,
+            "cosine": 0.801928400783756
+          }
+        },
+        "frames": {
+          "rmse": 0.09913656303904952,
+          "relative_rmse": 0.2538158432806905,
+          "max_abs": 0.9998648166656494,
+          "cosine": 0.9674720851512263
+        }
+      },
+      "temporal": {
+        "mean_p90_residual_px": 0.10539242152369818,
+        "max_p90_residual_px": 0.1588703260411202,
+        "mean_track_loss": 0.00020325203252032268,
+        "estimated_zoom": 1.2022903290052513,
+        "not_quality_proof": true
+      },
+      "audio_stats": {
+        "/0/0/waveform": {
+          "rms": 0.010142375715076923,
+          "peak": 0.14307545125484467,
+          "finite": true
+        }
+      }
+    },
+    "sol_fast": {
+      "e2e": 148.781,
+      "sampling": 137.39029600005597,
+      "step_mean": 6.869514800002799,
+      "tensor_errors": {
+        "latents": {
+          "/0/samples/0": {
+            "rmse": 0.37346461887124704,
+            "relative_rmse": 0.3552686685670895,
+            "max_abs": 4.227804601192474,
+            "cosine": 0.9370747807323699
+          },
+          "/0/samples/1": {
+            "rmse": 0.21150465160659937,
+            "relative_rmse": 0.4024332360273144,
+            "max_abs": 1.236438274383545,
+            "cosine": 0.918638685169875
+          },
+          "/1/samples/0": {
+            "rmse": 0.3734646188517463,
+            "relative_rmse": 0.35526866855696493,
+            "max_abs": 4.227804601192474,
+            "cosine": 0.9370747807350612
+          },
+          "/1/samples/1": {
+            "rmse": 0.21150465162095516,
+            "relative_rmse": 0.4024332360543017,
+            "max_abs": 1.236438274383545,
+            "cosine": 0.9186386851608422
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "rmse": 0.01221273477950178,
+            "relative_rmse": 1.4109511213259118,
+            "max_abs": 0.10067100450396538,
+            "cosine": 0.4012488430656632
+          }
+        },
+        "frames": {
+          "rmse": 0.10487623848763028,
+          "relative_rmse": 0.26851093174734597,
+          "max_abs": 1.0,
+          "cosine": 0.9633118517850711
+        }
+      },
+      "temporal": {
+        "mean_p90_residual_px": 0.12319247319860613,
+        "max_p90_residual_px": 0.168898857728864,
+        "mean_track_loss": 0.001239837398373978,
+        "estimated_zoom": 1.2139661141439122,
+        "not_quality_proof": true
+      },
+      "audio_stats": {
+        "/0/0/waveform": {
+          "rms": 0.012762452475726604,
+          "peak": 0.11267513781785965,
+          "finite": true
+        }
+      }
+    },
+    "floatpv_protected": {
+      "e2e": 196.67,
+      "sampling": 175.9722352081444,
+      "step_mean": 8.798611760407221,
+      "tensor_errors": {
+        "latents": {
+          "/0/samples/0": {
+            "rmse": 0.15030612983206354,
+            "relative_rmse": 0.1429829116993778,
+            "max_abs": 3.5003433227539062,
+            "cosine": 0.989772821993288
+          },
+          "/0/samples/1": {
+            "rmse": 0.13185560239393726,
+            "relative_rmse": 0.25088373402974085,
+            "max_abs": 1.2226077318191528,
+            "cosine": 0.9686671156732262
+          },
+          "/1/samples/0": {
+            "rmse": 0.15030612981996788,
+            "relative_rmse": 0.14298291169126265,
+            "max_abs": 3.5003433227539062,
+            "cosine": 0.9897728219942977
+          },
+          "/1/samples/1": {
+            "rmse": 0.13185560236621321,
+            "relative_rmse": 0.2508837339767856,
+            "max_abs": 1.2226077318191528,
+            "cosine": 0.9686671156859339
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "rmse": 0.008056774254212286,
+            "relative_rmse": 0.930808281150138,
+            "max_abs": 0.10356330871582031,
+            "cosine": 0.539756547917748
+          }
+        },
+        "frames": {
+          "rmse": 0.039151055132079844,
+          "relative_rmse": 0.10023706460111434,
+          "max_abs": 0.9480583667755127,
+          "cosine": 0.994994126231998
+        }
+      },
+      "temporal": {
+        "mean_p90_residual_px": 0.12182998605232237,
+        "max_p90_residual_px": 0.20670851766995169,
+        "mean_track_loss": 6.097560975609626e-05,
+        "estimated_zoom": 1.1936280627718838,
+        "not_quality_proof": true
+      },
+      "audio_stats": {
+        "/0/0/waveform": {
+          "rms": 0.008109701797366142,
+          "peak": 0.07793781161308289,
+          "finite": true
+        }
+      }
+    }
+  },
+  "secondary_runs": [
+    {
+      "run_id": "secondary-0-exact",
+      "mode": "exact",
+      "job": {
+        "mode": "exact",
+        "warmup": false,
+        "steps": 20,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a small antique music shop. The camera slowly dollies forward toward a wooden counter. A woman in a dark blue shirt gently turns a brass music box handle on the counter. Behind her, a round wall clock, three framed botanical prints and shelves of vinyl records remain rigid and stationary. A small green desk lamp and a red ceramic cup sit beside the music box. Warm natural window light, realistic fine detail, stable background geometry, no cuts. Clear delicate music-box notes and a quiet mechanical ticking sound, no speech.",
+        "seed": 913602847
+      },
+      "timings": {
+        "sampling_loop": 186.51671937503852,
+        "sampling": 188.9413034580648,
+        "audio_decode": 0.5341680001001805,
+        "video_decode": 10.511718875030056,
+        "create_video": 0.00017341692000627518,
+        "save_video": 0.6389260001014918
+      },
+      "e2e": 207.357,
+      "peak_driver_gib": 50.27703857421875,
+      "candidate_stats": {},
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "9b4305303df8f8904791f079b01c308abf68e48a651df91c0c2049095fb33705",
+            "shape": [
+              109
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "33f662166ee9482f5c00df77b6ca06aa1003c6e8310abb9ee0e7cb6ac3f83a0a",
+            "shape": [
+              1,
+              109,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "118ad64c1c8046abca070b331c08bdc53992892389bbe813d3dc0fcd76937ab0",
+            "shape": [
+              1,
+              1,
+              1831872
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "cabc531543290a0c09573baff7528b5d507ac21fb9cca65a57a27e841ac80425",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "a3ba412bdcf3242fab922d819fe7699b565568cbb9867bdf3ef029b9f4f7459e",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "1f30faae4c74ca8407d4f396ff44cc472175fdf93de000db57e126d11f27ad61",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "f98b352fc12db7dff50c9092331f433e67e51eee9729880ba7f1940e92f74a49",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "5a5915586a2922f521d5593747e53613c73a9ceef6c63cfecd9023a10e755d27",
+            "shape": [
+              1,
+              2,
+              165600
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "d70a2476322f7a627d97a308d3cb1e768fe3ebe72c0870330a91a4ba29e23d73",
+            "shape": [
+              124,
+              512,
+              1024,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      }
+    },
+    {
+      "run_id": "secondary-1-floatpv_full",
+      "mode": "floatpv_full",
+      "job": {
+        "mode": "floatpv_full",
+        "warmup": false,
+        "steps": 20,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a small antique music shop. The camera slowly dollies forward toward a wooden counter. A woman in a dark blue shirt gently turns a brass music box handle on the counter. Behind her, a round wall clock, three framed botanical prints and shelves of vinyl records remain rigid and stationary. A small green desk lamp and a red ceramic cup sit beside the music box. Warm natural window light, realistic fine detail, stable background geometry, no cuts. Clear delicate music-box notes and a quiet mechanical ticking sound, no speech.",
+        "seed": 913602847
+      },
+      "timings": {
+        "sampling_loop": 169.89599524997175,
+        "sampling": 170.00235537509434,
+        "audio_decode": 0.35701587493531406,
+        "video_decode": 10.23629999998957,
+        "create_video": 0.00011754198931157589,
+        "save_video": 0.6335083749145269
+      },
+      "e2e": 181.264,
+      "peak_driver_gib": 56.30047607421875,
+      "candidate_stats": {
+        "floatpv_calls": 1000
+      },
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "9b4305303df8f8904791f079b01c308abf68e48a651df91c0c2049095fb33705",
+            "shape": [
+              109
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "33f662166ee9482f5c00df77b6ca06aa1003c6e8310abb9ee0e7cb6ac3f83a0a",
+            "shape": [
+              1,
+              109,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "118ad64c1c8046abca070b331c08bdc53992892389bbe813d3dc0fcd76937ab0",
+            "shape": [
+              1,
+              1,
+              1831872
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "18818b79ad4823dcee423e309a60e9988df9bd7a2afe92e7fb07f8132b42ddc8",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "5ee988aeacbc48f3182d79933c9c15a6d09ea56c031209de11c7248f4d9f1cf7",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "973c2961a7b472e9f39c3d7fa98b0ce513e9fcf4e290ce4303204e001d1da267",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "b3e5833101993e966726c36214dc170338e2e5a8fcd1e5da3b155363e8020ab3",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "09a9b01b2a473d2f2c542109b3779e7ef831d31b59543abbc080affe7fdc147c",
+            "shape": [
+              1,
+              2,
+              165600
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "ee0793a7b137b11ab3a4fa63f03f728670f800deac89bf33384b504cf48a78ce",
+            "shape": [
+              124,
+              512,
+              1024,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      }
+    },
+    {
+      "run_id": "secondary-2-sol_fast",
+      "mode": "sol_fast",
+      "job": {
+        "mode": "sol_fast",
+        "warmup": false,
+        "steps": 20,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a small antique music shop. The camera slowly dollies forward toward a wooden counter. A woman in a dark blue shirt gently turns a brass music box handle on the counter. Behind her, a round wall clock, three framed botanical prints and shelves of vinyl records remain rigid and stationary. A small green desk lamp and a red ceramic cup sit beside the music box. Warm natural window light, realistic fine detail, stable background geometry, no cuts. Clear delicate music-box notes and a quiet mechanical ticking sound, no speech.",
+        "seed": 913602847
+      },
+      "timings": {
+        "sampling_loop": 137.39029600005597,
+        "sampling": 137.5012145419605,
+        "audio_decode": 0.36637829104438424,
+        "video_decode": 10.22806983301416,
+        "create_video": 0.00011512520723044872,
+        "save_video": 0.6470105419866741
+      },
+      "e2e": 148.781,
+      "peak_driver_gib": 56.30047607421875,
+      "candidate_stats": {},
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "9b4305303df8f8904791f079b01c308abf68e48a651df91c0c2049095fb33705",
+            "shape": [
+              109
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "33f662166ee9482f5c00df77b6ca06aa1003c6e8310abb9ee0e7cb6ac3f83a0a",
+            "shape": [
+              1,
+              109,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "118ad64c1c8046abca070b331c08bdc53992892389bbe813d3dc0fcd76937ab0",
+            "shape": [
+              1,
+              1,
+              1831872
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "6421d012efc7b0d2587d39dd69c5a1483baaab65fe16bd0ddfa73ae5984db9f7",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "dc3e47e28689872c8aa13d72dcdd7a0ca337f2cc08fee7b43aee6891362431f4",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "288045b58a9c90335691f378e3798e8cc0bda30b28ad8133a8a5ef58f9faffab",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "3e2b7214d5568e9034b73083f2ce7411a0b39f2f0e6ff73eb5662d670139aed5",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "63aaf3fbc92813c8e01716e8fb5b9b2f0ae62678555b75e008ef1877eb29517a",
+            "shape": [
+              1,
+              2,
+              165600
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "903c397d9221a33c0bfb548657efe5f9bb82e567bcdd8c936aca9750e03eb5ed",
+            "shape": [
+              124,
+              512,
+              1024,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      }
+    },
+    {
+      "run_id": "protected-confirm-0-floatpv_protected",
+      "mode": "floatpv_protected",
+      "job": {
+        "mode": "floatpv_protected",
+        "warmup": false,
+        "steps": 20,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a small antique music shop. The camera slowly dollies forward toward a wooden counter. A woman in a dark blue shirt gently turns a brass music box handle on the counter. Behind her, a round wall clock, three framed botanical prints and shelves of vinyl records remain rigid and stationary. A small green desk lamp and a red ceramic cup sit beside the music box. Warm natural window light, realistic fine detail, stable background geometry, no cuts. Clear delicate music-box notes and a quiet mechanical ticking sound, no speech.",
+        "seed": 913602847
+      },
+      "timings": {
+        "sampling_loop": 175.9722352081444,
+        "sampling": 178.4585720000323,
+        "audio_decode": 0.5441737498622388,
+        "video_decode": 10.450076375156641,
+        "create_video": 0.00015433412045240402,
+        "save_video": 0.6350035420618951
+      },
+      "e2e": 196.67,
+      "peak_driver_gib": 51.28485107421875,
+      "candidate_stats": {
+        "floatpv_calls": 630
+      },
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "9b4305303df8f8904791f079b01c308abf68e48a651df91c0c2049095fb33705",
+            "shape": [
+              109
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "33f662166ee9482f5c00df77b6ca06aa1003c6e8310abb9ee0e7cb6ac3f83a0a",
+            "shape": [
+              1,
+              109,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "118ad64c1c8046abca070b331c08bdc53992892389bbe813d3dc0fcd76937ab0",
+            "shape": [
+              1,
+              1,
+              1831872
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "0cba8f024301e63340e52e70fda8630f681ff6e6dffa3c91ff50fde1d30d1bce",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "1635af0ad8f08fc30b907c3e906091ab74835b10b40057f750e69282507040ef",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "49f3814282895d0c9cef3b79779cfb9f538b8bc80e374bf278a33eb3163b8cfa",
+            "shape": [
+              1,
+              24,
+              37,
+              32,
+              64
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "a88e52161a8fd323d401f60a71bbca6a0e89cb40f23cedd72a1562d9185f8986",
+            "shape": [
+              1,
+              32,
+              2,
+              207
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "694c0de616d0adff056eb142168d1e7004de89357be46edfde0bb0ae26c169cf",
+            "shape": [
+              1,
+              2,
+              165600
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "b9257a338453276ab2a4dce89070664f48207acb08179086ab9fe1106aca2b8d",
+            "shape": [
+              124,
+              512,
+              1024,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      }
+    }
+  ],
+  "primary_jobs": [
+    {
+      "run_id": "study-6-exact",
+      "mode": "exact",
+      "job": {
+        "mode": "exact",
+        "warmup": false,
+        "steps": 20,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a quiet sunlit study. The camera slowly dollies forward toward a wooden desk, producing a gentle steady push-in with clear natural parallax. On the desk stand a single red ceramic vase and a small brass globe. In the background, a round white wall clock with dark hands hangs above a wooden bookshelf containing upright blue, green and red books. Three distinct rectangular framed landscape photographs hang in a straight horizontal row on the wall. A leafy potted plant stands beside the bookshelf. The square checkerboard floor and all furniture remain rigid and stationary throughout. No people, no object movement, no scene cuts. Natural daylight, realistic fine detail, stable geometry and consistent colors. Quiet room ambience, no music.",
+        "seed": 812764035
+      },
+      "timings": {
+        "sampling_loop": 185.0644831249956,
+        "sampling": 185.1816565839108,
+        "audio_decode": 0.3525261669419706,
+        "video_decode": 10.184336583828554,
+        "create_video": 8.529191836714745e-05,
+        "save_video": 0.5987134578172117
+      },
+      "e2e": 196.336,
+      "peak_driver_gib": 55.30047607421875,
+      "candidate_stats": {}
+    },
+    {
+      "run_id": "study-7-dense_protected",
+      "mode": "dense_protected",
+      "job": {
+        "mode": "dense_protected",
+        "warmup": false,
+        "steps": 20,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a quiet sunlit study. The camera slowly dollies forward toward a wooden desk, producing a gentle steady push-in with clear natural parallax. On the desk stand a single red ceramic vase and a small brass globe. In the background, a round white wall clock with dark hands hangs above a wooden bookshelf containing upright blue, green and red books. Three distinct rectangular framed landscape photographs hang in a straight horizontal row on the wall. A leafy potted plant stands beside the bookshelf. The square checkerboard floor and all furniture remain rigid and stationary throughout. No people, no object movement, no scene cuts. Natural daylight, realistic fine detail, stable geometry and consistent colors. Quiet room ambience, no music.",
+        "seed": 812764035
+      },
+      "timings": {
+        "sampling_loop": 174.79973754216917,
+        "sampling": 174.91914262482896,
+        "audio_decode": 0.34884966700337827,
+        "video_decode": 10.191122625023127,
+        "create_video": 8.583301678299904e-05,
+        "save_video": 0.6183170829899609
+      },
+      "e2e": 186.085,
+      "peak_driver_gib": 56.30047607421875,
+      "candidate_stats": {}
+    },
+    {
+      "run_id": "study-8-sol_fast",
+      "mode": "sol_fast",
+      "job": {
+        "mode": "sol_fast",
+        "warmup": false,
+        "steps": 20,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a quiet sunlit study. The camera slowly dollies forward toward a wooden desk, producing a gentle steady push-in with clear natural parallax. On the desk stand a single red ceramic vase and a small brass globe. In the background, a round white wall clock with dark hands hangs above a wooden bookshelf containing upright blue, green and red books. Three distinct rectangular framed landscape photographs hang in a straight horizontal row on the wall. A leafy potted plant stands beside the bookshelf. The square checkerboard floor and all furniture remain rigid and stationary throughout. No people, no object movement, no scene cuts. Natural daylight, realistic fine detail, stable geometry and consistent colors. Quiet room ambience, no music.",
+        "seed": 812764035
+      },
+      "timings": {
+        "sampling_loop": 136.90814837510698,
+        "sampling": 137.02842345810495,
+        "audio_decode": 0.3497803749050945,
+        "video_decode": 10.228879499947652,
+        "create_video": 8.441600948572159e-05,
+        "save_video": 0.6076889999676496
+      },
+      "e2e": 148.221,
+      "peak_driver_gib": 56.30047607421875,
+      "candidate_stats": {}
+    },
+    {
+      "run_id": "study-9-sol_hybrid",
+      "mode": "sol_hybrid",
+      "job": {
+        "mode": "sol_hybrid",
+        "warmup": false,
+        "steps": 20,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a quiet sunlit study. The camera slowly dollies forward toward a wooden desk, producing a gentle steady push-in with clear natural parallax. On the desk stand a single red ceramic vase and a small brass globe. In the background, a round white wall clock with dark hands hangs above a wooden bookshelf containing upright blue, green and red books. Three distinct rectangular framed landscape photographs hang in a straight horizontal row on the wall. A leafy potted plant stands beside the bookshelf. The square checkerboard floor and all furniture remain rigid and stationary throughout. No people, no object movement, no scene cuts. Natural daylight, realistic fine detail, stable geometry and consistent colors. Quiet room ambience, no music.",
+        "seed": 812764035
+      },
+      "timings": {
+        "sampling_loop": 135.76664320891723,
+        "sampling": 135.89046399993822,
+        "audio_decode": 0.37776791700161994,
+        "video_decode": 10.213291333988309,
+        "create_video": 8.650007657706738e-05,
+        "save_video": 0.6099105409812182
+      },
+      "e2e": 147.098,
+      "peak_driver_gib": 56.30047607421875,
+      "candidate_stats": {}
+    },
+    {
+      "run_id": "study-10-floatpv_protected",
+      "mode": "floatpv_protected",
+      "job": {
+        "mode": "floatpv_protected",
+        "warmup": false,
+        "steps": 20,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a quiet sunlit study. The camera slowly dollies forward toward a wooden desk, producing a gentle steady push-in with clear natural parallax. On the desk stand a single red ceramic vase and a small brass globe. In the background, a round white wall clock with dark hands hangs above a wooden bookshelf containing upright blue, green and red books. Three distinct rectangular framed landscape photographs hang in a straight horizontal row on the wall. A leafy potted plant stands beside the bookshelf. The square checkerboard floor and all furniture remain rigid and stationary throughout. No people, no object movement, no scene cuts. Natural daylight, realistic fine detail, stable geometry and consistent colors. Quiet room ambience, no music.",
+        "seed": 812764035
+      },
+      "timings": {
+        "sampling_loop": 178.05168137489818,
+        "sampling": 178.17109083291143,
+        "audio_decode": 0.3545910830143839,
+        "video_decode": 10.221125666983426,
+        "create_video": 8.320901542901993e-05,
+        "save_video": 0.6237013749778271
+      },
+      "e2e": 189.377,
+      "peak_driver_gib": 56.30047607421875,
+      "candidate_stats": {
+        "floatpv_calls": 630
+      }
+    },
+    {
+      "run_id": "study-11-floatpv_full",
+      "mode": "floatpv_full",
+      "job": {
+        "mode": "floatpv_full",
+        "warmup": false,
+        "steps": 20,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a quiet sunlit study. The camera slowly dollies forward toward a wooden desk, producing a gentle steady push-in with clear natural parallax. On the desk stand a single red ceramic vase and a small brass globe. In the background, a round white wall clock with dark hands hangs above a wooden bookshelf containing upright blue, green and red books. Three distinct rectangular framed landscape photographs hang in a straight horizontal row on the wall. A leafy potted plant stands beside the bookshelf. The square checkerboard floor and all furniture remain rigid and stationary throughout. No people, no object movement, no scene cuts. Natural daylight, realistic fine detail, stable geometry and consistent colors. Quiet room ambience, no music.",
+        "seed": 812764035
+      },
+      "timings": {
+        "sampling_loop": 170.17949833301827,
+        "sampling": 170.29744279105216,
+        "audio_decode": 0.3449200000613928,
+        "video_decode": 10.219838083023205,
+        "create_video": 8.633383549749851e-05,
+        "save_video": 0.6035365830175579
+      },
+      "e2e": 181.473,
+      "peak_driver_gib": 56.30047607421875,
+      "candidate_stats": {
+        "floatpv_calls": 1000
+      }
+    },
+    {
+      "run_id": "study-12-floatpv_full",
+      "mode": "floatpv_full",
+      "job": {
+        "mode": "floatpv_full",
+        "warmup": false,
+        "steps": 20,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a quiet sunlit study. The camera slowly dollies forward toward a wooden desk, producing a gentle steady push-in with clear natural parallax. On the desk stand a single red ceramic vase and a small brass globe. In the background, a round white wall clock with dark hands hangs above a wooden bookshelf containing upright blue, green and red books. Three distinct rectangular framed landscape photographs hang in a straight horizontal row on the wall. A leafy potted plant stands beside the bookshelf. The square checkerboard floor and all furniture remain rigid and stationary throughout. No people, no object movement, no scene cuts. Natural daylight, realistic fine detail, stable geometry and consistent colors. Quiet room ambience, no music.",
+        "seed": 812764035
+      },
+      "timings": {
+        "sampling_loop": 170.1438132089097,
+        "sampling": 170.27265712502412,
+        "audio_decode": 0.34812266705557704,
+        "video_decode": 10.229659083066508,
+        "create_video": 8.320785127580166e-05,
+        "save_video": 0.6150227501057088
+      },
+      "e2e": 181.472,
+      "peak_driver_gib": 56.30047607421875,
+      "candidate_stats": {
+        "floatpv_calls": 1000
+      }
+    },
+    {
+      "run_id": "study-13-floatpv_protected",
+      "mode": "floatpv_protected",
+      "job": {
+        "mode": "floatpv_protected",
+        "warmup": false,
+        "steps": 20,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a quiet sunlit study. The camera slowly dollies forward toward a wooden desk, producing a gentle steady push-in with clear natural parallax. On the desk stand a single red ceramic vase and a small brass globe. In the background, a round white wall clock with dark hands hangs above a wooden bookshelf containing upright blue, green and red books. Three distinct rectangular framed landscape photographs hang in a straight horizontal row on the wall. A leafy potted plant stands beside the bookshelf. The square checkerboard floor and all furniture remain rigid and stationary throughout. No people, no object movement, no scene cuts. Natural daylight, realistic fine detail, stable geometry and consistent colors. Quiet room ambience, no music.",
+        "seed": 812764035
+      },
+      "timings": {
+        "sampling_loop": 175.28549050004221,
+        "sampling": 175.42871195892803,
+        "audio_decode": 0.34573966707102954,
+        "video_decode": 10.179413125151768,
+        "create_video": 8.612521924078465e-05,
+        "save_video": 0.6198154999874532
+      },
+      "e2e": 186.58,
+      "peak_driver_gib": 56.30047607421875,
+      "candidate_stats": {
+        "floatpv_calls": 630
+      }
+    },
+    {
+      "run_id": "study-14-sol_hybrid",
+      "mode": "sol_hybrid",
+      "job": {
+        "mode": "sol_hybrid",
+        "warmup": false,
+        "steps": 20,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a quiet sunlit study. The camera slowly dollies forward toward a wooden desk, producing a gentle steady push-in with clear natural parallax. On the desk stand a single red ceramic vase and a small brass globe. In the background, a round white wall clock with dark hands hangs above a wooden bookshelf containing upright blue, green and red books. Three distinct rectangular framed landscape photographs hang in a straight horizontal row on the wall. A leafy potted plant stands beside the bookshelf. The square checkerboard floor and all furniture remain rigid and stationary throughout. No people, no object movement, no scene cuts. Natural daylight, realistic fine detail, stable geometry and consistent colors. Quiet room ambience, no music.",
+        "seed": 812764035
+      },
+      "timings": {
+        "sampling_loop": 135.98606141703203,
+        "sampling": 136.10428116703406,
+        "audio_decode": 0.34637699997983873,
+        "video_decode": 10.214766582939774,
+        "create_video": 8.475012145936489e-05,
+        "save_video": 0.6094052919652313
+      },
+      "e2e": 147.281,
+      "peak_driver_gib": 56.30047607421875,
+      "candidate_stats": {}
+    },
+    {
+      "run_id": "study-15-sol_fast",
+      "mode": "sol_fast",
+      "job": {
+        "mode": "sol_fast",
+        "warmup": false,
+        "steps": 20,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a quiet sunlit study. The camera slowly dollies forward toward a wooden desk, producing a gentle steady push-in with clear natural parallax. On the desk stand a single red ceramic vase and a small brass globe. In the background, a round white wall clock with dark hands hangs above a wooden bookshelf containing upright blue, green and red books. Three distinct rectangular framed landscape photographs hang in a straight horizontal row on the wall. A leafy potted plant stands beside the bookshelf. The square checkerboard floor and all furniture remain rigid and stationary throughout. No people, no object movement, no scene cuts. Natural daylight, realistic fine detail, stable geometry and consistent colors. Quiet room ambience, no music.",
+        "seed": 812764035
+      },
+      "timings": {
+        "sampling_loop": 137.15011454210617,
+        "sampling": 137.2792629590258,
+        "audio_decode": 0.34600287512876093,
+        "video_decode": 10.220531041966751,
+        "create_video": 8.15829262137413e-05,
+        "save_video": 0.6149671250022948
+      },
+      "e2e": 148.469,
+      "peak_driver_gib": 56.30047607421875,
+      "candidate_stats": {}
+    },
+    {
+      "run_id": "study-16-dense_protected",
+      "mode": "dense_protected",
+      "job": {
+        "mode": "dense_protected",
+        "warmup": false,
+        "steps": 20,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a quiet sunlit study. The camera slowly dollies forward toward a wooden desk, producing a gentle steady push-in with clear natural parallax. On the desk stand a single red ceramic vase and a small brass globe. In the background, a round white wall clock with dark hands hangs above a wooden bookshelf containing upright blue, green and red books. Three distinct rectangular framed landscape photographs hang in a straight horizontal row on the wall. A leafy potted plant stands beside the bookshelf. The square checkerboard floor and all furniture remain rigid and stationary throughout. No people, no object movement, no scene cuts. Natural daylight, realistic fine detail, stable geometry and consistent colors. Quiet room ambience, no music.",
+        "seed": 812764035
+      },
+      "timings": {
+        "sampling_loop": 175.30260562500916,
+        "sampling": 175.42587195895612,
+        "audio_decode": 0.3667280001100153,
+        "video_decode": 10.31074208393693,
+        "create_video": 8.49580392241478e-05,
+        "save_video": 0.6206424168776721
+      },
+      "e2e": 186.723,
+      "peak_driver_gib": 56.30047607421875,
+      "candidate_stats": {}
+    },
+    {
+      "run_id": "study-17-exact",
+      "mode": "exact",
+      "job": {
+        "mode": "exact",
+        "warmup": false,
+        "steps": 20,
+        "frames": 124,
+        "width": 1024,
+        "height": 512,
+        "prompt": "A continuous cinematic shot inside a quiet sunlit study. The camera slowly dollies forward toward a wooden desk, producing a gentle steady push-in with clear natural parallax. On the desk stand a single red ceramic vase and a small brass globe. In the background, a round white wall clock with dark hands hangs above a wooden bookshelf containing upright blue, green and red books. Three distinct rectangular framed landscape photographs hang in a straight horizontal row on the wall. A leafy potted plant stands beside the bookshelf. The square checkerboard floor and all furniture remain rigid and stationary throughout. No people, no object movement, no scene cuts. Natural daylight, realistic fine detail, stable geometry and consistent colors. Quiet room ambience, no music.",
+        "seed": 812764035
+      },
+      "timings": {
+        "sampling_loop": 185.83506025001407,
+        "sampling": 185.96094304090366,
+        "audio_decode": 0.35606566700153053,
+        "video_decode": 10.225437666988,
+        "create_video": 8.429214358329773e-05,
+        "save_video": 0.6270270829554647
+      },
+      "e2e": 197.176,
+      "peak_driver_gib": 55.30047607421875,
+      "candidate_stats": {}
+    }
+  ],
+  "operator_screen": {
+    "shape": [
+      1,
+      56,
+      19508,
+      128
+    ],
+    "results": {
+      "exact": {
+        "relative_rmse": 0.0,
+        "finite": true,
+        "ms": [
+          100.24825002377231,
+          99.67865298191707,
+          99.70020836529632,
+          100.5922220647335,
+          99.65494430313508,
+          99.73601360494892,
+          99.54605569752555
+        ],
+        "median_ms": 99.70020836529632
+      },
+      "floatpv_layout_copies": {
+        "relative_rmse": 0.004608785267919302,
+        "finite": true,
+        "ms": [
+          89.04490262890856,
+          89.42562496910493,
+          89.45247197213273,
+          89.37230566516519,
+          89.27943060795467,
+          89.40805533590417,
+          89.17565263497333
+        ],
+        "median_ms": 89.37230566516519
+      },
+      "floatpv_native": {
+        "relative_rmse": 0.004608785267919302,
+        "finite": true,
+        "ms": [
+          82.77568065871795,
+          82.2282360556225,
+          82.55284729724129,
+          82.87173602730036,
+          82.58593066905935,
+          82.52458336452644,
+          83.14434733862679
+        ],
+        "median_ms": 82.58593066905935
+      },
+      "new_int8pv": {
+        "relative_rmse": 0.01472100056707859,
+        "finite": true,
+        "ms": [
+          75.53451360824208,
+          75.28325007297099,
+          75.17366662311058,
+          75.94804170851906,
+          75.31799996892612,
+          74.83441662043333,
+          75.61490265652537
+        ],
+        "median_ms": 75.31799996892612
+      },
+      "current_dense": {
+        "relative_rmse": 0.01558836828917265,
+        "finite": true,
+        "ms": [
+          82.11179162996511,
+          81.52686098280053,
+          82.17245829291642,
+          81.50291667940716,
+          81.74708338143925,
+          82.01494432675342,
+          81.73522197951873
+        ],
+        "median_ms": 81.74708338143925
+      },
+      "sol_fast": {
+        "relative_rmse": 0.17262837290763855,
+        "finite": true,
+        "ms": [
+          18.213444389402866,
+          18.244555375228327,
+          18.307944294065237,
+          18.13748595304787,
+          18.129374987135332,
+          18.173319287598133,
+          18.104555706183117
+        ],
+        "median_ms": 18.173319287598133
+      }
+    }
+  },
+  "production_validation": [
+    "strided 1x1",
+    "strided 15x63",
+    "strided 65x129",
+    "strided 257x513",
+    "19508 native versus upstream layout",
+    "19508 complete production versus benchmark",
+    "all-prefix exact",
+    "invalid scale, prefix, top-k, memory rejected"
+  ]
+}

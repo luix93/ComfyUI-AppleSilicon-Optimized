@@ -41,6 +41,11 @@ SPARSE_PRESETS = {
     "Dense INT8 · full draft": dict(SPARSE_BASE, sparse_backend="dense_int8",
         sparse_window_mode="step_fraction", sparse_start_percent=0.0, sparse_end_percent=1.0,
         sparse_dense_leading_blocks=0, sparse_dense_layers=""),
+    "Dense QK INT8 / PV BF16 · protected": dict(SPARSE_BASE, sparse_backend="dense_floatpv",
+        sparse_window_mode="step_fraction", sparse_start_percent=0.20, sparse_end_percent=0.90),
+    "Dense QK INT8 / PV BF16 · full experimental": dict(SPARSE_BASE, sparse_backend="dense_floatpv",
+        sparse_window_mode="step_fraction", sparse_start_percent=0.0, sparse_end_percent=1.0,
+        sparse_dense_leading_blocks=0, sparse_dense_layers=""),
     "SOL INT8 · hybrid fast": dict(SPARSE_BASE, sparse_backend="int8_hybrid", sparse_tau=1.30,
         sparse_window_mode="step_fraction", sparse_start_percent=0.20, sparse_end_percent=0.90),
     "Veda Metal · protected": dict(SPARSE_BASE, sparse_backend="veda_metal",
@@ -104,7 +109,7 @@ class AppleSiliconH3QuickAcceleration:
         "Default: MotionCache balanced alone. All enabled recipes approximate inference. "
         "Protected recipes compute more of the original model; fast draft recipes can substantially change appearance/motion. "
         "Use the advanced H3 Acceleration node for custom settings. Cache/attention recipes target 20-step sampling; "
-        "short-step Turbo combinations need separate quality checks. Fast token recipes have limited Turbo I2V screening, not a quality guarantee. Dense INT8 retains all tokens but changes arithmetic; hybrid fast quantizes protected layers only within the sparse window. Veda needs its predictor in models/veda. "
+        "short-step Turbo combinations need separate quality checks. Fast token recipes have limited Turbo I2V screening, not a quality guarantee. Dense QK INT8 / PV BF16 retains all keys, quantizes Q/K only, and remains approximate; protected uses the same step/layer guards, full applies at every step/layer. Dense INT8 retains all tokens but changes arithmetic; hybrid fast quantizes protected layers only within the sparse window. Veda needs its predictor in models/veda. "
         "Temporary memory uses Auto, and unrelated nodes/environment options still apply when all three selectors are Off."
     )
 

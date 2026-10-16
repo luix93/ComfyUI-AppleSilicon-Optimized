@@ -22,7 +22,7 @@
         "third_party/original-FP8-MIT.txt"
       ],
       "license_audited_revision": "031ec46d9ed5a9c181ac7f4a3628062786e12ee9",
-      "license_declaration": "MIT in upstream pyproject.toml and installed mtlflashattn 0.2.0 metadata; standalone license file absent in audited upstream tree. The unchanged Paweł MIT notice is preserved with inherited and derived code."
+      "license_declaration": "MIT in upstream pyproject.toml and installed mtlflashattn 0.2.0 metadata; standalone license file absent in audited upstream tree. The unchanged Pawe\u0142 MIT notice is preserved with inherited and derived code."
     },
     {
       "name": "Cider",
@@ -31,7 +31,8 @@
       "notices": [
         "third_party/cider-MIT.txt"
       ],
-      "license_audited_revision": "4d91fcee9439f7aea17ae6e965271d9536c604a0"
+      "license_audited_revision": "4d91fcee9439f7aea17ae6e965271d9536c604a0",
+      "diagnostic_derivatives": "dev/h3_fusion_experiments: exact QKV tile and FC1/SwiGLU fusion prototypes; not production dispatch."
     },
     {
       "name": "CCV",
@@ -41,8 +42,10 @@
         "third_party/ccv-BSD-3-Clause.txt"
       ],
       "source_revisions": [
-        "6a611be1aab6470ae279115ae4eaf7e01bc87135"
-      ]
+        "6a611be1aab6470ae279115ae4eaf7e01bc87135",
+        "e499321b29b5c9c31329a8efc6960d84856d3315"
+      ],
+      "floating_pv_adaptation": "_patches/h3_floatpv_shaders/int8_qk_float_pv.metal: generated NAInt8AttentionKernel with quantizePV=false and local BHSD addressing; optional H3 backend."
     },
     {
       "name": "PyTorch",
@@ -86,7 +89,8 @@
       ],
       "source_revisions": [
         "0.2.35"
-      ]
+      ],
+      "flux3_reference": "Comfy Kitchen 0.2.37 eager RMS/RoPE semantics used as the compatibility reference for the local exact Flux.3 rotary kernel; RMS normalization remains a PyTorch call."
     },
     {
       "name": "SeedVR",

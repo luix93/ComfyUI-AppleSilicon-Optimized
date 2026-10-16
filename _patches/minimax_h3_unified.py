@@ -268,9 +268,9 @@ class AppleSiliconH3Acceleration:
             "sparse_verbose": ("BOOLEAN", {"default": False}),
         }, "optional": {
             # Appended for compatibility with existing saved widget positions.
-            "sparse_backend": (["bf16", "int8", "dense_int8", "int8_hybrid", "veda_metal", "veda_mlx"], {
+            "sparse_backend": (["bf16", "int8", "dense_int8", "dense_floatpv", "int8_hybrid", "veda_metal", "veda_mlx"], {
                 "default": "bf16",
-                "tooltip": "BF16/INT8 select SOL. Dense INT8 keeps every token but quantizes QK/PV. SOL hybrid uses dense INT8 in protected layers inside its sampling window; protected steps stay exact. Veda Metal is an optional M5 Ultra tile-list backend; Veda MLX needs the optional mlx package. Both Veda modes need a predictor in models/veda. Each method approximates attention; choose one.",
+                "tooltip": "BF16/INT8 select SOL. Dense INT8 keeps every token but quantizes QK/PV. Dense floating PV quantizes QK only, retaining BF16 PV with FP32 accumulation. SOL hybrid uses dense INT8 in protected layers inside its sampling window; protected steps stay exact. Veda Metal is an optional M5 Ultra tile-list backend; Veda MLX needs the optional mlx package. Both Veda modes need a predictor in models/veda. Each method approximates attention; choose one.",
             }),
             "sparse_dense_layers": ("STRING", {
                 "default": "",

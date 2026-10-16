@@ -12,12 +12,12 @@ API nor making a runtime optional removes these notices.
 |---|---|---|
 | [ComfyUI-AppleSilicon-FP8 / Paweł Mazurkiewicz](https://github.com/pawel-mazurkiewicz/ComfyUI-AppleSilicon-FP8) | Inherited compatibility layer and original repository code | [Original MIT notice](third_party/original-FP8-MIT.txt) |
 | [mtlflashattn / Paweł Mazurkiewicz](https://github.com/pawel-mazurkiewicz/mtlflashattn) | Installed dependency; adapted V2 kernel in `_patches/mfa4_ext/flash41.mm`, reused by `sol_ext/sol_attn.mm` | MIT declared by upstream package metadata; Paweł's [full MIT notice](third_party/original-FP8-MIT.txt) and source copyright retained |
-| [Cider / Mininglamp contributors](https://github.com/Mininglamp-AI/cider) | Adapted INT8 GEMM helpers, compute and dequantization epilogues in `int8_ext/int8_gemm.mm` | [MIT](third_party/cider-MIT.txt) |
+| [Cider / Mininglamp contributors](https://github.com/Mininglamp-AI/cider) | Adapted INT8 GEMM helpers, compute and dequantization epilogues in `int8_ext/int8_gemm.mm`; diagnostic derivatives in `dev/h3_fusion_experiments` | [MIT](third_party/cider-MIT.txt) |
 | [CCV / Liu Liu and contributors](https://github.com/liuliu/ccv) | NA/dense/SOL attention in `mfa4_ext`, H3 shader directories; generated research shaders under `benchmarks/artifacts/krea2-oct2026/experiments` | [BSD-3-Clause](third_party/ccv-BSD-3-Clause.txt); source notice applies to code, CCV documentation has separate CC-BY terms |
 | [PyTorch / contributors](https://github.com/pytorch/pytorch) | MPP headers expanded at runtime; adapted reduction, normalization and rounding kernels, including Ideogram/Qwen/LTX/Wan/H3/SeedVR paths | [PyTorch full notices](_patches/krea2_ext/PYTORCH_LICENSE) and [SeedVR copy](_patches/seedvr2_ext/PYTORCH_LICENSE) |
 | [MLX / Apple and contributors](https://github.com/ml-explore/mlx) | PyTorch MPP/normalization ancestry; installed MLX integrations | [MIT](_patches/krea2_ext/MLX_LICENSE) |
 | [ComfyUI / contributors](https://github.com/Comfy-Org/ComfyUI) | Host model/decoder integrations and adapted forwards | GPL-3.0; [full text](LICENSE), [upstream license](https://github.com/Comfy-Org/ComfyUI/blob/master/LICENSE) |
-| [Comfy Kitchen / Comfy Org](https://github.com/Comfy-Org/comfy-kitchen) | Adapted LTX neighborhood-attention grouping; quantization, ConvRot and INT8 VAE references | [Apache-2.0](third_party/Comfy-Kitchen-Apache-2.0.txt); copyright (c) 2025 Comfy Org on the adapted LTX file |
+| [Comfy Kitchen / Comfy Org](https://github.com/Comfy-Org/comfy-kitchen) | Adapted LTX neighborhood-attention grouping; quantization, ConvRot, INT8 VAE and Flux.3 RMS/RoPE compatibility references | [Apache-2.0](third_party/Comfy-Kitchen-Apache-2.0.txt); copyright (c) 2025 Comfy Org on the adapted LTX file |
 | [SeedVR / ByteDance-Seed](https://github.com/ByteDance-Seed/SeedVR) | Bundled fixed positive/negative conditioning tensors | [Apache-2.0](_patches/seedvr2_assets/LICENSE), [asset provenance](_patches/seedvr2_assets/README.md) |
 | [MotionCache / starsFriday](https://github.com/starsFriday/ComfyUI-MiniMax-H3-MotionCache) | Bundled reference and maintained derivative | [MIT](_patches/h3_runtime/motion/LICENSE) |
 | [Spectrum H3 / xmarre](https://github.com/xmarre/ComfyUI-Spectrum-MiniMax-H3) | Bundled reference and maintained derivative | [GPL-3.0-or-later](_patches/h3_runtime/spectrum/LICENSE), [copyright](_patches/h3_runtime/spectrum/COPYRIGHT) |
@@ -38,6 +38,13 @@ not imply that every derivative was copied from that revision; pinned source
 revisions are identified separately below or in the adjacent source headers.
 
 ## Additional adapted source and research provenance
+
+The optional H3 INT8 QK / BF16 PV shader in `h3_floatpv_shaders` is generated
+from CCV revision `e499321b29b5c9c31329a8efc6960d84856d3315`
+(`NAInt8AttentionKernel`, `quantizePV=false`). The upstream BSD-3-Clause
+notice is retained in the shader. Native BHSD addressing, PyTorch buffer
+bindings, memory guards and H3 preset integration are local adaptations.
+
 
 The H3 latent-upscaler networks derive from revision
 `40316cf008b2fd8663263270669eb4da23f89d2c` of LBH-123-AI's project.

@@ -85,3 +85,10 @@ Optional workflow approximations remain independently selectable.
 | `ASFP8_EXEC_TRACE_SYNC` | off | with EXEC_TRACE: time the GPU tail drain after the sampler loop (splits real overhead from queued GPU work) |
 | `APPLESILICON_FP8_PSUTIL` | auto | psutil fix: `auto` / `off` / `force` |
 | `MTLFLASHATTN_SDPA*` | — | patch #5 gates (see mtlflashattn docs) |
+
+## Flux.3 (ComfyUI v0.41.2)
+
+See [Flux.3 controls and memory budgets](flux3.md). `ASFP8_FLUX3_FAST=0`
+disables the new paths; sampling cache, prompt cache, RoPE and SwiGLU have
+independent switches. Enabled automatically only on the reviewed M5 Ultra /
+PyTorch 2.14.1 / Comfy Kitchen 0.2.37 stack.
