@@ -1,0 +1,2782 @@
+{
+  "configuration": {
+    "comfyui": "0.41.2",
+    "torch": "2.14.1",
+    "hardware": "M5 Ultra 80 GPU / 256 GB",
+    "resolution": [
+      864,
+      480
+    ],
+    "frames": 39,
+    "steps_full": 10,
+    "steps_protected_screen": 4,
+    "sampler": "euler",
+    "scheduler": "simple",
+    "cfg": 1,
+    "seed": 812764035,
+    "guidance": "authored study-room full-video guide + image reference",
+    "loras": false,
+    "prompt": "A continuous cinematic shot inside a quiet sunlit study. The camera slowly dollies forward toward a wooden desk, producing a gentle steady push-in with clear natural parallax. On the desk stand a single red ceramic vase and a small brass globe. In the background, a round white wall clock with dark hands hangs above a wooden bookshelf containing upright blue, green and red books. Three distinct rectangular framed landscape photographs hang in a straight horizontal row on the wall. A leafy potted plant stands beside the bookshelf. The square checkerboard floor and all furniture remain rigid and stationary throughout. No people, no object movement, no scene cuts. Natural daylight, realistic fine detail, stable geometry and consistent colors. Quiet room ambience, no music."
+  },
+  "summary": {
+    "dense_full": {
+      "sampling_runs": [
+        47.40375516600034,
+        47.334293708001496
+      ],
+      "e2e_runs": [
+        50.811,
+        50.74
+      ],
+      "mean_sampling": 47.36902443700092,
+      "mean_e2e": 50.7755
+    },
+    "dense_full_relaxed": {
+      "sampling_runs": [
+        43.76254558299843,
+        43.67339987499872
+      ],
+      "e2e_runs": [
+        47.193,
+        47.103
+      ],
+      "mean_sampling": 43.717972728998575,
+      "mean_e2e": 47.147999999999996
+    },
+    "fpv_full": {
+      "sampling_runs": [
+        47.5856856659957,
+        46.73653495799226
+      ],
+      "e2e_runs": [
+        50.989,
+        50.14
+      ],
+      "mean_sampling": 47.16111031199398,
+      "mean_e2e": 50.564499999999995
+    },
+    "fpv_full_relaxed": {
+      "sampling_runs": [
+        45.54723937500967,
+        45.52396716699877
+      ],
+      "e2e_runs": [
+        48.95,
+        48.924
+      ],
+      "mean_sampling": 45.53560327100422,
+      "mean_e2e": 48.937
+    },
+    "dense_protected_relaxed": {
+      "sampling_runs": [
+        17.907771832993603
+      ],
+      "e2e_runs": [
+        21.3
+      ],
+      "mean_sampling": 17.907771832993603,
+      "mean_e2e": 21.3
+    },
+    "fpv_protected_relaxed": {
+      "sampling_runs": [
+        18.265835875004996
+      ],
+      "e2e_runs": [
+        21.666
+      ],
+      "mean_sampling": 18.265835875004996,
+      "mean_e2e": 21.666
+    }
+  },
+  "checks": {
+    "dense_full_repeat_byte_equal": true,
+    "dense_full_relaxed_repeat_byte_equal": true,
+    "fpv_full_repeat_byte_equal": true,
+    "fpv_full_relaxed_repeat_byte_equal": true,
+    "noise_and_conditioning_equal": true,
+    "finite_outputs": true
+  },
+  "on_vs_off_errors": {
+    "dense_full": {
+      "latents": {
+        "/0/samples/0": {
+          "rmse": 0.012327565811574459,
+          "relative_rmse": 0.01208015251904726,
+          "max_abs": 0.3033413887023926
+        },
+        "/0/samples/1": {
+          "rmse": 0.06034224107861519,
+          "relative_rmse": 0.11899561434984207,
+          "max_abs": 0.40077120065689087
+        },
+        "/1/samples/0": {
+          "rmse": 0.012327565811574459,
+          "relative_rmse": 0.01208015251904726,
+          "max_abs": 0.3033413887023926
+        },
+        "/1/samples/1": {
+          "rmse": 0.06034224480390549,
+          "relative_rmse": 0.11899562180042267,
+          "max_abs": 0.40077120065689087
+        }
+      },
+      "frames": {
+        "": {
+          "rmse": 0.0033257862087339163,
+          "relative_rmse": 0.007721173111349344,
+          "max_abs": 0.1240307092666626
+        }
+      },
+      "audio_decode": {
+        "/0/0/waveform": {
+          "rmse": 0.018941473215818405,
+          "relative_rmse": 0.1946250945329666,
+          "max_abs": 0.10328362882137299
+        }
+      }
+    },
+    "fpv_full": {
+      "latents": {
+        "/0/samples/0": {
+          "rmse": 0.007591932080686092,
+          "relative_rmse": 0.007408215664327145,
+          "max_abs": 0.19426703453063965
+        },
+        "/0/samples/1": {
+          "rmse": 0.02837301604449749,
+          "relative_rmse": 0.05583389848470688,
+          "max_abs": 0.14053089916706085
+        },
+        "/1/samples/0": {
+          "rmse": 0.007591932080686092,
+          "relative_rmse": 0.007408215664327145,
+          "max_abs": 0.19426703453063965
+        },
+        "/1/samples/1": {
+          "rmse": 0.02837301604449749,
+          "relative_rmse": 0.05583389848470688,
+          "max_abs": 0.14053089916706085
+        }
+      },
+      "frames": {
+        "": {
+          "rmse": 0.001957347383722663,
+          "relative_rmse": 0.004529545549303293,
+          "max_abs": 0.13950717449188232
+        }
+      },
+      "audio_decode": {
+        "/0/0/waveform": {
+          "rmse": 0.00880367960780859,
+          "relative_rmse": 0.08378716558218002,
+          "max_abs": 0.036223024129867554
+        }
+      }
+    }
+  },
+  "runs": [
+    {
+      "run_id": "dense-extension-0-exact",
+      "mode": "exact",
+      "warmup": true,
+      "e2e": 46.616,
+      "timings": {
+        "sampling_loop": 9.198780708000413,
+        "sampling": 17.26008679100778,
+        "audio_decode": 0.40581533301156014,
+        "video_decode": 2.965259167001932,
+        "create_video": 0.00016820800374262035,
+        "save_video": 0.17797887499909848
+      },
+      "steps": [
+        4.640677167000831,
+        4.557412624999415
+      ],
+      "peak_driver_gib": 53.12664794921875,
+      "candidate_stats": {},
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "ef897f62913bb6578e47d6624fb4c904844e53a86b51342fbb64ed84cdf4d88d",
+            "shape": [
+              1193
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/minimax_refs/0/latent": {
+            "sha256": "20c705c3add7ec042cad0849999b69ccbb2c1fcd78861c77055032d6a2f64935",
+            "shape": [
+              1,
+              24,
+              1,
+              46,
+              90
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/positive/0/minimax_keyframes/0/latent": {
+            "sha256": "37b08f7776544eed15e0082ce4d664a4a1f9f51ae26329c03b13174ad58e3486",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "f0fdb894a27ff0c9a352b02810eb374ab35b21f3211931cc1a3ffad8c486f3bd",
+            "shape": [
+              1,
+              1193,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "a7abadcf5944c1358b9bb26446c3cfa693f24e576e4ad36f373064512c4fc97b",
+            "shape": [
+              1,
+              1,
+              470720
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "da3e0138f248c5dfcb32a19d52cbf6127897f12d15ecafa8fff10b00279a2584",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "ac6e050181145b86bdf910d96349953a528ece1b9769fd4db0e2d5a391637e78",
+            "shape": [
+              1,
+              32,
+              2,
+              65
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "bc1767e4c332a976e79c4ea8ab1398b6f105c56e3d2affe8117a5dec9c88601a",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "794f7f217c290d91d17cd2a930ba5af55e75f61cf4382f73aae50a903f5a30d2",
+            "shape": [
+              1,
+              32,
+              2,
+              65
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "42e64e53f78d338e6f58b608825466794348572dc936fbd7f8b3def19cdbbb6d",
+            "shape": [
+              1,
+              2,
+              52000
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "59a3706f191d29db0282c74c069534318cd5bed0ba40b02d6c400fb46d71724f",
+            "shape": [
+              39,
+              480,
+              864,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      }
+    },
+    {
+      "run_id": "dense-extension-1-dense_full",
+      "mode": "dense_full",
+      "warmup": true,
+      "e2e": 13.464,
+      "timings": {
+        "sampling_loop": 10.000458791997517,
+        "sampling": 10.072552415993414,
+        "audio_decode": 0.22367700000177138,
+        "video_decode": 2.950028042003396,
+        "create_video": 0.0001134999911300838,
+        "save_video": 0.17537337500834838
+      },
+      "steps": [
+        5.251437375001842,
+        4.747242583995103
+      ],
+      "peak_driver_gib": 54.10125732421875,
+      "candidate_stats": {
+        "((1, 56, 12078, 128), None)": 100
+      },
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "ef897f62913bb6578e47d6624fb4c904844e53a86b51342fbb64ed84cdf4d88d",
+            "shape": [
+              1193
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/minimax_refs/0/latent": {
+            "sha256": "20c705c3add7ec042cad0849999b69ccbb2c1fcd78861c77055032d6a2f64935",
+            "shape": [
+              1,
+              24,
+              1,
+              46,
+              90
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/positive/0/minimax_keyframes/0/latent": {
+            "sha256": "37b08f7776544eed15e0082ce4d664a4a1f9f51ae26329c03b13174ad58e3486",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "f0fdb894a27ff0c9a352b02810eb374ab35b21f3211931cc1a3ffad8c486f3bd",
+            "shape": [
+              1,
+              1193,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "a7abadcf5944c1358b9bb26446c3cfa693f24e576e4ad36f373064512c4fc97b",
+            "shape": [
+              1,
+              1,
+              470720
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "3051f7e42877974a6da35c1d2c63abd8308b1c3a8c434e3e751d8054e37c70b9",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "59fa5dcface57aac1d1027aaa4e3d2d7e0f08644ea1f5f2c9c02c545306c5139",
+            "shape": [
+              1,
+              32,
+              2,
+              65
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "8c86693ae5f880d73410c554ebaf5459398d51f4693c9b99aad1f9b28919b830",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "f15be4c101f204f9470afe62d7c10a26f2ceac5bf7c6d09d4748ca34f6e782b5",
+            "shape": [
+              1,
+              32,
+              2,
+              65
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "fe9b89e25eca513861e466513f37c77735eaf7de9a10a1f5894588e9b977866b",
+            "shape": [
+              1,
+              2,
+              52000
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "fdaf80178501009d27b04d84c2bbbce763df12a3f3c9975a51ee899d2f9abde7",
+            "shape": [
+              39,
+              480,
+              864,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      }
+    },
+    {
+      "run_id": "dense-extension-2-dense_full_relaxed",
+      "mode": "dense_full_relaxed",
+      "warmup": true,
+      "e2e": 12.529,
+      "timings": {
+        "sampling_loop": 9.126485874992795,
+        "sampling": 9.206099625007482,
+        "audio_decode": 0.20517429200117476,
+        "video_decode": 2.942300916998647,
+        "create_video": 8.312500722240657e-05,
+        "save_video": 0.16940066700044554
+      },
+      "steps": [
+        4.760393374992418,
+        4.364289208999253
+      ],
+      "peak_driver_gib": 54.15594482421875,
+      "candidate_stats": {
+        "layout": [
+          [
+            0,
+            1193,
+            "text"
+          ],
+          [
+            1193,
+            6053,
+            "cond"
+          ],
+          [
+            6053,
+            7088,
+            "ref_img"
+          ],
+          [
+            7088,
+            7218,
+            "audio"
+          ],
+          [
+            7218,
+            12078,
+            "video"
+          ]
+        ],
+        "((1, 56, 12078, 128), ((0, 1193), (7088, 7218)))": 100
+      },
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "ef897f62913bb6578e47d6624fb4c904844e53a86b51342fbb64ed84cdf4d88d",
+            "shape": [
+              1193
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/minimax_refs/0/latent": {
+            "sha256": "20c705c3add7ec042cad0849999b69ccbb2c1fcd78861c77055032d6a2f64935",
+            "shape": [
+              1,
+              24,
+              1,
+              46,
+              90
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/positive/0/minimax_keyframes/0/latent": {
+            "sha256": "37b08f7776544eed15e0082ce4d664a4a1f9f51ae26329c03b13174ad58e3486",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "f0fdb894a27ff0c9a352b02810eb374ab35b21f3211931cc1a3ffad8c486f3bd",
+            "shape": [
+              1,
+              1193,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "a7abadcf5944c1358b9bb26446c3cfa693f24e576e4ad36f373064512c4fc97b",
+            "shape": [
+              1,
+              1,
+              470720
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "3d7fa1bedf768ac44cd83347510de4aa4444307939f40a145cb82e3dbdd70313",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "dc5acaa840c85ad96729a00970bd7dfbbe02db674a1d86c5fc3d0f327e7ca44f",
+            "shape": [
+              1,
+              32,
+              2,
+              65
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "f83632d32aba4974f795255c1ba79f3504ea10df45befd367c49cdf6acf28c9d",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "8abebc94968afd5c172bf3943fee6417daf6189c6256c5bcc9febe48468a50a3",
+            "shape": [
+              1,
+              32,
+              2,
+              65
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "68de2c637a41d39c2c8b5d07a7d3eacbfa70f44aaee8b65a4be34deeb434072a",
+            "shape": [
+              1,
+              2,
+              52000
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "65515c875fc4eb17d4a89a4f156ae68d6a64b679b87a0ce86f7fa30048782d00",
+            "shape": [
+              39,
+              480,
+              864,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      }
+    },
+    {
+      "run_id": "dense-extension-3-fpv_full",
+      "mode": "fpv_full",
+      "warmup": true,
+      "e2e": 12.785,
+      "timings": {
+        "sampling_loop": 9.39633654098725,
+        "sampling": 9.468454000001657,
+        "audio_decode": 0.20047545799752697,
+        "video_decode": 2.9375226659904,
+        "create_video": 7.600001117680222e-05,
+        "save_video": 0.17338595900218934
+      },
+      "steps": [
+        4.724890332989162,
+        4.6697085830091964
+      ],
+      "peak_driver_gib": 54.15594482421875,
+      "candidate_stats": {
+        "((1, 56, 12078, 128), None)": 100
+      },
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "ef897f62913bb6578e47d6624fb4c904844e53a86b51342fbb64ed84cdf4d88d",
+            "shape": [
+              1193
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/minimax_refs/0/latent": {
+            "sha256": "20c705c3add7ec042cad0849999b69ccbb2c1fcd78861c77055032d6a2f64935",
+            "shape": [
+              1,
+              24,
+              1,
+              46,
+              90
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/positive/0/minimax_keyframes/0/latent": {
+            "sha256": "37b08f7776544eed15e0082ce4d664a4a1f9f51ae26329c03b13174ad58e3486",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "f0fdb894a27ff0c9a352b02810eb374ab35b21f3211931cc1a3ffad8c486f3bd",
+            "shape": [
+              1,
+              1193,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "a7abadcf5944c1358b9bb26446c3cfa693f24e576e4ad36f373064512c4fc97b",
+            "shape": [
+              1,
+              1,
+              470720
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "096b9a3fc1202266a9963aae5e8189f441a9cb782c3759e8c5b446d26a21fca2",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "d544f0e7e2747b60a43ac08fe59cc3a3c5fc3da940e2d2d6fb371ab82e518830",
+            "shape": [
+              1,
+              32,
+              2,
+              65
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "7a519770f0ef4d2288d79dfc0ba43f2e50b1ca7369dc8ae09c73661b1021e9b9",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "bb05da5847020913ce5585d042ce108cd8c973d28344f14b327e38af83c87944",
+            "shape": [
+              1,
+              32,
+              2,
+              65
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "6778e2f7172d9648417723fa8fd7410e5c71c916e0346d958bc1ae8c72664957",
+            "shape": [
+              1,
+              2,
+              52000
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "95fd16be427661b4d703c75562ee26ae6d7d2b383c945ea1c483db2f8e5d2e3d",
+            "shape": [
+              39,
+              480,
+              864,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      }
+    },
+    {
+      "run_id": "dense-extension-4-fpv_full_relaxed",
+      "mode": "fpv_full_relaxed",
+      "warmup": true,
+      "e2e": 12.531,
+      "timings": {
+        "sampling_loop": 9.128549624991138,
+        "sampling": 9.200079707996338,
+        "audio_decode": 0.208911875000922,
+        "video_decode": 2.9451542500028154,
+        "create_video": 7.454099250026047e-05,
+        "save_video": 0.17181566699582618
+      },
+      "steps": [
+        4.583284583000932,
+        4.543529832997592
+      ],
+      "peak_driver_gib": 54.15594482421875,
+      "candidate_stats": {
+        "layout": [
+          [
+            0,
+            1193,
+            "text"
+          ],
+          [
+            1193,
+            6053,
+            "cond"
+          ],
+          [
+            6053,
+            7088,
+            "ref_img"
+          ],
+          [
+            7088,
+            7218,
+            "audio"
+          ],
+          [
+            7218,
+            12078,
+            "video"
+          ]
+        ],
+        "((1, 56, 12078, 128), ((0, 1193), (7088, 7218)))": 100
+      },
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "ef897f62913bb6578e47d6624fb4c904844e53a86b51342fbb64ed84cdf4d88d",
+            "shape": [
+              1193
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/minimax_refs/0/latent": {
+            "sha256": "20c705c3add7ec042cad0849999b69ccbb2c1fcd78861c77055032d6a2f64935",
+            "shape": [
+              1,
+              24,
+              1,
+              46,
+              90
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/positive/0/minimax_keyframes/0/latent": {
+            "sha256": "37b08f7776544eed15e0082ce4d664a4a1f9f51ae26329c03b13174ad58e3486",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "f0fdb894a27ff0c9a352b02810eb374ab35b21f3211931cc1a3ffad8c486f3bd",
+            "shape": [
+              1,
+              1193,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "a7abadcf5944c1358b9bb26446c3cfa693f24e576e4ad36f373064512c4fc97b",
+            "shape": [
+              1,
+              1,
+              470720
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "cc1f53ec34d7ab72d5a6e8faf84d2259c9495aa81801ed7113892dea5d9e5a87",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "734cf0697fc66baad956d3c883bb806d1fd74fa38d82ac2291a2f9229c949185",
+            "shape": [
+              1,
+              32,
+              2,
+              65
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "a2f209f56b64c4d7c5e978d73ae6a699114a643fa9c62e96cfb6ae0db49ceb59",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "8c6ebb363cfcfa0649429c8ae1c79a525fb506ed0c8249cddc2f670df647d3a7",
+            "shape": [
+              1,
+              32,
+              2,
+              65
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "de14675432c73fa9c366af44ce1bdade6dc85b06cd241c7e81b2b7b6fd3b519f",
+            "shape": [
+              1,
+              2,
+              52000
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "14452dc336cb7db2ac58b9a0cdb7ea4df90b4cbabef35b886f4c32adb883e4ac",
+            "shape": [
+              39,
+              480,
+              864,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      }
+    },
+    {
+      "run_id": "dense-extension-5-dense_full",
+      "mode": "dense_full",
+      "warmup": false,
+      "e2e": 50.811,
+      "timings": {
+        "sampling_loop": 47.40375516600034,
+        "sampling": 47.48150350000651,
+        "audio_decode": 0.20671800000127405,
+        "video_decode": 2.948811166002997,
+        "create_video": 8.116700337268412e-05,
+        "save_video": 0.1657388329913374
+      },
+      "steps": [
+        4.760229124993202,
+        4.731332249997649,
+        4.735404791004839,
+        4.7427221670077415,
+        4.735282333000214,
+        4.742777291990933,
+        4.733304708002834,
+        4.746258625003975,
+        4.729980459000217,
+        4.74455212499015
+      ],
+      "peak_driver_gib": 54.15594482421875,
+      "candidate_stats": {
+        "((1, 56, 12078, 128), None)": 500
+      },
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "ef897f62913bb6578e47d6624fb4c904844e53a86b51342fbb64ed84cdf4d88d",
+            "shape": [
+              1193
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/minimax_refs/0/latent": {
+            "sha256": "20c705c3add7ec042cad0849999b69ccbb2c1fcd78861c77055032d6a2f64935",
+            "shape": [
+              1,
+              24,
+              1,
+              46,
+              90
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/positive/0/minimax_keyframes/0/latent": {
+            "sha256": "37b08f7776544eed15e0082ce4d664a4a1f9f51ae26329c03b13174ad58e3486",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "f0fdb894a27ff0c9a352b02810eb374ab35b21f3211931cc1a3ffad8c486f3bd",
+            "shape": [
+              1,
+              1193,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "a7abadcf5944c1358b9bb26446c3cfa693f24e576e4ad36f373064512c4fc97b",
+            "shape": [
+              1,
+              1,
+              470720
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "f62a00ab718b8ebfc3d399dfc829af233300c2db6898863e8263f0f7f9dc15c6",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "20d503c192a51a77abff1c505bcab8de110105d9c972637b4e4c62cf58585812",
+            "shape": [
+              1,
+              32,
+              2,
+              65
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "46a6b0cd1b3ae5f7e9fd5a8fd4b5bdf5f1df201687cb2c9b4767c4d054539c32",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "55f156c66d15a203d2669612fb45f1e9d22f23a68ab4c45a6ee48352fd3e902e",
+            "shape": [
+              1,
+              32,
+              2,
+              65
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "78521f0480b69a7553c6a16063887a2167250797a754606bc249381087d997ac",
+            "shape": [
+              1,
+              2,
+              52000
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "e61b6f43ee0c012503ddc0291f2728d9ad178f5dcbbb64a9069d6cd6a605bbb6",
+            "shape": [
+              39,
+              480,
+              864,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      }
+    },
+    {
+      "run_id": "dense-extension-6-dense_full_relaxed",
+      "mode": "dense_full_relaxed",
+      "warmup": false,
+      "e2e": 47.193,
+      "timings": {
+        "sampling_loop": 43.76254558299843,
+        "sampling": 43.831342542005586,
+        "audio_decode": 0.23725362500408664,
+        "video_decode": 2.9533140839921543,
+        "create_video": 8.116700337268412e-05,
+        "save_video": 0.16604524999274872
+      },
+      "steps": [
+        4.426918999990448,
+        4.3652497500006575,
+        4.361223041007179,
+        4.376327666992438,
+        4.369597500000964,
+        4.378756707999855,
+        4.363849125002162,
+        4.370156624994706,
+        4.370399417006411,
+        4.378852207999444
+      ],
+      "peak_driver_gib": 54.15594482421875,
+      "candidate_stats": {
+        "layout": [
+          [
+            0,
+            1193,
+            "text"
+          ],
+          [
+            1193,
+            6053,
+            "cond"
+          ],
+          [
+            6053,
+            7088,
+            "ref_img"
+          ],
+          [
+            7088,
+            7218,
+            "audio"
+          ],
+          [
+            7218,
+            12078,
+            "video"
+          ]
+        ],
+        "((1, 56, 12078, 128), ((0, 1193), (7088, 7218)))": 500
+      },
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "ef897f62913bb6578e47d6624fb4c904844e53a86b51342fbb64ed84cdf4d88d",
+            "shape": [
+              1193
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/minimax_refs/0/latent": {
+            "sha256": "20c705c3add7ec042cad0849999b69ccbb2c1fcd78861c77055032d6a2f64935",
+            "shape": [
+              1,
+              24,
+              1,
+              46,
+              90
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/positive/0/minimax_keyframes/0/latent": {
+            "sha256": "37b08f7776544eed15e0082ce4d664a4a1f9f51ae26329c03b13174ad58e3486",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "f0fdb894a27ff0c9a352b02810eb374ab35b21f3211931cc1a3ffad8c486f3bd",
+            "shape": [
+              1,
+              1193,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "a7abadcf5944c1358b9bb26446c3cfa693f24e576e4ad36f373064512c4fc97b",
+            "shape": [
+              1,
+              1,
+              470720
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "538a5c74361cef915b14aa3b3e55858c4e5c499b5ca2700c0c8b190f201549ef",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "74c3da8c79af4dd88954ce8217ed0dd0dfa51f48547d6aeb7f4ba5b97fa1b41b",
+            "shape": [
+              1,
+              32,
+              2,
+              65
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "a1b1ffe54601100c0f6dca026caecacf5a295ed21760c1a20615f5846df32de0",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "fdd818bf252cc9e47b84d66a9140441a34dfaa16b35aa43a5b3a6ad4422fcb1d",
+            "shape": [
+              1,
+              32,
+              2,
+              65
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "fc493bf27a3971190c41c71eb64790e91e492259ad4f3cdc7be72dcd15389c96",
+            "shape": [
+              1,
+              2,
+              52000
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "d0f9d7e3a87d7409204681f96e997de8b093b84b30e1b2bcc5f6f421534af627",
+            "shape": [
+              39,
+              480,
+              864,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      }
+    },
+    {
+      "run_id": "dense-extension-7-fpv_full",
+      "mode": "fpv_full",
+      "warmup": false,
+      "e2e": 50.989,
+      "timings": {
+        "sampling_loop": 47.5856856659957,
+        "sampling": 47.660214542003814,
+        "audio_decode": 0.20844716599094681,
+        "video_decode": 2.9485398750111926,
+        "create_video": 8.270899706985801e-05,
+        "save_video": 0.16658629100129474
+      },
+      "steps": [
+        4.757448290998582,
+        4.7872108339943225,
+        4.757197124999948,
+        4.755531250004424,
+        4.779414374992484,
+        4.757011749999947,
+        4.749947583011817,
+        4.754708499996923,
+        4.718118374992628,
+        4.768506332999095
+      ],
+      "peak_driver_gib": 54.15594482421875,
+      "candidate_stats": {
+        "((1, 56, 12078, 128), None)": 500
+      },
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "ef897f62913bb6578e47d6624fb4c904844e53a86b51342fbb64ed84cdf4d88d",
+            "shape": [
+              1193
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/minimax_refs/0/latent": {
+            "sha256": "20c705c3add7ec042cad0849999b69ccbb2c1fcd78861c77055032d6a2f64935",
+            "shape": [
+              1,
+              24,
+              1,
+              46,
+              90
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/positive/0/minimax_keyframes/0/latent": {
+            "sha256": "37b08f7776544eed15e0082ce4d664a4a1f9f51ae26329c03b13174ad58e3486",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "f0fdb894a27ff0c9a352b02810eb374ab35b21f3211931cc1a3ffad8c486f3bd",
+            "shape": [
+              1,
+              1193,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "a7abadcf5944c1358b9bb26446c3cfa693f24e576e4ad36f373064512c4fc97b",
+            "shape": [
+              1,
+              1,
+              470720
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "f8c0213889e20effca26e7742fc0af0f841d9de4b037d9c50bde9e51718a15f0",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "b7fcc3baf156c248d8f4f5dda628119c9e28b25041e2312b67c76dedcfe0661c",
+            "shape": [
+              1,
+              32,
+              2,
+              65
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "19d122725efd3891536f0dcc2b8ea4ebe6873e9e21adbd19c74496c7f9b5c701",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "c95c112513e3e8af82f1662819373f000e0df38ad23d82257354ce4eff365cac",
+            "shape": [
+              1,
+              32,
+              2,
+              65
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "f6859654697e107de52ddb3fd3c4c248909044d2110aca1c82a8c966fecaf0f2",
+            "shape": [
+              1,
+              2,
+              52000
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "ca42fdb3839c02aa0a2264394ddfc827b558ae6ecd1310ae9a2d417539d4c788",
+            "shape": [
+              39,
+              480,
+              864,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      }
+    },
+    {
+      "run_id": "dense-extension-8-fpv_full_relaxed",
+      "mode": "fpv_full_relaxed",
+      "warmup": false,
+      "e2e": 48.95,
+      "timings": {
+        "sampling_loop": 45.54723937500967,
+        "sampling": 45.62473433400737,
+        "audio_decode": 0.20480920899717603,
+        "video_decode": 2.9489594170008786,
+        "create_video": 7.61660048738122e-05,
+        "save_video": 0.16627512499690056
+      },
+      "steps": [
+        4.588949375000084,
+        4.557361416009371,
+        4.549062167003285,
+        4.549531416996615,
+        4.552501124999253,
+        4.548772458001622,
+        4.549907749998965,
+        4.548829207997187,
+        4.551386999999522,
+        4.549141791998409
+      ],
+      "peak_driver_gib": 54.15594482421875,
+      "candidate_stats": {
+        "layout": [
+          [
+            0,
+            1193,
+            "text"
+          ],
+          [
+            1193,
+            6053,
+            "cond"
+          ],
+          [
+            6053,
+            7088,
+            "ref_img"
+          ],
+          [
+            7088,
+            7218,
+            "audio"
+          ],
+          [
+            7218,
+            12078,
+            "video"
+          ]
+        ],
+        "((1, 56, 12078, 128), ((0, 1193), (7088, 7218)))": 500
+      },
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "ef897f62913bb6578e47d6624fb4c904844e53a86b51342fbb64ed84cdf4d88d",
+            "shape": [
+              1193
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/minimax_refs/0/latent": {
+            "sha256": "20c705c3add7ec042cad0849999b69ccbb2c1fcd78861c77055032d6a2f64935",
+            "shape": [
+              1,
+              24,
+              1,
+              46,
+              90
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/positive/0/minimax_keyframes/0/latent": {
+            "sha256": "37b08f7776544eed15e0082ce4d664a4a1f9f51ae26329c03b13174ad58e3486",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "f0fdb894a27ff0c9a352b02810eb374ab35b21f3211931cc1a3ffad8c486f3bd",
+            "shape": [
+              1,
+              1193,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "a7abadcf5944c1358b9bb26446c3cfa693f24e576e4ad36f373064512c4fc97b",
+            "shape": [
+              1,
+              1,
+              470720
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "3286369862857817d09ad33c51efc255c59e843b4e96c6a8651d9b14f024f3ae",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "d32342e26644221d0c1dc4cc500897f9c0926ee312f6db970f3ef28f8e6fe280",
+            "shape": [
+              1,
+              32,
+              2,
+              65
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "ec1f6cee298cd62cf3f62e9b9b4fc33c30fc20576099d68e3411973ba73db9ab",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "5b88e1da12d4002ab7ee7fad41f1ed5c71c1f7dd207852de12b96dbe39518f00",
+            "shape": [
+              1,
+              32,
+              2,
+              65
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "0cac554e7f9a9d8de1101f3211b338d8f6df486030787ed821ad6d7c2304bcec",
+            "shape": [
+              1,
+              2,
+              52000
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "2680038d904187fb533e8a32d8dd324b7d3957c0d4d884a22f5261e1e7b54d2c",
+            "shape": [
+              39,
+              480,
+              864,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      }
+    },
+    {
+      "run_id": "dense-extension-9-fpv_full_relaxed",
+      "mode": "fpv_full_relaxed",
+      "warmup": false,
+      "e2e": 48.924,
+      "timings": {
+        "sampling_loop": 45.52396716699877,
+        "sampling": 45.60247741600324,
+        "audio_decode": 0.20285262500692625,
+        "video_decode": 2.9476738329976797,
+        "create_video": 8.225000055972487e-05,
+        "save_video": 0.16525770799489692
+      },
+      "steps": [
+        4.587078709009802,
+        4.557692000002135,
+        4.54897712499951,
+        4.548251582993544,
+        4.543522167004994,
+        4.545502166001825,
+        4.546149249988957,
+        4.550612292005098,
+        4.549679667004966,
+        4.544700415994157
+      ],
+      "peak_driver_gib": 54.15594482421875,
+      "candidate_stats": {
+        "layout": [
+          [
+            0,
+            1193,
+            "text"
+          ],
+          [
+            1193,
+            6053,
+            "cond"
+          ],
+          [
+            6053,
+            7088,
+            "ref_img"
+          ],
+          [
+            7088,
+            7218,
+            "audio"
+          ],
+          [
+            7218,
+            12078,
+            "video"
+          ]
+        ],
+        "((1, 56, 12078, 128), ((0, 1193), (7088, 7218)))": 500
+      },
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "ef897f62913bb6578e47d6624fb4c904844e53a86b51342fbb64ed84cdf4d88d",
+            "shape": [
+              1193
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/minimax_refs/0/latent": {
+            "sha256": "20c705c3add7ec042cad0849999b69ccbb2c1fcd78861c77055032d6a2f64935",
+            "shape": [
+              1,
+              24,
+              1,
+              46,
+              90
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/positive/0/minimax_keyframes/0/latent": {
+            "sha256": "37b08f7776544eed15e0082ce4d664a4a1f9f51ae26329c03b13174ad58e3486",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "f0fdb894a27ff0c9a352b02810eb374ab35b21f3211931cc1a3ffad8c486f3bd",
+            "shape": [
+              1,
+              1193,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "a7abadcf5944c1358b9bb26446c3cfa693f24e576e4ad36f373064512c4fc97b",
+            "shape": [
+              1,
+              1,
+              470720
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "3286369862857817d09ad33c51efc255c59e843b4e96c6a8651d9b14f024f3ae",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "d32342e26644221d0c1dc4cc500897f9c0926ee312f6db970f3ef28f8e6fe280",
+            "shape": [
+              1,
+              32,
+              2,
+              65
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "ec1f6cee298cd62cf3f62e9b9b4fc33c30fc20576099d68e3411973ba73db9ab",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "5b88e1da12d4002ab7ee7fad41f1ed5c71c1f7dd207852de12b96dbe39518f00",
+            "shape": [
+              1,
+              32,
+              2,
+              65
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "0cac554e7f9a9d8de1101f3211b338d8f6df486030787ed821ad6d7c2304bcec",
+            "shape": [
+              1,
+              2,
+              52000
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "2680038d904187fb533e8a32d8dd324b7d3957c0d4d884a22f5261e1e7b54d2c",
+            "shape": [
+              39,
+              480,
+              864,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      }
+    },
+    {
+      "run_id": "dense-extension-10-fpv_full",
+      "mode": "fpv_full",
+      "warmup": false,
+      "e2e": 50.14,
+      "timings": {
+        "sampling_loop": 46.73653495799226,
+        "sampling": 46.81275441600883,
+        "audio_decode": 0.2077266660053283,
+        "video_decode": 2.9482401670102263,
+        "create_video": 8.299999171867967e-05,
+        "save_video": 0.1658915000007255
+      },
+      "steps": [
+        4.718719666998368,
+        4.671352666002349,
+        4.66744283400476,
+        4.665176707989303,
+        4.667278125009034,
+        4.670086166996043,
+        4.665306291004526,
+        4.670463791990187,
+        4.669863750008517,
+        4.669021291992976
+      ],
+      "peak_driver_gib": 54.15594482421875,
+      "candidate_stats": {
+        "((1, 56, 12078, 128), None)": 500
+      },
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "ef897f62913bb6578e47d6624fb4c904844e53a86b51342fbb64ed84cdf4d88d",
+            "shape": [
+              1193
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/minimax_refs/0/latent": {
+            "sha256": "20c705c3add7ec042cad0849999b69ccbb2c1fcd78861c77055032d6a2f64935",
+            "shape": [
+              1,
+              24,
+              1,
+              46,
+              90
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/positive/0/minimax_keyframes/0/latent": {
+            "sha256": "37b08f7776544eed15e0082ce4d664a4a1f9f51ae26329c03b13174ad58e3486",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "f0fdb894a27ff0c9a352b02810eb374ab35b21f3211931cc1a3ffad8c486f3bd",
+            "shape": [
+              1,
+              1193,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "a7abadcf5944c1358b9bb26446c3cfa693f24e576e4ad36f373064512c4fc97b",
+            "shape": [
+              1,
+              1,
+              470720
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "f8c0213889e20effca26e7742fc0af0f841d9de4b037d9c50bde9e51718a15f0",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "b7fcc3baf156c248d8f4f5dda628119c9e28b25041e2312b67c76dedcfe0661c",
+            "shape": [
+              1,
+              32,
+              2,
+              65
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "19d122725efd3891536f0dcc2b8ea4ebe6873e9e21adbd19c74496c7f9b5c701",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "c95c112513e3e8af82f1662819373f000e0df38ad23d82257354ce4eff365cac",
+            "shape": [
+              1,
+              32,
+              2,
+              65
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "f6859654697e107de52ddb3fd3c4c248909044d2110aca1c82a8c966fecaf0f2",
+            "shape": [
+              1,
+              2,
+              52000
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "ca42fdb3839c02aa0a2264394ddfc827b558ae6ecd1310ae9a2d417539d4c788",
+            "shape": [
+              39,
+              480,
+              864,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      }
+    },
+    {
+      "run_id": "dense-extension-11-dense_full_relaxed",
+      "mode": "dense_full_relaxed",
+      "warmup": false,
+      "e2e": 47.103,
+      "timings": {
+        "sampling_loop": 43.67339987499872,
+        "sampling": 43.74018733399862,
+        "audio_decode": 0.20774120900023263,
+        "video_decode": 2.9829611250024755,
+        "create_video": 7.974999607540667e-05,
+        "save_video": 0.16635612500249408
+      },
+      "steps": [
+        4.374867417005589,
+        4.370997291000094,
+        4.364647042006254,
+        4.368781499986653,
+        4.364760250013205,
+        4.365856499993242,
+        4.372555750000174,
+        4.362029791998793,
+        4.361942666000687,
+        4.366302124995855
+      ],
+      "peak_driver_gib": 54.15594482421875,
+      "candidate_stats": {
+        "layout": [
+          [
+            0,
+            1193,
+            "text"
+          ],
+          [
+            1193,
+            6053,
+            "cond"
+          ],
+          [
+            6053,
+            7088,
+            "ref_img"
+          ],
+          [
+            7088,
+            7218,
+            "audio"
+          ],
+          [
+            7218,
+            12078,
+            "video"
+          ]
+        ],
+        "((1, 56, 12078, 128), ((0, 1193), (7088, 7218)))": 500
+      },
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "ef897f62913bb6578e47d6624fb4c904844e53a86b51342fbb64ed84cdf4d88d",
+            "shape": [
+              1193
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/minimax_refs/0/latent": {
+            "sha256": "20c705c3add7ec042cad0849999b69ccbb2c1fcd78861c77055032d6a2f64935",
+            "shape": [
+              1,
+              24,
+              1,
+              46,
+              90
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/positive/0/minimax_keyframes/0/latent": {
+            "sha256": "37b08f7776544eed15e0082ce4d664a4a1f9f51ae26329c03b13174ad58e3486",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "f0fdb894a27ff0c9a352b02810eb374ab35b21f3211931cc1a3ffad8c486f3bd",
+            "shape": [
+              1,
+              1193,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "a7abadcf5944c1358b9bb26446c3cfa693f24e576e4ad36f373064512c4fc97b",
+            "shape": [
+              1,
+              1,
+              470720
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "538a5c74361cef915b14aa3b3e55858c4e5c499b5ca2700c0c8b190f201549ef",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "74c3da8c79af4dd88954ce8217ed0dd0dfa51f48547d6aeb7f4ba5b97fa1b41b",
+            "shape": [
+              1,
+              32,
+              2,
+              65
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "a1b1ffe54601100c0f6dca026caecacf5a295ed21760c1a20615f5846df32de0",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "fdd818bf252cc9e47b84d66a9140441a34dfaa16b35aa43a5b3a6ad4422fcb1d",
+            "shape": [
+              1,
+              32,
+              2,
+              65
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "fc493bf27a3971190c41c71eb64790e91e492259ad4f3cdc7be72dcd15389c96",
+            "shape": [
+              1,
+              2,
+              52000
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "d0f9d7e3a87d7409204681f96e997de8b093b84b30e1b2bcc5f6f421534af627",
+            "shape": [
+              39,
+              480,
+              864,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      }
+    },
+    {
+      "run_id": "dense-extension-12-dense_full",
+      "mode": "dense_full",
+      "warmup": false,
+      "e2e": 50.74,
+      "timings": {
+        "sampling_loop": 47.334293708001496,
+        "sampling": 47.416117332992144,
+        "audio_decode": 0.20380641699011903,
+        "video_decode": 2.948315333997016,
+        "create_video": 8.524999429937452e-05,
+        "save_video": 0.16613212501397356
+      },
+      "steps": [
+        4.75200937500631,
+        4.738779708000948,
+        4.73065820899501,
+        4.727144165997743,
+        4.733084999999846,
+        4.730683458998101,
+        4.728941416004091,
+        4.729925167004694,
+        4.73232533299597,
+        4.730112083998392
+      ],
+      "peak_driver_gib": 54.15594482421875,
+      "candidate_stats": {
+        "((1, 56, 12078, 128), None)": 500
+      },
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "ef897f62913bb6578e47d6624fb4c904844e53a86b51342fbb64ed84cdf4d88d",
+            "shape": [
+              1193
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/minimax_refs/0/latent": {
+            "sha256": "20c705c3add7ec042cad0849999b69ccbb2c1fcd78861c77055032d6a2f64935",
+            "shape": [
+              1,
+              24,
+              1,
+              46,
+              90
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/positive/0/minimax_keyframes/0/latent": {
+            "sha256": "37b08f7776544eed15e0082ce4d664a4a1f9f51ae26329c03b13174ad58e3486",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "f0fdb894a27ff0c9a352b02810eb374ab35b21f3211931cc1a3ffad8c486f3bd",
+            "shape": [
+              1,
+              1193,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "a7abadcf5944c1358b9bb26446c3cfa693f24e576e4ad36f373064512c4fc97b",
+            "shape": [
+              1,
+              1,
+              470720
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "f62a00ab718b8ebfc3d399dfc829af233300c2db6898863e8263f0f7f9dc15c6",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "20d503c192a51a77abff1c505bcab8de110105d9c972637b4e4c62cf58585812",
+            "shape": [
+              1,
+              32,
+              2,
+              65
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "46a6b0cd1b3ae5f7e9fd5a8fd4b5bdf5f1df201687cb2c9b4767c4d054539c32",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "55f156c66d15a203d2669612fb45f1e9d22f23a68ab4c45a6ee48352fd3e902e",
+            "shape": [
+              1,
+              32,
+              2,
+              65
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "78521f0480b69a7553c6a16063887a2167250797a754606bc249381087d997ac",
+            "shape": [
+              1,
+              2,
+              52000
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "e61b6f43ee0c012503ddc0291f2728d9ad178f5dcbbb64a9069d6cd6a605bbb6",
+            "shape": [
+              39,
+              480,
+              864,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      }
+    },
+    {
+      "run_id": "dense-extension-13-dense_protected_relaxed",
+      "mode": "dense_protected_relaxed",
+      "warmup": false,
+      "e2e": 21.3,
+      "timings": {
+        "sampling_loop": 17.907771832993603,
+        "sampling": 17.973397082998417,
+        "audio_decode": 0.20073554100235924,
+        "video_decode": 2.947187334008049,
+        "create_video": 7.979199290275574e-05,
+        "save_video": 0.1692114580073394
+      },
+      "steps": [
+        4.575301958000637,
+        4.391012416992453,
+        4.382352375003393,
+        4.557306917005917
+      ],
+      "peak_driver_gib": 54.15594482421875,
+      "candidate_stats": {
+        "layout": [
+          [
+            0,
+            1193,
+            "text"
+          ],
+          [
+            1193,
+            6053,
+            "cond"
+          ],
+          [
+            6053,
+            7088,
+            "ref_img"
+          ],
+          [
+            7088,
+            7218,
+            "audio"
+          ],
+          [
+            7218,
+            12078,
+            "video"
+          ]
+        ],
+        "((1, 56, 12078, 128), ((0, 1193), (7088, 7218)))": 90
+      },
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "ef897f62913bb6578e47d6624fb4c904844e53a86b51342fbb64ed84cdf4d88d",
+            "shape": [
+              1193
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/minimax_refs/0/latent": {
+            "sha256": "20c705c3add7ec042cad0849999b69ccbb2c1fcd78861c77055032d6a2f64935",
+            "shape": [
+              1,
+              24,
+              1,
+              46,
+              90
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/positive/0/minimax_keyframes/0/latent": {
+            "sha256": "37b08f7776544eed15e0082ce4d664a4a1f9f51ae26329c03b13174ad58e3486",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "f0fdb894a27ff0c9a352b02810eb374ab35b21f3211931cc1a3ffad8c486f3bd",
+            "shape": [
+              1,
+              1193,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "a7abadcf5944c1358b9bb26446c3cfa693f24e576e4ad36f373064512c4fc97b",
+            "shape": [
+              1,
+              1,
+              470720
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "1d0cb1f1c169158e92ae3b07bce4ab6fddf768150647a7fc7cc47722978a7f06",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "98e3f2a9978aa43dbce107105826e656540c1dd64ebaf2b1c3f88b09678e558a",
+            "shape": [
+              1,
+              32,
+              2,
+              65
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "d149f49c30e600a961d983a60753830e9ea4c7520477002ad411c226f3a22f4e",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "931903633667bb09bf7458a3211c7b705f735af5fbfdef90a9b26876caa848de",
+            "shape": [
+              1,
+              32,
+              2,
+              65
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "eb4ed8cb5d4f5e8d4a006a17f801fea21ff46eb6e54a05ed1cfb41823509c4d0",
+            "shape": [
+              1,
+              2,
+              52000
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "fce37bc42588dc3e95deb874af1ab98668ec316944f12d646ead44c771bca40e",
+            "shape": [
+              39,
+              480,
+              864,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      }
+    },
+    {
+      "run_id": "dense-extension-14-fpv_protected_relaxed",
+      "mode": "fpv_protected_relaxed",
+      "warmup": false,
+      "e2e": 21.666,
+      "timings": {
+        "sampling_loop": 18.265835875004996,
+        "sampling": 18.337012459000107,
+        "audio_decode": 0.2068912079994334,
+        "video_decode": 2.94811558398942,
+        "create_video": 8.162499580066651e-05,
+        "save_video": 0.16910804199869744
+      },
+      "steps": [
+        4.6070750420039985,
+        4.552070374993491,
+        4.551703040997381,
+        4.553184667005553
+      ],
+      "peak_driver_gib": 54.15594482421875,
+      "candidate_stats": {
+        "layout": [
+          [
+            0,
+            1193,
+            "text"
+          ],
+          [
+            1193,
+            6053,
+            "cond"
+          ],
+          [
+            6053,
+            7088,
+            "ref_img"
+          ],
+          [
+            7088,
+            7218,
+            "audio"
+          ],
+          [
+            7218,
+            12078,
+            "video"
+          ]
+        ],
+        "((1, 56, 12078, 128), ((0, 1193), (7088, 7218)))": 90
+      },
+      "tensors": {
+        "conditioning": {
+          "/positive/0/minimax_token_tags": {
+            "sha256": "ef897f62913bb6578e47d6624fb4c904844e53a86b51342fbb64ed84cdf4d88d",
+            "shape": [
+              1193
+            ],
+            "dtype": "torch.int64",
+            "finite": true
+          },
+          "/positive/0/minimax_refs/0/latent": {
+            "sha256": "20c705c3add7ec042cad0849999b69ccbb2c1fcd78861c77055032d6a2f64935",
+            "shape": [
+              1,
+              24,
+              1,
+              46,
+              90
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/positive/0/minimax_keyframes/0/latent": {
+            "sha256": "37b08f7776544eed15e0082ce4d664a4a1f9f51ae26329c03b13174ad58e3486",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/positive/0/cross_attn": {
+            "sha256": "f0fdb894a27ff0c9a352b02810eb374ab35b21f3211931cc1a3ffad8c486f3bd",
+            "shape": [
+              1,
+              1193,
+              5120
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "noise": {
+          "/": {
+            "sha256": "a7abadcf5944c1358b9bb26446c3cfa693f24e576e4ad36f373064512c4fc97b",
+            "shape": [
+              1,
+              1,
+              470720
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "latents": {
+          "/0/samples/0": {
+            "sha256": "ed499a139458be922316877c935a186acd448a7e39c5b9e4e3ca8c89d8d67cf8",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/0/samples/1": {
+            "sha256": "83ce79856751b72cb37fdfde1378c1d4ba4d3b6827e5654a7d05505c7c051346",
+            "shape": [
+              1,
+              32,
+              2,
+              65
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/0": {
+            "sha256": "c3f421834f9b2e388414284000bb5d835328f8a67d149afd00ee7adedb2b8a9a",
+            "shape": [
+              1,
+              24,
+              12,
+              30,
+              54
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          },
+          "/1/samples/1": {
+            "sha256": "4e4c9ab33f12c10c49863e8452fd9e911eea3d77312fa6fb4560d4e048cf465b",
+            "shape": [
+              1,
+              32,
+              2,
+              65
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "audio_decode": {
+          "/0/0/waveform": {
+            "sha256": "66affb46a23e101a1ed107c6b89e96203de493f0623c47478aecd0d9cca3cc14",
+            "shape": [
+              1,
+              2,
+              52000
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        },
+        "frames": {
+          "": {
+            "sha256": "042954b212f344d172180cd07390bfa1d375fd49c18e3bd6943bec9aa8dcf2fd",
+            "shape": [
+              39,
+              480,
+              864,
+              3
+            ],
+            "dtype": "torch.float32",
+            "finite": true
+          }
+        }
+      }
+    }
+  ],
+  "native_checks": [
+    {
+      "backend": "h3_dense_mps",
+      "tokens": 601,
+      "off_matches_prechange_bytes": true,
+      "on_video_rows_equal_for_same_inputs": true
+    },
+    {
+      "backend": "h3_dense_mps",
+      "tokens": 4217,
+      "off_matches_prechange_bytes": true,
+      "on_video_rows_equal_for_same_inputs": true
+    },
+    {
+      "backend": "h3_floatpv_mps",
+      "tokens": 601,
+      "off_matches_prechange_bytes": true,
+      "on_video_rows_equal_for_same_inputs": true
+    },
+    {
+      "backend": "h3_floatpv_mps",
+      "tokens": 4217,
+      "off_matches_prechange_bytes": true,
+      "on_video_rows_equal_for_same_inputs": true
+    }
+  ]
+}

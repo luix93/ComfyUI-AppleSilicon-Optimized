@@ -25,7 +25,7 @@ const FIELDS = {
     sparse_backend: "Attention method", sparse_mode: "Mode", sparse_tau: "Routing tau", sparse_window_mode: "Schedule",
     sparse_start_percent: "Start fraction", sparse_end_percent: "End fraction", sparse_dense_leading_blocks: "Dense leading blocks",
     sparse_dense_layers: "Protected dense layers", sparse_min_sequence_tokens: "Minimum tokens", sparse_verbose: "Log sparse activity",
-    sparse_memory_budget_gib: "Temporary memory (GiB)", sparse_topk_ratio: "Top-k video fraction",
+    sparse_memory_budget_gib: "Temporary memory (GiB)", sparse_topk_ratio: "Top-k video fraction", sparse_approximate_references: "Approximate reference / guide attention",
     veda_predictor: "Veda predictor", veda_sparsity: "Video sparsity (%)",
     veda_reference_sparsity: "Reference sparsity (%)", veda_dense_steps: "Additional dense steps",
     token_reduction_scale: "Update scale", token_early_evaluations: "Early evaluations", token_detail_restore_block: "Later restore block",
@@ -140,7 +140,7 @@ export function buildH3Panel(controls, presets, specs, properties, resized) {
         "spectrum_blend_weight","cache_verbose"]);
     groups.sparse = card("sparse", "Attention acceleration", "Optional attention arithmetic or sparsity. Adds approximation.", "sparse_attention");
     tune(groups.sparse.box,"sparse",["sparse_backend","sparse_mode","sparse_topk_ratio","sparse_tau","sparse_window_mode","sparse_start_percent","sparse_end_percent",
-        "sparse_dense_layers","sparse_dense_leading_blocks","sparse_min_sequence_tokens","sparse_memory_budget_gib","sparse_verbose",
+        "sparse_dense_layers","sparse_dense_leading_blocks","sparse_min_sequence_tokens","sparse_memory_budget_gib","sparse_verbose","sparse_approximate_references",
         "veda_predictor","veda_sparsity","veda_reference_sparsity","veda_dense_steps"]);
     groups.tokens = card("tokens", "Token reduction", "Experimental · reduces spatial detail during computation.", "token_reduction");
     tune(groups.tokens.box,"tokens",["token_reduction_scale","token_early_evaluations","token_detail_restore_block","token_coarse_restore_block","token_start_percent","token_end_percent","token_phase_policy","token_early_step_fraction","token_verbose"]);
@@ -179,6 +179,7 @@ export function buildH3Panel(controls, presets, specs, properties, resized) {
             else if (key.startsWith("spectrum_")) label.hidden = !mode?.startsWith("spectrum_");
             else if (key.startsWith("cache_") && key !== "cache_verbose") label.hidden = !(mode?.startsWith("first_block_cache") || ["oracle","block_oracle"].includes(mode));
             else if (key.startsWith("veda_")) label.hidden = !veda;
+            else if (key === "sparse_approximate_references") label.hidden = !["int8","int8_hybrid","dense_int8","dense_floatpv"].includes(attention);
             else if (key === "sparse_topk_ratio") label.hidden = !["int8","int8_hybrid"].includes(attention);
             else if (key === "sparse_tau") label.hidden = Boolean(veda) || ["dense_int8","dense_floatpv"].includes(attention) || (["int8","int8_hybrid"].includes(attention) && controls.get("sparse_topk_ratio") > 0);
             else if (key === "sparse_mode") label.hidden = Boolean(veda);
@@ -192,6 +193,7 @@ export function buildH3Panel(controls, presets, specs, properties, resized) {
         const active = [];
         if (cacheActive) active.push(CACHE_NAMES[mode] || mode);
         if (controls.get("sparse_attention")) active.push(veda ? "Veda" : attention === "dense_floatpv" ? "Dense floating PV" : attention === "dense_int8" ? "Dense INT8" : attention === "int8_hybrid" ? "SOL hybrid" : "SOL");
+        if (controls.get("sparse_attention") && ["int8", "int8_hybrid", "dense_int8", "dense_floatpv"].includes(attention) && controls.get("sparse_approximate_references")) active.push("visual references approximate");
         if (controls.get("token_reduction")) active.push("token reduction");
         badge.textContent = active.length ? "APPROXIMATE" : "EXACT";
         badge.dataset.exact = String(!active.length);

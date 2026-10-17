@@ -86,7 +86,7 @@ def check_workspace(tokens, heads, memory_budget_gib=0.0, layout_copies=3):
 
 
 @functools.lru_cache(maxsize=12)
-def _library(tokens, heads, exact_prefix, schedule):
+def _library(tokens, heads, exact_prefix, schedule, protected_ranges=None):
     source = (Path(__file__).parent / "h3_dense_shaders/int8.metal").read_text()
     for index, (name, value) in enumerate(
         (("N", 1), ("T", tokens), ("H", heads), ("QB", 64))
@@ -99,7 +99,12 @@ def _library(tokens, heads, exact_prefix, schedule):
         needle = "  const uint n = group.z, h = tile.y, nh = n * SOL_H + h;"
         if source.count(needle) != 1:
             raise RuntimeError("H3 SOL shader dispatch has changed")
-        source = source.replace(needle, "  if (tile.x * SOL_QB < p.begin) return;\n" + needle)
+        if protected_ranges is None:
+            guard = "tile.x * SOL_QB < p.begin"
+        else:
+            guard = " || ".join(f"(tile.x * SOL_QB >= {a}u && tile.x * SOL_QB < {b}u)"
+                                for a, b in protected_ranges) or "false"
+        source = source.replace(needle, f"  if ({guard}) return;\n" + needle)
     if schedule == "linear":
         start = source.index("  const uint2 tile = morton_decode_rectangular_2d(group.x,",
                              source.index("kernel void sol_attention"))
@@ -132,7 +137,7 @@ def _parameters(tokens, heads, video_start, scale, tau):
 
 
 def attention(q, k, v, *, tau, video_start, scale=None, exact_prefix=True, schedule="linear",
-              memory_budget_gib=0.0, topk_ratio=0.0):
+              memory_budget_gib=0.0, topk_ratio=0.0, protected_ranges=None):
     """Return BHSD output and on-device selected-block counts.
 
     Boundary query blocks are fully protected, rounded outward to 64 rows.
@@ -154,6 +159,11 @@ def attention(q, k, v, *, tau, video_start, scale=None, exact_prefix=True, sched
         raise ValueError("Invalid H3 SOL bounds or attention parameters")
     if topk_ratio != 0:
         raise ValueError("Dense INT8 retains all tokens; topk_ratio must be zero")
+    if protected_ranges is not None:
+        from .h3_sol_mps import normalize_protected_ranges
+        if not exact_prefix:
+            raise ValueError("Explicit protected ranges require exact_prefix=True")
+        protected_ranges = normalize_protected_ranges(protected_ranges, tokens)
     check_workspace(tokens, heads, memory_budget_gib, sum(not x.is_contiguous() for x in (q, k, v)))
 
     # H3 often already supplies this physical layout; otherwise include the
@@ -184,7 +194,7 @@ def attention(q, k, v, *, tau, video_start, scale=None, exact_prefix=True, sched
                routes, *quantized, query_scales, key_scales, value_scales,
                value_mean, summary_keys, summary_values, *summary_scales,
                route_bits, _parameters(tokens, heads, int(video_start), scale, float(tau))]
-    library, bindings = _library(tokens, heads, exact_prefix, schedule)
+    library, bindings = _library(tokens, heads, exact_prefix, schedule, protected_ranges)
     tile = 1
     while tile < (4 if tokens <= 20480 else 8) and heads >= tile * 8:
         tile *= 2
@@ -201,10 +211,12 @@ def attention(q, k, v, *, tau, video_start, scale=None, exact_prefix=True, sched
             *[buffers[i] for i in bindings[name]],
             threads=(width * threads, height, 1), group_size=(threads, 1, 1),
         )
-    if exact_prefix and video_start:
-        end = min(tokens, (video_start + 63) // 64 * 64)
-        protected = torch.nn.functional.scaled_dot_product_attention(
-            q[:, :, :end], k, v, scale=scale,
-        )
-        output[:, :, :end].copy_(protected)
+    ranges = protected_ranges if protected_ranges is not None else ((0, min(tokens, (video_start + 63) // 64 * 64)),)
+    if exact_prefix:
+        for start, end in ranges:
+            if end > start:
+                protected = torch.nn.functional.scaled_dot_product_attention(
+                    q[:, :, start:end], k, v, scale=scale,
+                )
+                output[:, :, start:end].copy_(protected)
     return output, torch.full((heads, blocks), blocks, device=q.device, dtype=torch.int64), routes.numel()

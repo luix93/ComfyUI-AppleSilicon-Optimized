@@ -57,3 +57,25 @@ def test_override_precedes_new_backend(monkeypatch):
     monkeypatch.setattr(router, "_default", lambda *a, **kw: kw["transformer_options"])
     opts = {"optimized_attention_override": object()}
     assert router._router_tensors(q, q, q, 4, transformer_options=opts) is opts
+
+
+@pytest.mark.parametrize("masked", [False, True])
+def test_max_install_routes_long_h3_to_native_before_legacy_paths(monkeypatch, masked):
+    from _patches import _common
+    monkeypatch.setattr(_common.sys, "platform", "darwin")
+    monkeypatch.setattr(torch, "__version__", "2.14.1")
+    monkeypatch.setattr(torch.backends.mps, "is_available", lambda: True)
+    monkeypatch.setattr(_common.subprocess, "check_output", lambda *a, **kw: "Apple M5 Max")
+    env = {}
+    _common.apply_native_master_switch(env)
+    _common.apply_default_attention_backend(env)
+    monkeypatch.setenv("ASFP8_ATTN_BACKEND", env["ASFP8_ATTN_BACKEND"])
+    # Metadata-only tensors: exercise actual selection, with no GPU allocation.
+    q = SimpleNamespace(device=SimpleNamespace(type="mps"), dtype=torch.bfloat16,
+                        shape=(1, 56, 32612, 128))
+    mask = SimpleNamespace(dtype=torch.bool) if masked else None
+    monkeypatch.setattr(router, "_route_log", lambda *a: None)
+    monkeypatch.setattr(patch, "attention", lambda *a, **kw: "native_pytorch")
+    monkeypatch.setattr(router, "_fa41_attention", lambda *a, **kw: pytest.fail("legacy flash selected"))
+    monkeypatch.setattr(router, "_sub_quad", lambda *a, **kw: pytest.fail("legacy masked route selected"))
+    assert router._router_tensors(q, q, q, 56, mask=mask, skip_reshape=True) == "native_pytorch"

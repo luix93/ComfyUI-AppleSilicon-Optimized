@@ -7,7 +7,7 @@ from _patches import minimax_h3_unified as unified
 def test_small_schema_and_default():
     schema = presets.AppleSiliconH3QuickAcceleration.INPUT_TYPES()
     assert list(schema['required']) == ['model', 'cache', 'sparse', 'tokens']
-    assert list(schema['optional']) == ['log_activity']
+    assert list(schema['optional']) == ['log_activity', 'approximate_references']
     assert not schema['optional']['log_activity'][1]['default']
     settings = presets.resolve_presets('MotionCache · balanced', presets.OFF, presets.OFF)
     assert settings['cache_mode'] == 'motion_cache'

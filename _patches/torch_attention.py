@@ -1,7 +1,8 @@
 """Explicit PyTorch 2.14 MPS attention, without mtlflashattn interception.
 
-ASFP8_ATTN_BACKEND=pytorch selects this route, automatically on the reviewed
-M5 Ultra builds. The existing router handles other builds and shapes outside
+ASFP8_ATTN_BACKEND=pytorch selects this route, automatically on M5-family
+PyTorch 2.14 releases. Custom query-cache kernels retain separate Ultra/build
+validation. The existing router handles other builds and shapes outside
 the MPP prefill implementation.
 The selection changes attention arithmetic; it is not a bit-exact mode.
 """

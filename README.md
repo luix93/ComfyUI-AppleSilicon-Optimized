@@ -82,9 +82,12 @@ not the application bundle. Launch that instance; the hook uses the Python
 Desktop launched, so no virtual-environment activation is needed. Pip-less
 environments use a disposable pip helper targeting that exact Python.
 
-Start ComfyUI normally. Native acceleration is automatic on macOS/MPS; the
-reviewed M5 Ultra / Torch 2.14 builds also select our tested PyTorch attention
-settings. First launch/use can take longer while native extensions compile.
+Start ComfyUI normally. Native acceleration is automatic on macOS/MPS.
+**M5, M5 Pro, M5 Max and M5 Ultra with stable PyTorch 2.14.x use native PyTorch
+attention by default**, avoiding the older attention router on eligible calls.
+Custom query-cache kernels retain their separate validated Ultra/build guards;
+selecting native PyTorch does not enable those kernels on a Max. Explicit backend
+settings remain authoritative. First launch/use can take longer while native extensions compile.
 If Apple developer tools are missing, `xcode-select --install` opens their
 installer; ensure the selected tools include the required Metal compiler.
 Unavailable extension paths retain their existing fallbacks.
@@ -114,6 +117,15 @@ global/system interpreter and leaves non-Apple-Silicon environments unchanged.
 `ASFP8_NATIVE=0` disables automatic native feature activation at startup;
 individual feature overrides still take priority. Approximate H3 modes remain off
 unless selected explicitly. See [all settings](#environment-variables).
+
+**M5 Max attention regression:** earlier package versions incorrectly required
+Ultra-specific custom-kernel validation before selecting native PyTorch 2.14.
+Installing the pack could therefore select older attention paths instead. The
+startup selection is now independent; this fix has routing-unit-test coverage,
+but the tester's reported 140 → 200 s/step slowdown has not been reproduced or
+re-benchmarked. After updating, restart and look for
+`native PyTorch attention defaults` and `PyTorch 2.14 SDPA selected` in the log.
+Existing explicit backend overrides must be checked separately.
 
 Setup downloads and resolves wheels before changing packages, verifies the
 reviewed Torch/vision checksums and Torch source revision, and then installs
@@ -222,6 +234,14 @@ Top-k Wide has reported background morphing; the legacy relaxed H3 preset is
 currently slower than the exact-optimized default. See the
 [current-stack report](benchmarks/m5-ultra-torch2141-retest.md).
 
+For reference/guide-heavy H3 workflows, SOL and dense quantized presets have a
+separate **default-off visual reference approximation switch**. SOL also has an
+exact protected-prefix optimization.
+A matched five-second guide + image-reference test measured **218.98 → 159.07 s
+(1.38×)** with SOL Fast and reference approximation; this is an additional
+approximation, not a change to the exact default.
+[Matched guided tests and quality notes](benchmarks/m5-ultra-h3-reference-attention.md).
+
 The table combines named workflow reports; it is not a promise for other inputs,
 hardware or cold model loads. The INT8 routes are not a blanket guarantee of
 parity with vanilla ComfyUI. [All benchmark reports](benchmarks/README.md) contain
@@ -252,7 +272,7 @@ are for controls or new functions:
 
 | Node | Purpose |
 |---|---|
-| H3 Acceleration · Simple | Combine one cache preset, one attention preset and optional token reduction. Placement defaults to MotionCache balanced; set all three selectors to Off for pass-through. |
+| H3 Acceleration · Simple | Combine one cache preset, one attention preset and optional token reduction. SOL/dense quantized reference approximation is a separate default-off switch. Placement defaults to MotionCache balanced; set all three selectors to Off for pass-through. |
 | H3 Apple Silicon Acceleration | Advanced settings for the same runtime. MotionCache, Spectrum and Veda implementations are bundled; Veda predictor weights require separate setup. |
 | H3 LoRA (Apple Silicon) | Ordered adapter list, including Turbo, with enable/weight/validation per entry. |
 | Attention Backend (Apple Silicon) | Select attention on the connected model. |

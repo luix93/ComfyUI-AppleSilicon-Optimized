@@ -4,8 +4,8 @@ Connect this node between the H3 model loader/LoRA loader and the guider. Each m
 
 ## Simple node
 
-Use **H3 Acceleration · Simple** for three standard dropdowns and a logging
-switch. It is compact on first placement in Nodes 2.0 and the classic canvas;
+Use **H3 Acceleration · Simple** for three standard dropdowns, a reference/guide approximation switch and a
+logging switch. It is compact on first placement in Nodes 2.0 and the classic canvas;
 there are no hidden controls or expandable panels. It shares the advanced
 node's implementation and keeps each selected mechanism independent.
 
@@ -15,7 +15,7 @@ node's implementation and keeps each selected mechanism independent.
 | Attention acceleration | Off; SOL INT8 conservative / balanced / fast / top-k wide / top-k all-step draft / hybrid fast; Dense INT8 protected / full draft; Dense QK INT8 / PV BF16 protected / full experimental; Veda Metal protected / fast draft |
 | Token reduction | Off; Protected / Balanced / Light / Fast protected / Fast aggressive (experimental) |
 
-Defaults: **MotionCache balanced**, **sparse Off**, **tokens Off**, **Detailed logs Off**.
+Defaults: **MotionCache balanced**, **sparse Off**, **tokens Off**, **Detailed logs Off**, **Approximate reference / guide attention Off**.
 Use **one** Simple or advanced acceleration node between model/LoRA loader and
 guider. All three Off returns the incoming model unchanged. Other nodes or
 environment approximations still apply. Choose the advanced node when you want
@@ -80,6 +80,52 @@ Light are newly screened on short authored clips; the other cache/sparse
 recipes retain the previous full-clip measurements linked below. Token reduction
 stays off by default. [Current validation and comparisons](../benchmarks/m5-ultra-h3-presets.md).
 
+### Reference and guide attention
+
+**Approximate reference / guide attention** is available directly on the Simple
+node and under **Sparse attention → Settings** on the advanced node. It is
+**off by default** and applies to **SOL INT8** presets (including hybrid
+and top-k), **Dense INT8**, and **Dense QK INT8 / PV BF16**, both protected and
+full variants. It has no effect with attention Off, BF16 SOL or Veda; Veda
+retains its separate reference-sparsity control.
+
+- **Off:** all reference/guide/text/audio queries use exact attention. In SOL,
+  prefix keys remain dense and only generated-video interactions are sparsified.
+- **On, SOL:** visual guide and reference-image/video queries and keys may use
+  existing quantization, sparse routing and pooled correction. Text/audio keys
+  remain dense.
+- **On, dense:** visual reference queries use the selected dense kernel: INT8
+  QK/PV or INT8 QK with BF16 PV. Every key connection is retained; no sparse
+  routing is introduced. Text/audio query rows are recomputed from the original
+  BF16 Q/K/V inputs. Dense quantization already applies to all keys used by
+  approximate queries; this is not a promise that those keys use exact arithmetic.
+
+In both paths, text/audio query rows remain exact for the same Q/K/V inputs.
+Boundary tiles round outward to protect complete 64-token blocks. This selective
+visual switch does **not** reproduce ordinary Kitchen's whole-sequence
+quantization policy, which also approximates text/audio query rows.
+
+The selected preset's sampling-step and layer protections still apply. Hybrid's
+protected-layer dense INT8 path retains the original reference protection.
+Unknown or changed packed layouts fall back to full prefix protection, including
+when token reduction changes the sequence length. Pure text-to-video has no
+visual reference to relax. The completion log reports how many calls actually
+used the switch.
+
+This is an additional approximation: it can change reference fidelity, motion,
+background geometry and final audio through later layers, despite directly
+protecting audio attention. It is not a quality guarantee. Full-video guides can
+occupy about half the sequence; protecting their queries and keys then protects
+roughly three quarters of the attention matrix. More total tokens alone therefore
+does not imply a larger SOL speedup.
+
+SOL's exact protected-prefix attention also uses the validated rectangular query-cache
+on M5 / PyTorch 2.14.1, within its tested geometry limits. This changes scheduling,
+not arithmetic. `ASFP8_H3_PREFIX_QCACHE=0` restores native prefix SDPA for debugging;
+unsupported builds/shapes fall back automatically. This optimization is independent
+of the reference-approximation switch.
+[Matched guide/reference timing and quality tests](../benchmarks/m5-ultra-h3-reference-attention.md).
+
 ### Additional SOL and token controls
 
 **Top-k video fraction** in the advanced node selects a fixed fraction of generated
@@ -87,7 +133,8 @@ video key blocks per query block. **0** retains the existing tau route; a positi
 value overrides tau. Global conditioning/audio blocks, outward-rounded boundary
 queries and local neighbors are retained in addition to that budget, so measured
 attention density exceeds the nominal fraction. Rejected blocks still contribute
-through the existing pooled tail. No reference/audio prefix is discarded.
+through the existing pooled tail. With reference approximation off, no reference/audio prefix is discarded. With it
+on, the budget covers visual guides/references too; text/audio remain protected.
 
 Top-k uses a deterministic Metal sort with index tie-breaks. Its maximum is
 **262,144 packed tokens** because the router's workgroup sort uses up to 32 KiB
@@ -98,7 +145,8 @@ choose fraction 0 to use tau routing instead.
 
 At 20 steps, **top-k wide** keeps the first **2** and last **1** steps dense,
 while **top-k all-step draft** makes every step and layer eligible. Dense protected
-queries/global keys still apply inside the Draft kernel. Both change inference
+queries/global keys still apply inside the Draft kernel, subject to the separate
+visual-reference switch described above. Both change inference
 bytes. More coverage can change composition, color, motion and background stability;
 Draft is a speed/quality tradeoff, not a quality-preserving replacement for Exact.
 

@@ -141,3 +141,23 @@ def test_h3_long_schedule_scope_and_optout(monkeypatch, heads, seq, expected):
     monkeypatch.setenv('ASFP8_H3_LONG_ATTN', '1')
     monkeypatch.setattr(torch, '__version__', '2.14.0')
     assert not patch._h3_long_schedule(q, q)
+
+
+@pytest.mark.skipif(not _available(), reason='requires validated M5 Ultra / PyTorch 2.14')
+@pytest.mark.parametrize('rows,keys',[(2051,4159),(12352,24789),(33024,65023)])
+def test_h3_rectangular_protected_rows_require_scope_and_preserve_bytes(monkeypatch,rows,keys):
+    if torch.__version__.split('+')[0]!='2.14.1':pytest.skip('rectangular validation is 2.14.1 only')
+    monkeypatch.setenv('ASFP8_ATTN_BACKEND','pytorch')
+    monkeypatch.setenv('PYTORCH_MPS_FAST_MATH','0')
+    monkeypatch.setenv('ASFP8_H3_PREFIX_QCACHE','1')
+    with torch.inference_mode():
+        torch.manual_seed(rows)
+        q=torch.randn(1,keys+2,56,128,device='mps',dtype=torch.bfloat16)[:,1:rows+1].transpose(1,2)
+        k,v=[torch.randn(1,keys+2,56,128,device='mps',dtype=torch.bfloat16)[:,1:-1].transpose(1,2) for _ in range(2)]
+        assert patch.maybe_attention(q,k,v) is None
+        expected=F.scaled_dot_product_attention(q,k,v)
+        got=patch.maybe_attention(q,k,v,h3_protected=True)
+        assert got is not None and not patch._dead
+        assert torch.equal(got.cpu().contiguous().view(torch.uint8),expected.cpu().contiguous().view(torch.uint8))
+        monkeypatch.setenv('ASFP8_H3_PREFIX_QCACHE','0')
+        assert patch.maybe_attention(q,k,v,h3_protected=True) is None

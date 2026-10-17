@@ -30,12 +30,12 @@ export const PRESETS = [
     { label: "Dense INT8 · full draft", settings: { ...OFF, ...SOL, sparse_backend: "dense_int8",
         sparse_start_percent: 0, sparse_end_percent: 1, sparse_dense_leading_blocks: 0,
         sparse_dense_layers: "" },
-        lines: ["All token connections retained, INT8 video attention at every step.", "Prefix queries still use exact attention; the final video/audio can change.", "Draft · substantial composition changes observed at higher resolution."] },
+        lines: ["All token connections retained, INT8 video attention at every step.", "Visual references can be approximated with the separate switch.", "Draft · substantial composition changes observed at higher resolution."] },
     { label: "Dense QK INT8 / PV BF16 · protected", settings: { ...OFF, ...SOL, sparse_backend: "dense_floatpv" },
         lines: ["All keys retained. INT8 QK, BF16 PV with FP32 accumulation.", "First 4 / last 2 steps and protected layers stay exact at 20 steps.", "Experimental · M5 only; output video/audio can change."] },
     { label: "Dense QK INT8 / PV BF16 · full experimental", settings: { ...OFF, ...SOL, sparse_backend: "dense_floatpv",
         sparse_start_percent: 0, sparse_end_percent: 1, sparse_dense_leading_blocks: 0, sparse_dense_layers: "" },
-        lines: ["Dense floating-PV attention at every step and layer.", "Prefix queries stay exact; video/audio may change through later layers.", "Experimental · no sparse routing or cross-step reuse."] },
+        lines: ["Dense floating-PV attention at every step and layer.", "Visual references can be approximated with the separate switch.", "Experimental · no sparse routing or cross-step reuse."] },
     { label: "SOL INT8 · hybrid fast", settings: { ...OFF, ...SOL, sparse_backend: "int8_hybrid" },
         lines: ["SOL Fast plus dense INT8 in its protected layers.", "First 4 / last 2 sampling steps stay exact at 20 steps.", "Small additional gain; quality changes can accumulate."] },
     { label: "SOL top-k · wide", settings: { ...OFF, ...SOL, sparse_topk_ratio: 0.15,
@@ -103,6 +103,7 @@ export function accelerationControls(node) {
         },
         selectedPreset() {
             if (backend.some(w => connected(w.name))) return "Custom combination";
+            if (get("sparse_attention") && ["int8", "int8_hybrid", "dense_int8", "dense_floatpv"].includes(get("sparse_backend")) && get("sparse_approximate_references")) return "Custom combination";
             return PRESETS.find(p => Object.entries(p.settings).every(([k,v]) => get(k) === v))?.label || "Custom combination";
         },
         changed() { node.graph?.change?.(); node.setDirtyCanvas?.(true, true); },

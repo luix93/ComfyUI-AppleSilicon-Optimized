@@ -56,11 +56,11 @@ def test_explicit_one_not_reported_as_implied():
     assert env["ASFP8_INT8_EXT"] == "1"
 
 
-def _reviewed_stack(monkeypatch, supported=True, hardware=True):
+def _reviewed_stack(monkeypatch, version="2.14.1", brand="Apple M5 Ultra"):
     monkeypatch.setattr(_common.sys, "platform", "darwin")
     monkeypatch.setattr(_common.torch.backends.mps, "is_available", lambda: True)
-    monkeypatch.setattr(qc, "_torch_build_supported", lambda: supported)
-    monkeypatch.setattr(qc, "_hardware", lambda: hardware)
+    monkeypatch.setattr(_common.torch, "__version__", version)
+    monkeypatch.setattr(_common.subprocess, "check_output", lambda *a, **kw: brand)
 
 
 def test_reviewed_attention_defaults_and_idempotence(monkeypatch):
@@ -74,9 +74,48 @@ def test_reviewed_attention_defaults_and_idempotence(monkeypatch):
     assert "ASFP8_MINIMAX_RELAXED" not in env
 
 
-@pytest.mark.parametrize("supported,hardware", [(False, True), (True, False)])
-def test_unreviewed_stack_keeps_existing_attention(monkeypatch, supported, hardware):
-    _reviewed_stack(monkeypatch, supported, hardware)
+@pytest.mark.parametrize("version,brand", [
+    ("2.13.0", "Apple M5 Max"), ("2.15.0", "Apple M5 Ultra"),
+    ("2.14.0.dev20261017", "Apple M5 Max"), ("2.14.1", "Apple M4 Max"),
+    ("2.14.1", "Apple M50"), ("2.14.1", "unknown"),
+])
+def test_other_versions_or_hardware_keep_existing_attention(monkeypatch, version, brand):
+    _reviewed_stack(monkeypatch, version, brand)
+    env = {"ASFP8_NATIVE": "1"}
+    assert _common.apply_default_attention_backend(env) == []
+    assert env == {"ASFP8_NATIVE": "1"}
+
+
+@pytest.mark.parametrize("brand", ["Apple M5", "Apple M5 Pro", "Apple M5 Max", "Apple M5 Ultra"])
+@pytest.mark.parametrize("version", ["2.14.0", "2.14.1", "2.14.2+local"])
+def test_native_selection_is_independent_of_custom_kernel_validation(monkeypatch, brand, version):
+    _reviewed_stack(monkeypatch, version, brand)
+    monkeypatch.setattr(qc, "_torch_build_supported", lambda: pytest.fail("native backend used custom build gate"))
+    monkeypatch.setattr(qc, "_hardware", lambda: pytest.fail("native backend used Ultra-only gate"))
+    env = {"ASFP8_NATIVE": "1"}
+    _common.apply_default_attention_backend(env)
+    assert env["ASFP8_ATTN_BACKEND"] == "pytorch"
+    assert env["MTLFLASHATTN_SDPA"] == "off"
+    assert "ASFP8_MPP_QCACHE" not in env
+
+
+def test_max_native_default_does_not_unlock_ultra_shader(monkeypatch):
+    _reviewed_stack(monkeypatch, brand="Apple M5 Max")
+    qc._hardware.cache_clear()
+    try:
+        env = {"ASFP8_NATIVE": "1"}
+        _common.apply_default_attention_backend(env)
+        assert env["ASFP8_ATTN_BACKEND"] == "pytorch"
+        assert not qc._hardware()
+    finally:
+        qc._hardware.cache_clear()
+
+
+def test_hardware_probe_failure_keeps_existing_policy(monkeypatch):
+    _reviewed_stack(monkeypatch)
+    def fail(*args, **kwargs):
+        raise OSError("sysctl unavailable")
+    monkeypatch.setattr(_common.subprocess, "check_output", fail)
     env = {"ASFP8_NATIVE": "1"}
     assert _common.apply_default_attention_backend(env) == []
     assert env == {"ASFP8_NATIVE": "1"}

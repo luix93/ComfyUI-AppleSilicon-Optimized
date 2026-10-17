@@ -72,7 +72,7 @@ TOKEN_PRESETS = {
 }
 
 
-def resolve_presets(cache, sparse, tokens, log_activity=False):
+def resolve_presets(cache, sparse, tokens, log_activity=False, approximate_references=False):
     """Resolve complete settings without mutating a recipe or the advanced node."""
     from .minimax_h3_unified import AppleSiliconH3Acceleration
     if tokens == LEGACY_FAST:
@@ -94,6 +94,7 @@ def resolve_presets(cache, sparse, tokens, log_activity=False):
         if label not in recipes:
             raise ValueError(f"Unknown H3 {mechanism} preset: {label!r}")
         settings.update(recipes[label])
+    settings["sparse_approximate_references"] = bool(approximate_references) and settings.get("sparse_backend") in ("int8", "int8_hybrid", "dense_int8", "dense_floatpv")
     settings.update(cache_verbose=bool(log_activity), sparse_verbose=bool(log_activity),
                     token_verbose=bool(log_activity))
     return settings
@@ -120,10 +121,11 @@ class AppleSiliconH3QuickAcceleration:
             "cache": (list(CACHE_PRESETS), {"default": "MotionCache · balanced",
                 "tooltip": "MotionCache: protected 0.10 / one skip, balanced 0.15 / two skips. FirstBlockCache: protected 0.10, fast 0.20. Spectrum: protected first 4 / last 2 actual evaluations, fast first / last 1. Select one; combine with sparse and tokens below."}),
             "sparse": (list(SPARSE_PRESETS), {"default": OFF,
-                "tooltip": "Dense INT8: protected keeps first 4/last 2 steps and protected layers exact; full quantizes video-query attention in every DiT call, retaining every token. Prefix queries stay exact, but video and audio outputs can change. Hybrid fast adds dense INT8 to protected layers inside the SOL window. SOL INT8: conservative tau 0.25 late sigma window, balanced tau 0.5 and fast tau 1.3 over steps 20–90%. Top-k wide: experimental, background morphing reported where INT8 Fast was stable; 15% video budget over steps 10–95%, protected layers; all-step draft: 10%, all steps/layers. Budgets also retain global/local blocks and pooled tail. Veda: 90% video sparsity, reference attention dense; protected steps/layers or all-step fast draft. Auto memory budget."}),
+                "tooltip": "Dense INT8: protected keeps first 4/last 2 steps and protected layers exact; full quantizes video-query attention in every DiT call, retaining every token. Prefix queries stay exact unless visual reference approximation is enabled, but video and audio outputs can change. Hybrid fast adds dense INT8 to protected layers inside the SOL window. SOL INT8: conservative tau 0.25 late sigma window, balanced tau 0.5 and fast tau 1.3 over steps 20–90%. Top-k wide: experimental, background morphing reported where INT8 Fast was stable; 15% video budget over steps 10–95%, protected layers; all-step draft: 10%, all steps/layers. Budgets also retain global/local blocks and pooled tail. Veda: 90% video sparsity, reference attention dense; protected steps/layers or all-step fast draft. Auto memory budget."}),
             "tokens": (list(TOKEN_PRESETS), {"default": OFF,
                 "tooltip": "Experimental horizontal pairing from block 4. Protected restores 12/8 over steps 20–90%; Balanced restores 30/20 over 10–95%; Light restores 20/12. Fast protected keeps the corrected 33/30 recipe. Fast aggressive restores at 40 for the first half of sampler steps (at most 10), then at 30; greater quality risk. Old Fast selections map to Fast protected. Full spatial output is restored, but content/detail may change. Incompatible mask pairs run unreduced."}),
-        }, "optional": {"log_activity": ("BOOLEAN", {"default": False, "tooltip": "Detailed startup, routing and per-step diagnostics. Final work/speedup summaries remain enabled when off."})}}
+        }, "optional": {"log_activity": ("BOOLEAN", {"default": False, "tooltip": "Detailed startup, routing and per-step diagnostics. Final work/speedup summaries remain enabled when off."}),
+            "approximate_references": ("BOOLEAN", {"default": False, "tooltip": "SOL INT8 and dense quantized presets. Approximate visual references and full-video guides as well as generated video. Text/audio query rows remain protected, but likeness, motion and sound can change indirectly. Off retains the original protection."})}}
 
     @classmethod
     def VALIDATE_INPUTS(cls, tokens):
@@ -135,9 +137,9 @@ class AppleSiliconH3QuickAcceleration:
             return True
         return True if tokens in TOKEN_PRESETS or tokens == LEGACY_FAST else f"Unknown H3 tokens preset: {tokens!r}"
 
-    def apply(self, model, cache="MotionCache · balanced", sparse=OFF, tokens=OFF, log_activity=False):
+    def apply(self, model, cache="MotionCache · balanced", sparse=OFF, tokens=OFF, log_activity=False, approximate_references=False):
         from .minimax_h3_unified import apply_h3_acceleration
-        return (apply_h3_acceleration(model, **resolve_presets(cache, sparse, tokens, log_activity)),)
+        return (apply_h3_acceleration(model, **resolve_presets(cache, sparse, tokens, log_activity, approximate_references)),)
 
 
 NODE_CLASS_MAPPINGS = {"AppleSiliconH3QuickAcceleration": AppleSiliconH3QuickAcceleration}

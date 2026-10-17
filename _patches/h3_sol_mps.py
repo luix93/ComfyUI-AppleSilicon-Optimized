@@ -81,7 +81,7 @@ def check_workspace(tokens, heads, memory_budget_gib=0.0):
 
 
 @functools.lru_cache(maxsize=12)
-def _library(tokens, heads, exact_prefix, schedule, topk_ratio=0.0):
+def _library(tokens, heads, exact_prefix, schedule, topk_ratio=0.0, protected_ranges=None):
     source = (Path(__file__).parent / "h3_sol_head_major_shaders/int8.metal").read_text()
     for index, (name, value) in enumerate(
         (("N", 1), ("T", tokens), ("H", heads), ("QB", 64))
@@ -112,6 +112,28 @@ def _library(tokens, heads, exact_prefix, schedule, topk_ratio=0.0):
         # The selected count is relative to video blocks, not global sinks.
         router = router.replace("SOL_TOPK_RATIO", repr(float(topk_ratio)) + "f")
         source += "\n" + router
+    if protected_ranges is not None:
+        tests = [f"(start < {b}u && stop > {a}u)" for a, b in protected_ranges]
+        helper = "inline bool sol_protected(uint start, uint stop) { return " + (" || ".join(tests) or "false") + "; }\n"
+        source = source.replace("inline uint compact_morton_even_bits", helper + "inline uint compact_morton_even_bits")
+        replacements = {
+            "tile.x * SOL_QB < p.begin": "sol_protected(tile.x * SOL_QB, min((tile.x + 1) * SOL_QB, SOL_T))",
+            "block * 64 < p.begin || min((block + 1) * 64, SOL_T) > p.end": "sol_protected(block * 64, min((block + 1) * 64, SOL_T))",
+            "block * 64 >= p.begin && min((block + 1) * 64, SOL_T) <= p.end": "!sol_protected(block * 64, min((block + 1) * 64, SOL_T))",
+            "qb * SOL_QB < p.begin || min((qb + 1) * SOL_QB, SOL_T) > p.end": "sol_protected(qb * SOL_QB, min((qb + 1) * SOL_QB, SOL_T))",
+            "j * 64 < p.begin || min((j + 1) * 64, SOL_T) > p.end": "sol_protected(j * 64, min((j + 1) * 64, SOL_T))",
+        }
+        for old, new in replacements.items():
+            if old not in source:
+                raise RuntimeError("SOL reference protection shader changed: " + old)
+            source = source.replace(old, new)
+        if topk_ratio:
+            # Top-k has its own short-form router; rank only unprotected blocks.
+            source = source.replace("j >= sink && j < J", "j < J && !sol_protected(j * 64, min((j + 1) * 64, SOL_T))")
+            source = source.replace("exact || j < sink ||", "exact || sol_protected(j * 64, min((j + 1) * 64, SOL_T)) ||")
+            source = source.replace("const bool exact = qb * 64 < p.begin || min((qb + 1) * 64, SOL_T) > p.end;", "const bool exact = sol_protected(qb * 64, min((qb + 1) * 64, SOL_T));")
+            protected_blocks = sum((b - a + 63) // 64 for a, b in protected_ranges)
+            source = source.replace("float(J - sink)", f"float(J - {protected_blocks}u)")
     # CCV uses a common sparse buffer-index ABI. PyTorch binds positional
     # arguments, so compact the declared buffers independently for each kernel.
     bindings = {}
@@ -137,7 +159,7 @@ def _parameters(tokens, heads, video_start, scale, tau):
 
 
 def attention(q, k, v, *, tau, video_start, scale=None, exact_prefix=True, schedule="linear",
-              memory_budget_gib=0.0, topk_ratio=0.0):
+              memory_budget_gib=0.0, topk_ratio=0.0, protected_ranges=None):
     """Return BHSD output and on-device selected-block counts.
 
     Boundary query blocks are fully protected, rounded outward to 64 rows.
@@ -161,9 +183,13 @@ def attention(q, k, v, *, tau, video_start, scale=None, exact_prefix=True, sched
         raise ValueError("SOL top-k ratio must be zero (threshold) or in (0, 1)")
     if topk_ratio and (tokens + 63) // 64 > 4096:
         raise ValueError("Top-k SOL supports at most 262,144 tokens")
+    if protected_ranges is not None:
+        if not exact_prefix:
+            raise ValueError("Explicit protected ranges require exact_prefix=True")
+        protected_ranges = normalize_protected_ranges(protected_ranges, tokens)
     check_workspace(tokens, heads, memory_budget_gib)
 
-    if os.environ.get("ASFP8_SOL_LAYOUT", "head_major") == "legacy":
+    if os.environ.get("ASFP8_SOL_LAYOUT", "head_major") == "legacy" and protected_ranges is None:
         from . import h3_sol_legacy_mps
         try:
             return h3_sol_legacy_mps.attention(q, k, v, tau=tau, video_start=video_start,
@@ -202,7 +228,7 @@ def attention(q, k, v, *, tau, video_start, scale=None, exact_prefix=True, sched
                routes, *quantized, query_scales, key_scales, value_scales,
                value_mean, summary_keys, summary_values, *summary_scales,
                route_bits, _parameters(tokens, heads, int(video_start), scale, float(tau))]
-    library, bindings = _library(tokens, heads, exact_prefix, schedule, float(topk_ratio))
+    library, bindings = _library(tokens, heads, exact_prefix, schedule, float(topk_ratio), protected_ranges)
     tile = 1
     while tile < (4 if tokens <= 20480 else 8) and heads >= tile * 8:
         tile *= 2
@@ -221,10 +247,36 @@ def attention(q, k, v, *, tau, video_start, scale=None, exact_prefix=True, sched
             *[buffers[i] for i in bindings[name]],
             threads=(width * threads, height, 1), group_size=(threads, 1, 1),
         )
-    if exact_prefix and video_start:
-        end = min(tokens, (video_start + 63) // 64 * 64)
-        protected = torch.nn.functional.scaled_dot_product_attention(
-            q[:, :, :end], k, v, scale=scale,
-        )
-        output[:, :, :end].copy_(protected)
+    ranges = protected_ranges if protected_ranges is not None else ((0, min(tokens, (video_start + 63) // 64 * 64)),)
+    if exact_prefix:
+        for start, end in ranges:
+            if end > start:
+                protected = protected_attention(q[:, :, start:end], k, v, scale=scale)
+                output[:, :, start:end].copy_(protected)
     return output, routes.sum(-1), routes.numel()
+
+
+def normalize_protected_ranges(ranges, tokens):
+    """Validate and merge outward-rounded 64-row blocks before allocating."""
+    out = []
+    for a, b in sorted(ranges):
+        if not isinstance(a, int) or not isinstance(b, int) or not 0 <= a <= b <= tokens:
+            raise ValueError("Invalid SOL protected range")
+        if a == b:
+            continue
+        a, b = a // 64 * 64, min(tokens, (b + 63) // 64 * 64)
+        if out and a <= out[-1][1]:
+            out[-1] = (out[-1][0], max(b, out[-1][1]))
+        else:
+            out.append((a, b))
+    return tuple(out)
+
+
+def protected_attention(q, k, v, scale=None):
+    # Explicit scope: rectangular guide-prefix calls have separate validation
+    # from ordinary model attention. Unsupported shapes retain native SDPA.
+    from . import torch_mpp_qcache
+    out = torch_mpp_qcache.maybe_attention(q, k, v, h3_protected=True, scale=scale)
+    if out is not None:
+        return out
+    return torch.nn.functional.scaled_dot_product_attention(q, k, v, scale=scale)

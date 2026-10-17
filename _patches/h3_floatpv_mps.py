@@ -104,7 +104,7 @@ def _video_attention(q, k, v):
 
 
 def attention(q, k, v, *, tau=0.0, video_start=0, scale=None, exact_prefix=True,
-              schedule='linear', memory_budget_gib=0.0, topk_ratio=0.0):
+              schedule='linear', memory_budget_gib=0.0, topk_ratio=0.0, protected_ranges=None):
     if not supported():
         raise ValueError('H3 floating PV requires M5 and torch.mps.compile_shader')
     if (q.ndim != 4 or q.shape != k.shape or q.shape != v.shape
@@ -118,7 +118,22 @@ def attention(q, k, v, *, tau=0.0, video_start=0, scale=None, exact_prefix=True,
         raise ValueError('H3 floating PV requires the standard D128 attention scale')
     if topk_ratio != 0 or schedule != 'linear':
         raise ValueError('H3 floating PV uses dense linear traversal without top-k')
+    if protected_ranges is not None:
+        from .h3_sol_mps import normalize_protected_ranges
+        if not exact_prefix:
+            raise ValueError('Explicit protected ranges require exact_prefix=True')
+        protected_ranges = normalize_protected_ranges(protected_ranges, tokens)
     check_workspace(tokens, memory_budget_gib)
+    if protected_ranges is not None:
+        # One Q/K preparation for the complete sequence. Recompute only the
+        # protected text/audio rows with original BF16 inputs; avoid repeating
+        # K/V preparation for each disjoint visual segment.
+        out = _video_attention(q, k, v)
+        for start, end in protected_ranges:
+            out[:, :, start:end].copy_(torch.nn.functional.scaled_dot_product_attention(
+                q[:, :, start:end], k, v, scale=scale))
+        blocks = (tokens+63)//64
+        return out, torch.full((56, blocks), blocks, device=q.device, dtype=torch.int64), 56*blocks*blocks
     end = min(tokens, ((video_start+63)//64)*64) if exact_prefix else 0
     out = torch.empty_like(q, memory_format=torch.contiguous_format)
     if end < tokens:

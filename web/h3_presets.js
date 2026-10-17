@@ -12,7 +12,7 @@ export function migrateQuickPresets(graph) {
     for (const subgraph of graph.definitions?.subgraphs || []) migrateQuickPresets(subgraph);
 }
 export function prepareQuickNode(node) {
-    const labels = { cache: "Temporal cache", sparse: "Attention acceleration", tokens: "Token reduction", log_activity: "Detailed logs" };
+    const labels = { cache: "Temporal cache", sparse: "Attention acceleration", tokens: "Token reduction", log_activity: "Detailed logs", approximate_references: "Approximate reference / guide attention" };
     for (const widget of node.widgets || []) {
         if (labels[widget.name]) widget.label = labels[widget.name];
     }

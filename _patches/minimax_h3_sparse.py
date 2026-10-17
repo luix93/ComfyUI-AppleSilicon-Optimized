@@ -481,6 +481,7 @@ class _RunStats:
     sparse_calls: int = 0
     dense_calls: int = 0
     quantized_dense_calls: int = 0  # protected layers in the optional hybrid
+    reference_approximation_calls: int = 0
     routed_calls: int = 0      # calls the router scored (includes dense_reference)
     evaluations: int = 0
     sparse_evaluations: int = 0
@@ -537,6 +538,7 @@ class H3SparseHolder:
         window_mode: str = "sigma_percent",
         memory_budget_gib: float = 0.0,
         topk_ratio: float = 0.0,
+        approximate_references: bool = False,
     ):
         if mode not in MODES:
             raise ValueError(f"mode must be one of {MODES}")
@@ -607,6 +609,10 @@ class H3SparseHolder:
             topk_ratio = 0.0
         if topk_ratio and backend not in ("int8", "int8_hybrid"):
             raise ValueError("Top-k requires the INT8 SOL backend")
+        if approximate_references and backend not in ("int8", "int8_hybrid", "dense_int8", "dense_floatpv"):
+            raise ValueError("Reference approximation requires SOL INT8, hybrid or dense quantized attention")
+        self.approximate_references = bool(approximate_references)
+        self.protected_ranges = None
         self.topk_ratio = float(topk_ratio)
         self.rows_per_frame: int | None = None
         self.sigma: float | None = None
@@ -623,6 +629,7 @@ class H3SparseHolder:
             self.block_size, self.verbose, self.temporal_taps,
             self.backend, ",".join(map(str, sorted(self.dense_layers))),
             self.window_mode, self.memory_budget_gib, self.topk_ratio,
+            self.approximate_references,
         )
 
     def prepare_timesteps(self, model_sampling: Any, sigmas=None) -> "H3SparseHolder":
@@ -655,6 +662,7 @@ class H3SparseHolder:
         self.audio_rows = None
         self.rows_per_frame = None
         self.prefix_rows = None
+        self.protected_ranges = None
         if not isinstance(video, torch.Tensor) or not isinstance(audio, torch.Tensor):
             return
         if video.dim() != 5 or audio.dim() < 3:
@@ -814,6 +822,11 @@ def sparse_attention_override(comfy_fn, q, k, v, heads, **kwargs):
                 holder.note(f"kernel_unavailable protected-layer INT8 ({exc})")
         return _dense(comfy_fn, q, k, v, heads, kwargs)
 
+    if holder.approximate_references:
+        holder.protected_ranges = reference_protection(
+            transformer_options.get("minimax_h3_layout"), q.shape[2])
+        if holder.protected_ranges is None:
+            holder.note("reference_layout_unavailable; retaining reference protection")
     try:
         out, selected, total = _run_sparse(holder, q, k, v, kwargs.get("scale"))
     except _SparseBudgetExceeded as exc:
@@ -838,6 +851,8 @@ def sparse_attention_override(comfy_fn, q, k, v, heads, **kwargs):
         holder.stats.dense_calls += 1
         return _dense(comfy_fn, q, k, v, heads, kwargs)
     holder.stats.sparse_calls += 1
+    if holder.protected_ranges is not None:
+        holder.stats.reference_approximation_calls += 1
     if not kwargs.get("skip_output_reshape", False):
         heads_n, seq, dim = out.shape
         return out.transpose(0, 1).reshape(1, seq, heads_n * dim)
@@ -876,6 +891,29 @@ def _pad_to_blocks(tensors, pad):
     if not pad:
         return list(tensors)
     return [torch.nn.functional.pad(t, (0, 0, 0, pad)) for t in tensors]
+
+
+def reference_protection(layout, seq):
+    """Return exact text/audio spans, or None for an unknown/changed layout.
+
+    Boundary tiles round outward in the kernel. Never infer reference positions
+    from a stale full-resolution layout after token reduction.
+    """
+    if layout is None or getattr(layout, "seq_len", None) != seq:
+        return None
+    ranges, cursor, has_reference = [], 0, False
+    for start, stop, kind in getattr(layout, "segments", ()):
+        if start != cursor or not start <= stop <= seq:
+            return None
+        if kind in ("cond", "ref_img"):
+            has_reference = has_reference or stop > start
+        elif kind != "video":
+            # Includes text, target audio, reference audio, conditioning audio,
+            # padding and future segment kinds: protect unknown kinds too.
+            if stop > start:
+                ranges.append((start, stop))
+        cursor = stop
+    return tuple(ranges) if cursor == seq and has_reference else None
 
 
 def _video_row_start(holder: "H3SparseHolder", seq: int) -> int:
@@ -1045,7 +1083,11 @@ def _run_dense_int8(holder: H3SparseHolder, q, k, v, scale):
     try:
         out, selected, total = implementation.attention(
             q,k,v,tau=0.0,video_start=_video_row_start(holder,q.shape[2]),
-            scale=scale,memory_budget_gib=holder.memory_budget_gib)
+            scale=scale,memory_budget_gib=holder.memory_budget_gib,
+            # Hybrid's protected-layer policy is unchanged. A previous sparse
+            # layer may have populated ranges on the same holder.
+            protected_ranges=(holder.protected_ranges if holder.backend in
+                              ("dense_int8", "dense_floatpv") else None))
         return out[0],selected,total
     except h3_dense_mps.WorkspaceBudgetExceeded as exc:
         raise _SparseBudgetExceeded(str(exc)) from exc
@@ -1070,6 +1112,7 @@ def _run_sparse(holder: H3SparseHolder, q, k, v, scale):
                 video_start=_video_row_start(holder, q.shape[2]), scale=scale,
                 memory_budget_gib=holder.memory_budget_gib,
                 topk_ratio=holder.topk_ratio,
+                protected_ranges=holder.protected_ranges,
             )
             return out[0], selected, total
         except h3_sol_mps.WorkspaceBudgetExceeded as exc:
@@ -1147,29 +1190,31 @@ def h3_sparse_sample_wrapper(executor, *args, **kwargs):
                              TAG, first, stop, count)
             logging.info(
                 "%s enabled router=%s backend=%s mode=%s tau=%.3g window=%.2f..%.2f "
-                "dense_leading=%d min_seq=%d block=%d temporal_taps=%d dense_layers=%s topk_ratio=%.3g",
+                "dense_leading=%d min_seq=%d block=%d temporal_taps=%d dense_layers=%s topk_ratio=%.3g approximate_references=%s",
                 TAG, active.router, active.backend, active.mode, active.tau, active.start_percent,
                 active.end_percent, active.dense_leading_blocks,
                 active.min_sequence_tokens, active.block_size, active.temporal_taps,
                 sorted(active.dense_layers),
-                active.topk_ratio,
+                active.topk_ratio, active.approximate_references,
             )
         return executor(*args, **kwargs)
     finally:
         if active is not None:
             stats = active.stats
+            ref_note = (f"; reference/guide approximation {stats.reference_approximation_calls}/{stats.calls} calls, text/audio rows protected"
+                        if active.approximate_references else "")
             if stats.calls and not active.verbose:
                 if active.backend in ("dense_int8", "dense_floatpv"):
-                    logging.info("MiniMax H3 %s - %d/%d attention calls quantized (speedup not measured)", "dense INT8 QK / BF16 PV" if active.backend == "dense_floatpv" else "dense INT8", stats.sparse_calls,stats.calls)
+                    logging.info("MiniMax H3 %s - %d/%d attention calls quantized (speedup not measured)%s", "dense INT8 QK / BF16 PV" if active.backend == "dense_floatpv" else "dense INT8", stats.sparse_calls,stats.calls,ref_note)
                 elif active.backend == "int8_hybrid" and stats.sparse_calls:
-                    logging.info("MiniMax H3 SOL hybrid - %.1f%% attention blocks omitted within %d/%d calls, %d protected-layer calls quantized (speedup not measured)",100*(1-stats.mean_density()),stats.sparse_calls,stats.calls,stats.quantized_dense_calls)
+                    logging.info("MiniMax H3 SOL hybrid - %.1f%% attention blocks omitted within %d/%d calls, %d protected-layer calls quantized (speedup not measured)%s",100*(1-stats.mean_density()),stats.sparse_calls,stats.calls,stats.quantized_dense_calls,ref_note)
                 elif stats.sparse_calls and active.mode != "dense_reference":
-                    logging.info("MiniMax H3 SOL sparse - %.1f%% attention blocks omitted within %d/%d attention calls (speedup not measured)",
-                                 100 * (1 - stats.mean_density()), stats.sparse_calls, stats.calls)
+                    logging.info("MiniMax H3 SOL sparse - %.1f%% attention blocks omitted within %d/%d attention calls (speedup not measured)%s",
+                                 100 * (1 - stats.mean_density()), stats.sparse_calls, stats.calls, ref_note)
                 else:
-                    logging.info("MiniMax H3 SOL sparse - 0/%d attention calls accelerated (estimated 1.00x speedup)", stats.calls)
+                    logging.info("MiniMax H3 SOL sparse - 0/%d attention calls accelerated (estimated 1.00x speedup)%s", stats.calls, ref_note)
             if active.verbose:
-                logging.info("%s %s", TAG, active.summary())
+                logging.info("%s %s%s", TAG, active.summary(), ref_note)
                 for line in active.oracle_report():
                     logging.info("%s %s", TAG, line)
             active.stats = _RunStats()
@@ -1193,6 +1238,7 @@ def apply_h3_sparse(
     window_mode: str = "sigma_percent",
     memory_budget_gib: float = 0.0,
     topk_ratio: float = 0.0,
+    approximate_references: bool = False,
 ):
     """Attach corrected sparse attention to a cloned MiniMax H3 ModelPatcher.
 
@@ -1213,6 +1259,7 @@ def apply_h3_sparse(
         block_size=block_size, verbose=verbose, temporal_taps=temporal_taps,
         backend=backend, dense_layers=dense_layers, window_mode=window_mode,
         memory_budget_gib=memory_budget_gib, topk_ratio=topk_ratio,
+        approximate_references=approximate_references,
     )
     if backend in ("int8", "int8_hybrid"):
         from . import h3_sol_mps

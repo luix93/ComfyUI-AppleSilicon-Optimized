@@ -111,6 +111,7 @@ def apply_h3_acceleration(
     token_end_percent: float = 1.0,
     token_phase_policy: str = "evaluation_count",
     token_early_step_fraction: float = 0.5,
+    sparse_approximate_references: bool = False,
 ):
     """Attach the selected H3 mechanisms in their supported composition order."""
     if cache_mode not in CACHE_MODES:
@@ -181,6 +182,7 @@ def apply_h3_acceleration(
             window_mode=sparse_window_mode,
             memory_budget_gib=float(sparse_memory_budget_gib),
             topk_ratio=float(sparse_topk_ratio) if sparse_backend in ("int8", "int8_hybrid") else 0.0,
+            approximate_references=bool(sparse_approximate_references) and sparse_backend in ("int8", "int8_hybrid", "dense_int8", "dense_floatpv"),
         )
 
     return patched
@@ -311,6 +313,8 @@ class AppleSiliconH3Acceleration:
                 "tooltip": "evaluation_count preserves saved recipes. capped_steps uses a fraction of actual sampler steps, capped by Early evaluations; CFG calls and cache skips do not move the boundary."}),
             "token_early_step_fraction": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.05,
                 "tooltip": "capped_steps only: fraction of sampler steps using Early restore block, rounded down and capped by Early evaluations. Remaining steps use Later restore block."}),
+            "sparse_approximate_references": ("BOOLEAN", {"default": False,
+                "tooltip": "SOL INT8 and dense quantized modes: approximate visual reference and guide attention. Text/audio query rows remain exact; dense modes retain every key connection; output identity, motion and sound can still change indirectly. Off preserves existing behavior. Requires the native H3 layout; incompatible layouts fall back to protected references."}),
         }}
 
     def apply(self, model, **settings):

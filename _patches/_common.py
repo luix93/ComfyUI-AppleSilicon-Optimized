@@ -13,6 +13,8 @@ with a real FP8->float cast and runs entirely on the GPU.
 """
 
 import os
+import re
+import subprocess
 import sys
 
 import torch
@@ -55,15 +57,29 @@ def apply_native_master_switch(environ=None):
 
 
 def apply_default_attention_backend(environ=None):
-    """Use the measured PyTorch route only on the reviewed M5 Ultra builds."""
+    """Prefer native PyTorch 2.14 on M5 independently of custom-kernel gates.
+
+    The query-cache's Ultra/build/header guards validate our modified shader,
+    not PyTorch's own backend. Reusing those guards here sent M5 Max back to
+    the older attention router merely because the pack was installed.
+    """
     if environ is None:
         environ = os.environ
     if (environ.get("ASFP8_NATIVE") != "1"
             or "ASFP8_ATTN_BACKEND" in environ or sys.platform != "darwin"
             or not torch.backends.mps.is_available()):
         return []
-    from . import torch_mpp_qcache as qc
-    if not qc._torch_build_supported() or not qc._hardware():
+    # Keep other Torch generations and prereleases on their existing policy.
+    # Native SDPA does not need the private-header/source hash used by qcache.
+    if not re.fullmatch(r"2\.14\.\d+", torch.__version__.split("+")[0]):
+        return []
+    try:
+        brand = subprocess.check_output(
+            ["/usr/sbin/sysctl", "-n", "machdep.cpu.brand_string"],
+            text=True, timeout=2).strip()
+    except (OSError, subprocess.SubprocessError):
+        return []
+    if re.search(r"\bM5\b", brand) is None:
         return []
     environ["ASFP8_ATTN_BACKEND"] = "pytorch"
     implied = ["ASFP8_ATTN_BACKEND"]

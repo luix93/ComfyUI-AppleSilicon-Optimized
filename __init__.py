@@ -95,7 +95,7 @@ if __spec__ is not None and __spec__.parent:
     _attention_implied = _adab()
     if _attention_implied:
         import os as _default_os
-        print("[AppleSilicon-Optimized] tested attention defaults -> "
+        print("[AppleSilicon-Optimized] native PyTorch attention defaults -> "
               + ', '.join(v + '=' + _default_os.environ[v] for v in _attention_implied))
     # Self-heal JIT prerequisites BEFORE any extension tries to build
     # (fresh Desktop venvs: no ninja, stripped torch headers). ASFP8_AUTOFIX=0

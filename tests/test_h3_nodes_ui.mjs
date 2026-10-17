@@ -138,7 +138,7 @@ async function controlsNode(saved) {
     const defaults={...unifiedDefaults,cache_mode:'motion_cache',sparse_backend:'bf16',sparse_dense_layers:'',sparse_window_mode:'sigma_percent',
         motion_reuse_threshold:0.15,motion_strength:1,motion_warmup_steps:4,motion_max_consecutive_skips:2,
         motion_start_percent:0.15,motion_end_percent:0.95,spectrum_blend_weight:0.5,sparse_memory_budget_gib:0,
-        veda_predictor:'predictor.safetensors',veda_sparsity:90,veda_reference_sparsity:0,veda_dense_steps:'',sparse_topk_ratio:0,token_start_percent:0,token_end_percent:1};
+        veda_predictor:'predictor.safetensors',veda_sparsity:90,veda_reference_sparsity:0,veda_dense_steps:'',sparse_topk_ratio:0,token_start_percent:0,token_end_percent:1,sparse_approximate_references:false};
     const n={widgets:Object.entries({...defaults,...saved}).map(([name,value])=>({name,value})),properties:{}};
     return {n,c:accelerationControls(n),presets:PRESETS};
 }
@@ -211,7 +211,7 @@ test('SOL memory ceiling survives recipe changes and independent toggles',async(
     }
     c.set('sparse_attention',false);c.set('sparse_attention',true);
     assert.equal(c.get('sparse_memory_budget_gib'),16);
-    assert.equal(n.widgets.findIndex(w=>w.name==='sparse_memory_budget_gib'),n.widgets.length-8);
+    assert.equal(n.widgets.findIndex(w=>w.name==='sparse_memory_budget_gib'),n.widgets.length-9);
 });
 
 test('Every approximate preset agrees with its measured benchmark settings',async()=>{
@@ -264,4 +264,30 @@ test('Dense and hybrid recipes remain independent of cache and token controls',a
     assert.equal(c.get('sparse_dense_layers'),'0,1,33,34,35');
     c.preset('SOL attention · 14 steps');
     assert.equal(c.get('sparse_backend'),'int8');
+});
+
+
+test('Reference approximation is default-off, independent, serialized and visibly custom',async()=>{
+    const {n,c}=await controlsNode();
+    assert.equal(c.get('sparse_approximate_references'),false);
+    c.preset('SOL attention · 14 steps');
+    c.set('sparse_approximate_references',true);
+    assert.equal(c.selectedPreset(),'Custom combination');
+    c.preset('Exact · no approximation');
+    assert.equal(c.get('sparse_attention'),false);
+    assert.equal(c.get('sparse_approximate_references'),true);
+    c.preset('SOL INT8 · hybrid fast');
+    assert.equal(c.get('sparse_approximate_references'),true);
+    assert.equal(c.selectedPreset(),'Custom combination');
+    c.set('sparse_approximate_references',false);
+    assert.equal(c.selectedPreset(),'SOL INT8 · hybrid fast');
+    assert.equal(n.widgets.at(-1).name,'sparse_approximate_references');
+    for (const preset of ['Dense INT8 · protected','Dense INT8 · full draft','Dense QK INT8 / PV BF16 · protected','Dense QK INT8 / PV BF16 · full experimental']) {
+        c.set('sparse_approximate_references',true);
+        c.preset(preset);
+        assert.equal(c.selectedPreset(),'Custom combination');
+        assert.equal(c.get('sparse_approximate_references'),true);
+        c.set('sparse_approximate_references',false);
+        assert.equal(c.selectedPreset(),preset);
+    }
 });

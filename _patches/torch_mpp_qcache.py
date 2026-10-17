@@ -151,7 +151,7 @@ def _yue2(q, k):
             and q.shape[2] <= k.shape[2] <= 8192)
 
 
-def _supports(q, k, v, kwargs):
+def _supports(q, k, v, kwargs, *, h3_protected=False):
     if (_dead or os.environ.get('ASFP8_MPP_QCACHE', '1') != '1'
             or os.environ.get('ASFP8_ATTN_BACKEND') != 'pytorch'
             or torch.is_grad_enabled()
@@ -171,6 +171,11 @@ def _supports(q, k, v, kwargs):
             or not 2048 <= q.shape[2] <= max_tokens or k.shape != v.shape
             or k.shape[0] != q.shape[0] or k.shape[-1] != q.shape[-1]
             or not (wan or _qwen_edit(q, k) or _ltx25(q, k) or _yue2(q, k) or (
+                h3_protected and q.shape[1] == k.shape[1] == 56
+                and q.shape[2] <= k.shape[2] <= 65536
+                and torch.__version__.split("+")[0] == "2.14.1"
+                and os.environ.get("PYTORCH_MPS_FAST_MATH", "0") == "0"
+                and os.environ.get("ASFP8_H3_PREFIX_QCACHE", "1") == "1") or (
                 k.shape[2:] == q.shape[2:]
                 and (q.shape[1], k.shape[1]) in ((30, 30), (48, 12), (56, 56))))
             # Batch/head pointers use int64 strides. Only the in-tile row
@@ -196,9 +201,9 @@ def _h3_long_schedule(q, k):
             and os.environ.get('ASFP8_H3_LONG_ATTN', '1') == '1')
 
 
-def maybe_attention(q, k, v, *, output_bshd=False, **kwargs):
+def maybe_attention(q, k, v, *, output_bshd=False, h3_protected=False, **kwargs):
     global _library, _half_library, _h3_long_library, _dead, _calls
-    if not _supports(q, k, v, kwargs):
+    if not _supports(q, k, v, kwargs, h3_protected=h3_protected):
         return None
     try:
         wan = _wan(q, k)
