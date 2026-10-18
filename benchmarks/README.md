@@ -1,5 +1,6 @@
 # Benchmark reports
 
+- [ComfyUI nightly c06bf5f5 regression](m5-ultra-comfy0413-nightly-smoke.md): 29 available cases run twice; YuE2/Flux.3 guard repairs, skipped checkpoints and upstream numerical changes documented.
 
 - [ComfyUI v0.41.2 regression check](m5-ultra-comfy0412-smoke.md): 22 cases, two runs each; matched v0.40.0 outputs and stable warm timings.
 
@@ -12,6 +13,7 @@ preceding optimized output without matching stock ComfyUI.
 
 | Model / area | Reports |
 |---|---|
+| MOSS-Image SFT / Base | [Nightly stock baseline, exact fusions/caches, full-step byte comparisons](m5-ultra-moss-image.md) |
 | ComfyUI v0.40.0 regression check | [23 cases, two runs each, prior-stack timing and tensor comparisons](m5-ultra-comfy040-smoke.md) |
 | Full PyTorch 2.14.1 retest | [Models, compatibility and timings](m5-ultra-torch2141-retest.md) |
 | SDXL / Z-Image | [2.14 production workflows](m5-ultra-torch214-production.md), [SDXL investigation](m5-ultra-sdxl-investigation.md) |

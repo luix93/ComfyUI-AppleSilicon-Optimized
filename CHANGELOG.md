@@ -1,5 +1,37 @@
 # Release notes
 
+## October 18, 2026 — nightly regression and compatibility guards
+
+- Retested 29 available workflow/mode/preprocessor cases twice on ComfyUI
+  nightly `c06bf5f5` (after v0.41.3), PyTorch 2.14.1 and Kitchen 0.2.38.
+  SDXL and Wan checkpoints were unavailable. SeedVR memory guards remained
+  enabled; no memory watchdog tripped.
+- Restored YuE2's exact single-token RoPE on the reviewed nightly source:
+  full-workflow warm time recovered from 49.10 to 34.83 seconds, with identical
+  tensors. Enabled the existing exact Flux.3 fusions/caches on reviewed Kitchen
+  0.2.38: distilled/base T2I 5.79/33.38 seconds, edit 12.80/70.59 seconds.
+  Repairs preserve the pre-repair nightly bytes; 46 focused tests passed.
+- LTX and Flux.3 differ numerically from the previous core. Diagnostic replays
+  of its quantized-linear dispatch restore the old bytes on LTX convolutional
+  VAE and Flux.3 distilled T2I. That rollback is not installed. Other cases
+  match their references. [Results and scope](benchmarks/m5-ultra-comfy0413-nightly-smoke.md).
+
+## October 18, 2026 — MOSS-Image
+
+- Added automatic MOSS-Image SFT/Base exact BF16 SiTU, split-half RoPE and
+  modulation fusions, dense PyTorch query reuse, and bounded sampling-local
+  weight/text/position caches. Full-step captures preserve the preceding
+  optimized output bytes; standalone MOSS-only tests also preserve stock bytes.
+- Sampling improves by about 37% over the preceding pack at 1024² / 25 steps.
+  [Complete results and exactness boundaries](benchmarks/m5-ultra-moss-image.md).
+- Tested on nightly ComfyUI `c06bf5f5`, PyTorch 2.14.1 and Kitchen 0.2.38 on
+  M5 Ultra; the subsequent regression is documented above. Source/build guards
+  retain existing paths on unreviewed stacks, explicit backend overrides or
+  unsupported cases.
+- New caches are phase-local and released on completion/interruption/failure;
+  the tested prepared weights use about 1.97 GiB. Independent switches and
+  memory controls are in the [MOSS guide](docs/moss-image.md).
+
 ## October 16, 2026 update
 
 - Latest tested ComfyUI core is **v0.41.2**, with PyTorch **2.14.1** and

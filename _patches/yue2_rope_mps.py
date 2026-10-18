@@ -13,7 +13,12 @@ from pathlib import Path
 import torch
 
 _LLAMA_SHA = '3e8cbb319e0c727d1a75525cbe29863463aa8263485fac22303c58fa0316ab4a'
-_LLAMA_SHAS = {_LLAMA_SHA, '630a9d0f66448ae1b8de53041fde7dc2c4df1e7a16f29fab8ed6c9bb44ff7fdd'}
+_LLAMA_SHAS = {
+    _LLAMA_SHA,
+    '630a9d0f66448ae1b8de53041fde7dc2c4df1e7a16f29fab8ed6c9bb44ff7fdd',
+    # ComfyUI c06bf5f5: reviewed Attention/RoPE arithmetic is unchanged.
+    '01abd69c5b92730c390b1fe6f686174cea48acb08eaf56850adc89c413ff0aef',
+}
 _EAGER_SHA = '630a3d287bf602046935086f9d43eb6db2ec4971913a1cb3fb35bae6ea4ac9ee'
 _library = None
 _dead = False

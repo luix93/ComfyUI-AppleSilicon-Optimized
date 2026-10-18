@@ -110,3 +110,11 @@ PyTorch 2.14.1 / Comfy Kitchen 0.2.37 stack.
 The Base multi-view camera fix preserves intended FP32 head computation. It does
 not split long clips automatically. Start joint-frame tests with a short window.
 [Measurements and numerical limits](../benchmarks/m5-ultra-vision-preprocessors.md).
+
+## MOSS-Image (nightly `c06bf5f5`)
+
+`ASFP8_MOSS_FAST=0` disables the new MOSS paths. SiTU, RoPE, modulation,
+query reuse, text/position reuse and prepared-weight caching have independent
+switches. The cache uses approximately 1.97 GiB on the tested workflows and
+is cleared after sampling. See [MOSS settings and exactness](moss-image.md).
+Reviewed M5 Ultra / PyTorch 2.14.1 and matching ComfyUI/Kitchen sources are required.

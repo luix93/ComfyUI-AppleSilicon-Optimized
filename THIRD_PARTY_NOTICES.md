@@ -17,7 +17,7 @@ API nor making a runtime optional removes these notices.
 | [PyTorch / contributors](https://github.com/pytorch/pytorch) | MPP headers expanded at runtime; adapted reduction, normalization and rounding kernels, including Ideogram/Qwen/LTX/Wan/H3/SeedVR paths | [PyTorch full notices](_patches/krea2_ext/PYTORCH_LICENSE) and [SeedVR copy](_patches/seedvr2_ext/PYTORCH_LICENSE) |
 | [MLX / Apple and contributors](https://github.com/ml-explore/mlx) | PyTorch MPP/normalization ancestry; installed MLX integrations | [MIT](_patches/krea2_ext/MLX_LICENSE) |
 | [ComfyUI / contributors](https://github.com/Comfy-Org/ComfyUI) | Host model/decoder integrations and adapted forwards | GPL-3.0; [full text](LICENSE), [upstream license](https://github.com/Comfy-Org/ComfyUI/blob/master/LICENSE) |
-| [Comfy Kitchen / Comfy Org](https://github.com/Comfy-Org/comfy-kitchen) | Adapted LTX neighborhood-attention grouping; quantization, ConvRot, INT8 VAE and Flux.3 RMS/RoPE compatibility references | [Apache-2.0](third_party/Comfy-Kitchen-Apache-2.0.txt); copyright (c) 2025 Comfy Org on the adapted LTX file |
+| [Comfy Kitchen / Comfy Org](https://github.com/Comfy-Org/comfy-kitchen) | Adapted LTX neighborhood-attention grouping; quantization, ConvRot, INT8 VAE, Flux.3 and MOSS RMS/RoPE/modulation compatibility references | [Apache-2.0](third_party/Comfy-Kitchen-Apache-2.0.txt); copyright (c) 2025 Comfy Org on the adapted LTX file |
 | [SeedVR / ByteDance-Seed](https://github.com/ByteDance-Seed/SeedVR) | Bundled fixed positive/negative conditioning tensors | [Apache-2.0](_patches/seedvr2_assets/LICENSE), [asset provenance](_patches/seedvr2_assets/README.md) |
 | [MotionCache / starsFriday](https://github.com/starsFriday/ComfyUI-MiniMax-H3-MotionCache) | Bundled reference and maintained derivative | [MIT](_patches/h3_runtime/motion/LICENSE) |
 | [Spectrum H3 / xmarre](https://github.com/xmarre/ComfyUI-Spectrum-MiniMax-H3) | Bundled reference and maintained derivative | [GPL-3.0-or-later](_patches/h3_runtime/spectrum/LICENSE), [copyright](_patches/h3_runtime/spectrum/COPYRIGHT) |
@@ -202,3 +202,13 @@ notices, licenses and corresponding source when redistributing this bundle.
 camera interfaces (tested core `b53f77a7`, GPL-3.0). ComfyUI and its contributors
 retain attribution under the existing ComfyUI entry above. BiRefNet, SDPose,
 RT-DETR and DA3 weights remain external and are not redistributed by this pack.
+
+### MOSS-Image exact execution
+
+`_patches/moss_fast.py` / `.metal` follow the operation semantics and integration
+points of ComfyUI's `comfy/ldm/moss_image/model.py` at core `c06bf5f5` (GPL-3.0),
+and Comfy Kitchen 0.2.38's eager RMS/RoPE/modulation operations (Apache-2.0).
+ComfyUI and Comfy Kitchen retain the credits and licenses listed above. The
+MOSS query-reuse path uses this pack's existing attributed PyTorch MPS shader
+adapter (`torch_mpp_qcache.py`); it does not bundle a different attention library.
+Model weights are separate downloads governed by their own licenses.
