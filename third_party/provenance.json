@@ -32,7 +32,8 @@
         "third_party/cider-MIT.txt"
       ],
       "license_audited_revision": "4d91fcee9439f7aea17ae6e965271d9536c604a0",
-      "diagnostic_derivatives": "dev/h3_fusion_experiments: exact QKV tile and FC1/SwiGLU fusion prototypes; not production dispatch."
+      "diagnostic_derivatives": "dev/h3_fusion_experiments: exact QKV tile and FC1/SwiGLU fusion prototypes; not production dispatch.",
+      "moss_ffn_adaptation": "_patches/moss_ffn_mps.metal: existing attributed INT8 GEMM core with local direct paired-column addressing and exact SiTU epilogue."
     },
     {
       "name": "CCV",
@@ -45,7 +46,8 @@
         "6a611be1aab6470ae279115ae4eaf7e01bc87135",
         "e499321b29b5c9c31329a8efc6960d84856d3315"
       ],
-      "floating_pv_adaptation": "_patches/h3_floatpv_shaders/int8_qk_float_pv.metal: generated NAInt8AttentionKernel with quantizePV=false and local BHSD addressing; optional H3 backend."
+      "floating_pv_adaptation": "_patches/h3_floatpv_shaders/int8_qk_float_pv.metal: generated NAInt8AttentionKernel with quantizePV=false and local BHSD addressing; optional H3 backend.",
+      "moss_attention_adaptation": "_patches/moss_attention_mps.py: hash-checked existing dense INT8 shaders with local 24-head BNHD/interleaved-V addressing and dense-only preparation; optional, no sparse routing."
     },
     {
       "name": "PyTorch",
@@ -59,7 +61,8 @@
         "cf30153c4c131c8164ee7798e5022d810682e2cb",
         "08187d9e0fba026dc8217405802ab5381dc88d90",
         "5c4886908584029761b579af026dcfb627c84070"
-      ]
+      ],
+      "moss_attention_adaptation": "_patches/moss_attention_mps.py: optional 32-query MPP tile and direct BNHD output using the existing hash-checked runtime source adapter."
     },
     {
       "name": "MLX",
@@ -196,6 +199,26 @@
       "use": "reference and optional downloaded model package; app/source not bundled",
       "notices": [],
       "license_audited_revision": "f47a05b7f11e2d02c43bfa5337984fe2cee546f2"
+    },
+    {
+      "name": "Kitchen-style Metal INT8 attention prototype",
+      "repository": "https://github.com/Comfy-Org/comfy-kitchen",
+      "use": "adapted Q/K randomized Hadamard quantization, adaptive K anchor, per-channel V quantization and unsigned-probability delayed-rescale policy; CUDA source not bundled",
+      "source_revision": "42081bf9bb5fad3992c1256aab4f01b27cbb5816",
+      "source_version": "0.2.38",
+      "copyright": "Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.",
+      "notices": [
+        "third_party/Comfy-Kitchen-Apache-2.0.txt",
+        "third_party/ccv-BSD-3-Clause.txt"
+      ],
+      "derivatives": [
+        "_patches/kitchen_attention_mps.metal",
+        "_patches/kitchen_attention_mps.py",
+        "benchmarks/tools/kitchen_attention_oracle.py"
+      ],
+      "source_hash_manifest": "benchmarks/data/kitchen-0238-reference.json",
+      "limitations": "D128 BF16 unmasked M5 prototype; CUDA byte equivalence unverified; disabled by default",
+      "additional_reference": "Metal MPP tiling follows the existing CCV-derived H3 shader, CCV 6a611be1aab6470ae279115ae4eaf7e01bc87135, Copyright (c) 2010 Liu Liu"
     }
   ],
   "notice_sha256": {

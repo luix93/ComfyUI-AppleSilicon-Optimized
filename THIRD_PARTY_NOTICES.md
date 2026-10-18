@@ -12,9 +12,9 @@ API nor making a runtime optional removes these notices.
 |---|---|---|
 | [ComfyUI-AppleSilicon-FP8 / Paweł Mazurkiewicz](https://github.com/pawel-mazurkiewicz/ComfyUI-AppleSilicon-FP8) | Inherited compatibility layer and original repository code | [Original MIT notice](third_party/original-FP8-MIT.txt) |
 | [mtlflashattn / Paweł Mazurkiewicz](https://github.com/pawel-mazurkiewicz/mtlflashattn) | Installed dependency; adapted V2 kernel in `_patches/mfa4_ext/flash41.mm`, reused by `sol_ext/sol_attn.mm` | MIT declared by upstream package metadata; Paweł's [full MIT notice](third_party/original-FP8-MIT.txt) and source copyright retained |
-| [Cider / Mininglamp contributors](https://github.com/Mininglamp-AI/cider) | Adapted INT8 GEMM helpers, compute and dequantization epilogues in `int8_ext/int8_gemm.mm`; diagnostic derivatives in `dev/h3_fusion_experiments` | [MIT](third_party/cider-MIT.txt) |
-| [CCV / Liu Liu and contributors](https://github.com/liuliu/ccv) | NA/dense/SOL attention in `mfa4_ext`, H3 shader directories; generated research shaders under `benchmarks/artifacts/krea2-oct2026/experiments` | [BSD-3-Clause](third_party/ccv-BSD-3-Clause.txt); source notice applies to code, CCV documentation has separate CC-BY terms |
-| [PyTorch / contributors](https://github.com/pytorch/pytorch) | MPP headers expanded at runtime; adapted reduction, normalization and rounding kernels, including Ideogram/Qwen/LTX/Wan/H3/SeedVR paths | [PyTorch full notices](_patches/krea2_ext/PYTORCH_LICENSE) and [SeedVR copy](_patches/seedvr2_ext/PYTORCH_LICENSE) |
+| [Cider / Mininglamp contributors](https://github.com/Mininglamp-AI/cider) | Adapted INT8 GEMM helpers, compute and dequantization epilogues in `int8_ext/int8_gemm.mm` and `_patches/moss_ffn_mps.metal`; diagnostic derivatives in `dev/h3_fusion_experiments` | [MIT](third_party/cider-MIT.txt) |
+| [CCV / Liu Liu and contributors](https://github.com/liuliu/ccv) | NA/dense/SOL attention in `mfa4_ext`, H3 shader directories, optional MOSS layout adaptations in `_patches/moss_attention_mps.py`; generated research shaders under `benchmarks/artifacts/krea2-oct2026/experiments` | [BSD-3-Clause](third_party/ccv-BSD-3-Clause.txt); source notice applies to code, CCV documentation has separate CC-BY terms |
+| [PyTorch / contributors](https://github.com/pytorch/pytorch) | MPP headers expanded at runtime; adapted reduction, normalization and rounding kernels, including Ideogram/Qwen/LTX/Wan/H3/SeedVR and optional MOSS query-tile paths | [PyTorch full notices](_patches/krea2_ext/PYTORCH_LICENSE) and [SeedVR copy](_patches/seedvr2_ext/PYTORCH_LICENSE) |
 | [MLX / Apple and contributors](https://github.com/ml-explore/mlx) | PyTorch MPP/normalization ancestry; installed MLX integrations | [MIT](_patches/krea2_ext/MLX_LICENSE) |
 | [ComfyUI / contributors](https://github.com/Comfy-Org/ComfyUI) | Host model/decoder integrations and adapted forwards | GPL-3.0; [full text](LICENSE), [upstream license](https://github.com/Comfy-Org/ComfyUI/blob/master/LICENSE) |
 | [Comfy Kitchen / Comfy Org](https://github.com/Comfy-Org/comfy-kitchen) | Adapted LTX neighborhood-attention grouping; quantization, ConvRot, INT8 VAE, Flux.3 and MOSS RMS/RoPE/modulation compatibility references | [Apache-2.0](third_party/Comfy-Kitchen-Apache-2.0.txt); copyright (c) 2025 Comfy Org on the adapted LTX file |
@@ -212,3 +212,22 @@ ComfyUI and Comfy Kitchen retain the credits and licenses listed above. The
 MOSS query-reuse path uses this pack's existing attributed PyTorch MPS shader
 adapter (`torch_mpp_qcache.py`); it does not bundle a different attention library.
 Model weights are separate downloads governed by their own licenses.
+
+
+## Kitchen-style Metal attention research
+
+`_patches/kitchen_attention_mps.py` / `.metal` and the test oracle in
+`benchmarks/tools/kitchen_attention_oracle.py` adapt the quantization and
+online-softmax policy of [Comfy Kitchen v0.2.38](https://github.com/Comfy-Org/comfy-kitchen/tree/42081bf9bb5fad3992c1256aab4f01b27cbb5816),
+Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+The [Apache-2.0 license](third_party/Comfy-Kitchen-Apache-2.0.txt) applies to
+these derivatives. [Reference hashes](benchmarks/data/kitchen-0238-reference.json)
+identify the reviewed CUDA files; those CUDA implementations are not bundled.
+Changes include D128 BF16 Metal dispatch, head-major scratch, signed-probability
+integer correction, hardware/memory guards and a standalone CUDA comparison
+script. This prototype is disabled by default and does not claim CUDA byte parity.
+
+`_patches/moss_situ_quant_mps.py` / `.metal` combine this pack's SiTU LUT with
+Comfy Kitchen's regular Hadamard and rowwise quantization semantics. The fused
+Hadamard reassociates sums; this optional experiment is not bit-exact. The
+separate exact MOSS implementation and its credits above remain unchanged.

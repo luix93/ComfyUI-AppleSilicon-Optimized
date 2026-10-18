@@ -16,6 +16,7 @@ from contextvars import ContextVar
 import torch
 
 _installed = False
+_installed_cast = None
 _scope = ContextVar('apple_silicon_yue2_casts', default=None)
 _acoustic_scope = ContextVar('apple_silicon_yue2_acoustic', default=False)
 _stats = {}
@@ -192,7 +193,7 @@ def _generate(original, self, *args, **kwargs):
 
 
 def install():
-    global _installed
+    global _installed, _installed_cast
     if _installed or sys.platform != 'darwin' or not torch.backends.mps.is_available():
         return
     if os.environ.get('ASFP8_YUE2_FAST', '1') != '1':
@@ -211,6 +212,7 @@ def install():
     @functools.wraps(cast)
     def cached(*args, **kwargs):
         return _cast_cached(cast, cast_signature, *args, **kwargs)
+    _installed_cast = cached
     ops.cast_bias_weight = cached
     generate = YuE2TEModel._generate
     @functools.wraps(generate)

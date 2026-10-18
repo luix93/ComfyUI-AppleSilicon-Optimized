@@ -1,0 +1,55 @@
+{
+  "revision": "42081bf9bb5fad3992c1256aab4f01b27cbb5816",
+  "files": [
+    {
+      "file": "comfy_kitchen/sage_attention.py",
+      "sha256": "23447a19aa113722f9b0e9a3b1fcc30cec59c438fe652535b870922f50d0543a",
+      "bytes": 22607
+    },
+    {
+      "file": "comfy_kitchen/backends/cuda/float_utils.cuh",
+      "sha256": "5dd76a0abac5c556cd3f4c6186028ee54dd25c2fefd05efd029cb26253fe38c6",
+      "bytes": 6481
+    },
+    {
+      "file": "comfy_kitchen/backends/cuda/sage_attention/quant_qk_int8.cu",
+      "sha256": "f8164c3e3fd48882a1b36d898c9989adff3c3d9d1c62b1c0103b78b8de3ddbbb",
+      "bytes": 36382
+    },
+    {
+      "file": "comfy_kitchen/backends/cuda/sage_attention/quant_v_int8.cu",
+      "sha256": "dfd4758091689306c0e4fb258ea51ea3d2aed8640206dcf49156a38249423a36",
+      "bytes": 8942
+    },
+    {
+      "file": "comfy_kitchen/backends/cuda/sage_attention/qk_int_sv_i8_cuda.cuh",
+      "sha256": "8ba5f059a38f197a11e343766fac225d35ccf93fbdbd50d2d97d151f0efdfe98",
+      "bytes": 56982
+    },
+    {
+      "file": "comfy_kitchen/backends/cuda/sage_attention/attn_utils.cuh",
+      "sha256": "46b4b71f101cb57f096948711aec9c4358e8ca4b4404282ec098936a12d15c15",
+      "bytes": 56032
+    },
+    {
+      "file": "comfy_kitchen/backends/cuda/sage_attention/sage_attn_launcher.cu",
+      "sha256": "22a6cd363469d94a137c84cebe10d24f60abc41e627c491c80e4e28d88bdd380",
+      "bytes": 19051
+    },
+    {
+      "file": "comfy_kitchen/backends/cuda/ops/int8_linear.cu",
+      "sha256": "d6285998530ee699259052a88ee05eb8054b1d118d98b399b7ea1df0f9462989",
+      "bytes": 109047
+    },
+    {
+      "file": "tests/test_int8_attention.py",
+      "sha256": "22953665492bb94d9f839fee7947e06df239b419fcb45b9d1ec0e919be2e0567",
+      "bytes": 46912
+    },
+    {
+      "file": "LICENSE",
+      "sha256": "cd1c9ea1573c9047e9b5a3676ecc1c8f755e56f249ac1ebd8b5ceda7899037da",
+      "bytes": 11364
+    }
+  ]
+}

@@ -1,7 +1,8 @@
 """Exact MOSS-Image BF16 elementwise execution on the tested MPS stack.
 
 SiTU tables are evaluated by PyTorch for every BF16 input bit pattern, retaining
-all intermediate rounding. RMS reductions, GEMMs, sampler and VAE stay upstream.
+all intermediate rounding. An opt-in exact FC1/SiTU epilogue can eliminate
+the wide FFN intermediate; RMS reductions, sampler and VAE stay unchanged.
 Patches are active only inside an eligible MOSS sampling call.
 
 Operation semantics follow ComfyUI's MOSS implementation (GPL-3.0) and Comfy
@@ -18,6 +19,7 @@ import math
 from threading import RLock
 import psutil
 import os
+import sys
 from contextvars import ContextVar
 from pathlib import Path
 
@@ -35,6 +37,9 @@ _stats = {}
 _cast_lock = RLock()
 _cast_users = 0
 _active_cast = None
+_direct_ffn_supported = False
+_OPS_HASH = '2a5e52fe5176be3ac48becebf1678509867f769c1467fa7c7115d1897c16a429'
+_BLOCK_HASH = 'c6f63b080fee07147e43608d17b499f3adf7ada81c600b9d65f6b61f23e56998'
 _MODEL_HASH = 'c70010e9e51ef21ddd5396ed971c68d6c0c225525cf3ae7cebb79d1071c7f22f'
 _ROPE_HASH = '630a3d287bf602046935086f9d43eb6db2ec4971913a1cb3fb35bae6ea4ac9ee'
 _ADALN_HASH = '0de0af829d63679300911c8765d12a4ddc05be3755f5dd1f6fb8566bd9c3a160'
@@ -193,7 +198,8 @@ def _optimized_attention(original, q, k, v, heads, **kwargs):
     shape = tensors[0].shape
     if (not all(_bf16(t) and t.shape == shape and t.stride(-1) == 1 for t in tensors)
             or len(shape) != 3 or shape[0] != 1 or shape[2] != 3072
-            or not 4096 <= shape[1] <= 4608):
+            # Includes the validated 1248-square SFT workflow and prompt-token tails.
+            or not 4096 <= shape[1] <= 6656):
         return original(q, k, v, heads, **kwargs)
     import comfy.ldm.modules.attention as attention
     from . import attn_router_mps, torch_attention
@@ -203,6 +209,42 @@ def _optimized_attention(original, q, k, v, heads, **kwargs):
     if not (native or routed):
         # Preserve an explicitly selected CLI backend or a third-party dispatcher.
         return original(q, k, v, heads, **kwargs)
+    if os.environ.get('ASFP8_MOSS_ATTN_MODE', 'exact') != 'exact':
+        from . import moss_attention_mps
+        qq, kk, vv = [t.unflatten(-1, (heads, 128)).transpose(1, 2) for t in tensors]
+        out = moss_attention_mps.maybe_attention(qq, kk, vv)
+        if out is not None:
+            state = _scope.get()
+            mode = moss_attention_mps.selected_mode()
+            key = mode + '_attention_calls'
+            if not state.get(key):
+                contract = 'exact tile/layout' if mode == 'tile32' else 'approximate dense; all keys retained'
+                logging.info('%s %s attention enabled (%s).', _TAG, mode, contract)
+            state[key] = state.get(key, 0) + 1
+            for container in (q, k, v):
+                container.take()
+            return out.transpose(1, 2).reshape(shape)
+    # Experimental and deliberately separate from the exact/default path.
+    # Only reviewed MOSS calls with an explicit checkpoint request qualify.
+    if (os.environ.get('ASFP8_MOSS_KITCHEN_INT8', '0') == '1'
+            and os.environ.get('ASFP8_MOSS_ATTN_MODE', 'exact') == 'exact'):
+        from . import kitchen_attention_mps
+        state = _scope.get()
+        if (not state.get('kitchen_int8_disabled')
+                and kitchen_attention_mps.requested(getattr(preferred, 'config', None))):
+            qq, kk, vv = [t.unflatten(-1, (heads, 128)).transpose(1, 2) for t in tensors]
+            try:
+                out = kitchen_attention_mps.attention(qq, kk, vv)
+            except (ValueError, SyntaxError) as exc:
+                state['kitchen_int8_disabled'] = True
+                logging.warning('%s experimental INT8 attention unavailable; keeping exact: %s', _TAG, exc)
+            else:
+                for container in (q, k, v):
+                    container.take()
+                if not state.get('kitchen_int8_calls'):
+                    logging.info('%s experimental Kitchen-style INT8 attention enabled; non-bit-exact, CUDA parity unverified.', _TAG)
+                state['kitchen_int8_calls'] = state.get('kitchen_int8_calls', 0) + 1
+                return out.transpose(1, 2).reshape(shape)
     try:
         if _attention_library is None:
             _attention_library = torch.mps.compile_shader(torch_mpp_qcache._source())
@@ -306,6 +348,74 @@ def _cached_cast(original, signature, *args, **kwargs):
     return result
 
 
+def _owned_dequantizing_cast(cast):
+    # Inspect identities, not functools.wraps' copied names. Unknown wrappers
+    # may change requantization semantics and must retain the ordinary path.
+    from . import ops_bias_fp8, qwen3vl_decode, yue2_fast
+    owned = ops_bias_fp8._installed_cast
+    if owned is None:
+        return False
+    allowed = [_active_cast]
+    for module in (qwen3vl_decode, yue2_fast):
+        if module._scope.get() is None:
+            allowed.append(module._installed_cast)
+    seen = set()
+    while cast is not owned:
+        if cast is None or id(cast) in seen or not any(cast is fn for fn in allowed):
+            return False
+        seen.add(id(cast))
+        cast = getattr(cast, '__wrapped__', None)
+    return True
+
+
+def _linear_input_act(original, linear, x, input_act, *args, **kwargs):
+    # Our active FP8-compatibility cast also dequantizes INT8 weights. On the
+    # reviewed core, the fused quantized helper then
+    # returns NotImplemented, and linear_input_act calls Linear.forward anyway.
+    # Skip only that provably unused preparation, retaining module-owned input
+    # processing and the exact same SiTU / INT8 arithmetic.
+    state = _scope.get()
+    if (not _direct_ffn_supported or not _enabled('FFN_DISPATCH')
+            or args or kwargs or input_act != 'situ' or state is None
+            or id(linear) not in state['modules'] or not _bf16(x)
+            or x.ndim != 3 or x.shape[-1] != 16384 or not x.is_contiguous()
+            or hasattr(linear, '_v') or getattr(linear, 'bias', None) is not None
+            or any(getattr(linear, k, None) for k in (
+                'weight_function', 'bias_function', 'weight_lowvram_function',
+                'bias_lowvram_function', '_forward_hooks', '_forward_pre_hooks'))):
+        return original(linear, x, input_act, *args, **kwargs)
+    from comfy_kitchen.tensor import QuantizedTensor
+    weight = getattr(linear, 'weight', None)
+    if (not isinstance(weight, QuantizedTensor)
+            or getattr(weight, '_layout_cls', None) != 'TensorWiseINT8Layout'
+            or weight.dtype not in (torch.float16, torch.bfloat16, torch.float32)
+            or weight.device != x.device
+            or tuple(weight.shape) != (3072, 8192)):
+        return original(linear, x, input_act, *args, **kwargs)
+    import comfy.ops as ops
+    if not _owned_dequantizing_cast(ops.cast_bias_weight):
+        return original(linear, x, input_act, *args, **kwargs)
+    ops.run_every_op()
+    if os.environ.get('ASFP8_MOSS_SITU_QUANT', '0') == '1' and _ready():
+        from . import moss_situ_quant_mps
+        result = moss_situ_quant_mps.linear(linear, x, _tables)
+        if result is not None:
+            if not state.get('situ_quant_calls'):
+                logging.info('%s experimental fused SiTU/ConvRot/INT8 enabled; non-bit-exact rotation.', _TAG)
+            state['situ_quant_calls'] = state.get('situ_quant_calls', 0) + 1
+            return result
+    state['direct_ffn_calls'] = state.get('direct_ffn_calls', 0) + 1
+    return linear(ops._eager_input_act(x, input_act))
+
+
+def _block(original, module, layer, x, mod, pe, transformer_options={}):
+    if os.environ.get('ASFP8_MOSS_FFN_EPILOGUE', '0') != '1':
+        return original(layer, x, mod, pe, transformer_options)
+    from . import moss_ffn_mps
+    return moss_ffn_mps.block(original, module, sys.modules[__name__], layer,
+                              x, mod, pe, transformer_options)
+
+
 def _acquire_cast():
     import comfy.ops as ops
     global _cast_users, _active_cast
@@ -358,7 +468,7 @@ def _sample(original, model_type, guider, *args, **kwargs):
 
 
 def install():
-    global _installed
+    global _installed, _direct_ffn_supported
     if (_installed or os.environ.get('ASFP8_MOSS_FAST', '1') != '1'
             or os.environ.get('ASFP8_DIT_EXT') != '1'
             or not torch.backends.mps.is_available()
@@ -381,6 +491,10 @@ def install():
             return
     except ImportError:
         return
+    _direct_ffn_supported = _matches(ops, _OPS_HASH)
+    original_input_act = ops.linear_input_act
+    ops.linear_input_act = functools.wraps(original_input_act)(
+        lambda *a, **k: _linear_input_act(original_input_act, *a, **k))
     original_sample = samplers.CFGGuider.inner_sample
     @functools.wraps(original_sample)
     def sample(self, *a, **k):
@@ -398,5 +512,9 @@ def install():
     m.MOSSImage.rope = functools.wraps(original_position)(lambda *a, **k: _position(original_position, *a, **k))
     original_text = m.TextEmbedder.forward
     m.TextEmbedder.forward = functools.wraps(original_text)(lambda *a, **k: _text(original_text, *a, **k))
+    original_block = m.Block.forward
+    if _function_matches(original_block, _BLOCK_HASH):
+        m.Block.forward = functools.wraps(original_block)(
+            lambda *a, **k: _block(original_block, m, *a, **k))
     _installed = True
     logging.info('%s exact SiTU/RoPE/modulation, query reuse and bounded sampling caches enabled.', _TAG)

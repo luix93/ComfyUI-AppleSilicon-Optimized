@@ -170,3 +170,115 @@ def test_split_half_rope_strides_and_tail_exact():
                 return out.reshape(x.shape).to(x.dtype)
             got=p._rope_tensors(q,k,pe)
             assert all(torch.equal(a.view(torch.int16),reference(x).view(torch.int16)) for a,x in zip(got,(q,k)))
+
+
+@pytest.mark.skipif(not torch.backends.mps.is_available(), reason='requires MPS')
+@pytest.mark.parametrize('tokens', [4609, 6107, 6167, 6656])
+def test_larger_query_reuse_matches_native_sdpa(tokens):
+    # Exercise non-aligned tails, both real CFG branch lengths and the new ceiling.
+    # Packed QKV views also validate the non-contiguous input strides.
+    if not p.torch_mpp_qcache._torch_build_supported() or not p.torch_mpp_qcache._hardware():
+        pytest.skip('requires reviewed PyTorch build and M5 Ultra')
+    with torch.inference_mode():
+        torch.manual_seed(37)
+        packed = torch.randn(1, tokens, 9216, device='mps', dtype=torch.bfloat16)
+        q, k, v = [t.unflatten(-1, (24, 128)).transpose(1, 2) for t in packed.chunk(3, -1)]
+        reference = torch.nn.functional.scaled_dot_product_attention(q, k, v)
+        if p._attention_library is None:
+            p._attention_library = torch.mps.compile_shader(p.torch_mpp_qcache._source())
+        params = p.torch_mpp_qcache._parameters(
+            tuple(q.shape), tuple(k.shape), q.stride(), k.stride(), v.stride(), 128**-.5)
+        out = torch.empty(q.shape, device=q.device, dtype=q.dtype)
+        p._attention_library.custom_attn(
+            q, k, v, out, params, params, params,
+            threads=(((tokens + 63) // 64) * 128, 24, 1), group_size=(128, 1, 1))
+        assert torch.equal(out.view(torch.int16), reference.view(torch.int16))
+
+
+@pytest.mark.skipif(not torch.backends.mps.is_available(), reason='requires MPS')
+@pytest.mark.parametrize('cast_kind', ['owned', 'cache_owned', 'foreign', 'cache_foreign', 'disabled', 'changed_core', 'hook'])
+def test_direct_ffn_requires_owned_cast(monkeypatch, cast_kind):
+    import sys
+    from types import ModuleType
+    import comfy_kitchen.tensor as kitchen_tensor
+    from _patches import ops_bias_fp8
+    x = torch.zeros(1, 1, 16384, device='mps', dtype=torch.bfloat16)
+    events = []
+    class Weight:
+        _layout_cls = 'TensorWiseINT8Layout'
+        dtype = torch.bfloat16
+        device = x.device
+        shape = (3072, 8192)
+    class Layer:
+        weight = Weight()
+        bias = None
+        def __call__(self, activation):
+            events.append('module')
+            return activation
+    layer = Layer()
+    monkeypatch.setattr(kitchen_tensor, 'QuantizedTensor', Weight)
+    comfy = ModuleType('comfy')
+    ops = ModuleType('comfy.ops')
+    comfy.ops = ops
+    monkeypatch.setitem(sys.modules, 'comfy', comfy)
+    monkeypatch.setitem(sys.modules, 'comfy.ops', ops)
+    owned = lambda *a, **k: None
+    foreign = lambda *a, **k: None
+    monkeypatch.setattr(ops_bias_fp8, '_installed_cast', owned)
+    monkeypatch.setattr(p, '_direct_ffn_supported', True)
+    monkeypatch.setenv('ASFP8_MOSS_FAST', '1')
+    monkeypatch.setenv('ASFP8_MOSS_FFN_DISPATCH', '1')
+    cache = lambda *a, **k: None
+    cache.__wrapped__ = owned if cast_kind == 'cache_owned' else foreign
+    monkeypatch.setattr(p, '_active_cast', cache)
+    ops.cast_bias_weight = cache if cast_kind.startswith('cache_') else foreign if cast_kind == 'foreign' else owned
+    if cast_kind == 'disabled':
+        monkeypatch.setenv('ASFP8_MOSS_FFN_DISPATCH', '0')
+    if cast_kind == 'changed_core':
+        monkeypatch.setattr(p, '_direct_ffn_supported', False)
+    if cast_kind == 'hook':
+        layer._forward_hooks = {1: object()}
+    ops.run_every_op = lambda: events.append('interrupt_check')
+    ops._eager_input_act = lambda value, act: value
+    def original(*a, **k):
+        events.append('original')
+        return x
+    state = {'modules': {id(layer)}}
+    with torch.inference_mode():
+        token = p._scope.set(state)
+        try:
+            assert p._linear_input_act(original, layer, x, 'situ') is x
+        finally:
+            p._scope.reset(token)
+    expected = cast_kind in ('owned', 'cache_owned')
+    assert events == (['interrupt_check', 'module'] if expected else ['original'])
+    assert state.get('direct_ffn_calls', 0) == int(expected)
+
+
+@pytest.mark.parametrize('kind', ['transparent', 'active_qwen', 'active_yue', 'foreign', 'cycle'])
+def test_ffn_cast_chain_is_owned_and_inactive(monkeypatch, kind):
+    from _patches import ops_bias_fp8, qwen3vl_decode, yue2_fast
+    owned = lambda: None
+    yue = lambda: None
+    qwen = lambda: None
+    moss = lambda: None
+    yue.__wrapped__ = owned
+    qwen.__wrapped__ = yue
+    moss.__wrapped__ = qwen
+    monkeypatch.setattr(ops_bias_fp8, '_installed_cast', owned)
+    monkeypatch.setattr(yue2_fast, '_installed_cast', yue)
+    monkeypatch.setattr(qwen3vl_decode, '_installed_cast', qwen)
+    monkeypatch.setattr(p, '_active_cast', moss)
+    if kind == 'foreign':
+        foreign = lambda: None
+        foreign.__wrapped__ = yue
+        qwen.__wrapped__ = foreign
+    elif kind == 'cycle':
+        yue.__wrapped__ = qwen
+    qt = qwen3vl_decode._scope.set({} if kind == 'active_qwen' else None)
+    yt = yue2_fast._scope.set({} if kind == 'active_yue' else None)
+    try:
+        assert p._owned_dequantizing_cast(moss) == (kind == 'transparent')
+    finally:
+        qwen3vl_decode._scope.reset(qt)
+        yue2_fast._scope.reset(yt)

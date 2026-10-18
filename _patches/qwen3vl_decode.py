@@ -19,6 +19,7 @@ import torch
 
 _scope = ContextVar('as_qwen3vl_decode', default=None)
 _installed = False
+_installed_cast = None
 _last_stats = {}
 _library = None
 _kernel_failed = False
@@ -461,7 +462,7 @@ def _rope(original, q, k, freqs_cis):
 
 
 def install():
-    global _installed
+    global _installed, _installed_cast
     if _installed or not torch.backends.mps.is_available():
         return
     import comfy.ops as ops
@@ -475,6 +476,7 @@ def install():
     @functools.wraps(cast)
     def cached(*a, **kw):
         return _cast(cast, signature, QuantizedTensor, *a, **kw)
+    _installed_cast = cached
     ops.cast_bias_weight = cached
     generate = Qwen3VL.generate
     @functools.wraps(generate)

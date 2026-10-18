@@ -49,7 +49,9 @@ column measures actual completed runs, not an extrapolation.
 3. **Modulation:** keep native RMS normalization and norm-weight folding; fuse
    only the following elementwise sequence, retaining each intermediate round.
 4. **Prepared FFN output weights:** reuse owned copies instead of repeating
-   preparation every model call. The floating matrix multiplication is unchanged.
+   preparation every model call. A later dispatch audit confirmed these prepared
+   BF16 weights are discarded by the fused helper; the actual down-projection
+   already uses the native INT8 module path. See the execution follow-up.
 5. **Text/position reuse:** cache timestep-independent features only when input
    tensors compare equal. Recompute timestep embeddings and all diffusion blocks.
 6. **Exact dense attention:** reuse the already validated PyTorch shader adapter,

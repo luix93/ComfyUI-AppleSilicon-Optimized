@@ -1,5 +1,61 @@
 # Release notes
 
+## October 18, 2026 — MOSS CFG batching experiment closed
+
+- Record byte-identical grouped CFG projection tests: 2.55% E2E improvement
+  at 1024² and an inconsistent 0.19% at 1248². No runtime option was added.
+- Keep the final joined-state screen separate from complete-render results;
+  current defaults remain unchanged. [Benchmark report](benchmarks/m5-ultra-moss-cfg-projections.md).
+
+## October 18, 2026 — optional MOSS dense attention tuning
+
+- Add MOSS-specific dense INT8 QK/PV and INT8 QK/BF16 PV paths with direct
+  input/output addressing, reduced preparation and smaller floating-PV query
+  groups. All keys remain; no SOL. Existing exact attention remains the default.
+- Add an independent exact 32-row query-tile option. Verify final latents/frames
+  against exact, and verify each tuned INT8 mode against its preceding dense
+  algorithm. Guard both packed and interleaved QKV value layouts.
+- Reject larger floating key tiles, FP16 conversion and inconsistent direct-V
+  gains. [Full-render results and visual comparisons](benchmarks/m5-ultra-moss-attention-tuning.md).
+
+## October 18, 2026 — optional exact MOSS FFN fusion
+
+- Add an opt-in FC1/SiTU matrix-output kernel with direct paired-column weight
+  reads, unchanged BF16 rounding and no packed-weight cache. Full SFT renders
+  retain identical latents/frames; gains are small and the default is unchanged.
+- Reject the larger FC1/SiTU/ConvRot fusion after slower operator timings and
+  numerical differences. [Measurements](benchmarks/m5-ultra-moss-ffn-epilogue.md).
+
+## October 18, 2026 — Kitchen-style Metal research
+
+- Added a disabled-by-default shared D128 BF16 INT8 attention prototype and an
+  independent fused MOSS SiTU/ConvRot/quantization experiment. Both are
+  non-bit-exact and rejected as accelerations after complete 25-step tests.
+  Exact defaults and existing H3 presets remain unchanged.
+- Pinned Kitchen 0.2.38 provenance, added local quantization/oracle tests and a
+  standalone CUDA reference exporter/comparator. CUDA byte parity is unverified.
+  [Implementation and results](benchmarks/m5-ultra-moss-kitchen-int8.md).
+
+## October 18, 2026 — MOSS FFN dispatch audit
+
+- Remove redundant FFN weight preparation on the reviewed MOSS path while
+  retaining the same SiTU and INT8 module arithmetic. Known wrapper identities
+  and core-source guards preserve fallback for unsupported combinations.
+- Eliminate the unused 1.97 GiB prepared-weight cache on this path. Warm 1024²
+  SFT results are 22.21 / 42.71 s at 25 / 50 steps; the change is below 1% E2E,
+  so this is not a material speedup claim. Full captures remain byte-identical;
+  72 focused tests pass. [Audit](benchmarks/m5-ultra-moss-execution.md).
+
+## October 18, 2026 — MOSS SFT 1.5 MP
+
+- Extend validated exact MOSS query reuse through 6,656 tokens. The user's
+  1248×1248 workflow previously used ordinary PyTorch attention at this size.
+- Warm optimized-to-optimized means: **35.27 → 34.07 s** at 25 steps and
+  **68.41 → 66.73 s** at 50 steps, CFG 2.5. All complete sampler and decoded
+  tensors match; direct SDPA checks cover real branch lengths and the new boundary.
+- Matrix tile experiments remain uninstalled. The tested changes do not achieve
+  the user-reported Blackwell timings. [Full report](benchmarks/m5-ultra-moss-15mp.md).
+
 ## October 18, 2026 — nightly regression and compatibility guards
 
 - Retested 29 available workflow/mode/preprocessor cases twice on ComfyUI

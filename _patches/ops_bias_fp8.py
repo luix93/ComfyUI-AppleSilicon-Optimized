@@ -29,9 +29,10 @@ decode weight/bias FP8 -> compute dtype via the LUT+gather path (decode_fp8 in
 _common.py), which is MPS-safe and bit-exact.  weight_function / bias_function
 (LoRA-as-function, etc.) are applied exactly as the original does.
 
-Anything we don't recognise (vbar `_v` layers, QuantizedTensor weights, non-FP8
-layers) is delegated back to the original implementation — with the historical
-bias_dtype clamp kept as a belt-and-braces fallback for those paths.
+Plain QuantizedTensor weights also take this path and are dequantized to the
+requested compute dtype. Other cases (including vbar `_v` layers and ordinary
+non-FP8 tensors) delegate to the original implementation, retaining the
+historical bias_dtype clamp.
 """
 
 import sys
@@ -43,6 +44,7 @@ from ._common import FP8_DTYPES, decode_fp8
 TAG = "[AppleSilicon-Optimized/ops_bias]"
 
 _installed = False
+_installed_cast = None
 
 
 def _get_quantized_tensor_cls():
@@ -116,7 +118,7 @@ def _fp8_safe_bias_dtype(bias_dtype, dtype, input_tensor):
 
 
 def install():
-    global _installed, _QuantizedTensor
+    global _installed, _QuantizedTensor, _installed_cast
     if _installed:
         return
 
@@ -188,6 +190,7 @@ def install():
             want_requant=want_requant,
         )
 
-    ops_mod.cast_bias_weight = _mps_safe_cast_bias_weight
+    _installed_cast = _mps_safe_cast_bias_weight
+    ops_mod.cast_bias_weight = _installed_cast
     _installed = True
     print(f"{TAG} cast_bias_weight FP8 weight+bias LUT-decoded to compute dtype on MPS.")

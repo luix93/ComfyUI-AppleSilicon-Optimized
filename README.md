@@ -202,6 +202,8 @@ not a comparison across different ComfyUI versions.
 | Flux.3 Base, edit / 896×1152 / 50 steps / CFG 3.5 | 118.77 s | **75.35 s** | **1.58×** | 70.59 s |
 | MOSS-Image SFT, 1024×1024 / 25 steps / CFG 2.5 | 68.47 s | **22.14 s** | **3.09×** | 22.30 s |
 | MOSS-Image Base, 1024×1024 / 25 steps / CFG 2.5 | 69.16 s | **22.44 s** | **3.08×** | 22.46 s |
+| MOSS-Image SFT, 1248×1248 / 25 steps / CFG 2.5 | Not measured | **34.07 s** | — | 34.07 s |
+| MOSS-Image SFT, 1248×1248 / 50 steps / CFG 2.5 | Not measured | **66.73 s** | — | 66.73 s |
 | SeedVR2 7B INT8 video, 416×736 → 832×1472 / 120 frames | Not measured | **124.66 s** | — | 124.70 s |
 | SeedVR2 7B INT8 video, 25-frame processing screen / same dimensions | 34.18 s | **27.81 s** | **1.23×** | — |
 | YuE2, saved full-song workflow / 83.2 s song | Not measured | **34.12 s** | — | 34.83 s |
@@ -254,7 +256,14 @@ includes previous-version timings, before/after repairs and numerical scope.
 - **MOSS:** exact refinements cut sampling by about 37% versus the preceding
   pack, preserving its tested latents/decoded bytes. The complete pack is not
   stock-byte-identical; a separate MOSS-only configuration passed stock-byte
-  comparisons. [Benchmarks](benchmarks/m5-ultra-moss-image.md) · [Controls](docs/moss-image.md).
+  comparisons. The later 1.5 MP SFT attention extension preserves output bytes,
+  improving the preceding pack from 35.27 → 34.07 s (25 steps) and
+  68.41 → 66.73 s (50 steps). These are incremental comparisons, not stock.
+  [Initial benchmarks](benchmarks/m5-ultra-moss-image.md) ·
+  [1.5 MP follow-up](benchmarks/m5-ultra-moss-15mp.md) ·
+  [1024² execution audit](benchmarks/m5-ultra-moss-execution.md): latest FFN cleanup
+  removes an unused 1.97 GiB cache, with less than 1% measured E2E change.
+  [Controls](docs/moss-image.md). The later [Kitchen-style INT8 / fused FFN experiments](benchmarks/m5-ultra-moss-kitchen-int8.md) were slower end to end and remain disabled; the exact default is unchanged.
 - **Flux.3:** distilled uses CFG 1, Base CFG 3.5; both use Euler/simple and INT8
   ConvRot models. Prepared Qwen3.5 weights reduce prompt expansion from 116–117 s
   to about 10 s. With fresh expansion/reference encoding, the original v0.41.2

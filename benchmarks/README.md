@@ -1,5 +1,19 @@
 # Benchmark reports
 
+- [MOSS CFG projection grouping](m5-ultra-moss-cfg-projections.md): byte-identical full-render comparisons, small/inconsistent gains, and a screened joined-state refinement; not promoted.
+
+- [MOSS-specific dense attention tuning](m5-ultra-moss-attention-tuning.md): exact query tiles, INT8 preparation/layout changes, full-render comparisons and rejected candidates.
+
+- [MOSS exact FC1/SiTU matrix-output fusion](m5-ultra-moss-ffn-epilogue.md): guarded opt-in kernel, full-render byte checks, small practical gains and rejected ConvRot fusion.
+
+- [MOSS with H3 dense INT8 kernels](m5-ultra-moss-h3-dense.md): both dense variants, full-step 1024/1248 comparisons and numerical/visual tradeoffs; no SOL.
+
+- [MOSS Kitchen-style INT8 Metal prototype](m5-ultra-moss-kitchen-int8.md): shared backend, independent FFN fusion, rejected end-to-end results and a standalone CUDA reference script.
+
+- [MOSS SFT 1024² execution audit](m5-ultra-moss-execution.md): actual INT8 dispatch, redundant weight-cache cleanup and full-step results; no material new speed claim.
+
+- [MOSS SFT 1.5 MP exact attention follow-up](m5-ultra-moss-15mp.md): 25/50-step timings, byte checks and profiling.
+
 - [ComfyUI nightly c06bf5f5 regression](m5-ultra-comfy0413-nightly-smoke.md): 29 available cases run twice; YuE2/Flux.3 guard repairs, skipped checkpoints and upstream numerical changes documented.
 
 - [ComfyUI v0.41.2 regression check](m5-ultra-comfy0412-smoke.md): 22 cases, two runs each; matched v0.40.0 outputs and stable warm timings.
