@@ -165,8 +165,8 @@ geometry. A model loading successfully does not prove that its fast path ran.
 
 ### Complete performance table
 
-**Baseline and optimized columns are matched measurements from the linked benchmark
-reports.** Baseline means stock unless marked otherwise. The last column shows the latest nightly's warm second run, after the
+**Stock and optimized columns are matched measurements from the linked benchmark
+reports.** Earlier optimized implementations are never used as stock baselines. The last column shows the latest nightly's warm second run, after the
 YuE2 and Flux.3 compatibility fixes. Speedups use the paired benchmark columns,
 not a comparison across different ComfyUI versions.
 
@@ -177,7 +177,7 @@ not a comparison across different ComfyUI versions.
 
 <!-- Canonical current benchmark table: update the date, measurements and linked report together after validated runs. -->
 
-| Workflow | Before (baseline) | After (optimized) | Speedup | Latest nightly check |
+| Workflow | Before (stock) | After (optimized) | Speedup | Latest nightly check |
 |---|---:|---:|---:|---:|
 | SDXL, 896×1152 / 12 steps | 2.61 s | **2.40 s** | **1.09×** | Skipped¹ |
 | Z-Image Turbo, 1024×1024 / 8 steps | 7.86 s | **3.44 s** | **2.28×** | 3.48 s |
@@ -202,39 +202,41 @@ not a comparison across different ComfyUI versions.
 | Flux.3 Base, edit / 896×1152 / 50 steps / CFG 3.5 | 118.77 s | **75.35 s** | **1.58×** | 70.59 s |
 | MOSS-Image SFT, 1024×1024 / 25 steps / CFG 2.5 | 68.47 s | **22.14 s** | **3.09×** | 22.30 s |
 | MOSS-Image Base, 1024×1024 / 25 steps / CFG 2.5 | 69.16 s | **22.44 s** | **3.08×** | 22.46 s |
-| SeedVR2 7B INT8 video, 416×736 → 832×1472 / 120 frames | 128.18 s³ | **124.66 s** | **1.03×** | 124.70 s |
+| SeedVR2 7B INT8 video, 416×736 → 832×1472 / 120 frames | Not measured | **124.66 s** | — | 124.70 s |
 | SeedVR2 7B INT8 video, 25-frame processing screen / same dimensions | 34.18 s | **27.81 s** | **1.23×** | — |
-| YuE2, saved full-song workflow / 83.2 s song | 50.46 s² | **34.12 s** | **1.48×** | 34.83 s |
-| YuE2 Mothersuperior, 20 s | 31.35 s² | **21.94 s** | **1.43×** | 22.41 s |
+| YuE2, saved full-song workflow / 83.2 s song | Not measured | **34.12 s** | — | 34.83 s |
+| YuE2 Mothersuperior, 20 s | Not measured | **21.94 s** | — | 22.41 s |
 | BiRefNet, 4 synthetic frames | 21.786 s (CPU) | 0.757 s (MPS) | 28.78× | 0.753 s |
 | Multi-person SDPose + detector, 4 frames / 8 crops | 2.943 s | 1.448 s | 2.03× | 1.458 s |
 | DA3 Mono Large, 8 frames | 0.456 s | 0.416 s | 1.10× | 0.417 s |
 | DA3 Base multi-view, 8 frames | — | — | — | 0.129 s |
 
-Speedup = baseline time ÷ optimized time. **2×** means twice the processing speed;
+Speedup = stock time ÷ optimized time. **2×** means twice the processing speed;
 **1.2×** means 20% faster. **—** means no measurement is published for that cell.
 
 ¹ SDXL and Wan retain their earlier benchmark results; their checkpoints were
 unavailable for the latest regression.
 
-² YuE2 full-song and Mothersuperior baselines use GPU BF16 with the relevant
-fusions off, not stock CPU FP32. These are the matched 2.14.1 comparisons in the
-[YuE2 GPU checks](benchmarks/m5-ultra-torch2141-retest.md#yue-full-song-and-adapter-gpu-checks).
-The complete stock CPU song was not timed.
+The full-song YuE2, Mothersuperior and 120-frame SeedVR2 rows retain their
+optimized timings, but have **no measured full-workflow stock comparison**.
+YuE2's original 83.2-second song took **354.18 s** on the earlier GPU stack;
+that already used our MPS placement patch, so it is not stock. Later 50.46 s /
+31.35 s YuE2 controls and the 128.18 s SeedVR2 control already included further
+optimizations and must not be used to calculate stock speedup.
+[Original YuE2 measurements](benchmarks/m5-ultra-yue2.md) ·
+[Later YuE2 GPU comparisons](benchmarks/m5-ultra-torch2141-retest.md#yue-full-song-and-adapter-gpu-checks) ·
+[SeedVR2 incremental comparison](benchmarks/m5-ultra-seedvr2-vae2141.md#video-fusion-and-scheduling-screens).
 
-³ SeedVR2's 120-frame baseline is the previous optimized implementation with
-per-block synchronization; the after column includes bounded block scheduling.
-[Matched full-video comparison](benchmarks/m5-ultra-seedvr2-vae2141.md#video-fusion-and-scheduling-screens).
-The separate 25-frame row compares stock arithmetic plus safety guards with
-optimized kernels; it includes processing and first-frame PNG, but excludes
-video export. It must not be extrapolated as a measured five-second stock run.
+The SeedVR2 25-frame row is a genuine stock-arithmetic comparison with memory
+safety guards retained. It includes processing and first-frame PNG, but excludes
+video export; it is not a measured five-second stock run.
 [25-frame stock comparison](benchmarks/m5-ultra-seedvr2-video-memory.md#scheduling-experiments).
 
 Generation timings include sampling, decode and export; model loading and unchanged
 conditioning are cached. YuE regenerates tokens/conditioning. MOSS also includes
 fresh text encoding, with prompt enhancement off. Flux.3 edit uses identical frozen
 expanded prompts, excluding prompt expansion. Preprocessing rows exclude model
-loading and video/file IO. Unmarked stock baselines omit this pack; Qwen retains its minimal encoder
+loading and video/file IO. Stock baselines omit this pack; Qwen retains its minimal encoder
 compatibility shim and SeedVR retains scheduling-only memory protection.
 Optional H3 acceleration modes are off in the main table.
 
