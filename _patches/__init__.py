@@ -4,6 +4,7 @@
 # Install order (the tuple in the top-level __init__.py) differs from patch
 # number order; the comments here use patch numbers, not install positions.
 __all__ = [
+    "vision_preprocessors", # SDPose feature-only execution, bounded DA3 batches and camera dtype fix
     "psutil_vmstat",        # patch #1  — psutil vm_stat fallback (macOS beta crash)
     "comfykitchen_fp8",     # patch #2  — comfy_kitchen eager FP8 dequant (Ideogram 4)
     "scaled_mm_fp8",        # patch #3  — torch._scaled_mm FP8 → bf16 + matrix-unit matmul
@@ -17,6 +18,8 @@ __all__ = [
     "te_device_mps",        # patch #11 — text_encoder_device CPU→MPS on Apple Silicon
     "int_mm_mps",           # patch #12 — torch._int_mm on GPU on MPS (INT8 models, no CPU fallback)
     "int8_linear_mps",      # patch #13 — int8-fast wide-batch Linear via MPS native bf16 GEMM
+    "qwen_vl_vision",      # bounded dense attention for oversized Qwen vision inputs
+    "qwen3vl_decode",       # exact generation-scoped INT8 weight reuse and vocabulary GEMV
     "mlx_textgen",          # patch #14 — MLX-backed Qwen3-VL TextGenerate (prompt expansion)
     # patch #15 (fp8_linear_mps, opt-in fp8-native F.linear) RETIRED — wrong seam:
     #   real ComfyUI fp8 routes through torch._scaled_mm (QuantizedTensor hides the fp8

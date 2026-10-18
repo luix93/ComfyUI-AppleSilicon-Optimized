@@ -128,7 +128,7 @@ from MLX's `mlx/backend/metal/kernels/rms_norm.metal`
 and [_patches/krea2_ext/MLX_LICENSE](_patches/krea2_ext/MLX_LICENSE).
 
 The Qwen-Image 2.1 RMSNorm reduction in `_patches/qwen21_fast.metal`
-follows the same PyTorch/MLX reduction convention as the Krea2 kernels above.
+and Qwen3-VL decode normalization in `_patches/qwen3vl_decode.metal` follow the same PyTorch/MLX reduction convention as the Krea2 kernels above.
 The PyTorch and MLX license notices are included in `_patches/krea2_ext`.
 
 The tile grouping and attention loop in `_patches/ltx25_vae.py` are adapted
@@ -194,3 +194,11 @@ under GPL-3.0 (see `LICENSE`). Spectrum itself retains GPL-3.0-or-later terms. T
 its existing MIT notices in `third_party/original-FP8-MIT.txt`; those notices do not relicense Spectrum.
 The complete corresponding source is supplied in this repository. Preserve these
 notices, licenses and corresponding source when redistributing this bundle.
+
+### Vision preprocessing integrations
+
+`_patches/vision_preprocessors.py` adapts the DA3 inference loop from ComfyUI's
+`comfy_extras/nodes_depth_anything_3.py` and integrates with its SDPose and DA3
+camera interfaces (tested core `b53f77a7`, GPL-3.0). ComfyUI and its contributors
+retain attribution under the existing ComfyUI entry above. BiRefNet, SDPose,
+RT-DETR and DA3 weights remain external and are not redistributed by this pack.

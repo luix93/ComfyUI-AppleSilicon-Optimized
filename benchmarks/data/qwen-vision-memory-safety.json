@@ -1,0 +1,44 @@
+{
+  "full_24_block_random_vision": [
+    {
+      "max_abs": 0.0,
+      "rms": 0.0,
+      "bytes_equal": true
+    },
+    {
+      "max_abs": 0.0,
+      "rms": 0.0,
+      "bytes_equal": true
+    },
+    {
+      "max_abs": 0.0,
+      "rms": 0.0,
+      "bytes_equal": true
+    },
+    {
+      "max_abs": 0.0,
+      "rms": 0.0,
+      "bytes_equal": true
+    }
+  ],
+  "crash_geometry": {
+    "shape": [
+      1,
+      16,
+      47776,
+      64
+    ],
+    "score_gib": 136.05035400390625,
+    "seconds": 2.379238291992806,
+    "baseline": {
+      "tensor": 591396864,
+      "driver": 1074479104
+    },
+    "peaks": {
+      "tensor": 887226368,
+      "driver": 1116422144
+    },
+    "finite": true,
+    "sample_max_abs": 2.421438694000244e-08
+  }
+}

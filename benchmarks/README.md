@@ -17,6 +17,9 @@ preceding optimized output without matching stock ComfyUI.
 | SDXL / Z-Image | [2.14 production workflows](m5-ultra-torch214-production.md), [SDXL investigation](m5-ultra-sdxl-investigation.md) |
 | Krea2 | [October exact tile and rejected attention experiments](m5-ultra-krea2-oct2026.md), [earlier exact work](m5-ultra-krea2-exact.md) |
 | Ideogram 4 / H3 kernels | [QKV / FC1 exact fusion follow-up](m5-ultra-h3-fusions.md), [Exact matrix execution experiments](m5-ultra-h3-matrix-execution.md), [Hardware counters and occupancy](m5-ultra-h3-gpu-counters.md), [GPU profiling and exact K/V layout](m5-ultra-h3-attention-profile.md), [Exact attention pipeline screens](m5-ultra-h3-exact-attention-pipeline.md), [Long-clip exact attention follow-up](m5-ultra-h3-long-exact.md), [October kernel follow-up](m5-ultra-ideogram-h3-oct2026.md), [Ideogram baseline](m5-ultra-ideogram4.md) |
+| Qwen3-VL 4B text generation | [Exact PyTorch decode acceleration, including synthetic multi-image input](m5-ultra-qwen3vl-decode.md), [large-image vision memory safeguard](qwen-vision-memory-safety.md) |
+| BiRefNet / SDPose / Depth Anything 3 | [Warm preprocessing timings, exact SDPose refinement and DA3 multi-view compatibility](m5-ultra-vision-preprocessors.md) |
+| SAM3.1 segmentation | [Repeated Metal compilation fix and exact refinement-reuse prototype](m5-ultra-sam3.md) |
 | Qwen 2.1 | [Generation](m5-ultra-qwen21.md), [image edit](m5-ultra-qwen21-edit.md) |
 | Flux.3 Klein | [Base/distilled, T2I/edit, exact refinements and prompt expansion](m5-ultra-flux3.md) |
 | Flux.2 Klein | [Text-to-image and edit](m5-ultra-flux2-klein.md) |

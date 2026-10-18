@@ -1,0 +1,296 @@
+{
+  "benchmark": {
+    "stack": {
+      "comfy": "0.41.2",
+      "torch": "2.14.1",
+      "dtype": "torch.float16"
+    },
+    "frames": 2,
+    "height": 480,
+    "width": 864,
+    "threshold": 0.0,
+    "refine_iterations": 2,
+    "results": [
+      {
+        "repeat": 0,
+        "mode": "baseline",
+        "seconds": 4.371464041003492,
+        "calls": {
+          "trunk": 6,
+          "segment": 4
+        },
+        "mask_sha256": "75a198fbc9f71785e2a67e3219d38e288c77b1fb4478b6492c0aafa4d77f948f",
+        "mask_pixels": 62469,
+        "bytes_and_boxes_equal": true
+      },
+      {
+        "repeat": 0,
+        "mode": "router_fix",
+        "seconds": 0.6317076659761369,
+        "calls": {
+          "trunk": 6,
+          "segment": 4
+        },
+        "mask_sha256": "75a198fbc9f71785e2a67e3219d38e288c77b1fb4478b6492c0aafa4d77f948f",
+        "mask_pixels": 62469,
+        "bytes_and_boxes_equal": true
+      },
+      {
+        "repeat": 0,
+        "mode": "router_fix_reuse",
+        "seconds": 0.4267320830258541,
+        "calls": {
+          "trunk": 4,
+          "segment": 4
+        },
+        "mask_sha256": "75a198fbc9f71785e2a67e3219d38e288c77b1fb4478b6492c0aafa4d77f948f",
+        "mask_pixels": 62469,
+        "bytes_and_boxes_equal": true
+      },
+      {
+        "repeat": 1,
+        "mode": "baseline",
+        "seconds": 4.218076666991692,
+        "calls": {
+          "trunk": 6,
+          "segment": 4
+        },
+        "mask_sha256": "75a198fbc9f71785e2a67e3219d38e288c77b1fb4478b6492c0aafa4d77f948f",
+        "mask_pixels": 62469,
+        "bytes_and_boxes_equal": true
+      },
+      {
+        "repeat": 1,
+        "mode": "router_fix",
+        "seconds": 0.6294684580061585,
+        "calls": {
+          "trunk": 6,
+          "segment": 4
+        },
+        "mask_sha256": "75a198fbc9f71785e2a67e3219d38e288c77b1fb4478b6492c0aafa4d77f948f",
+        "mask_pixels": 62469,
+        "bytes_and_boxes_equal": true
+      },
+      {
+        "repeat": 1,
+        "mode": "router_fix_reuse",
+        "seconds": 0.42559041699860245,
+        "calls": {
+          "trunk": 4,
+          "segment": 4
+        },
+        "mask_sha256": "75a198fbc9f71785e2a67e3219d38e288c77b1fb4478b6492c0aafa4d77f948f",
+        "mask_pixels": 62469,
+        "bytes_and_boxes_equal": true
+      },
+      {
+        "repeat": 2,
+        "mode": "baseline",
+        "seconds": 4.213136041013058,
+        "calls": {
+          "trunk": 6,
+          "segment": 4
+        },
+        "mask_sha256": "75a198fbc9f71785e2a67e3219d38e288c77b1fb4478b6492c0aafa4d77f948f",
+        "mask_pixels": 62469,
+        "bytes_and_boxes_equal": true
+      },
+      {
+        "repeat": 2,
+        "mode": "router_fix",
+        "seconds": 0.6300303750031162,
+        "calls": {
+          "trunk": 6,
+          "segment": 4
+        },
+        "mask_sha256": "75a198fbc9f71785e2a67e3219d38e288c77b1fb4478b6492c0aafa4d77f948f",
+        "mask_pixels": 62469,
+        "bytes_and_boxes_equal": true
+      },
+      {
+        "repeat": 2,
+        "mode": "router_fix_reuse",
+        "seconds": 0.4277285000134725,
+        "calls": {
+          "trunk": 4,
+          "segment": 4
+        },
+        "mask_sha256": "75a198fbc9f71785e2a67e3219d38e288c77b1fb4478b6492c0aafa4d77f948f",
+        "mask_pixels": 62469,
+        "bytes_and_boxes_equal": true
+      }
+    ],
+    "peaks": {
+      "rss": 1533394944,
+      "driver": 3254681600
+    }
+  },
+  "warm_medians": {
+    "baseline": 4.215606354002375,
+    "router_fix": 0.6297494165046373,
+    "router_fix_reuse": 0.4266594585060375
+  },
+  "inclusive_profile": {
+    "total_seconds": 4.259513291995972,
+    "inclusive_timings": {
+      "interpolate": {
+        "seconds": 0.011488209973322228,
+        "calls": 25
+      },
+      "model_management": {
+        "seconds": 0.00013241602573543787,
+        "calls": 1
+      },
+      "image_backbone": {
+        "seconds": 0.5052253749745432,
+        "calls": 6
+      },
+      "detection_heads": {
+        "seconds": 0.060040707990992814,
+        "calls": 2
+      },
+      "detection_including_backbone": {
+        "seconds": 0.25454795800033025,
+        "calls": 2
+      },
+      "prompt_encoder": {
+        "seconds": 0.010981791972881183,
+        "calls": 4
+      },
+      "decoder_self_attn": {
+        "seconds": 0.00697716700960882,
+        "calls": 8
+      },
+      "decoder_cross_attn_token_to_image": {
+        "seconds": 1.4194479169673286,
+        "calls": 8
+      },
+      "decoder_mlp": {
+        "seconds": 0.004088793997652829,
+        "calls": 8
+      },
+      "decoder_cross_attn_image_to_token": {
+        "seconds": 1.4156214189715683,
+        "calls": 8
+      },
+      "decoder_final_attention": {
+        "seconds": 0.705880833993433,
+        "calls": 4
+      },
+      "mask_transformer": {
+        "seconds": 3.5719090839556884,
+        "calls": 4
+      },
+      "upscale_0": {
+        "seconds": 0.004496083041885868,
+        "calls": 4
+      },
+      "highres_projection_1": {
+        "seconds": 0.0031624990224372596,
+        "calls": 4
+      },
+      "upscale_1": {
+        "seconds": 0.001996917970245704,
+        "calls": 4
+      },
+      "upscale_2": {
+        "seconds": 0.0008013329934328794,
+        "calls": 4
+      },
+      "upscale_3": {
+        "seconds": 0.0013588760048151016,
+        "calls": 4
+      },
+      "highres_projection_0": {
+        "seconds": 0.0012302930117584765,
+        "calls": 4
+      },
+      "upscale_4": {
+        "seconds": 0.0007511660223826766,
+        "calls": 4
+      },
+      "mask_decoder": {
+        "seconds": 3.592637167981593,
+        "calls": 4
+      },
+      "segmentation_heads": {
+        "seconds": 3.611842249025358,
+        "calls": 4
+      },
+      "segmentation_including_backbone": {
+        "seconds": 3.984789873997215,
+        "calls": 4
+      },
+      "refinement_including_crop_resize": {
+        "seconds": 3.990656748996116,
+        "calls": 2
+      }
+    }
+  },
+  "experimental_mask_selection": {
+    "stack": {
+      "comfy": "0.41.2",
+      "torch": "2.14.1",
+      "dtype": "torch.float16"
+    },
+    "frames": 2,
+    "height": 480,
+    "width": 864,
+    "threshold": 0.0,
+    "refine_iterations": 2,
+    "results": [
+      {
+        "repeat": 0,
+        "mode": "baseline",
+        "seconds": 4.322448499995517,
+        "calls": {
+          "trunk": 6,
+          "segment": 4
+        },
+        "mask_sha256": "75a198fbc9f71785e2a67e3219d38e288c77b1fb4478b6492c0aafa4d77f948f",
+        "mask_pixels": 62469,
+        "bytes_and_boxes_equal": true
+      },
+      {
+        "repeat": 0,
+        "mode": "select_masks",
+        "seconds": 3.9965827909763902,
+        "calls": {
+          "trunk": 4,
+          "segment": 4
+        },
+        "mask_sha256": "75a198fbc9f71785e2a67e3219d38e288c77b1fb4478b6492c0aafa4d77f948f",
+        "mask_pixels": 62469,
+        "bytes_and_boxes_equal": true
+      },
+      {
+        "repeat": 1,
+        "mode": "baseline",
+        "seconds": 4.205414083000505,
+        "calls": {
+          "trunk": 6,
+          "segment": 4
+        },
+        "mask_sha256": "75a198fbc9f71785e2a67e3219d38e288c77b1fb4478b6492c0aafa4d77f948f",
+        "mask_pixels": 62469,
+        "bytes_and_boxes_equal": true
+      },
+      {
+        "repeat": 1,
+        "mode": "select_masks",
+        "seconds": 3.9822734170011245,
+        "calls": {
+          "trunk": 4,
+          "segment": 4
+        },
+        "mask_sha256": "75a198fbc9f71785e2a67e3219d38e288c77b1fb4478b6492c0aafa4d77f948f",
+        "mask_pixels": 62469,
+        "bytes_and_boxes_equal": true
+      }
+    ],
+    "peaks": {
+      "rss": 1531576320,
+      "driver": 3254665216
+    }
+  }
+}

@@ -315,7 +315,12 @@ def _router_tensors(q, k, v, heads, mask=None, attn_precision=None,
             # Default upcast only: honor an explicit fp32 attn_precision request.
             # flash41 takes bf16 AND fp16 (Wan runs fp16); math is fp32 inside.
             if (_fa41 is not None and not _gqa and attn_precision is None
-                    and D <= 128
+                    # The shared Metal library also instantiates FP8 TensorOps
+                    # entry points: their static head extent must be 32-aligned,
+                    # even when this call requests FP16/BF16 cooperative math.
+                    # D=16 SAM3 cross-attention otherwise recompiles, fails and
+                    # falls back to bmm on EVERY call (~175 ms per attempt).
+                    and D <= 128 and D % 32 == 0
                     and q.dtype in (torch.bfloat16, torch.float16)):
                 try:
                     out = _fa41_attention(q, k, v, heads, scale=scale,

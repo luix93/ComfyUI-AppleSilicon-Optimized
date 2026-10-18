@@ -1,0 +1,1070 @@
+{
+  "date": "2026-10-18",
+  "scope": "Synthetic frames; real downloaded checkpoints. No private media, video decoding, encoding, or model loading in warm timing. Pose: detector timed, then two supplied crops/frame. Base uses smaller processing resolution than Mono Large.",
+  "confirmation": {
+    "bg": {
+      "stock-exact": {
+        "task": "bg",
+        "mode": "stock",
+        "variant": "exact",
+        "frames": 4,
+        "height": 480,
+        "width": 864,
+        "seed": 678,
+        "torch": "2.14.1",
+        "metadata": {
+          "device": "cpu",
+          "dtype": "torch.float16"
+        },
+        "rows": [
+          {
+            "repeat": 0,
+            "seconds": 21.00502625000081,
+            "stages": {
+              "mask": 21.00502083299216
+            }
+          },
+          {
+            "repeat": 1,
+            "seconds": 20.816922666999744,
+            "stages": {
+              "mask": 20.816917666001245
+            }
+          },
+          {
+            "repeat": 2,
+            "seconds": 22.371276541991392,
+            "stages": {
+              "mask": 22.371271375013748
+            }
+          },
+          {
+            "repeat": 3,
+            "seconds": 22.16959541599499,
+            "stages": {
+              "mask": 22.169590374978725
+            }
+          }
+        ],
+        "peaks": {
+          "rss": 8543879168,
+          "driver": 458752
+        },
+        "warm_mean_seconds": 21.78593154166204
+      },
+      "ours-production": {
+        "task": "bg",
+        "mode": "ours",
+        "variant": "production",
+        "frames": 4,
+        "height": 480,
+        "width": 864,
+        "seed": 678,
+        "torch": "2.14.1",
+        "metadata": {
+          "device": "mps",
+          "dtype": "torch.float16"
+        },
+        "rows": [
+          {
+            "repeat": 0,
+            "seconds": 1.2360874169971794,
+            "stages": {
+              "mask": 1.236081999988528
+            }
+          },
+          {
+            "repeat": 1,
+            "seconds": 0.7606867919967044,
+            "stages": {
+              "mask": 0.760679082974093
+            }
+          },
+          {
+            "repeat": 2,
+            "seconds": 0.7544014580198564,
+            "stages": {
+              "mask": 0.7543939159950241
+            }
+          },
+          {
+            "repeat": 3,
+            "seconds": 0.7560072500200476,
+            "stages": {
+              "mask": 0.75600024999585
+            }
+          }
+        ],
+        "peaks": {
+          "rss": 1155235840,
+          "driver": 9392586752
+        },
+        "warm_mean_seconds": 0.7570318333455361
+      },
+      "stock-exact-comparison": {
+        "mask": {
+          "equal_bytes": false,
+          "max_abs": 0.03279292583465576,
+          "mean_abs": 2.0211891751387157e-05
+        }
+      }
+    },
+    "pose": {
+      "stock-exact": {
+        "task": "pose",
+        "mode": "stock",
+        "variant": "exact",
+        "frames": 4,
+        "height": 480,
+        "width": 864,
+        "seed": 678,
+        "torch": "2.14.1",
+        "metadata": {
+          "device": "mps",
+          "dtype": "torch.float16",
+          "pose_boxes": "two deterministic boxes/frame; detector also timed independently"
+        },
+        "rows": [
+          {
+            "repeat": 0,
+            "seconds": 4.152528749982594,
+            "stages": {
+              "detector": 1.2840162909997161,
+              "pose": 2.866743165999651,
+              "draw": 0.0010798339790198952
+            }
+          },
+          {
+            "repeat": 1,
+            "seconds": 2.9546899999841116,
+            "stages": {
+              "detector": 0.2053315420052968,
+              "pose": 2.74776191599085,
+              "draw": 0.0008942919957917184
+            }
+          },
+          {
+            "repeat": 2,
+            "seconds": 2.9513141670031473,
+            "stages": {
+              "detector": 0.2104570419760421,
+              "pose": 2.739343875000486,
+              "draw": 0.0008424590050708503
+            }
+          },
+          {
+            "repeat": 3,
+            "seconds": 2.9228318329842295,
+            "stages": {
+              "detector": 0.21238654101034626,
+              "pose": 2.708912833011709,
+              "draw": 0.0008771670109126717
+            }
+          }
+        ],
+        "peaks": {
+          "rss": 1078886400,
+          "driver": 6580879360
+        },
+        "warm_mean_seconds": 2.9429453333238293
+      },
+      "ours-exact": {
+        "task": "pose",
+        "mode": "ours",
+        "variant": "exact",
+        "frames": 4,
+        "height": 480,
+        "width": 864,
+        "seed": 678,
+        "torch": "2.14.1",
+        "metadata": {
+          "device": "mps",
+          "dtype": "torch.float16",
+          "pose_boxes": "two deterministic boxes/frame; detector also timed independently"
+        },
+        "rows": [
+          {
+            "repeat": 0,
+            "seconds": 2.1607640830043238,
+            "stages": {
+              "detector": 0.4684735419868957,
+              "pose": 1.6904644169844687,
+              "draw": 0.0011299170146230608
+            }
+          },
+          {
+            "repeat": 1,
+            "seconds": 1.5599774160073139,
+            "stages": {
+              "detector": 0.048784625018015504,
+              "pose": 1.509660999989137,
+              "draw": 0.0008515829977113754
+            }
+          },
+          {
+            "repeat": 2,
+            "seconds": 1.5540147080027964,
+            "stages": {
+              "detector": 0.05258250000770204,
+              "pose": 1.4999242500052787,
+              "draw": 0.0008448750013485551
+            }
+          },
+          {
+            "repeat": 3,
+            "seconds": 1.5496319580124691,
+            "stages": {
+              "detector": 0.04803591701784171,
+              "pose": 1.499959749984555,
+              "draw": 0.0009584999934304506
+            }
+          }
+        ],
+        "peaks": {
+          "rss": 1440038912,
+          "driver": 7782744064
+        },
+        "warm_mean_seconds": 1.5545413606741931
+      },
+      "ours-production": {
+        "task": "pose",
+        "mode": "ours",
+        "variant": "production",
+        "frames": 4,
+        "height": 480,
+        "width": 864,
+        "seed": 678,
+        "torch": "2.14.1",
+        "metadata": {
+          "device": "mps",
+          "dtype": "torch.float16",
+          "pose_boxes": "two deterministic boxes/frame; detector also timed independently"
+        },
+        "rows": [
+          {
+            "repeat": 0,
+            "seconds": 2.1081942500022706,
+            "stages": {
+              "detector": 0.49192820899770595,
+              "pose": 1.6142602500040084,
+              "draw": 0.0012974590063095093
+            }
+          },
+          {
+            "repeat": 1,
+            "seconds": 1.455340915999841,
+            "stages": {
+              "detector": 0.051159916998585686,
+              "pose": 1.4025632499833591,
+              "draw": 0.00094508400070481
+            }
+          },
+          {
+            "repeat": 2,
+            "seconds": 1.4537356660002843,
+            "stages": {
+              "detector": 0.047821042011491954,
+              "pose": 1.40435837500263,
+              "draw": 0.0008648750081192702
+            }
+          },
+          {
+            "repeat": 3,
+            "seconds": 1.43503216598765,
+            "stages": {
+              "detector": 0.04881979100173339,
+              "pose": 1.3846693329978734,
+              "draw": 0.0008413330069743097
+            }
+          }
+        ],
+        "peaks": {
+          "rss": 1437351936,
+          "driver": 7782760448
+        },
+        "warm_mean_seconds": 1.4480362493292585
+      },
+      "stock-exact-comparison": {
+        "pose_json": {
+          "equal": true
+        },
+        "detect_json": {
+          "equal": true
+        },
+        "render": {
+          "equal_bytes": true,
+          "max_abs": 0.0,
+          "mean_abs": 0.0
+        }
+      },
+      "ours-exact-comparison": {
+        "pose_json": {
+          "equal": true
+        },
+        "detect_json": {
+          "equal": true
+        },
+        "render": {
+          "equal_bytes": true,
+          "max_abs": 0.0,
+          "mean_abs": 0.0
+        }
+      }
+    },
+    "da3": {
+      "stock-exact": {
+        "task": "da3",
+        "mode": "stock",
+        "variant": "exact",
+        "frames": 8,
+        "height": 480,
+        "width": 864,
+        "seed": 678,
+        "torch": "2.14.1",
+        "metadata": {
+          "device": "mps",
+          "dtype": "torch.float16"
+        },
+        "rows": [
+          {
+            "repeat": 0,
+            "seconds": 0.7079233749827836,
+            "stages": {
+              "inference": 0.682159165997291,
+              "render": 0.025441625009989366
+            }
+          },
+          {
+            "repeat": 1,
+            "seconds": 0.45753662500646897,
+            "stages": {
+              "inference": 0.4350503339956049,
+              "render": 0.022196624981006607
+            }
+          },
+          {
+            "repeat": 2,
+            "seconds": 0.4548455420008395,
+            "stages": {
+              "inference": 0.4349414169846568,
+              "render": 0.019610333984019235
+            }
+          },
+          {
+            "repeat": 3,
+            "seconds": 0.4550616249907762,
+            "stages": {
+              "inference": 0.43563887500204146,
+              "render": 0.019142416975228116
+            }
+          }
+        ],
+        "peaks": {
+          "rss": 1617526784,
+          "driver": 2186379264
+        },
+        "warm_mean_seconds": 0.45581459733269486
+      },
+      "ours-exact": {
+        "task": "da3",
+        "mode": "ours",
+        "variant": "exact",
+        "frames": 8,
+        "height": 480,
+        "width": 864,
+        "seed": 678,
+        "torch": "2.14.1",
+        "metadata": {
+          "device": "mps",
+          "dtype": "torch.float16"
+        },
+        "rows": [
+          {
+            "repeat": 0,
+            "seconds": 0.6133030829951167,
+            "stages": {
+              "inference": 0.587955625000177,
+              "render": 0.024981957976706326
+            }
+          },
+          {
+            "repeat": 1,
+            "seconds": 0.4123369579901919,
+            "stages": {
+              "inference": 0.38990833298885264,
+              "render": 0.02213412499986589
+            }
+          },
+          {
+            "repeat": 2,
+            "seconds": 0.41428491700207815,
+            "stages": {
+              "inference": 0.3947257499967236,
+              "render": 0.019264500006102026
+            }
+          },
+          {
+            "repeat": 3,
+            "seconds": 0.4223889999848325,
+            "stages": {
+              "inference": 0.4012511250039097,
+              "render": 0.020836957992287353
+            }
+          }
+        ],
+        "peaks": {
+          "rss": 1620721664,
+          "driver": 1852489728
+        },
+        "warm_mean_seconds": 0.41633695832570083
+      },
+      "ours-production": {
+        "task": "da3",
+        "mode": "ours",
+        "variant": "production",
+        "frames": 8,
+        "height": 480,
+        "width": 864,
+        "seed": 678,
+        "torch": "2.14.1",
+        "metadata": {
+          "device": "mps",
+          "dtype": "torch.float16"
+        },
+        "rows": [
+          {
+            "repeat": 0,
+            "seconds": 0.5763310840120539,
+            "stages": {
+              "inference": 0.5509691249753814,
+              "render": 0.024991582991788164
+            }
+          },
+          {
+            "repeat": 1,
+            "seconds": 0.36142704100348055,
+            "stages": {
+              "inference": 0.33900687500135973,
+              "render": 0.022102749993791804
+            }
+          },
+          {
+            "repeat": 2,
+            "seconds": 0.36071862498647533,
+            "stages": {
+              "inference": 0.34067812500870787,
+              "render": 0.019749292026972398
+            }
+          },
+          {
+            "repeat": 3,
+            "seconds": 0.364824749995023,
+            "stages": {
+              "inference": 0.3446965420152992,
+              "render": 0.01978937498643063
+            }
+          }
+        ],
+        "peaks": {
+          "rss": 1590362112,
+          "driver": 2885943296
+        },
+        "warm_mean_seconds": 0.362323471994993
+      },
+      "stock-exact-comparison": {
+        "depth": {
+          "equal_bytes": true,
+          "max_abs": 0.0,
+          "mean_abs": 0.0
+        },
+        "render": {
+          "equal_bytes": true,
+          "max_abs": 0.0,
+          "mean_abs": 0.0
+        }
+      },
+      "ours-exact-comparison": {
+        "depth": {
+          "equal_bytes": true,
+          "max_abs": 0.0,
+          "mean_abs": 0.0
+        },
+        "render": {
+          "equal_bytes": true,
+          "max_abs": 0.0,
+          "mean_abs": 0.0
+        }
+      }
+    },
+    "base": {
+      "ours-production": {
+        "task": "base",
+        "mode": "ours",
+        "variant": "production",
+        "frames": 8,
+        "height": 480,
+        "width": 864,
+        "seed": 678,
+        "torch": "2.14.1",
+        "metadata": {
+          "device": "mps",
+          "dtype": "torch.float16"
+        },
+        "rows": [
+          {
+            "repeat": 0,
+            "seconds": 1.0975914169976022,
+            "stages": {
+              "inference": 1.0768893329950515,
+              "render": 0.020321291987784207
+            }
+          },
+          {
+            "repeat": 1,
+            "seconds": 0.12983887500013225,
+            "stages": {
+              "inference": 0.11156795799615793,
+              "render": 0.01796445800573565
+            }
+          },
+          {
+            "repeat": 2,
+            "seconds": 0.11787058299523778,
+            "stages": {
+              "inference": 0.10275258400361054,
+              "render": 0.014842957985820249
+            }
+          },
+          {
+            "repeat": 3,
+            "seconds": 0.11712270899442956,
+            "stages": {
+              "inference": 0.1022194999968633,
+              "render": 0.014636125008109957
+            }
+          }
+        ],
+        "peaks": {
+          "rss": 1194164224,
+          "driver": 2462138368
+        },
+        "warm_mean_seconds": 0.1216107223299332
+      }
+    }
+  },
+  "paired": {
+    "pose": {
+      "task": "pose",
+      "mode": "ours",
+      "variant": "paired",
+      "frames": 4,
+      "height": 480,
+      "width": 864,
+      "seed": 678,
+      "torch": "2.14.1",
+      "metadata": {
+        "device": "mps",
+        "dtype": "torch.float16",
+        "pose_boxes": "two deterministic boxes/frame; detector also timed independently"
+      },
+      "rows": [
+        {
+          "repeat": 0,
+          "seconds": 2.308899166993797,
+          "stages": {
+            "detector": 0.531027625023853,
+            "pose": 1.775801041017985,
+            "draw": 0.0013483329967129976
+          },
+          "new_patch_enabled": false,
+          "equal": true
+        },
+        {
+          "repeat": 1,
+          "seconds": 1.4551589159818832,
+          "stages": {
+            "detector": 0.04953254200518131,
+            "pose": 1.4041087920195423,
+            "draw": 0.0008464999846182764
+          },
+          "new_patch_enabled": true,
+          "equal": true
+        },
+        {
+          "repeat": 2,
+          "seconds": 1.5636782090005,
+          "stages": {
+            "detector": 0.04761774998041801,
+            "pose": 1.5144878329883795,
+            "draw": 0.0008869580051396042
+          },
+          "new_patch_enabled": false,
+          "equal": true
+        },
+        {
+          "repeat": 3,
+          "seconds": 1.4484797909972258,
+          "stages": {
+            "detector": 0.05235408298904076,
+            "pose": 1.394497750006849,
+            "draw": 0.0009524580091238022
+          },
+          "new_patch_enabled": true,
+          "equal": true
+        },
+        {
+          "repeat": 4,
+          "seconds": 1.5610431249951944,
+          "stages": {
+            "detector": 0.04847008298384026,
+            "pose": 1.511049708002247,
+            "draw": 0.0008595419931225479
+          },
+          "new_patch_enabled": false,
+          "equal": true
+        },
+        {
+          "repeat": 5,
+          "seconds": 1.4410814580041915,
+          "stages": {
+            "detector": 0.04970395800773986,
+            "pose": 1.3897510830138344,
+            "draw": 0.00088825001148507
+          },
+          "new_patch_enabled": true,
+          "equal": true
+        },
+        {
+          "repeat": 6,
+          "seconds": 1.5500089589913841,
+          "stages": {
+            "detector": 0.04754387499997392,
+            "pose": 1.5009338750096504,
+            "draw": 0.0008518749964423478
+          },
+          "new_patch_enabled": false,
+          "equal": true
+        },
+        {
+          "repeat": 7,
+          "seconds": 1.468145666003693,
+          "stages": {
+            "detector": 0.04750975000206381,
+            "pose": 1.4191242090018932,
+            "draw": 0.000848084018798545
+          },
+          "new_patch_enabled": true,
+          "equal": true
+        }
+      ],
+      "peaks": {
+        "rss": 1472856064,
+        "driver": 7791230976
+      }
+    },
+    "da3": {
+      "task": "da3",
+      "mode": "ours",
+      "variant": "paired",
+      "frames": 8,
+      "height": 480,
+      "width": 864,
+      "seed": 678,
+      "torch": "2.14.1",
+      "metadata": {
+        "device": "mps",
+        "dtype": "torch.float16"
+      },
+      "rows": [
+        {
+          "repeat": 0,
+          "seconds": 0.6393307920079678,
+          "stages": {
+            "inference": 0.6135336669976823,
+            "render": 0.02545120898867026
+          },
+          "new_patch_enabled": false,
+          "equal": true
+        },
+        {
+          "repeat": 1,
+          "seconds": 0.4085129169980064,
+          "stages": {
+            "inference": 0.3848829999915324,
+            "render": 0.02331595798023045
+          },
+          "new_patch_enabled": true,
+          "equal": true
+        },
+        {
+          "repeat": 2,
+          "seconds": 0.4276736250030808,
+          "stages": {
+            "inference": 0.4039902910008095,
+            "render": 0.023383667023153976
+          },
+          "new_patch_enabled": false,
+          "equal": true
+        },
+        {
+          "repeat": 3,
+          "seconds": 0.3704744589922484,
+          "stages": {
+            "inference": 0.35021720800432377,
+            "render": 0.019962582999141887
+          },
+          "new_patch_enabled": true,
+          "equal": true
+        },
+        {
+          "repeat": 4,
+          "seconds": 0.4186619999818504,
+          "stages": {
+            "inference": 0.3955652909935452,
+            "render": 0.022769999981392175
+          },
+          "new_patch_enabled": false,
+          "equal": true
+        },
+        {
+          "repeat": 5,
+          "seconds": 0.37323895798181184,
+          "stages": {
+            "inference": 0.3534256249840837,
+            "render": 0.019517707987688482
+          },
+          "new_patch_enabled": true,
+          "equal": true
+        },
+        {
+          "repeat": 6,
+          "seconds": 0.422078874980798,
+          "stages": {
+            "inference": 0.401306082989322,
+            "render": 0.02046916598919779
+          },
+          "new_patch_enabled": false,
+          "equal": true
+        },
+        {
+          "repeat": 7,
+          "seconds": 0.3661224170064088,
+          "stages": {
+            "inference": 0.3457474999886472,
+            "render": 0.020094500010600314
+          },
+          "new_patch_enabled": true,
+          "equal": true
+        }
+      ],
+      "peaks": {
+        "rss": 1694957568,
+        "driver": 2929344512
+      }
+    }
+  },
+  "screens": {
+    "pose-batch": {
+      "task": "pose",
+      "mode": "candidate",
+      "variant": "batch",
+      "frames": 2,
+      "torch": "2.14.1",
+      "metadata": {
+        "device": "mps",
+        "dtype": "torch.float16",
+        "pose_boxes": "two deterministic boxes/frame; detector also timed independently"
+      },
+      "rows": [
+        {
+          "repeat": 0,
+          "seconds": 2.0242624999955297,
+          "stages": {
+            "detector": 0.4547310420020949,
+            "pose": 1.5670860829995945,
+            "draw": 0.002012707991525531
+          }
+        },
+        {
+          "repeat": 1,
+          "seconds": 0.7441155410197098,
+          "stages": {
+            "detector": 0.04162404200178571,
+            "pose": 0.7013719579845201,
+            "draw": 0.0007276249816641212
+          }
+        },
+        {
+          "repeat": 2,
+          "seconds": 0.7489839580084663,
+          "stages": {
+            "detector": 0.040250749996630475,
+            "pose": 0.707630208984483,
+            "draw": 0.000713417015504092
+          }
+        }
+      ],
+      "peaks": {
+        "rss": 1517633536,
+        "driver": 10813259776
+      }
+    },
+    "pose-exact": {
+      "task": "pose",
+      "mode": "candidate",
+      "variant": "exact",
+      "frames": 2,
+      "torch": "2.14.1",
+      "metadata": {
+        "device": "mps",
+        "dtype": "torch.float16",
+        "pose_boxes": "two deterministic boxes/frame; detector also timed independently"
+      },
+      "rows": [
+        {
+          "repeat": 0,
+          "seconds": 1.3617745410010684,
+          "stages": {
+            "detector": 0.4384121249895543,
+            "pose": 0.9209415829973295,
+            "draw": 0.002024332992732525
+          }
+        },
+        {
+          "repeat": 1,
+          "seconds": 0.7335701669799164,
+          "stages": {
+            "detector": 0.04006112500792369,
+            "pose": 0.6919920840009581,
+            "draw": 0.001063875010004267
+          }
+        },
+        {
+          "repeat": 2,
+          "seconds": 0.7431384579977021,
+          "stages": {
+            "detector": 0.03723670798353851,
+            "pose": 0.7050070419791155,
+            "draw": 0.0005367079866118729
+          }
+        }
+      ],
+      "peaks": {
+        "rss": 1399554048,
+        "driver": 6647955456
+      }
+    },
+    "bg-batch": {
+      "task": "bg",
+      "mode": "candidate",
+      "variant": "batch",
+      "frames": 2,
+      "torch": "2.14.1",
+      "metadata": {
+        "device": "mps",
+        "dtype": "torch.float16"
+      },
+      "rows": [
+        {
+          "repeat": 0,
+          "seconds": 1.4882888749998529,
+          "stages": {
+            "mask": 1.4882841249927878
+          }
+        },
+        {
+          "repeat": 1,
+          "seconds": 0.36282279100851156,
+          "stages": {
+            "mask": 0.3628137500199955
+          }
+        },
+        {
+          "repeat": 2,
+          "seconds": 0.36030341699370183,
+          "stages": {
+            "mask": 0.3602965000027325
+          }
+        }
+      ],
+      "peaks": {
+        "rss": 1127071744,
+        "driver": 16362307584
+      }
+    },
+    "bg-exact": {
+      "task": "bg",
+      "mode": "candidate",
+      "variant": "exact",
+      "frames": 2,
+      "torch": "2.14.1",
+      "metadata": {
+        "device": "mps",
+        "dtype": "torch.float16"
+      },
+      "rows": [
+        {
+          "repeat": 0,
+          "seconds": 0.8804437920043711,
+          "stages": {
+            "mask": 0.8804374590108637
+          }
+        },
+        {
+          "repeat": 1,
+          "seconds": 0.410904832999222,
+          "stages": {
+            "mask": 0.4108954170078505
+          }
+        },
+        {
+          "repeat": 2,
+          "seconds": 0.39999658401939087,
+          "stages": {
+            "mask": 0.3999900000053458
+          }
+        }
+      ],
+      "peaks": {
+        "rss": 1130659840,
+        "driver": 9389277184
+      }
+    },
+    "bg-sdpa": {
+      "task": "bg",
+      "mode": "candidate",
+      "variant": "sdpa",
+      "frames": 2,
+      "height": 480,
+      "width": 864,
+      "seed": 678,
+      "torch": "2.14.1",
+      "metadata": {
+        "device": "mps",
+        "dtype": "torch.float16"
+      },
+      "rows": [
+        {
+          "repeat": 0,
+          "seconds": 0.9073905420082156,
+          "stages": {
+            "mask": 0.9073854580055922
+          }
+        },
+        {
+          "repeat": 1,
+          "seconds": 0.3453168749983888,
+          "stages": {
+            "mask": 0.34530804099631496
+          }
+        },
+        {
+          "repeat": 2,
+          "seconds": 0.35932808299548924,
+          "stages": {
+            "mask": 0.359320999996271
+          }
+        }
+      ],
+      "peaks": {
+        "rss": 1120616448,
+        "driver": 9385967616
+      }
+    },
+    "da3-batch": {
+      "task": "da3",
+      "mode": "candidate",
+      "variant": "batch",
+      "frames": 2,
+      "torch": "2.14.1",
+      "metadata": {
+        "device": "mps",
+        "dtype": "torch.float16"
+      },
+      "rows": [
+        {
+          "repeat": 0,
+          "seconds": 2.0535911249753553,
+          "stages": {
+            "inference": 2.046845500008203,
+            "render": 0.006375333003234118
+          }
+        },
+        {
+          "repeat": 1,
+          "seconds": 0.09354029200039804,
+          "stages": {
+            "inference": 0.0863315419992432,
+            "render": 0.006872416997794062
+          }
+        },
+        {
+          "repeat": 2,
+          "seconds": 0.09347358398372307,
+          "stages": {
+            "inference": 0.0866447500011418,
+            "render": 0.00650216598296538
+          }
+        }
+      ],
+      "peaks": {
+        "rss": 1368506368,
+        "driver": 1808728064
+      }
+    },
+    "da3-exact": {
+      "task": "da3",
+      "mode": "candidate",
+      "variant": "exact",
+      "frames": 2,
+      "torch": "2.14.1",
+      "metadata": {
+        "device": "mps",
+        "dtype": "torch.float16"
+      },
+      "rows": [
+        {
+          "repeat": 0,
+          "seconds": 0.3144974169845227,
+          "stages": {
+            "inference": 0.30778816700330935,
+            "render": 0.006371333991410211
+          }
+        },
+        {
+          "repeat": 1,
+          "seconds": 0.10416758302017115,
+          "stages": {
+            "inference": 0.09784945897990838,
+            "render": 0.006032625009538606
+          }
+        },
+        {
+          "repeat": 2,
+          "seconds": 0.10332029100391082,
+          "stages": {
+            "inference": 0.09760991702205501,
+            "render": 0.005453749996377155
+          }
+        }
+      ],
+      "peaks": {
+        "rss": 520912896,
+        "driver": 458752
+      }
+    }
+  },
+  "portrait_batch_error": {
+    "depth": {
+      "max_abs": 0.0008573532104492188,
+      "mean_abs": 1.6402784240199253e-05,
+      "equal": false
+    },
+    "render": {
+      "max_abs": 0.37775731086730957,
+      "mean_abs": 0.0005109888152219355,
+      "equal": false
+    }
+  },
+  "default_da3_batch": 1
+}

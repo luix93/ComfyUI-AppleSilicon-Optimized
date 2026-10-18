@@ -63,6 +63,35 @@ class _Container:
         return value
 
 
+@pytest.mark.parametrize('dim',[8,16,24,40,48,56,72,80,88,104,112,120])
+@pytest.mark.parametrize('q_len,k_len',[(8,5184),(5184,8)])
+def test_skip_uncompilable_shared_flash_library(monkeypatch,dim,q_len,k_len):
+    from types import SimpleNamespace
+    # No GPU allocation needed to prove the compile-attempt routing guard.
+    def fake(n):
+        return SimpleNamespace(shape=(1,8,n,dim),device=torch.device('mps'),
+                               dtype=torch.float16,element_size=lambda:2)
+    calls=_sentinels(monkeypatch,flash_ok=False)
+    monkeypatch.setattr(patch.torch_attention,'supports',lambda *a:False)
+    monkeypatch.setattr(patch,'_fa41',object())
+    monkeypatch.setattr(patch,'_fa41_attention',lambda *a,**k:pytest.fail('unsupported compile attempted'))
+    q,k,v=fake(q_len),fake(k_len),fake(k_len)
+    assert patch._router_tensors(q,k,v,8,skip_reshape=True)=='bmm'
+    assert calls['route']=='bmm'
+
+
+@pytest.mark.parametrize('dim',[32,64,96,128])
+def test_aligned_flash_heads_keep_existing_route(monkeypatch,dim):
+    from types import SimpleNamespace
+    q=SimpleNamespace(shape=(1,8,5184,dim),device=torch.device('mps'),
+                      dtype=torch.float16,element_size=lambda:2)
+    _sentinels(monkeypatch,flash_ok=False)
+    monkeypatch.setattr(patch.torch_attention,'supports',lambda *a:False)
+    monkeypatch.setattr(patch,'_fa41',object())
+    monkeypatch.setattr(patch,'_fa41_attention',lambda *a,**k:'flash41')
+    assert patch._router_tensors(q,q,q,8,skip_reshape=True)=='flash41'
+
+
 def test_router_consumes_all_three_ownership_containers_once(monkeypatch):
     seen = []
     monkeypatch.setattr(patch, "_default", object(), raising=False)

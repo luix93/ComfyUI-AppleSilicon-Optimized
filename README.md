@@ -154,7 +154,58 @@ geometry. A model loading successfully does not prove that its fast path ran.
 
 ## Latest results — M5 Ultra (80 GPU cores)
 
-**Updated 2026-10-16 · 256 GB unified memory · macOS 27.0 · PyTorch 2.14.1**
+**Updated 2026-10-18 · 256 GB unified memory · macOS 27.0 · PyTorch 2.14.1**
+
+### Video preprocessing: BiRefNet, SDPose and DA3
+
+Warm synthetic-frame tests on **ComfyUI v0.41.2 / PyTorch 2.14.1**:
+
+| Task | Stock | Optimized default | Speedup |
+|---|---:|---:|---:|
+| BiRefNet, 4 frames | 21.786 s (CPU) | **0.757 s (MPS)** | **28.78×** |
+| Multi-person SDPose + detector, 4 frames / 8 crops | 2.943 s | **1.448 s** | **2.03×** |
+| DA3 Mono Large, 8 frames | 0.456 s | **0.416 s** | **1.10×** |
+
+BiRefNet benefits from the existing placement patch; CPU/MPS masks differ numerically.
+New SDPose feature-only execution saves another ~7% over the previous pack with
+identical tested pose outputs. DA3 Base multi-view now avoids a Metal camera-head
+dtype crash. DA3 batching remains experimental and off by default after portrait
+inputs revealed numerical differences. Timings exclude video IO/model loading;
+these are not full private-workflow timings. [Scope, memory and rejected candidates](benchmarks/m5-ultra-vision-preprocessors.md).
+
+### SAM3.1 segmentation routing fix
+
+Fixed repeated failed Metal compilation in SAM3’s 16-wide attention heads.
+On two synthetic 864×480 frames with two refinement passes, warm node time
+fell from **4.22 s to 0.63 s (6.7×)** with identical masks and boxes. This
+compares the previous pack route with the corrected route, not stock ComfyUI.
+Full-video loading and export are excluded. [Details and further candidates](benchmarks/m5-ultra-sam3.md).
+
+### New: Qwen3-VL 4B prompt generation in PyTorch
+
+On ComfyUI **v0.41.2**, native PyTorch decoding reaches approximately **70 tok/s**
+with the existing Qwen3-VL 4B INT8 ConvRot checkpoint. Latest exact improvements,
+compared with our preceding cache/RoPE pass using the same PyTorch SDPA backend:
+
+| Task | Previous exact pass | Updated | Speedup |
+|---|---:|---:|---:|
+| Text prompt expansion, 117 tokens | 2.22 s | **2.05 s** | **1.08×** |
+| Text prompt expansion, 111 tokens | 2.14 s | **1.96 s** | **1.09×** |
+| Two synthetic images → video prompt, 60 tokens | 1.37 s | **1.34 s** | **1.02×** |
+
+Warm alternating runs include prefill and cache preparation. Tested outputs match
+byte-for-byte; temporary converted weights use **7.49 GiB**. The earlier 42 tok/s
+benchmark used basic attention because its standalone harness did not parse CLI
+flags; changing attention backend is separate from these exact gains. Historical
+10–11× cache results, memory limits, tests and switches are in the
+[benchmark report](benchmarks/m5-ultra-qwen3vl-decode.md).
+
+**Large-image safety:** Qwen’s vision encoder can bypass the global attention
+router and request a full quadratic score tensor. Oversized basic-attention
+calls now use bounded query chunks, preserving image resolution and all keys.
+Small calls are unchanged; chunked matrix execution can change floating-point
+rounding. This safeguard is separate from the byte-exact decoding optimizations
+above. See the [memory-safety validation](benchmarks/qwen-vision-memory-safety.md).
 
 ### New: Flux.3 on ComfyUI v0.41.2
 

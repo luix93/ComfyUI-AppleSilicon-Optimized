@@ -18,6 +18,14 @@ Optional workflow approximations remain independently selectable.
 | `ASFP8_ATTN_NA` | 1 | production independent-simdgroup flash41 kernel; `0` restores the older cooperative kernel |
 | `ASFP8_DIT_EXT` | implied by native | DiT block-fusion kernels (all families) |
 | `ASFP8_INT8_EMBEDDING` | on | preserve already-dequantized INT8 embedding weights across CPU/MPS casts; compatibility repair independent of native kernels |
+| `ASFP8_QWEN_VISION_SAFE` | 1 | bound oversized Qwen3-VL / Qwen3.5 vision basic-attention calls on MPS using query chunks; retains all pixels/keys and precision, but floating-point bytes can differ; small inputs and explicitly selected non-basic backends stay unchanged; `0` restores the unsafe original allocation behavior |
+| `ASFP8_QWEN_VISION_MEMORY_MB` | 512 | scratch-memory planning budget for the vision safeguard, clamped to 64–1024 MiB and reduced under memory pressure; not a cap on total model/process memory |
+| `ASFP8_QWEN3VL_DECODE` | 1 | exact native-PyTorch generation acceleration for Qwen3-VL 4B INT8 ConvRot; `0` restores the previous path; conditioning encode is unchanged |
+| `ASFP8_QWEN3VL_CACHE_GIB` | 8 | temporary converted-weight cache ceiling, additionally capped to 10% of Metal's recommended working set; `0` disables caching; released after generation, including errors |
+| `ASFP8_QWEN3VL_HEAD` / `ASFP8_QWEN3VL_ROPE` | 1 | independently disable the exact single-token vocabulary/RoPE kernels with `0`; guarded to validated M5 Ultra / pinned PyTorch builds and supported shapes |
+| `ASFP8_QWEN3VL_GROUPED_PROJ` | 1 | group Q/K/V and gate/up projections during single-token Qwen3-VL 4B generation; retains native BF16 matrix execution and replaces separate cache allocations with packed views; validated M5 Ultra/build only |
+| `ASFP8_QWEN3VL_NORM_ROPE` | 1 | fuse single-token Q/K RMSNorm with the exact RoPE kernel; preserves BF16 intermediate rounding; source/build/hardware guarded; requires `ASFP8_QWEN3VL_ROPE=1` |
+| `ASFP8_DISABLE_MLX_TEXTGEN` | 0 | `1` uses native PyTorch for text-only generation instead of the existing optional MLX route; image-containing requests already use PyTorch |
 | `ASFP8_QWEN21_FAST` | on (under DIT_EXT) | exact Qwen-Image 2.1 fusions on the pinned validated M5 Ultra / PyTorch 2.14.0 and 2.14.1 builds; `0` retains the encoder fix and generic native paths |
 | `ASFP8_SOL_LAYOUT` | `head_major` | optional SOL physical layout; `legacy` selects the prior wrapper/shaders for diagnosis. New layout preserves prior SOL output bytes, not exact-native attention bytes; restart after changing it |
 | `ASFP8_YUE2_FAST` | on | exact phase-local cast-weight reuse, guarded vocabulary projection and single-token BF16 RoPE for the MPS YuE2 encoder; scoped acoustic attention under the existing PyTorch query-cache route; `0` restores the preceding YuE2 paths |
@@ -92,3 +100,13 @@ See [Flux.3 controls and memory budgets](flux3.md). `ASFP8_FLUX3_FAST=0`
 disables the new paths; sampling cache, prompt cache, RoPE and SwiGLU have
 independent switches. Enabled automatically only on the reviewed M5 Ultra /
 PyTorch 2.14.1 / Comfy Kitchen 0.2.37 stack.
+
+## Vision preprocessing (ComfyUI v0.41.2)
+
+- `ASFP8_PREPROCESSORS=0`: disable SDPose feature-only execution, DA3 camera-head compatibility and optional mono batching. Default enabled on MPS, with tested-source guards.
+- `ASFP8_SDPOSE_FEATURE_ONLY=0`: keep the original complete SDPose U-Net evaluation. Default enabled; tested keypoints/confidences/rendered maps are unchanged.
+- `ASFP8_DA3_BATCH=2`: experimental two-frame FP16 mono depth inference. Default **1**; values are capped at two. Output rounding can change, including visible normalization/sky-threshold differences. Not a temporal-consistency mode. Resolution and available-memory guards retain the single-frame path when unsuitable.
+
+The Base multi-view camera fix preserves intended FP32 head computation. It does
+not split long clips automatically. Start joint-frame tests with a short window.
+[Measurements and numerical limits](../benchmarks/m5-ultra-vision-preprocessors.md).
