@@ -1,5 +1,17 @@
 # Release notes
 
+## October 19, 2026 — updated-core compatibility repairs
+
+- Restore the reviewed MOSS path on core `8f04fd6e` / Kitchen 0.2.39, adapting
+  the new positional-options interface and preserving custom RoPE controls.
+  The matched 1024² / 25-step probe falls from 34.39 to 22.53 s with identical
+  captured output bytes; the final installed-copy check takes 22.30 s.
+- Admit reviewed Kitchen 0.2.39 for Flux.3 and the changed Llama source for
+  YuE2 RoPE. No new approximation or default attention change.
+- Add cache-interface/passthrough tests; 69 focused tests pass against the
+  actual updated core. Record restored SDXL/Wan cases and cross-version
+  numerical/input limitations in the [regression report](benchmarks/m5-ultra-comfy0421-smoke.md).
+
 ## October 18, 2026 — MOSS CFG batching experiment closed
 
 - Record byte-identical grouped CFG projection tests: 2.55% E2E improvement

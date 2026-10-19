@@ -130,3 +130,18 @@ to a runtime flag. A further joined-state layout also screened as a small
 operator gain; no complete-render claim is made for that variant.
 
 [Measurements and scope](../benchmarks/m5-ultra-moss-cfg-projections.md).
+
+## October 19 core compatibility repair
+
+ComfyUI `8f04fd6e` (`v0.42.0-3-g8f04fd6e`, reported by the instance as the
+0.42.1 update) adds a `transformer_options` argument and custom RoPE controls.
+Kitchen also moves to 0.2.39. The previous guards disabled the reviewed MOSS
+path, increasing the matched 1024² SFT / 25-step warm render to 34.39 s.
+
+The compatibility repair accepts the reviewed source and Kitchen version,
+forwards the new options unchanged, and bypasses position reuse whenever custom
+RoPE controls are present. The default path returns to about 22.3 s with the
+same conditioning, noise, latent and decoded-frame bytes. No attention mode or
+approximation is enabled by this repair.
+
+[Updated-stack regression and numerical scope](../benchmarks/m5-ultra-comfy0421-smoke.md).

@@ -41,6 +41,11 @@ _direct_ffn_supported = False
 _OPS_HASH = '2a5e52fe5176be3ac48becebf1678509867f769c1467fa7c7115d1897c16a429'
 _BLOCK_HASH = 'c6f63b080fee07147e43608d17b499f3adf7ada81c600b9d65f6b61f23e56998'
 _MODEL_HASH = 'c70010e9e51ef21ddd5396ed971c68d6c0c225525cf3ae7cebb79d1071c7f22f'
+_MODEL_HASHES = {
+    _MODEL_HASH,
+    # ComfyUI 8f04fd6e: RoPE options/signature added; block arithmetic unchanged.
+    '5384f7e0d1ed36dc78f76ba7f96a600918627f5317cedcd2c58ba92a83c5bbf8',
+}
 _ROPE_HASH = '630a3d287bf602046935086f9d43eb6db2ec4971913a1cb3fb35bae6ea4ac9ee'
 _ADALN_HASH = '0de0af829d63679300911c8765d12a4ddc05be3755f5dd1f6fb8566bd9c3a160'
 _SITU_HASH = '2078a73661794535cbcfe08ac947d9c0866ec51be1630b446c9498191ae14430'
@@ -263,14 +268,19 @@ def _optimized_attention(original, q, k, v, heads, **kwargs):
     return out.transpose(1, 2).reshape(shape)
 
 
-def _position(original, module, h, w, text_len, device):
-    if not _enabled('REUSE'):
-        return original(module, h, w, text_len, device)
+def _position(original, module, h, w, text_len, device, *args, **kwargs):
+    # Newer core passes transformer_options to rope(). Preserve all arguments
+    # and leave non-default positional controls uncached, avoiding stale positions.
+    options = args[0] if args else kwargs.get('transformer_options', {})
+    if (not _enabled('REUSE') or len(args) > 1
+            or kwargs.keys() - {'transformer_options'}
+            or not isinstance(options, dict) or options.get('rope_options')):
+        return original(module, h, w, text_len, device, *args, **kwargs)
     state = _scope.get()
     key = (h, w, text_len, str(device))
     value = state['positions'].get(key)
     if value is None:
-        value = original(module, h, w, text_len, device)
+        value = original(module, h, w, text_len, device, *args, **kwargs)
         size = value.numel() * value.element_size()
         if len(state['positions']) < 4 and state['reuse_bytes'] + size <= 32 * 2**20:
             state['positions'][key] = value
@@ -477,14 +487,14 @@ def install():
             or os.environ.get('PYTORCH_MPS_FAST_MATH', '0') != '0'):
         return
     try:
-        if version('comfy-kitchen') != '0.2.38':
+        if version('comfy-kitchen') not in ('0.2.38', '0.2.39'):
             return
         import comfy.ldm.moss_image.model as m
         import comfy.ops as ops
         import comfy.samplers as samplers
         import comfy_kitchen.backends.eager.rope as rope
         adaln = importlib.import_module('comfy_kitchen.backends.eager.adaln')
-        if not (_matches(m, _MODEL_HASH) and _matches(rope, _ROPE_HASH)
+        if not (any(_matches(m, sha) for sha in _MODEL_HASHES) and _matches(rope, _ROPE_HASH)
                 and _matches(adaln, _ADALN_HASH)
                 and _function_matches(getattr(ops, '_situ_eager', None), _SITU_HASH)
                 and ops.INPUT_ACT_EAGER.get('situ') is ops._situ_eager):

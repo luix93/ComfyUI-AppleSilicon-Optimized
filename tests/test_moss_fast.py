@@ -13,6 +13,45 @@ def test_source_guard_missing_changed(tmp_path):
     assert not p._function_matches(test_source_guard_missing_changed, p._SITU_HASH)
 
 
+@pytest.mark.parametrize('style', ['old', 'positional', 'keyword'])
+def test_position_cache_accepts_both_core_signatures(style):
+    calls = []
+    value = torch.zeros(1, 3)
+    def original(*args, **kwargs):
+        calls.append((args, kwargs))
+        return value
+    args = ({'cond_or_uncond': [0]},) if style == 'positional' else ()
+    kwargs = {'transformer_options': {'cond_or_uncond': [1]}} if style == 'keyword' else {}
+    state = dict(positions={}, reuse_bytes=0, position_hits=0)
+    with torch.inference_mode():
+        token = p._scope.set(state)
+        try:
+            for _ in range(2):
+                assert p._position(original, None, 64, 64, 83, 'mps', *args, **kwargs) is value
+        finally:
+            p._scope.reset(token)
+    assert len(calls) == 1 and state['position_hits'] == 1
+    assert calls[0][0][5:] == args and calls[0][1] == kwargs
+
+
+def test_position_controls_bypass_cache_and_keep_options():
+    calls = []
+    def original(module, h, w, length, device, transformer_options):
+        calls.append(transformer_options)
+        return torch.tensor(transformer_options['rope_options']['shift_x'])
+    state = dict(positions={}, reuse_bytes=0, position_hits=0)
+    with torch.inference_mode():
+        token = p._scope.set(state)
+        try:
+            for shift in (1., 2., 1.):
+                options = {'rope_options': {'shift_x': shift}}
+                assert p._position(original, None, 64, 64, 83, 'mps', options).item() == shift
+                assert calls[-1] is options
+        finally:
+            p._scope.reset(token)
+    assert len(calls) == 3 and not state['positions']
+
+
 def test_scope_and_grad_required(monkeypatch):
     with torch.inference_mode():
         assert not p._enabled('SITU')

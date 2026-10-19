@@ -1,5 +1,7 @@
 # Benchmark reports
 
+- [Updated ComfyUI 0.42.x regression](m5-ultra-comfy0421-smoke.md): reviewed source/Kitchen repairs, restored SDXL/Wan coverage, two-run timings and numerical scope.
+
 - [MOSS CFG projection grouping](m5-ultra-moss-cfg-projections.md): byte-identical full-render comparisons, small/inconsistent gains, and a screened joined-state refinement; not promoted.
 
 - [MOSS-specific dense attention tuning](m5-ultra-moss-attention-tuning.md): exact query tiles, INT8 preparation/layout changes, full-render comparisons and rejected candidates.
