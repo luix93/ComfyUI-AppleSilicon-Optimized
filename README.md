@@ -1,9 +1,18 @@
 # ComfyUI-AppleSilicon-Optimized
 
-An Apple Silicon acceleration and compatibility pack for ComfyUI. It makes
-FP8/INT8 models work on MPS and speeds up sampling, attention and video/image
-VAEs using custom Metal kernels and runtime patches. Standard workflows work
-without adding an acceleration node or setting a main flag.
+An Apple Silicon acceleration and compatibility pack for ComfyUI, with maximum
+acceleration validated on **M5 chips: M5 Max and M5 Ultra have been tested**.
+Support for earlier chips is experimental. Use the **latest macOS (currently
+macOS 27)** for maximum acceleration: our full native kernels rely on **Metal
+4.1**. The node configures the tested Python dependencies and runtime settings
+automatically; standard workflows need no acceleration node or main flag.
+It makes FP8/INT8 models work on MPS and accelerates sampling, attention and
+video/image VAEs using custom Metal kernels and runtime patches.
+
+**Our tested exact optimizations are bit-exact:** they preserve identical output
+bytes against their documented reference. This guarantee does not extend to
+every quantized compatibility path or optional approximate mode; see the
+[numerics policy](#numerics-policy).
 
 The pack also includes optional H3 acceleration/LoRA controls, Prompt Studio,
 and Apple Silicon Super Resolution. Cache, sparse attention, token reduction
@@ -148,11 +157,23 @@ are downloaded by the main installer; their separate setup is documented in
 [Super Resolution](docs/super-resolution.md) and [Prompt Studio](docs/prompt-studio.md).
 ## Supported configurations
 
+**Latest ComfyUI releases are supported**, with source checks controlling which
+native fast paths can run. The latest published release is
+[v0.42.1](https://github.com/Comfy-Org/ComfyUI/releases/tag/v0.42.1).
+**Timing-confirmed regression:** October 19, 2026, core
+[`8f04fd6e`](https://github.com/Comfy-Org/ComfyUI/commit/8f04fd6ecf4a548937971e840af2a985529fab76)
+(`v0.42.0-3-g8f04fd6e`), with 33 cases run twice. This is the checkout behind the
+latest timings below. The tagged v0.42.1 release contains subsequent MOSS
+changes and has not yet received that same regression test; unreviewed source
+revisions use compatibility fallbacks rather than a claim of validated maximum
+acceleration. [Regression results and scope](benchmarks/m5-ultra-comfy0421-smoke.md).
+
 | Configuration | Validation status |
 |---|---|
 | M5 Ultra, 80 GPU cores / 256 GB, macOS 27, PyTorch 2.14.1 + torchvision 0.29.1 | Stock/optimized benchmarks use `v0.39.0-33-g1d2ea294`, Flux.3/preprocessing on v0.41.2 and MOSS on nightly `c06bf5f5`. Latest [two-run regression](benchmarks/m5-ultra-comfy0421-smoke.md): core `8f04fd6e`, Kitchen 0.2.39; see its input and numerical scope. |
 | PyTorch 2.14.0 + torchvision 0.29.0 | Reviewed build retained by setup; earlier workflow evidence is linked in the reports. |
-| M5 Max | Historical measurements exist; the current release stack was not retested on a Max. |
+| M5 Max | Tested in earlier optimization work. The latest regression and current performance table use M5 Ultra; the current release stack was not retested on a Max. |
+| Latest macOS / Metal 4.1 toolchain | Required for maximum native acceleration. Current benchmarks use macOS 27; install the matching Xcode/Metal tools as described above. |
 | M1–M4 / older macOS / other framework builds | Experimental. Available routes are attempted with existing fallbacks; full native acceleration, performance and parity are not established. |
 | Intel Mac / Windows / Linux | Automatic Apple runtime setup leaves these environments unchanged; Apple acceleration is not supported. |
 
