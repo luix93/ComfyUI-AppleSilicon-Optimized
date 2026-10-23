@@ -5,6 +5,19 @@ import torch
 from _patches import minimax_h3_graph as graph
 
 
+def test_rewriter_retains_native_pdd_output_heads_and_sampling_arguments():
+    class FinalLayer:
+        def forward(self, x, t_emb, video_seg, audio_seg, sigma, sample_sigmas, shifts):
+            return self.video_out(self.norm(x)), self.audio_out(self.adaln_proj(t_emb)), sigma, sample_sigmas, shifts
+
+    original = FinalLayer.forward
+    result = graph.rewrite_final_layer(types.SimpleNamespace(FinalLayer=FinalLayer),
+        types.SimpleNamespace(rms_mod_seg_f32=lambda *args: None), lambda *args: None)
+    assert not result.applied
+    assert "PDD" in result.reason
+    assert FinalLayer.forward is original
+
+
 def test_rewriter_rejects_an_unknown_final_graph():
     class FinalLayer:
         def forward(self, x, t, video, audio):

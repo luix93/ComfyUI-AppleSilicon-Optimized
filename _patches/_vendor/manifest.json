@@ -69,29 +69,5 @@
       "external_patch_compat.py": "076f9af35820d87c57ed7c31b5996bbcf223e606d51da9c272eb7aeaacf7b036",
       "replay_component_shadow.py": "3a2098865f2b0ec8ee15462c4e4c614b46f523a8fa5394b995b88a48f9974ae9"
     }
-  },
-  "veda": {
-    "repository": "https://github.com/veda-sparse/Veda-on-ComfyUI",
-    "commit": "fd59c7277ccc37ebf1a8f6823474b8c2ef2e33a0",
-    "files": {
-      "LICENSE": "6a651fd959d3457a390cf75e4abadc30801c4e5cdad3cb3ccf7ca0a1725a789d",
-      "__init__.py": "960c58ac2128679765e42738c89ee5b0321ae9ad780e1a0d5522777180d00da3",
-      "backends/__init__.py": "807ea591a400c77a5dfc16d49040b25d8dbf521ba0a07319722d6c37252512fe",
-      "backends/base.py": "6df8df683d12e348dc988a93ee0d834bd7e34fde2af4aa17353142b37db5b2df",
-      "backends/mlx_gather.py": "281c525c1fd92d25aa5f7b9c9e0867cd7f14c62c53f414a2a1ecb9e337023552",
-      "comfy_patch.py": "f364d8dd197a10a407929e24a1f5486b65001b7517fea89b3c0f29d47bcac973",
-      "core/bundle.py": "d62e6497339996399b64678baf6da8e8f647052bbd33a28773c9660129a99044",
-      "core/engine.py": "c65264d964621e7646d050dc8134e3d8639485cbbc708811d8c0ac1fc46f40de",
-      "core/h3_layout.py": "e8936edd23ad09b627e12371a8e061ffb68c5c1249a2c4a6b4ec3c1ee37eb360",
-      "core/plans.py": "dfe533a21bebedbbc5569d8c83346806be01b0ea2f0e749ffe616c82520f9e10",
-      "core/predictor.py": "668efd5e52af86752cb5ecb47044ddc0a7b55f9f0c4720c1c39a0afc1a058d4f",
-      "core/reference.py": "610bfae2f609103d29669f0fd7d935b555f7317148f9d120e26d65cb8f4ae087",
-      "core/selection.py": "4a32cbffb50a7af87d321004d63549ae654edd1a8a6f0199d09aaf1b098b2d82",
-      "core/tiling.py": "8c7be2feede3e4cda1b11849135c71bfdee1b3ab667befa98e0062b1561badda",
-      "hardware.py": "51e12c4b5b2e116867e84233c2bcf75d01df2ddbd5a5f5f1a88d3779e06a543e",
-      "predictors.py": "872c3ec3b37c1604a1778082b3aa3f10afc60d61c50fa7776be9d18814dcac01",
-      "settings.py": "00b9086a69a486ca1348dd6d84da82fbc0dd19fd079ff0dd986e8ad98ac5d34f",
-      "status.py": "da3533ebc97b15ec513ee1fcc3db7aad3c627f05d72255eedb5daa93fcbb1cac"
-    }
   }
 }

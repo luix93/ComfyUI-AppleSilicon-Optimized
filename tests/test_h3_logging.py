@@ -10,7 +10,6 @@ import torch
 
 from _patches.h3_logging import call_summary, block_summary, spectrum_summary
 from _patches.h3_runtime.spectrum.runtime import RuntimeStats
-from _patches.h3_runtime.veda.settings import VedaSettings, parse_sparsity
 from _patches import minimax_h3_sparse as sol
 from _patches import minimax_h3_structure as tokens
 from _patches import minimax_h3_presets as presets
@@ -56,26 +55,6 @@ def test_quiet_sparse_still_warns_once_for_kernel_failure(caplog):
     assert caplog.records[0].levelno == logging.WARNING
     assert 'memory budget' in caplog.text
 
-
-def test_quiet_veda_reports_work_without_multiline_banner(monkeypatch):
-    # Exercise diagnostics without initializing a GPU/model manager.
-    prefetch = ModuleType('comfy.model_prefetch')
-    prefetch.pause_malloc_graph = contextlib.nullcontext
-    monkeypatch.setitem(sys.modules, 'comfy.model_prefetch', prefetch)
-    module = importlib.import_module('_patches.h3_runtime.veda.comfy_patch')
-    VedaPatch, _Run = module.VedaPatch, module._Run
-    patch = object.__new__(VedaPatch)
-    patch.run = _Run()
-    patch.run.calls.update(sparse=10, **{'protected step': 10})
-    patch._engines = {'mps': SimpleNamespace(
-        stats=SimpleNamespace(compute_fraction=lambda: .2),
-        backend=SimpleNamespace(display='Metal'))}
-    patch.settings = VedaSettings(parse_sparsity("90%", "test"), parse_sparsity("0%", "test"), verbose=False)
-    summary = patch._summary()
-    assert '\n' not in summary
-    assert '40.0%' in summary  # Dense calls remain in the denominator.
-    assert '10/20 sparse calls' in summary
-    assert 'speedup not measured' in summary
 
 
 @pytest.mark.parametrize('verbose', [False, True])

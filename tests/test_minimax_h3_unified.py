@@ -199,38 +199,28 @@ def test_new_optional_tuning_controls_keep_the_existing_widget_order():
     assert list(schema["optional"])[:3] == ["sparse_backend", "sparse_dense_layers", "sparse_window_mode"]
     assert schema["optional"]["motion_reuse_threshold"][1]["default"] == 0.15
     assert schema["optional"]["spectrum_blend_weight"][1]["default"] == 0.5
-    assert list(schema["optional"])[10:15] == ["sparse_memory_budget_gib", "veda_predictor", "veda_sparsity", "veda_reference_sparsity", "veda_dense_steps"]
+    # The four Veda inputs that followed sparse_memory_budget_gib were removed;
+    # web/h3_acceleration.js drops their saved positional values.
+    assert list(schema["optional"])[10:12] == ["sparse_memory_budget_gib", "sparse_topk_ratio"]
     assert schema["optional"]["sparse_memory_budget_gib"][1]["default"] == 0.0
-    assert list(schema["optional"])[15:] == ["sparse_topk_ratio", "token_start_percent", "token_end_percent", "token_phase_policy", "token_early_step_fraction", "sparse_approximate_references"]
+    assert list(schema["optional"])[11:17] == ["sparse_topk_ratio", "token_start_percent", "token_end_percent", "token_phase_policy", "token_early_step_fraction", "sparse_approximate_references"]
+    assert list(schema["optional"])[17:] == ["vsa_tile_size", "vsa_keep_percent", "vsa_reference_keep_percent", "vsa_head_chunk"]
+    assert not any("veda" in name for group in schema.values() for name in group)
+    assert not any(b.startswith("veda") for b in schema["optional"]["sparse_backend"][0])
 
 
 @pytest.mark.parametrize("backend", ["veda_metal", "veda_mlx"])
-def test_veda_is_an_independent_sparse_mode_with_existing_cache_composition(monkeypatch, backend):
+def test_removed_veda_backend_runs_sol_int8(monkeypatch, backend):
     calls = []
-    monkeypatch.setattr(unified, "apply_motion_cache_preset", lambda m, *a: "cached")
-    def veda(model, **options):
-        calls.append((model, options))
-        return "veda-model"
-    monkeypatch.setattr(unified.minimax_h3_veda, "apply_veda", veda)
-    monkeypatch.setattr(sparse, "apply_h3_sparse", lambda *a, **k: pytest.fail("SOL must not run with Veda"))
+    monkeypatch.setattr(sparse, "apply_h3_sparse", lambda model, **k: calls.append(k) or "sol-model")
     settings = _defaults()
-    settings.update(sparse_attention=True, sparse_backend=backend, veda_sparsity=80,
-                    veda_reference_sparsity=0, veda_dense_steps="0,19", sparse_memory_budget_gib=8)
-    assert unified.apply_h3_acceleration("source", **settings) == "veda-model"
-    assert calls[0][0] == "cached"
-    assert calls[0][1]["backend"] == backend
-    assert calls[0][1]["sparsity"] == 80
-    assert calls[0][1]["reference_sparsity"] == 0
-    assert calls[0][1]["dense_steps"] == "0,19"
-    assert calls[0][1]["memory_budget_gib"] == 8
-
-
-def test_disabled_veda_does_not_load_predictor_or_backend(monkeypatch):
-    monkeypatch.setattr(unified.minimax_h3_veda, "apply_veda", lambda *a, **k: pytest.fail("Veda was loaded"))
-    settings = _defaults()
-    settings.update(cache_mode="disabled", sparse_backend="veda_metal", sparse_attention=False)
-    model = object()
-    assert unified.apply_h3_acceleration(model, **settings) is model
+    settings.update(cache_mode="disabled", sparse_attention=True, sparse_backend=backend)
+    assert unified.apply_h3_acceleration("source", **settings) == "sol-model"
+    assert calls[0]["backend"] == "int8"
+    node = unified.AppleSiliconH3Acceleration
+    assert node.VALIDATE_INPUTS(sparse_backend=backend) is True
+    assert node.VALIDATE_INPUTS(sparse_backend="int8") is True
+    assert node.VALIDATE_INPUTS(sparse_backend="nope") != True
 
 
 @pytest.mark.parametrize("backend,expected", [("int8", .15), ("bf16", 0.0)])

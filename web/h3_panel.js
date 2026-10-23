@@ -14,8 +14,8 @@ const CACHE_HELP = {
     oracle: "Measures cache error without skipping model work.",
     block_oracle: "Measures block error without skipping model work.",
 };
-const ATTENTION_NAMES = {bf16: "SOL · BF16", int8: "SOL · INT8 (M5)", dense_int8: "Dense · INT8 (M5)", dense_floatpv: "Dense · INT8 QK / BF16 PV (M5)", int8_hybrid: "SOL + dense INT8 (M5)",
-    veda_metal: "Veda · Metal (experimental)", veda_mlx: "Veda · MLX (experimental)"};
+const ATTENTION_NAMES = {bf16: "SOL · BF16", int8: "SOL Metal · INT8 (M5)", dense_int8: "Dense Metal · INT8 v1 (M5)", dense_floatpv: "Dense Metal · INT8 QK / BF16 PV (M5)", dense_int8_v2: "Dense Metal · INT8 v2 (M5)", dense_int8_v3: "Dense Metal · INT8 v3, Kitchen numerics (M5)", int8_hybrid: "SOL Metal hybrid · + dense INT8 (M5)",
+    vsa_metal: "VSA · Metal (FastH3)"};
 const FIELDS = {
     cache_reuse_threshold: "Reuse threshold", cache_start_percent: "Start fraction", cache_end_percent: "End fraction",
     cache_max_consecutive_skips: "Maximum skips", cache_audio_weight: "Audio veto weight", cache_verbose: "Log cache activity",
@@ -26,8 +26,7 @@ const FIELDS = {
     sparse_start_percent: "Start fraction", sparse_end_percent: "End fraction", sparse_dense_leading_blocks: "Dense leading blocks",
     sparse_dense_layers: "Protected dense layers", sparse_min_sequence_tokens: "Minimum tokens", sparse_verbose: "Log sparse activity",
     sparse_memory_budget_gib: "Temporary memory (GiB)", sparse_topk_ratio: "Top-k video fraction", sparse_approximate_references: "Approximate reference / guide attention",
-    veda_predictor: "Veda predictor", veda_sparsity: "Video sparsity (%)",
-    veda_reference_sparsity: "Reference sparsity (%)", veda_dense_steps: "Additional dense steps",
+    vsa_tile_size: "VSA tile size", vsa_keep_percent: "Video keep (%)", vsa_reference_keep_percent: "Reference video keep (%)", vsa_head_chunk: "Heads per batch",
     token_reduction_scale: "Update scale", token_early_evaluations: "Early evaluations", token_detail_restore_block: "Later restore block",
     token_coarse_restore_block: "Early restore block", token_start_percent: "Start step fraction", token_end_percent: "End step fraction", token_verbose: "Log token activity",
     token_phase_policy: "Early phase policy", token_early_step_fraction: "Early step fraction",
@@ -141,7 +140,7 @@ export function buildH3Panel(controls, presets, specs, properties, resized) {
     groups.sparse = card("sparse", "Attention acceleration", "Optional attention arithmetic or sparsity. Adds approximation.", "sparse_attention");
     tune(groups.sparse.box,"sparse",["sparse_backend","sparse_mode","sparse_topk_ratio","sparse_tau","sparse_window_mode","sparse_start_percent","sparse_end_percent",
         "sparse_dense_layers","sparse_dense_leading_blocks","sparse_min_sequence_tokens","sparse_memory_budget_gib","sparse_verbose","sparse_approximate_references",
-        "veda_predictor","veda_sparsity","veda_reference_sparsity","veda_dense_steps"]);
+        "vsa_tile_size","vsa_keep_percent","vsa_reference_keep_percent","vsa_head_chunk"]);
     groups.tokens = card("tokens", "Token reduction", "Experimental · reduces spatial detail during computation.", "token_reduction");
     tune(groups.tokens.box,"tokens",["token_reduction_scale","token_early_evaluations","token_detail_restore_block","token_coarse_restore_block","token_start_percent","token_end_percent","token_phase_policy","token_early_step_fraction","token_verbose"]);
     const footer = element("div", "h3-footer");
@@ -162,13 +161,13 @@ export function buildH3Panel(controls, presets, specs, properties, resized) {
         preset.disabled = controls.backend.some(w=>controls.connected(w.name));
         const mode = controls.get("cache_mode"); cache.help.textContent = CACHE_HELP[mode] || "Custom cache method.";
         const attention = controls.get("sparse_backend");
-        const veda = attention?.startsWith("veda_");
-        note.textContent = veda && controls.get("sparse_attention")
-            ? "Experimental · preview predictor trained for 8-step Turbo. Other shapes use the nearest plan. Compare appearance, motion and audio."
+        const vsa = attention === "vsa_metal";
+        note.textContent = vsa && controls.get("sparse_attention") ? "Experimental FastH3 VSA. Uses the checkpoint's learned gates. Compare reference fidelity, motion and audio; no cache or token reduction."
             : "Built in · no extra nodes. Presets tested at 20 steps without Turbo LoRA. Combinations need a quality check.";
-        groups.sparse.help.textContent = veda
-            ? "Learned tile selection. Video sparsity controls skipped connections; 0% reference sparsity keeps references dense. Predictor required in models/veda."
+        groups.sparse.help.textContent = vsa ? "FastH3 trained VSA gates required. Cache/tokens must be Off. 128-token tiles use Omni's per-reference-video routing; 64 keeps references dense like ComfyUI. Auto scratch is 256 MiB."
             : attention === "dense_floatpv" ? "Every key is retained. INT8 QK with BF16 PV and FP32 accumulation; approximate, opt-in M5 kernel."
+            : attention === "dense_int8_v3" ? "Every key is retained. Kitchen-style INT8 numerics: Q/K rotation and per-tile probabilities; protected steps and layers use the exact backend."
+            : attention === "dense_int8_v2" ? "Every key is retained. General INT8 kernel: 255-level probabilities, per-channel V, INT32 accumulation; protected steps and layers use the exact backend."
             : attention === "dense_int8" ? "Every token is retained. INT8 QK/PV changes arithmetic; protected steps and layers use the exact backend."
             : attention === "int8_hybrid" ? "SOL in the active window, with dense INT8 in protected layers. Protected sampling steps stay exact."
             : "SOL attention on computed evaluations. Adds approximation.";
@@ -178,12 +177,13 @@ export function buildH3Panel(controls, presets, specs, properties, resized) {
             if (key.startsWith("motion_")) label.hidden = mode !== "motion_cache";
             else if (key.startsWith("spectrum_")) label.hidden = !mode?.startsWith("spectrum_");
             else if (key.startsWith("cache_") && key !== "cache_verbose") label.hidden = !(mode?.startsWith("first_block_cache") || ["oracle","block_oracle"].includes(mode));
-            else if (key.startsWith("veda_")) label.hidden = !veda;
-            else if (key === "sparse_approximate_references") label.hidden = !["int8","int8_hybrid","dense_int8","dense_floatpv"].includes(attention);
+            else if (key.startsWith("vsa_")) label.hidden = !vsa || (key === "vsa_reference_keep_percent" && Number(controls.get("vsa_tile_size")) === 64);
+            else if (["sparse_window_mode","sparse_dense_leading_blocks"].includes(key)) label.hidden = vsa;
+            else if (key === "sparse_approximate_references") label.hidden = !["int8","int8_hybrid","dense_int8","dense_floatpv","dense_int8_v2","dense_int8_v3"].includes(attention);
             else if (key === "sparse_topk_ratio") label.hidden = !["int8","int8_hybrid"].includes(attention);
-            else if (key === "sparse_tau") label.hidden = Boolean(veda) || ["dense_int8","dense_floatpv"].includes(attention) || (["int8","int8_hybrid"].includes(attention) && controls.get("sparse_topk_ratio") > 0);
-            else if (key === "sparse_mode") label.hidden = Boolean(veda);
-            else if (key === "sparse_memory_budget_gib") label.hidden = !["int8","int8_hybrid","dense_int8","dense_floatpv"].includes(attention) && !veda;
+            else if (key === "sparse_tau") label.hidden = vsa || ["dense_int8","dense_floatpv","dense_int8_v2","dense_int8_v3"].includes(attention) || (["int8","int8_hybrid"].includes(attention) && controls.get("sparse_topk_ratio") > 0);
+            else if (key === "sparse_mode") label.hidden = vsa;
+            else if (key === "sparse_memory_budget_gib") label.hidden = !["int8","int8_hybrid","dense_int8","dense_floatpv","dense_int8_v2","dense_int8_v3"].includes(attention) && !vsa;
         }
         details.get("cache").hidden = !cacheActive;
         for (const [group,key] of [["sparse","sparse_attention"],["tokens","token_reduction"]]) {
@@ -192,8 +192,8 @@ export function buildH3Panel(controls, presets, specs, properties, resized) {
         }
         const active = [];
         if (cacheActive) active.push(CACHE_NAMES[mode] || mode);
-        if (controls.get("sparse_attention")) active.push(veda ? "Veda" : attention === "dense_floatpv" ? "Dense floating PV" : attention === "dense_int8" ? "Dense INT8" : attention === "int8_hybrid" ? "SOL hybrid" : "SOL");
-        if (controls.get("sparse_attention") && ["int8", "int8_hybrid", "dense_int8", "dense_floatpv"].includes(attention) && controls.get("sparse_approximate_references")) active.push("visual references approximate");
+        if (controls.get("sparse_attention")) active.push(vsa ? "VSA Metal" : attention === "dense_floatpv" ? "Dense Metal · floating PV" : attention === "dense_int8_v3" ? "Dense Metal" : attention === "dense_int8_v2" ? "Dense Metal · v2" : attention === "dense_int8" ? "Dense Metal · v1" : attention === "int8_hybrid" ? "SOL Metal hybrid" : attention === "int8" ? "SOL Metal" : "SOL");
+        if (controls.get("sparse_attention") && ["int8", "int8_hybrid", "dense_int8", "dense_floatpv", "dense_int8_v2", "dense_int8_v3"].includes(attention) && controls.get("sparse_approximate_references")) active.push("visual references approximate");
         if (controls.get("token_reduction")) active.push("token reduction");
         badge.textContent = active.length ? "APPROXIMATE" : "EXACT";
         badge.dataset.exact = String(!active.length);

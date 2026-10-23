@@ -11,7 +11,6 @@ Repository = "https://github.com/luix93/ComfyUI-AppleSilicon-Optimized"
 
 [project.optional-dependencies]
 mlx = ["mlx-vlm"]
-veda-mlx = ["mlx>=0.32.3; platform_system == 'Darwin' and platform_machine == 'arm64'"]
 # Build toolchain for the opt-in Metal matmul kernels (fp8-native patch #3 via
 # ASFP8_FP8_EXT=1, int8 W8A8 patch #17 via ASFP8_INT8_EXT=1). torch's
 # cpp_extension needs the ninja build tool; install with the [kernels] extra.

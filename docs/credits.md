@@ -42,8 +42,7 @@ inventory; keep it and the referenced license files when redistributing.
 
 - **[MotionCache](https://github.com/starsFriday/ComfyUI-MiniMax-H3-MotionCache)**
   (starsFriday, MIT), **[Spectrum H3](https://github.com/xmarre/ComfyUI-Spectrum-MiniMax-H3)**
-  (xmarre, GPL-3.0-or-later), and **[Veda-on-ComfyUI](https://github.com/veda-sparse/Veda-on-ComfyUI)**
-  (veda-sparse, MIT) — the copied/adapted cache, forecast and predictor runtimes
+  (xmarre, GPL-3.0-or-later) — the copied/adapted cache and forecast runtimes
   in `_patches/h3_runtime`, with pinned originals in `_patches/_vendor`.
   The local APIs and Apple backends retain their algorithms and attribution.
 - **[PyTorch](https://github.com/pytorch/pytorch)** (PyTorch contributors, BSD-style

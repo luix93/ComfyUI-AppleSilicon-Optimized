@@ -41,7 +41,7 @@ def test_recipe_calls_existing_runtime(monkeypatch):
         return 'patched'
     monkeypatch.setattr(unified, 'apply_h3_acceleration', apply)
     result = presets.AppleSiliconH3QuickAcceleration().apply('model',
-        'FirstBlockCache · protected', 'SOL INT8 · balanced', 'Light · experimental')
+        'FirstBlockCache · protected', 'SOL Metal · balanced', 'Light · experimental')
     assert result == ('patched',)
     assert captured['cache_reuse_threshold'] == .10
     assert captured['sparse_tau'] == .5
@@ -81,3 +81,12 @@ def test_aggressive_is_opt_in_and_bounds_the_deeper_phase():
     assert cfg['token_phase_policy'] == 'capped_steps'
     assert cfg['token_early_evaluations'] == 10
     assert cfg['token_early_step_fraction'] == .5
+
+
+@pytest.mark.parametrize("old", [k for k in presets.SPARSE_ALIASES if k.startswith(("SOL INT8 · ", "Dense INT8 v3 · "))
+                                 and k != "SOL INT8 · hybrid balanced"])
+def test_renamed_metal_presets_resolve_to_the_same_recipe(old):
+    new = presets.SPARSE_ALIASES[old]
+    assert new.startswith(("SOL Metal · ", "Dense Metal · ")) and new in presets.SPARSE_PRESETS
+    assert presets.resolve_presets("Off", old, "Off") == presets.resolve_presets("Off", new, "Off")
+    assert presets.AppleSiliconH3QuickAcceleration.VALIDATE_INPUTS(tokens="Off", sparse=old) is True

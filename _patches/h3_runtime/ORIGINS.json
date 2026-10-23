@@ -8,10 +8,6 @@
     "spectrum_h3": {
       "repository": "ComfyUI-Spectrum-MiniMax-H3",
       "commit": "5161f0457bc8c52535212d6783eee73f439e1537"
-    },
-    "veda": {
-      "repository": "https://github.com/veda-sparse/Veda-on-ComfyUI",
-      "commit": "fd59c7277ccc37ebf1a8f6823474b8c2ef2e33a0"
     }
   },
   "derived_files": {
@@ -285,86 +281,6 @@
       "source": "motion_cache.py",
       "source_sha256": "1c4b5107a84efba0eb602af38fb4526cae73f15e7b6c13220670c638588ef1a8"
     },
-    "veda/predictors.py": {
-      "package": "veda",
-      "source": "predictors.py",
-      "source_sha256": "872c3ec3b37c1604a1778082b3aa3f10afc60d61c50fa7776be9d18814dcac01"
-    },
-    "veda/LICENSE": {
-      "package": "veda",
-      "source": "LICENSE",
-      "source_sha256": "6a651fd959d3457a390cf75e4abadc30801c4e5cdad3cb3ccf7ca0a1725a789d"
-    },
-    "veda/comfy_patch.py": {
-      "package": "veda",
-      "source": "comfy_patch.py",
-      "source_sha256": "f364d8dd197a10a407929e24a1f5486b65001b7517fea89b3c0f29d47bcac973"
-    },
-    "veda/hardware.py": {
-      "package": "veda",
-      "source": "hardware.py",
-      "source_sha256": "51e12c4b5b2e116867e84233c2bcf75d01df2ddbd5a5f5f1a88d3779e06a543e"
-    },
-    "veda/settings.py": {
-      "package": "veda",
-      "source": "settings.py",
-      "source_sha256": "00b9086a69a486ca1348dd6d84da82fbc0dd19fd079ff0dd986e8ad98ac5d34f"
-    },
-    "veda/status.py": {
-      "package": "veda",
-      "source": "status.py",
-      "source_sha256": "da3533ebc97b15ec513ee1fcc3db7aad3c627f05d72255eedb5daa93fcbb1cac"
-    },
-    "veda/core/predictor.py": {
-      "package": "veda",
-      "source": "core/predictor.py",
-      "source_sha256": "668efd5e52af86752cb5ecb47044ddc0a7b55f9f0c4720c1c39a0afc1a058d4f"
-    },
-    "veda/core/bundle.py": {
-      "package": "veda",
-      "source": "core/bundle.py",
-      "source_sha256": "d62e6497339996399b64678baf6da8e8f647052bbd33a28773c9660129a99044"
-    },
-    "veda/core/h3_layout.py": {
-      "package": "veda",
-      "source": "core/h3_layout.py",
-      "source_sha256": "e8936edd23ad09b627e12371a8e061ffb68c5c1249a2c4a6b4ec3c1ee37eb360"
-    },
-    "veda/core/engine.py": {
-      "package": "veda",
-      "source": "core/engine.py",
-      "source_sha256": "c65264d964621e7646d050dc8134e3d8639485cbbc708811d8c0ac1fc46f40de"
-    },
-    "veda/core/plans.py": {
-      "package": "veda",
-      "source": "core/plans.py",
-      "source_sha256": "dfe533a21bebedbbc5569d8c83346806be01b0ea2f0e749ffe616c82520f9e10"
-    },
-    "veda/core/reference.py": {
-      "package": "veda",
-      "source": "core/reference.py",
-      "source_sha256": "610bfae2f609103d29669f0fd7d935b555f7317148f9d120e26d65cb8f4ae087"
-    },
-    "veda/core/tiling.py": {
-      "package": "veda",
-      "source": "core/tiling.py",
-      "source_sha256": "8c7be2feede3e4cda1b11849135c71bfdee1b3ab667befa98e0062b1561badda"
-    },
-    "veda/core/selection.py": {
-      "package": "veda",
-      "source": "core/selection.py",
-      "source_sha256": "4a32cbffb50a7af87d321004d63549ae654edd1a8a6f0199d09aaf1b098b2d82"
-    },
-    "veda/backends/mlx_gather.py": {
-      "package": "veda",
-      "source": "backends/mlx_gather.py",
-      "source_sha256": "281c525c1fd92d25aa5f7b9c9e0867cd7f14c62c53f414a2a1ecb9e337023552"
-    },
-    "veda/backends/base.py": {
-      "package": "veda",
-      "source": "backends/base.py",
-      "source_sha256": "6df8df683d12e348dc988a93ee0d834bd7e34fde2af4aa17353142b37db5b2df"
-    },
     "spectrum/api.py": {
       "package": "spectrum_h3",
       "source": "nodes.py",
@@ -372,12 +288,8 @@
     }
   },
   "local_files": {
-    "veda/runtime.py": "Extracted from our previously validated minimax_h3_veda.py; explicit AppleVedaEngine and cached resident projection-byte accounting.",
     "motion/__init__.py": "Internal runtime namespace.",
-    "spectrum/__init__.py": "Internal runtime namespace without upstream node registration.",
-    "veda/__init__.py": "Internal runtime namespace.",
-    "veda/backends/__init__.py": "Explicit Apple backends only; no global registry.",
-    "veda/core/__init__.py": "Internal predictor core namespace."
+    "spectrum/__init__.py": "Internal runtime namespace without upstream node registration."
   },
   "changes": {
     "motion": [
@@ -392,14 +304,6 @@
       "compatibility stack scoped to our runtime classes and initialized when applied",
       "exclude public nodes and objective-media modules",
       "isolated worker uses pack-specific namespace"
-    ],
-    "veda": [
-      "explicit Apple backend selection; remove generic resolver/public apply",
-      "retain trained predictor/parsing/tiling/selection arithmetic",
-      "dedicated bounded Apple execution class",
-      "remove generic CUDA allocator/attention loop",
-      "cache projection resident-byte count and reset at cleanup",
-      "log diagnostics through our pack"
     ]
   }
 }

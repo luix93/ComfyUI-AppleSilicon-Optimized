@@ -42,7 +42,7 @@ def test_defaults_clones_and_independent_switch():
         old=presets.resolve_presets('Off',name,'Off')
         new=presets.resolve_presets('Off',name,'Off',approximate_references=True)
         assert not old['sparse_approximate_references']
-        assert new['sparse_approximate_references']==(old.get('sparse_backend') in ('int8','int8_hybrid','dense_int8','dense_floatpv'))
+        assert new['sparse_approximate_references']==(old.get('sparse_backend') in ('int8','int8_hybrid','dense_int8','dense_floatpv','dense_int8_v2','dense_int8_v3'))
         new['sparse_approximate_references']=False
         assert old==new
 
@@ -78,8 +78,15 @@ def test_dense_shader_skips_only_explicit_protected_rows(monkeypatch):
     finally:dense._library.cache_clear()
 
 
-@pytest.mark.parametrize('backend,implementation', [('dense_int8',dense),('dense_floatpv',fpv),('int8_hybrid',dense)])
-def test_dense_dispatch_uses_ranges_but_hybrid_protected_layers_keep_prefix(monkeypatch,backend,implementation):
+@pytest.mark.parametrize('backend,implementation,env', [('dense_int8',dense,None),('dense_floatpv',fpv,None),
+                                                     ('int8_hybrid','i8',None),('int8_hybrid',dense,'v1')])
+def test_dense_dispatch_uses_ranges_but_hybrid_protected_layers_keep_prefix(monkeypatch,backend,implementation,env):
+    if implementation=='i8':
+        from _patches import int8_attention_mps as implementation
+        attribute='h3_attention'
+    else:
+        attribute='attention'
+    if env:monkeypatch.setenv('ASFP8_H3_HYBRID_DENSE',env)
     holder=sparse.H3SparseHolder(backend=backend,approximate_references=True)
     holder.protected_ranges=((0,64),(256,320))
     got=[]
@@ -87,7 +94,7 @@ def test_dense_dispatch_uses_ranges_but_hybrid_protected_layers_keep_prefix(monk
     def attention(*args,**kwargs):
         got.append(kwargs['protected_ranges'])
         return x,None,0
-    monkeypatch.setattr(implementation,'attention',attention)
+    monkeypatch.setattr(implementation,attribute,attention)
     sparse._run_dense_int8(holder,x,x,x,None)
     assert got==[None if backend=='int8_hybrid' else holder.protected_ranges]
     assert holder.clone().approximate_references

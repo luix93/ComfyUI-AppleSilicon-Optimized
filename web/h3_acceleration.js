@@ -11,37 +11,40 @@ const SOL = { sparse_attention: true, sparse_mode: "corrected", sparse_backend: 
     sparse_topk_ratio: 0, sparse_tau: 1.3, sparse_start_percent: 0.20, sparse_end_percent: 0.90,
     sparse_dense_leading_blocks: 2, sparse_min_sequence_tokens: 8192,
     sparse_dense_layers: "0,1,33,34,35", sparse_window_mode: "step_fraction" };
+const VSA = { ...OFF, sparse_attention: true, sparse_backend: "vsa_metal",
+    sparse_start_percent: 0, sparse_end_percent: 1, sparse_dense_leading_blocks: 0,
+    sparse_dense_layers: "", sparse_min_sequence_tokens: 12288,
+    vsa_keep_percent: 10, vsa_head_chunk: 4 };
 
 export const PRESETS = [
     { label: "MotionCache · recommended", settings: { ...OFF, cache_mode: "motion_cache", motion_reuse_threshold: 0.15, motion_strength: 1, motion_warmup_steps: 4, motion_max_consecutive_skips: 2, motion_start_percent: 0.15, motion_end_percent: 0.95 },
         lines: ["Closest content preservation in our tests.", "MotionCache 0.15 · first 4 evaluations fully computed.", "Included · no extra nodes."] },
     { label: "Exact · no approximation", settings: OFF,
         lines: ["Disables this node's approximate accelerators.", "Your exact Apple Silicon kernels remain active.", "Other nodes and environment options still apply."] },
+    { label: "VSA Metal · FastH3 Omni (128)", settings: { ...VSA, vsa_tile_size: 128, vsa_reference_keep_percent: 10 },
+        lines: ["FastH3 trained gates · 128-token tiles · 10% keep.", "All steps/layers eligible; reference videos routed separately.", "Experimental · cache and token reduction Off."] },
     { label: "Spectrum · protected", settings: { ...OFF, cache_mode: "spectrum_protected", spectrum_blend_weight: 0.5 },
         lines: ["Faster, with some observed motion changes.", "First 4 / last 2 evaluations fully computed.", "Included · no extra nodes."] },
     { label: "Spectrum · fast draft", settings: { ...OFF, cache_mode: "spectrum_fast", spectrum_blend_weight: 0.5 },
         lines: ["Fastest recent preset; larger appearance changes.", "First / last evaluation fully computed.", "Included · no extra nodes."] },
     { label: "FirstBlockCache · 0.20", settings: { ...OFF, ...FBC },
         lines: ["Fast residual reuse; composition can change.", "Window 0.15–0.95 · at most 2 consecutive skips.", "Built in · no extra node package."] },
-    { label: "SOL attention · 14 steps", settings: { ...OFF, ...SOL },
+    { label: "SOL Metal · fast", settings: { ...OFF, ...SOL },
         lines: ["INT8 sparse video attention · tau 1.3.", "At 20 steps: first 4 / last 2 stay dense.", "Protected layers 0, 1, 33, 34, 35 · built in."] },
-    { label: "Dense INT8 · protected", settings: { ...OFF, ...SOL, sparse_backend: "dense_int8" },
-        lines: ["All token connections retained; INT8 QK/PV changes arithmetic.", "At 20 steps: first 4 / last 2 and protected layers stay exact.", "Optional M5 kernel · no extra node package."] },
-    { label: "Dense INT8 · full draft", settings: { ...OFF, ...SOL, sparse_backend: "dense_int8",
-        sparse_start_percent: 0, sparse_end_percent: 1, sparse_dense_leading_blocks: 0,
-        sparse_dense_layers: "" },
-        lines: ["All token connections retained, INT8 video attention at every step.", "Visual references can be approximated with the separate switch.", "Draft · substantial composition changes observed at higher resolution."] },
-    { label: "Dense QK INT8 / PV BF16 · protected", settings: { ...OFF, ...SOL, sparse_backend: "dense_floatpv" },
-        lines: ["All keys retained. INT8 QK, BF16 PV with FP32 accumulation.", "First 4 / last 2 steps and protected layers stay exact at 20 steps.", "Experimental · M5 only; output video/audio can change."] },
-    { label: "Dense QK INT8 / PV BF16 · full experimental", settings: { ...OFF, ...SOL, sparse_backend: "dense_floatpv",
+    { label: "Dense Metal · protected", settings: { ...OFF, ...SOL, sparse_backend: "dense_int8_v3" },
+        lines: ["All keys retained; Kitchen-style INT8 numerics (rotation, per-tile P).", "At 20 steps: first 4 / last 2 and protected layers stay exact.", "Lowest INT8 error measured · ~8% slower attention than v2 · M5 only."] },
+    { label: "Dense Metal · balanced", settings: { ...OFF, ...SOL, sparse_backend: "dense_int8_v3",
+        sparse_start_percent: 0.10, sparse_end_percent: 0.95 },
+        lines: ["Kitchen-style INT8 between protected and full.", "At 20 steps: first 2 / last 1 and protected layers stay exact.", "17 of 20 steps quantized · M5 only."] },
+    { label: "Dense Metal · full experimental", settings: { ...OFF, ...SOL, sparse_backend: "dense_int8_v3",
         sparse_start_percent: 0, sparse_end_percent: 1, sparse_dense_leading_blocks: 0, sparse_dense_layers: "" },
-        lines: ["Dense floating-PV attention at every step and layer.", "Visual references can be approximated with the separate switch.", "Experimental · no sparse routing or cross-step reuse."] },
-    { label: "SOL INT8 · hybrid fast", settings: { ...OFF, ...SOL, sparse_backend: "int8_hybrid" },
+        lines: ["Dense Metal (INT8 v3) attention at every step and layer.", "Visual references can be approximated with the separate switch.", "Experimental · output video/audio can change."] },
+    { label: "SOL Metal · hybrid fast", settings: { ...OFF, ...SOL, sparse_backend: "int8_hybrid" },
         lines: ["SOL Fast plus dense INT8 in its protected layers.", "First 4 / last 2 sampling steps stay exact at 20 steps.", "Small additional gain; quality changes can accumulate."] },
-    { label: "SOL top-k · wide", settings: { ...OFF, ...SOL, sparse_topk_ratio: 0.15,
+    { label: "SOL Metal · top-k wide", settings: { ...OFF, ...SOL, sparse_topk_ratio: 0.15,
         sparse_start_percent: 0.10, sparse_end_percent: 0.95 },
         lines: ["15% video-block budget + global/local blocks and pooled tail.", "At 20 steps: first 2 / last 1 stay dense; protected layers.", "Experimental · background morphing reported; prefer SOL Fast for that case."] },
-    { label: "SOL top-k · all-step draft", settings: { ...OFF, ...SOL, sparse_topk_ratio: 0.10,
+    { label: "SOL Metal · top-k all-step draft", settings: { ...OFF, ...SOL, sparse_topk_ratio: 0.10,
         sparse_start_percent: 0, sparse_end_percent: 1, sparse_dense_leading_blocks: 0,
         sparse_dense_layers: "" },
         lines: ["10% video-block budget + global/local blocks and pooled tail.", "Every step and layer eligible · fastest SOL recipe.", "Draft · larger changes to composition, motion and audio possible."] },
@@ -53,22 +56,10 @@ export const PRESETS = [
         token_reduction_scale: 1, token_phase_policy: "evaluation_count", token_early_evaluations: 10, token_coarse_restore_block: 30,
         token_detail_restore_block: 20, token_start_percent: 0.10, token_end_percent: 0.95 },
         lines: ["Early/later restore at blocks 30/20.", "At 20 steps: first 2 / last 1 retain full spatial tokens.", "Experimental · between Light and Fast in reduced compute."] },
-    { label: "SOL + FirstBlockCache", settings: { ...OFF, ...SOL, ...FBC,
+    { label: "SOL Metal + FirstBlockCache", settings: { ...OFF, ...SOL, ...FBC,
         sparse_tau: 0.5, cache_reuse_threshold: 0.10, cache_start_percent: 0.25,
         cache_end_percent: 0.85, cache_max_consecutive_skips: 1 },
         lines: ["Measured hybrid · SOL tau 0.5 + cache 0.10.", "Cache window 0.25–0.85 · at most 1 skip.", "Quality changes can accumulate · built in."] },
-    { label: "Veda · protected (experimental)", settings: { ...OFF, sparse_attention: true,
-        sparse_backend: "veda_metal", veda_sparsity: 90, veda_reference_sparsity: 0,
-        veda_dense_steps: "", sparse_dense_leading_blocks: 2, sparse_dense_layers: "0,1,33,34,35",
-        sparse_start_percent: 0.20, sparse_end_percent: 0.90, sparse_window_mode: "step_fraction",
-        sparse_min_sequence_tokens: 8192 },
-        lines: ["Learned sparse attention · native Metal.", "First 4 / last 2 steps dense at 20 steps; protected layers.", "90% video sparsity · references dense · predictor required."] },
-    { label: "Veda · fast (experimental)", settings: { ...OFF, sparse_attention: true,
-        sparse_backend: "veda_metal", veda_sparsity: 90, veda_reference_sparsity: 0,
-        veda_dense_steps: "", sparse_dense_leading_blocks: 0, sparse_dense_layers: "",
-        sparse_start_percent: 0, sparse_end_percent: 1, sparse_window_mode: "step_fraction",
-        sparse_min_sequence_tokens: 8192 },
-        lines: ["All steps / layers use learned sparse attention.", "Faster; substantial color and motion changes in our test.", "90% video sparsity · references dense · predictor required."] },
 ];
 
 
@@ -103,7 +94,7 @@ export function accelerationControls(node) {
         },
         selectedPreset() {
             if (backend.some(w => connected(w.name))) return "Custom combination";
-            if (get("sparse_attention") && ["int8", "int8_hybrid", "dense_int8", "dense_floatpv"].includes(get("sparse_backend")) && get("sparse_approximate_references")) return "Custom combination";
+            if (get("sparse_attention") && ["int8", "int8_hybrid", "dense_int8", "dense_floatpv", "dense_int8_v2", "dense_int8_v3"].includes(get("sparse_backend")) && get("sparse_approximate_references")) return "Custom combination";
             return PRESETS.find(p => Object.entries(p.settings).every(([k,v]) => get(k) === v))?.label || "Custom combination";
         },
         changed() { node.graph?.change?.(); node.setDirtyCanvas?.(true, true); },
@@ -164,6 +155,21 @@ function prepare(node) {
     panel.refresh();
     requestAnimationFrame(resize);
 }
+// The four Veda inputs sat between sparse_memory_budget_gib and sparse_topk_ratio.
+// Workflows saved before their removal carry four extra positional values.
+const REMOVED_AFTER = "sparse_memory_budget_gib", REMOVED_COUNT = 4;
+export function migrateRemovedWidgets(node, info) {
+    const values = info?.widgets_values;
+    const backend = node.widgets?.filter(w => w.options?.serialize !== false) || [];
+    if (!Array.isArray(values) || values.length !== backend.length + REMOVED_COUNT) return;
+    const at = backend.findIndex(w => w.name === REMOVED_AFTER) + 1;
+    if (at <= 0) return;
+    values.splice(at, REMOVED_COUNT);
+    backend.forEach((w, i) => { w.value = values[i]; });
+    // Veda selections run SOL INT8 (the server maps them too).
+    const sparse = backend.find(w => w.name === "sparse_backend");
+    if (sparse && String(sparse.value).startsWith("veda_")) sparse.value = "int8";
+}
 const isH3 = node => (node.comfyClass || node.constructor?.comfyClass || node.type) === NODE_CLASS;
 app.registerExtension({
     name: "AppleSiliconFP8.H3AccelerationControls",
@@ -172,6 +178,7 @@ app.registerExtension({
         nodeType.prototype.__asfp8H3InputSpecs = { ...nodeData.input.required, ...nodeData.input.optional };
         const configure = nodeType.prototype.onConfigure;
         nodeType.prototype.onConfigure = function (...args) {
+            migrateRemovedWidgets(this, args[0]);
             const result = configure?.apply(this, args);
             // A loaded workflow owns its sparse values, even when switched off.
             this.properties.asfp8_h3_sparse_configured = true;

@@ -9,6 +9,7 @@ revisions fall through to their original Python forwards.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import inspect
 import sys
 from typing import Any, Callable
 
@@ -54,6 +55,10 @@ def rewrite_final_layer(
         return RewriteResult("final-rms-mod-cast", False, "FinalLayer absent")
     if getattr(cls.forward, "_asfp8_h3_graph", False):
         return RewriteResult("final-rms-mod-cast", True, "already applied")
+    if tuple(inspect.signature(cls.forward).parameters) != (
+            "self", "x", "t_emb", "video_seg", "audio_seg"):
+        return RewriteResult("final-rms-mod-cast", False,
+                             "unrecognized FinalLayer signature; retaining native PDD/schedule handling")
     required = {"adaln_proj", "norm", "video_out", "audio_out"}
     missing = required - _forward_names(cls)
     if missing:

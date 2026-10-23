@@ -8,12 +8,16 @@ that are disabled without duplicating any inference code.
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from . import minimax_h3_structure
 from . import minimax_h3cache
 from . import minimax_h3_sparse
-from . import minimax_h3_veda
+
+SPARSE_BACKENDS = ["bf16", "int8", "dense_int8", "dense_floatpv", "int8_hybrid", "vsa_metal", "dense_int8_v2", "dense_int8_v3"]
+# Removed backends; saved workflows that select one run SOL INT8 instead.
+REMOVED_BACKENDS = ("veda_metal", "veda_mlx")
 
 
 DISABLED = "disabled"
@@ -102,22 +106,35 @@ def apply_h3_acceleration(
     motion_end_percent: float = 0.95,
     spectrum_blend_weight: float = 0.5,
     sparse_memory_budget_gib: float = 0.0,
-    veda_predictor: str = minimax_h3_veda.DEFAULT_PREDICTOR,
-    veda_sparsity: float = 90.0,
-    veda_reference_sparsity: float = 0.0,
-    veda_dense_steps: str = "",
     sparse_topk_ratio: float = 0.0,
     token_start_percent: float = 0.0,
     token_end_percent: float = 1.0,
     token_phase_policy: str = "evaluation_count",
     token_early_step_fraction: float = 0.5,
     sparse_approximate_references: bool = False,
+    vsa_tile_size: int = 128,
+    vsa_keep_percent: float = 10.,
+    vsa_reference_keep_percent: float = 10.,
+    vsa_head_chunk: int = 4,
 ):
     """Attach the selected H3 mechanisms in their supported composition order."""
+    if sparse_backend in REMOVED_BACKENDS:
+        # Veda was removed; workflows saved with it run SOL INT8 instead.
+        logging.warning("[AppleSilicon-Optimized/H3] sparse backend %r was removed; using SOL INT8.", sparse_backend)
+        sparse_backend = "int8"
     if cache_mode not in CACHE_MODES:
         raise ValueError(f"unsupported H3 cache mode: {cache_mode!r}")
     if sparse_mode not in SPARSE_MODES:
         raise ValueError(f"unsupported H3 sparse mode: {sparse_mode!r}")
+    if sparse_attention and sparse_backend == "vsa_metal":
+        if cache_mode != DISABLED or token_reduction:
+            raise ValueError("FastH3 Metal VSA: set Temporal cache and Token reduction to Off")
+        from .minimax_h3_vsa import apply_vsa
+        return apply_vsa(model, tile_size=int(vsa_tile_size), keep_percent=float(vsa_keep_percent),
+            reference_keep_percent=float(vsa_reference_keep_percent), start_percent=float(sparse_start_percent),
+            end_percent=float(sparse_end_percent), min_tokens=int(sparse_min_sequence_tokens),
+            dense_layers=sparse_dense_layers, head_chunk=int(vsa_head_chunk),
+            memory_budget_gib=float(sparse_memory_budget_gib), verbose=bool(sparse_verbose))
 
     # One temporal predictor, followed by optional per-evaluation mechanisms.
     # Register it first so skipped calls never enter the token/sparse wrappers.
@@ -156,16 +173,7 @@ def apply_h3_acceleration(
             early_step_fraction=float(token_early_step_fraction),
         )
 
-    if sparse_attention and sparse_backend in ("veda_mlx", "veda_metal"):
-        patched = minimax_h3_veda.apply_veda(
-            patched, backend=sparse_backend, predictor=veda_predictor,
-            sparsity=float(veda_sparsity), reference_sparsity=float(veda_reference_sparsity),
-            dense_steps=veda_dense_steps, dense_layers=sparse_dense_layers,
-            dense_leading_blocks=int(sparse_dense_leading_blocks),
-            start_percent=float(sparse_start_percent), end_percent=float(sparse_end_percent),
-            window_mode=sparse_window_mode, min_sequence_tokens=int(sparse_min_sequence_tokens),
-            memory_budget_gib=float(sparse_memory_budget_gib), verbose=bool(sparse_verbose))
-    elif sparse_attention:
+    if sparse_attention:
         patched = minimax_h3_sparse.apply_h3_sparse(
             patched,
             mode=sparse_mode,
@@ -182,7 +190,7 @@ def apply_h3_acceleration(
             window_mode=sparse_window_mode,
             memory_budget_gib=float(sparse_memory_budget_gib),
             topk_ratio=float(sparse_topk_ratio) if sparse_backend in ("int8", "int8_hybrid") else 0.0,
-            approximate_references=bool(sparse_approximate_references) and sparse_backend in ("int8", "int8_hybrid", "dense_int8", "dense_floatpv"),
+            approximate_references=bool(sparse_approximate_references) and sparse_backend in ("int8", "int8_hybrid", *minimax_h3_sparse.DENSE_QUANT_BACKENDS),
         )
 
     return patched
@@ -270,9 +278,9 @@ class AppleSiliconH3Acceleration:
             "sparse_verbose": ("BOOLEAN", {"default": False}),
         }, "optional": {
             # Appended for compatibility with existing saved widget positions.
-            "sparse_backend": (["bf16", "int8", "dense_int8", "dense_floatpv", "int8_hybrid", "veda_metal", "veda_mlx"], {
+            "sparse_backend": (SPARSE_BACKENDS, {
                 "default": "bf16",
-                "tooltip": "BF16/INT8 select SOL. Dense INT8 keeps every token but quantizes QK/PV. Dense floating PV quantizes QK only, retaining BF16 PV with FP32 accumulation. SOL hybrid uses dense INT8 in protected layers inside its sampling window; protected steps stay exact. Veda Metal is an optional M5 Ultra tile-list backend; Veda MLX needs the optional mlx package. Both Veda modes need a predictor in models/veda. Each method approximates attention; choose one.",
+                "tooltip": "BF16/INT8 select SOL. Dense INT8 keeps every token but quantizes QK/PV. Dense floating PV quantizes QK only, retaining BF16 PV with FP32 accumulation. Dense INT8 v2 keeps every token with the general INT8 kernel: 255-level probabilities, per-channel V scales and INT32 accumulation, measured closer to exact than Dense INT8 at equal speed. Dense INT8 v3 adds Kitchen-style numerics (Q/K rotation, per-tile probabilities): about 2.4x lower error than v2 on long clips for ~8% more attention time. SOL hybrid uses dense INT8 in protected layers inside its sampling window; protected steps stay exact. Each method approximates attention; choose one.",
             }),
             "sparse_dense_layers": ("STRING", {
                 "default": "",
@@ -291,18 +299,8 @@ class AppleSiliconH3Acceleration:
             "spectrum_blend_weight": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01}),
             "sparse_memory_budget_gib": ("FLOAT", {
                 "default": 0.0, "min": 0.0, "max": 4096.0, "step": 1.0,
-                "tooltip": "SOL/Veda temporary-memory ceiling, not preallocated. 0 = Auto: up to 12.5% of RAM (32 GiB on a 256 GiB Mac), limited by free-memory headroom. Positive values set a manual GiB ceiling. Memory limits do not change attention math.",
+                "tooltip": "SOL temporary-memory ceiling, not preallocated. 0 = Auto: up to 12.5% of RAM (32 GiB on a 256 GiB Mac), limited by free-memory headroom. Positive values set a manual GiB ceiling. Memory limits do not change attention math.",
             }),
-            "veda_predictor": (minimax_h3_veda.predictor_options(), {
-                "default": minimax_h3_veda.DEFAULT_PREDICTOR,
-                "tooltip": "Veda predictor checkpoint in models/veda. Used only by Veda attention.",
-            }),
-            "veda_sparsity": ("FLOAT", {"default": 90.0, "min": 0.0, "max": 99.0, "step": 1.0,
-                "tooltip": "Percentage of generated video attention tiles skipped. Higher is faster and more approximate."}),
-            "veda_reference_sparsity": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 99.0, "step": 1.0,
-                "tooltip": "0 keeps reference images/video dense. Higher skips reference connections too."}),
-            "veda_dense_steps": ("STRING", {"default": "",
-                "tooltip": "Additional zero-based steps to keep dense, e.g. 0,1,18,19. Schedule fractions also apply."}),
             "sparse_topk_ratio": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 0.9, "step": 0.01,
                 "tooltip": "INT8 SOL only. 0 keeps existing tau routing. Otherwise tau is ignored and this fraction of video blocks is selected, plus global/local protection and pooled tail. Top-k supports up to 262,144 packed tokens (Metal sort shared-memory limit)."}),
             "token_start_percent": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.05,
@@ -315,7 +313,19 @@ class AppleSiliconH3Acceleration:
                 "tooltip": "capped_steps only: fraction of sampler steps using Early restore block, rounded down and capped by Early evaluations. Remaining steps use Later restore block."}),
             "sparse_approximate_references": ("BOOLEAN", {"default": False,
                 "tooltip": "SOL INT8 and dense quantized modes: approximate visual reference and guide attention. Text/audio query rows remain exact; dense modes retain every key connection; output identity, motion and sound can still change indirectly. Off preserves existing behavior. Requires the native H3 layout; incompatible layouts fall back to protected references."}),
+            "vsa_tile_size": ("INT", {"default": 128, "min": 64, "max": 128, "step": 64,
+                "tooltip": "VSA only. 128 matches FastH3 Omni's published recipe; 64 matches ComfyUI's VSA tile geometry."}),
+            "vsa_keep_percent": ("FLOAT", {"default": 10., "min": .5, "max": 100., "step": .5}),
+            "vsa_reference_keep_percent": ("FLOAT", {"default": 10., "min": .5, "max": 100., "step": .5}),
+            "vsa_head_chunk": ("INT", {"default": 4, "min": 1, "max": 56}),
         }}
+
+    @classmethod
+    def VALIDATE_INPUTS(cls, sparse_backend=None):
+        # Workflows saved with a removed backend stay executable (mapped to SOL INT8).
+        if sparse_backend is None or sparse_backend in SPARSE_BACKENDS or sparse_backend in REMOVED_BACKENDS:
+            return True
+        return f"Unknown H3 sparse backend: {sparse_backend!r}"
 
     def apply(self, model, **settings):
         return (apply_h3_acceleration(model, **settings),)

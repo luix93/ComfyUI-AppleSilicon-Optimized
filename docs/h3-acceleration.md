@@ -12,15 +12,25 @@ node's implementation and keeps each selected mechanism independent.
 | Selector | Recipes |
 |---|---|
 | Temporal cache | Off; MotionCache protected / balanced; FirstBlockCache protected / fast; Spectrum protected / fast draft |
-| Attention acceleration | Off; SOL INT8 conservative / balanced / fast / top-k wide / top-k all-step draft / hybrid fast; Dense INT8 protected / full draft; Dense QK INT8 / PV BF16 protected / full experimental; Veda Metal protected / fast draft |
+| Attention acceleration | Off; SOL Metal conservative / balanced / fast / hybrid fast / top-k wide / top-k all-step draft; Dense Metal protected / balanced / full experimental; VSA Metal · FastH3 Omni (128) |
 | Token reduction | Off; Protected / Balanced / Light / Fast protected / Fast aggressive (experimental) |
 
 Defaults: **MotionCache balanced**, **sparse Off**, **tokens Off**, **Detailed logs Off**, **Approximate reference / guide attention Off**.
 Use **one** Simple or advanced acceleration node between model/LoRA loader and
 guider. All three Off returns the incoming model unchanged. Other nodes or
 environment approximations still apply. Choose the advanced node when you want
-custom settings, another Veda predictor, or a manual temporary-memory ceiling.
-The Simple node uses the default Veda predictor and **Auto** memory.
+custom settings or a manual temporary-memory ceiling. The Simple node uses
+**Auto** memory.
+
+**SOL Metal** is the INT8 SOL sparse attention and **Dense Metal** the dense
+INT8 v3 attention (Kitchen-style numerics), both native Metal kernels on M5.
+Earlier names (`SOL INT8 · …`, `Dense INT8 v3 · …`) still load and run the same
+recipes. Removed attention recipes (October 23, 2026) also still load and run
+the nearest remaining recipe, with a log line: Dense INT8 v1/v2 and Dense QK
+INT8 / PV BF16 map to the matching Dense Metal recipe, SOL hybrid balanced to
+SOL Metal balanced, Veda protected / fast draft to SOL Metal fast / top-k wide,
+and VSA ComfyUI (64) to VSA FastH3 Omni (128). The advanced node keeps the Dense INT8 v1,
+v2 and floating-PV backends selectable.
 
 ### Logging
 
@@ -33,7 +43,7 @@ is not added to the native baseline. Cache/predictor/routing overhead is exclude
 so these are work estimates, not measured end-to-end speedups. Do not multiply
 estimates from combined modes.
 
-SOL and Veda report attention work omitted; token reduction reports evaluations
+SOL reports attention work omitted; token reduction reports evaluations
 reduced and token counts. These do not have a reliable wall-time speedup estimate
 without a matched dense run. Inactive routes report zero acceleration. Routine
 startup/configuration, protected-window fallback and per-step diagnostics are
@@ -50,22 +60,23 @@ acceleration log output. ComfyUI's own progress/model-loading logs remain.
 | FirstBlockCache protected | Cumulative threshold 0.10, window 0.25–0.85, max one skip, audio veto 1 |
 | FirstBlockCache fast | Cumulative threshold 0.20, window 0.15–0.95, max two skips, audio veto 1 |
 | Spectrum protected / fast draft | Existing first 4/final 2 or first/final 1 actual-evaluation recipes, blend 0.5 |
-| SOL conservative | INT8 corrected, tau 0.25, sigma window 0.50–0.85 |
-| SOL balanced / fast | INT8 corrected, tau 0.5 / 1.3, step fraction 0.20–0.90 |
-| SOL top-k wide | Fixed 15% video-block budget, step fraction 0.10–0.95; protected layers retained |
-| SOL top-k all-step draft | Fixed 10% video-block budget, every step/layer eligible |
-| Dense INT8 protected | Full INT8 QK/PV attention, step fraction 0.20–0.90; protected layers stay exact |
-| Dense INT8 full draft | Full INT8 QK/PV video-query attention in every step/layer; can substantially change composition |
-| SOL INT8 hybrid fast | SOL Fast in ordinary layers, dense INT8 in protected layers inside steps 20–90%; protected steps stay exact |
-| Veda protected | 90% video / 0% reference sparsity, step fraction 0.20–0.90 |
-| Veda fast draft | Same sparsity, every step/layer eligible |
+| SOL Metal conservative | INT8 corrected, tau 0.25, sigma window 0.50–0.85 |
+| SOL Metal balanced / fast | INT8 corrected, tau 0.5 / 1.3, step fraction 0.20–0.90 |
+| SOL Metal top-k wide | Fixed 15% video-block budget, step fraction 0.10–0.95; protected layers retained |
+| SOL Metal top-k all-step draft | Fixed 10% video-block budget, every step/layer eligible |
+| Dense Metal protected | Kitchen-style INT8 attention (Q/K rotation, per-tile P), step fraction 0.20–0.90; protected layers stay exact |
+| Dense Metal balanced | Same kernel, step fraction 0.10–0.95 |
+| Dense Metal full experimental | Same kernel in every step/layer; can change composition |
+| SOL Metal hybrid fast | SOL Fast in ordinary layers, dense INT8 in protected layers inside steps 20–90%; protected steps stay exact |
+| VSA Metal · FastH3 Omni (128) | FastH3 trained gates, 128-token tiles, 10% video keep; cache and tokens Off |
 | Token Protected | Early/later restore at 12/8, step fraction 0.20–0.90 |
 | Token Balanced | Early/later restore at 30/20, step fraction 0.10–0.95 |
 | Token Light / Fast protected | Horizontal pairs after block 3; early/later restore at 20/12 or 33/30, scale 1, first ten evaluations considered early |
 | Token Fast aggressive | Horizontal pairs after block 3; restore at 40 for the first half of sampler steps, capped at ten steps, then at 30; scale 1 |
 
-SOL conservative/balanced/fast/top-k wide and protected Veda keep layers **0,1,33,34,35** dense, with two leading
-blocks dense; SOL top-k all-step draft and Veda fast draft have neither protection. Every sparse recipe keeps
+SOL conservative/balanced/fast/top-k wide, hybrid fast and Dense Metal protected/balanced keep layers
+**0,1,33,34,35** dense, with two leading blocks dense; SOL top-k all-step draft and Dense Metal full
+experimental have neither protection. Every sparse recipe keeps
 attention dense below **8192 packed tokens**, including during token reduction.
 Thus a short clip can show no sparse gain, and a combined recipe can use sparse
 attention only outside the reduced span. These thresholds can be changed in the
@@ -86,8 +97,7 @@ stays off by default. [Current validation and comparisons](../benchmarks/m5-ultr
 node and under **Sparse attention → Settings** on the advanced node. It is
 **off by default** and applies to **SOL INT8** presets (including hybrid
 and top-k), **Dense INT8**, and **Dense QK INT8 / PV BF16**, both protected and
-full variants. It has no effect with attention Off, BF16 SOL or Veda; Veda
-retains its separate reference-sparsity control.
+full variants. It has no effect with attention Off or BF16 SOL.
 
 - **Off:** all reference/guide/text/audio queries use exact attention. In SOL,
   prefix keys remain dense and only generated-video interactions are sparsified.
@@ -151,7 +161,7 @@ bytes. More coverage can change composition, color, motion and background stabil
 Draft is a speed/quality tradeoff, not a quality-preserving replacement for Exact.
 
 **Quality feedback (October 7):** Top-k Wide caused background morphing in a
-user test where **SOL INT8 · fast** did not. Prefer Fast for that workflow; Wide
+user test where **SOL Metal · fast** did not. Prefer Fast for that workflow; Wide
 is experimental, not a recommended stability upgrade. Fast uses adaptive tau
 1.3 routing with the first four and final two of 20 steps dense. Wide changes
 both routing and the step window, so the cause is not isolated. A controlled
@@ -223,15 +233,13 @@ those indices at reduced width. If two horizontal partners have different
 modulation indices, that evaluation keeps its original tokens and logs the
 reason, avoiding a mixed conditioning timestep.
 
-Both SOL counts and Veda's packed layout now follow the actual reduced sequence
+SOL counts now follow the actual reduced sequence
 and return to full geometry when tokens expand. Conditioning's shared layout is
 never modified. Cleanup restores metadata even if a block is interrupted.
 A summary logs evaluations, actual reductions, full/reduced row counts and mask
 bypasses. Token reduction alone and the existing MotionCache/Spectrum/SOL
 combinations retain their earlier unmasked output bytes in the matched screening
-checks. Veda can now run inside the reduced span; this intentionally changes the
-previous combination, which silently used dense attention there. It is still
-experimental and was slower than token reduction alone in the short check.
+checks.
 
 [Download the single-node template](../workflows/h3_acceleration_simple.json)
 and connect its model sockets to your loader and guider.
@@ -256,16 +264,14 @@ Spectrum are included: no extra installation or workflow nodes are needed.
 | Spectrum · protected | Spectrum alone; first four and last two evaluations actual |
 | Spectrum · fast draft | Spectrum alone; first and last actual, bootstrap enabled |
 | FirstBlockCache · 0.20 | Cumulative policy, threshold 0.20, window 0.15–0.95, maximum two skips, audio veto 1 |
-| SOL attention · 14 steps | INT8 corrected, tau 1.3, step-fraction 0.20–0.90, layers 0,1,33,34,35 dense, minimum 8192 tokens |
-| SOL + FirstBlockCache | Same SOL protection at tau 0.5; cache 0.10, window 0.25–0.85, maximum one skip, audio veto 1 |
-| Veda · protected (experimental) | Native Metal learned sparse attention, 90% video / 0% reference sparsity; first four / last two of 20 steps and layers 0,1,33,34,35 dense; minimum 8192 tokens |
-| Veda · fast (experimental) | Same predictor/budgets, all steps and layers sparse; minimum 8192 tokens; larger observed appearance and motion changes |
+| SOL Metal · fast | INT8 corrected, tau 1.3, step-fraction 0.20–0.90, layers 0,1,33,34,35 dense, minimum 8192 tokens |
+| SOL Metal + FirstBlockCache | Same SOL protection at tau 0.5; cache 0.10, window 0.25–0.85, maximum one skip, audio veto 1 |
 | Custom combination | Indicates manually combined or tuned values; leaves those values intact |
 
 All approximate presets were measured at **20 steps without a Turbo LoRA**.
 They are not quality guarantees or recommendations for 4/6/8-step Turbo runs.
 Choose **one temporal cache** (MotionCache, Spectrum or FirstBlockCache), then
-optionally add SOL or Veda sparse attention, token reduction, or both. The temporal
+optionally add SOL or dense INT8 attention, token reduction, or both. The temporal
 predictor is applied first; actual model evaluations use the selected inner
 mechanisms. MotionCache and Spectrum are alternative predictors, so this node
 does not stack them with each other. Combinations compound approximation and
@@ -285,22 +291,59 @@ before applying a recipe.
 
 ## Attention acceleration
 
-### Dense INT8 and the SOL hybrid
+### FastH3 Omni VSA on Metal
 
-Three independently selectable M5 Metal recipes extend the existing attention
-choices. **Dense INT8 · protected** retains every key token, but quantizes QK and
-PV arithmetic. It keeps the first four/final two steps of a 20-step run and layers
-0,1,33,34,35 exact. **Dense INT8 · full draft** applies that quantized dense kernel
-in every step/layer; it can change scene composition substantially even when
-single-operation errors are small. **SOL INT8 · hybrid fast** retains SOL Fast
-in ordinary layers and uses dense INT8 in those protected layers only inside
-the active 14-step window. Its first four/final two steps remain exact.
+**VSA Metal · FastH3 Omni (128)** uses the checkpoint's trained compression
+gates and 128-token video cubes. It is a separate backend from SOL;
+SOL is not a substitute for this trained VSA branch. Current Metal execution
+requires M5 Ultra and the reviewed PyTorch 2.14.0/2.14.1 builds.
 
-All three retain exact packed-prefix query attention, rounded outward to a
+For an existing FastH3 Omni reference workflow, replace **Model Sparse
+Attention** with **H3 Acceleration · Simple**. Keep the model input after
+the loader/sigma-shift/dense-backend nodes and connect the output to both
+the guider and scheduler. Set:
+
+- Temporal cache: **Off**.
+- Attention acceleration: **VSA Metal · FastH3 Omni (128)**.
+- Token reduction: **Off**.
+
+Use eight Euler/simple steps, guidance 1, video/audio shifts 12/3 and a
+FastH3 checkpoint carrying `to_gate_compress` weights. Select **pytorch
+attention** in Model Attention Backend on Mac. No additional predictor is
+downloaded. [Example API workflow](../workflows/video_fasth3_omniref_metal_vsa.api.json).
+
+The recipe retains 10% of target-video tiles and, independently, 10% of each
+reference video's tiles. Image references, text and audio remain dense in the
+fine branch. The learned pooled branch is added as trained, including on
+prefix rows. Final output and audio are not identical to dense inference.
+The reference/guide approximation switch used by SOL does not control VSA.
+
+The advanced node's **VSA tile size 64** keeps ComfyUI's 64-token geometry with
+all reference conditioning dense, as a comparison. It uses floating-point Metal
+fine attention, so matching geometry does not establish byte parity with
+Kitchen's CUDA INT8 VSA implementation.
+
+[Measured record](../benchmarks/data/m5-ultra-fasth3-omniref-vsa.json).
+
+### Dense Metal and the SOL Metal hybrid
+
+**Dense Metal** retains every key token and uses the general M5 INT8 kernel
+with Kitchen-style numerics (Q/K rotation, per-tile probabilities). **Protected**
+keeps the first four/final two steps of a 20-step run and layers 0,1,33,34,35
+exact; **balanced** keeps the first two/final one; **full experimental** applies
+the kernel in every step/layer and can change scene composition even when
+single-operation errors are small. **SOL Metal · hybrid fast** uses SOL Fast
+(tau 1.3) in ordinary layers and the Dense Metal (v3) kernel in the protected
+layers, only inside the active 20–90% window; its first four/final two steps
+remain exact. `ASFP8_H3_HYBRID_DENSE=v1` restores the original v1 kernel there.
+[v1 vs v3 measurement](../benchmarks/m5-ultra-h3-hybrid-v3.md).
+
+All of them retain exact packed-prefix query attention, rounded outward to a
 64-row boundary. This protects the direct prefix calculation, not final audio
-bytes: changed video information can propagate through later layers. Every new
+bytes: changed video information can propagate through later layers. Every
 recipe is non-bit-exact, uses Auto memory, and keeps the 8192-token eligibility
 gate. Exact remains available by choosing Off; defaults have not changed.
+[Design, limits and measurements](int8-attention.md).
 
 The head-major SOL layout removes copies without changing the prior SOL's
 output bytes. `ASFP8_SOL_LAYOUT=legacy` provides a diagnostic rollback. This is
@@ -309,52 +352,20 @@ approximate relative to native attention. No token-rescue or cumulative-mass
 router is enabled by these presets; both remain screened research experiments.
 [Matched clip timings, numerical errors and per-preset temporal assessment](../benchmarks/m5-ultra-h3-kitchen-attention.md).
 
-### Dense INT8 QK with floating PV
+### Other dense backends (advanced node)
 
-Two additional opt-in M5 recipes retain every key and use **INT8 QK, BF16 P/V,
-and FP32 PV accumulation**. Hadamard rotation and K centering reduce Q/K
-quantization error. This is still approximate attention, even with INT8 model
-weights; final video and audio can change.
-
-- **Dense QK INT8 / PV BF16 · protected:** exact first four / final two steps
-  at 20 steps, plus exact layers 0,1,33,34,35. Intended for closer agreement.
-- **Dense QK INT8 / PV BF16 · full experimental:** applies in every step and
-  layer. Faster, with greater accumulated differences.
-
-Both keep exact packed-prefix query attention (rounded outward to 64 rows),
-Auto memory limits and the 8192-token eligibility gate. The native kernel
-supports BF16 `[1,56,S,128]`, at most 65,536 tokens. Unsupported or over-budget
-calls fall back to the existing dense route. Prefix protection does not make
-final audio exact: altered video information feeds later layers.
-
-Select these in **H3 Acceleration Presets → Attention acceleration**. For an
-attention-only comparison, choose cache **Off** and tokens **Off** as well.
-The advanced panel calls this method **Dense · INT8 QK / BF16 PV (M5)**.
-No environment flag is required. Exact/default dispatch and existing presets
-are unchanged. [1024×512 speed and quality measurements](../benchmarks/m5-ultra-h3-floatpv.md).
+The first Dense INT8 kernel, **Dense · INT8 v2 (M5)** and **Dense · INT8 QK /
+BF16 PV (M5)** remain selectable as the advanced node's attention method. Their
+Simple presets were removed on October 23, 2026: v3 matches or beats them on
+error at equal or better speed, and floating PV was only 1.05–1.08× faster than
+exact. Historical measurements:
+[Kitchen/dense/hybrid](../benchmarks/m5-ultra-h3-kitchen-attention.md) ·
+[floating PV at 1024×512](../benchmarks/m5-ultra-h3-floatpv.md) ·
+[INT8 v2/v3](../benchmarks/m5-ultra-int8-attention.md).
 
 ### Existing sparse implementations
 
-**Attention method = SOL · INT8** selects the M5 INT8 SOL implementation. This quantizes attention Q/K/V and approximates dropped video-token blocks with summaries; it is non-bit-exact even when the diffusion checkpoint already uses INT8 weights. **SOL · BF16** retains the older floating-point sparse implementation. Higher **Routing Tau** generally computes fewer exact token blocks, with a larger approximation budget. Veda is an additional method; selecting it does not alter the saved SOL tuning.
-
-### Veda learned sparse attention (optional)
-
-The two Veda starting points use our locally maintained derivative of the pinned [Veda-on-ComfyUI 0.2.0](https://github.com/veda-sparse/Veda-on-ComfyUI) predictor, geometry plans and tile selection. Our **Veda · Metal** backend reads selected tile lists directly in a native M5 MPP attention kernel, with fused Q/K/V layout conversion and TripPool statistics. It avoids the expanded K/V tensors and PyTorch/MLX copies used by upstream's Apple backend. Existing INT8 model kernels, exact dense attention and VAE optimizations remain active.
-
-Put [`minimax_h3_t2va_veda_8nfe_600step_preview_fp8.safetensors`](https://huggingface.co/Veda-Sparse/Minimax-H3-T2VA-Veda-8NFE-600Step-Preview) in **models/veda**, then restart ComfyUI and refresh the browser. The released checkpoint is about 275 MB; its FP8 storage is dequantized on CPU, so no FP8 Metal operation is required. The predictor has its own MiniMax Community License, separate from the MIT runtime. There is no runtime download. The native backend needs PyTorch 2.14's verified MPP sources and is currently validated on **M5 Ultra**; unsupported kernels decline to the existing dense route.
-
-Open **Sparse attention → Settings**:
-
-- **Attention method:** Veda · Metal is the tested faster route. **Veda · MLX** retains a bounded version of upstream's backend for comparison; it was slower than dense on this machine. Only the MLX route requires the optional `veda-mlx` dependency.
-- **Veda predictor:** select the installed checkpoint.
-- **Video sparsity (%):** percentage of generated-video tile connections to omit. Higher means more approximation; it is not the percentage of total inference time saved. Text/audio/global rows and keys remain dense. **Reference sparsity (%)** defaults to zero, retaining reference-video connections.
-- **Dense steps:** optional comma-separated **zero-based sampler indices** to protect, in addition to the shared window and dense layers. At 20 steps, the protected preset keeps steps 0–3 and 18–19 dense.
-- **Minimum sequence tokens:** both presets use 8192, preserving dense attention for short sequences where selection/dispatch overhead can erase the gain. Lower it to zero for short diagnostic tests.
-- **Temporary memory (GiB):** shared with SOL. Auto caps estimated workspaces using RAM and available Metal allocator headroom, and head groups are chunked to fit. It is a ceiling rather than an allocation. MLX gather chunks/cache are separately bounded; its cache limit is restored after the run.
-
-Veda and SOL are alternative attention methods. One can combine Veda with one temporal cache and/or token reduction using their independent switches. These compound approximations need separate assessment; selecting a Veda starting point initially disables cache and token reduction. Existing node defaults and saved workflow field positions are preserved. **Exact · no approximation** disables all three mechanisms. Veda at 0%/0% also re-enters our dense attention route, retaining the exact query-cache optimization. Run state and predictor GPU caches are released at sampler cleanup.
-
-Veda's preview predictor was released for eight-step Turbo H3 and specific geometry plans. Other shapes choose upstream's nearest plan and produce a warning; our standard 864×480 test uses such a plan. Full-step Veda changed color, geometry, motion and audio substantially in the 20-step reference. The protected preset stayed closer, but is still approximate. Neither is described as preserving quality based on tensor error alone. [Measured timings, numerical errors and generated comparisons](../benchmarks/m5-ultra-h3-veda.md).
+**Attention method = SOL · INT8** selects the M5 INT8 SOL implementation. This quantizes attention Q/K/V and approximates dropped video-token blocks with summaries; it is non-bit-exact even when the diffusion checkpoint already uses INT8 weights. **SOL · BF16** retains the older floating-point sparse implementation. Higher **Routing Tau** generally computes fewer exact token blocks, with a larger approximation budget.
 
 ### Temporary memory
 
@@ -468,7 +479,7 @@ and [bundled license](../LICENSE-BUNDLED).
 
 ## Internal runtime ownership
 
-MotionCache, Spectrum and Veda now execute from `_patches/h3_runtime` through
+MotionCache and Spectrum now execute from `_patches/h3_runtime` through
 our combined node's direct APIs. No upstream custom-node class is instantiated
 and no extra nodes are registered. Existing workflow IDs, field order, settings,
 cache/attention composition and measured presets are unchanged.
@@ -476,10 +487,7 @@ cache/attention composition and measured presets are unchanged.
 MotionCache retains its detector/reuse arithmetic while batching scalar GPU
 readbacks. It supports keyword inputs and guarantees restoration of sampler options if preparation raises. Spectrum
 retains forecasting, offline replay and the compatibility hook order; its unused
-objective-media node schemas/tools are omitted. Veda retains predictor weights,
-FP8 CPU dequantization, trained plans and selection arithmetic. The Apple backend
-is selected explicitly, with the existing bounded Metal/MLX path and run cleanup;
-projection-memory accounting avoids repeatedly scanning cached tensors.
+objective-media node schemas/tools are omitted.
 
 `_patches/_vendor` is retained only as a pinned comparison reference. Production
 imports do not use it. `_patches/h3_runtime/ORIGINS.json` maps derived files to

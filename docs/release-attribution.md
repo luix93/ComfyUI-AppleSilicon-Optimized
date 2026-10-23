@@ -28,8 +28,8 @@ code was adapted.
 
 Release the tracked source and its notices together. Generated `_runtime` files
 and downloaded model weights are excluded from the Git source distribution.
-Model and LoRA licenses remain separate, including Veda predictors and
-NVIDIA-derived DLSSMac weights. The bundled SeedVR conditioning asset has its own
+Model and LoRA licenses remain separate, including NVIDIA-derived DLSSMac
+weights. The bundled SeedVR conditioning asset has its own
 explicit Apache provenance. A binary release needs its actual resolved dependency
 notices and any separately applicable binary/model terms.
 

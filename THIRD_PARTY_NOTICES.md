@@ -21,7 +21,6 @@ API nor making a runtime optional removes these notices.
 | [SeedVR / ByteDance-Seed](https://github.com/ByteDance-Seed/SeedVR) | Bundled fixed positive/negative conditioning tensors | [Apache-2.0](_patches/seedvr2_assets/LICENSE), [asset provenance](_patches/seedvr2_assets/README.md) |
 | [MotionCache / starsFriday](https://github.com/starsFriday/ComfyUI-MiniMax-H3-MotionCache) | Bundled reference and maintained derivative | [MIT](_patches/h3_runtime/motion/LICENSE) |
 | [Spectrum H3 / xmarre](https://github.com/xmarre/ComfyUI-Spectrum-MiniMax-H3) | Bundled reference and maintained derivative | [GPL-3.0-or-later](_patches/h3_runtime/spectrum/LICENSE), [copyright](_patches/h3_runtime/spectrum/COPYRIGHT) |
-| [Veda / veda-sparse](https://github.com/veda-sparse/Veda-on-ComfyUI) | Bundled predictor/scoring/selection source and maintained derivative | [MIT](_patches/h3_runtime/veda/LICENSE); predictor weights separately use MiniMax Community terms |
 | [H3 latent upscaler / LBH-123-AI](https://github.com/LBH-123-AI/Comfyui_Minimax_h3_latent_Upscaler) | Adapted `h3_upscale_network_2d.py` / `3d.py` and model constants | [MIT](third_party/h3-latent-upscaler-MIT.txt) |
 | [h3.c / Salvatore Sanfilippo](https://github.com/antirez/h3.c) | Horizontal token-reduction policy adapted into our Python coordinator; C implementation is not bundled | [MIT](third_party/h3.c-MIT.txt) |
 | [Sol-Attn / NVIDIA and paper authors](https://arxiv.org/abs/2607.24027), [Sana reference](https://github.com/NVlabs/Sana/tree/sol-engine) | Adapted H3 `diag64` routing policy and centroid correction; CUDA/Triton/CuTe/FlashAttention kernels are not bundled | [Sana Apache-2.0](third_party/NVIDIA-Sana-Apache-2.0.txt), [branch licensing declaration](https://github.com/NVlabs/Sana/tree/sol-engine#-license) |
@@ -38,6 +37,17 @@ not imply that every derivative was copied from that revision; pinned source
 revisions are identified separately below or in the adjacent source headers.
 
 ## Additional adapted source and research provenance
+
+The experimental `_patches/h3_vsa_mps.py` operator implements FastVideo's
+H3 VSA tile geometry, per-region top-k and learned pooled-attention branch.
+The algorithm/source reference is `hao-ai-lab/FastVideo` revision
+`cdda1b7535fe32699335e39db82c1d4db21ceb88`,
+`fastvideo/attention/backends/video_sparse_attn_h3.py` and
+`video_sparse_attn.py`. [FastVideo's Apache-2.0 license](third_party/FastVideo-Apache-2.0.txt)
+is retained. No FastVideo CUDA/Triton kernel or checkpoint is bundled. The
+prototype reuses this pack's PyTorch/MLX-derived Metal tile-list fine-attention
+kernel; those notices remain in force. `dev/check_h3_vsa.py` checks SHA256-pinned
+external source functions without importing or bundling the upstream runtime.
 
 The optional H3 INT8 QK / BF16 PV shader in `h3_floatpv_shaders` is generated
 from CCV revision `e499321b29b5c9c31329a8efc6960d84856d3315`
@@ -80,7 +90,7 @@ to this maintainer's local prototype, not a third-party repository. The maintain
 confirmed this during the October 10 audit; the misleading source header has
 been corrected. The underlying mtlflashattn provenance remains credited.
 
-Model checkpoints, LoRAs, Veda predictors and NVIDIA-derived VSR/neural-rendering
+Model checkpoints, LoRAs and NVIDIA-derived VSR/neural-rendering
 weights are separate artifacts. This pack's source license grants no rights to
 those weights. `dev/setup_neural_rendering.py` records the separately obtained
 DLSSMac v0.1.6 package's origin and checksum; availability of that ZIP is not a
@@ -128,7 +138,7 @@ from MLX's `mlx/backend/metal/kernels/rms_norm.metal`
 and [_patches/krea2_ext/MLX_LICENSE](_patches/krea2_ext/MLX_LICENSE).
 
 The Qwen-Image 2.1 RMSNorm reduction in `_patches/qwen21_fast.metal`
-and Qwen3-VL decode normalization in `_patches/qwen3vl_decode.metal` follow the same PyTorch/MLX reduction convention as the Krea2 kernels above.
+Qwen3-VL decode normalization in `_patches/qwen3vl_decode.metal` and the Fibo 2.0 fused norms in `_patches/fibo2_fast.metal` follow the same PyTorch/MLX reduction convention as the Krea2 kernels above.
 The PyTorch and MLX license notices are included in `_patches/krea2_ext`.
 
 The tile grouping and attention loop in `_patches/ltx25_vae.py` are adapted
@@ -153,8 +163,16 @@ The BSD-3-Clause notice is preserved in each source and reproduced in
 Comfy Kitchen's full INT8 attention, chunked producer and token augmentation
 were research references; its CUDA implementation is not bundled by this pass.
 
-MotionCache, Spectrum and the Veda predictor runtime are locally maintained
-under `_patches/h3_runtime`. The combined node calls direct internal APIs;
+The opt-in general INT8 attention kernel `_patches/int8_attention_mps.metal`
+adapts the same CCV revision's matrix-fragment and online-softmax structure
+(BSD-3-Clause notice retained in the source). Its strided layouts, per-channel
+V scales, INT32 cross-tile accumulation and in-place integer rescaling are
+pack-owned. The 255-level P-128 probability encoding follows the policy of the
+pack's Kitchen-style Metal research port (Comfy Kitchen v0.2.38, Apache-2.0,
+referenced above); no Kitchen CUDA code is included.
+
+MotionCache and Spectrum are locally maintained under `_patches/h3_runtime`.
+The combined node calls direct internal APIs;
 these modules neither register upstream nodes nor import the vendor references.
 They load only when selected and perform no runtime downloads.
 
@@ -178,16 +196,6 @@ Future upstream changes must be reviewed, ported and parity-tested explicitly.
   Our direct preset API replaces public node registration. Unused objective-media
   nodes/tools are excluded; the isolated worker has a pack-specific package name.
   Full notices: `h3_runtime/spectrum/COPYRIGHT` and `h3_runtime/spectrum/LICENSE`.
-- **Veda-on-ComfyUI**, Veda contributors, v0.2.0, commit
-  `fd59c7277ccc37ebf1a8f6823474b8c2ef2e33a0`:
-  https://github.com/veda-sparse/Veda-on-ComfyUI — MIT.
-  Checkpoint dequantization, trained plans, TripPool scoring and tile selection
-  retain upstream arithmetic. Our explicit Apple runtime replaces backend
-  discovery and the public node API; bounded Metal/MLX execution lives in
-  `h3_runtime/veda/runtime.py`. Projection-memory accounting is cached and cleared
-  per run. Native Metal kernels remain in `h3_veda_mps.py`. Full license:
-  `h3_runtime/veda/LICENSE`. Predictor weights remain a separate model artifact
-  under the MiniMax H3 Community License; they are not bundled or retrained.
 
 This combined distribution includes GPL-covered Spectrum code and is distributed
 under GPL-3.0 (see `LICENSE`). Spectrum itself retains GPL-3.0-or-later terms. The project's original code retains

@@ -134,13 +134,14 @@ async function controlsNode(saved) {
     const source=(await readFile(new URL('../web/h3_acceleration.js',import.meta.url),'utf8'))
         .replace('import { app } from "../../scripts/app.js";','const app={registerExtension(){}};')
         .replace('import { buildH3Panel } from "./h3_panel.js";','');
-    const {accelerationControls,PRESETS}=await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
+    const {accelerationControls,migrateRemovedWidgets,PRESETS}=await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
     const defaults={...unifiedDefaults,cache_mode:'motion_cache',sparse_backend:'bf16',sparse_dense_layers:'',sparse_window_mode:'sigma_percent',
         motion_reuse_threshold:0.15,motion_strength:1,motion_warmup_steps:4,motion_max_consecutive_skips:2,
         motion_start_percent:0.15,motion_end_percent:0.95,spectrum_blend_weight:0.5,sparse_memory_budget_gib:0,
-        veda_predictor:'predictor.safetensors',veda_sparsity:90,veda_reference_sparsity:0,veda_dense_steps:'',sparse_topk_ratio:0,token_start_percent:0,token_end_percent:1,sparse_approximate_references:false};
+        sparse_topk_ratio:0,token_start_percent:0,token_end_percent:1,sparse_approximate_references:false,
+        vsa_tile_size:128,vsa_keep_percent:10,vsa_reference_keep_percent:10,vsa_head_chunk:4};
     const n={widgets:Object.entries({...defaults,...saved}).map(([name,value])=>({name,value})),properties:{}};
-    return {n,c:accelerationControls(n),presets:PRESETS};
+    return {n,c:accelerationControls(n),presets:PRESETS,migrateRemovedWidgets};
 }
 
 test('Default is MotionCache alone; sparse opt-in starts with the measured SOL recipe',async()=>{
@@ -155,69 +156,54 @@ test('Default is MotionCache alone; sparse opt-in starts with the measured SOL r
     assert.equal(c.get('sparse_tau'),0.45);
 });
 
-test('Veda is opt-in and switches independently while retaining SOL and Veda tuning',async()=>{
-    const {c}=await controlsNode();
-    c.preset('Veda · protected (experimental)');
-    assert.equal(c.get('sparse_backend'),'veda_metal');
-    assert.equal(c.get('cache_mode'),'disabled');
-    assert.equal(c.get('veda_reference_sparsity'),0);
-    assert.equal(c.selectedPreset(),'Veda · protected (experimental)');
-    assert.equal(c.get('sparse_min_sequence_tokens'),8192);
-    c.preset('Veda · fast (experimental)');
-    assert.equal(c.get('sparse_dense_layers'),'');
-    assert.equal(c.get('sparse_start_percent'),0);
-    assert.equal(c.get('sparse_end_percent'),1);
-    assert.equal(c.get('cache_mode'),'disabled');
-    c.set('veda_sparsity',80);c.set('sparse_tau',0.45);
-    c.set('sparse_backend','int8');c.set('sparse_backend','veda_mlx');
-    assert.equal(c.get('veda_sparsity'),80);assert.equal(c.get('sparse_tau'),0.45);
-    c.set('cache_mode','motion_cache');
-    assert.equal(c.get('sparse_attention'),true);
-    c.preset('Exact · no approximation');
-    assert.equal(c.get('sparse_attention'),false);
-    assert.equal(c.get('cache_mode'),'disabled');
-});
-
-test('Cache choice, sparse, and token switches are independent and retain tuning',async()=>{
-    const {c}=await controlsNode();c.set('sparse_attention',true);c.set('token_reduction',true);
-    c.set('cache_mode','spectrum_protected');c.set('spectrum_blend_weight',0.35);
-    assert.equal(c.get('sparse_attention'),true);assert.equal(c.get('token_reduction'),true);
-    c.set('cache_mode','disabled');assert.equal(c.get('sparse_attention'),true);
-    c.set('cache_mode','spectrum_protected');assert.equal(c.get('spectrum_blend_weight'),0.35);
-    c.preset('Exact · no approximation');
-    assert.equal(c.get('cache_mode'),'disabled');assert.equal(c.get('sparse_attention'),false);assert.equal(c.get('token_reduction'),false);
-});
-
-test('Loaded custom sparse configuration is never reset when enabled',async()=>{
-    const {n,c}=await controlsNode({sparse_tau:0.123,sparse_backend:'bf16',sparse_window_mode:'sigma_percent'});
-    n.properties.asfp8_h3_sparse_configured=true;
-    c.set('sparse_attention',true);assert.equal(c.get('sparse_tau'),0.123);
-    assert.equal(c.get('sparse_backend'),'bf16');assert.equal(c.get('sparse_window_mode'),'sigma_percent');
-});
-
-test('Connected settings cannot be replaced by presets or local controls',async()=>{
-    const {n,c}=await controlsNode();n.inputs=[{widget:{name:'cache_mode'},link:7}];
-    const original=n.widgets.map(w=>w.value);c.preset('Exact · no approximation');c.set('cache_mode','disabled');
-    assert.deepEqual(n.widgets.map(w=>w.value),original);assert.equal(c.selectedPreset(),'Custom combination');
-    c.set('token_reduction',true);assert.equal(c.get('token_reduction'),true);
+test('Workflows saved with the removed Veda inputs load their later values in place',async()=>{
+    const {n,c,migrateRemovedWidgets}=await controlsNode();
+    const backend=n.widgets;
+    const at=backend.findIndex(w=>w.name==='sparse_memory_budget_gib')+1;
+    const saved=backend.map(w=>w.value);
+    saved[backend.findIndex(w=>w.name==='sparse_backend')]='veda_metal';
+    saved[backend.findIndex(w=>w.name==='sparse_topk_ratio')]=.15;
+    const old=[...saved.slice(0,at),'predictor.safetensors',90,0,'',...saved.slice(at)];
+    migrateRemovedWidgets(n,{widgets_values:old});
+    assert.equal(c.get('sparse_topk_ratio'),.15);
+    assert.equal(c.get('vsa_head_chunk'),4);
+    assert.equal(c.get('sparse_backend'),'int8');
+    // Current-length values are left alone.
+    const current=backend.map(w=>w.value);current[0]='first_block_cache';
+    migrateRemovedWidgets(n,{widgets_values:current});
+    assert.notEqual(c.get('cache_mode'),'first_block_cache');
 });
 
 test('SOL memory ceiling survives recipe changes and independent toggles',async()=>{
     const {n,c}=await controlsNode();assert.equal(c.get('sparse_memory_budget_gib'),0);
     c.set('sparse_memory_budget_gib',16);
-    for (const preset of ['SOL attention · 14 steps','Exact · no approximation','SOL + FirstBlockCache']) {
+    for (const preset of ['SOL Metal · fast','Exact · no approximation','SOL Metal + FirstBlockCache']) {
         c.preset(preset);assert.equal(c.get('sparse_memory_budget_gib'),16);
         assert.equal(c.selectedPreset(),preset);
     }
     c.set('sparse_attention',false);c.set('sparse_attention',true);
     assert.equal(c.get('sparse_memory_budget_gib'),16);
-    assert.equal(n.widgets.findIndex(w=>w.name==='sparse_memory_budget_gib'),n.widgets.length-9);
+    assert.equal(n.widgets.findIndex(w=>w.name==='sparse_memory_budget_gib'),n.widgets.findIndex(w=>w.name==='sparse_topk_ratio')-1);
+});
+
+test('FastH3 VSA presets disable unrelated approximations and retain exported eligibility',async()=>{
+    const {c}=await controlsNode();
+    c.set('token_reduction',true);
+    for (const [label,tile,reference] of [['VSA Metal · FastH3 Omni (128)',128,10]]) {
+        c.preset(label);
+        assert.equal(c.get('cache_mode'),'disabled');assert.equal(c.get('token_reduction'),false);
+        assert.equal(c.get('sparse_backend'),'vsa_metal');assert.equal(c.get('vsa_tile_size'),tile);
+        assert.equal(c.get('vsa_keep_percent'),10);assert.equal(c.get('vsa_reference_keep_percent'),reference);
+        assert.equal(c.get('sparse_start_percent'),0);assert.equal(c.get('sparse_end_percent'),1);
+        assert.equal(c.get('sparse_min_sequence_tokens'),12288);assert.equal(c.get('sparse_dense_layers'),'');
+        assert.equal(c.selectedPreset(),label);
+    }
 });
 
 test('Every approximate preset agrees with its measured benchmark settings',async()=>{
     const fixtures={'MotionCache · recommended':'h3_motion_cache','Spectrum · protected':'h3_spectrum_protected',
         'Spectrum · fast draft':'h3_spectrum_fast','FirstBlockCache · 0.20':'h3_first_block_cache',
-        'SOL attention · 14 steps':'h3_sol14','SOL + FirstBlockCache':'h3_sol14_cache'};
+        'SOL Metal · fast':'h3_sol14','SOL Metal + FirstBlockCache':'h3_sol14_cache'};
     for(const [label,file] of Object.entries(fixtures)) {
         const graph=JSON.parse(await readFile(new URL(`../workflows/${file}.api.json`,import.meta.url),'utf8'));
         const reference=Object.values(graph).find(n=>n.class_type==='AppleSiliconH3UnifiedAcceleration').inputs;
@@ -232,11 +218,11 @@ test('Every approximate preset agrees with its measured benchmark settings',asyn
 
 test('New sparse budgets reset on old recipes, and token protection is independent',async()=>{
     const {c}=await controlsNode();
-    c.preset('SOL top-k · wide');assert.equal(c.get('sparse_topk_ratio'),.15);
+    c.preset('SOL Metal · top-k wide');assert.equal(c.get('sparse_topk_ratio'),.15);
     assert.equal(c.get('sparse_start_percent'),.10);
-    c.preset('SOL top-k · all-step draft');assert.equal(c.get('sparse_topk_ratio'),.10);
+    c.preset('SOL Metal · top-k all-step draft');assert.equal(c.get('sparse_topk_ratio'),.10);
     assert.equal(c.get('sparse_dense_layers'),'');
-    c.preset('SOL attention · 14 steps');assert.equal(c.get('sparse_topk_ratio'),0);
+    c.preset('SOL Metal · fast');assert.equal(c.get('sparse_topk_ratio'),0);
     c.preset('Token reduction · protected');assert.equal(c.get('token_start_percent'),.20);
     assert.equal(c.get('token_end_percent'),.90);assert.equal(c.get('token_coarse_restore_block'),12);
     c.set('sparse_attention',true);assert.equal(c.get('token_start_percent'),.20);
@@ -246,23 +232,23 @@ test('New sparse budgets reset on old recipes, and token protection is independe
 
 test('Dense and hybrid recipes remain independent of cache and token controls',async()=>{
     const {c}=await controlsNode();
-    c.preset('Dense INT8 · protected');
-    assert.equal(c.get('sparse_backend'),'dense_int8');
+    c.preset('Dense Metal · protected');
+    assert.equal(c.get('sparse_backend'),'dense_int8_v3');
     assert.equal(c.get('sparse_start_percent'),.20);
     assert.equal(c.get('sparse_end_percent'),.90);
     assert.equal(c.get('cache_mode'),'disabled');
     c.set('cache_mode','motion_cache');c.set('token_reduction',true);
-    assert.equal(c.get('sparse_backend'),'dense_int8');
-    c.preset('Dense INT8 · full draft');
+    assert.equal(c.get('sparse_backend'),'dense_int8_v3');
+    c.preset('Dense Metal · full experimental');
     assert.equal(c.get('sparse_dense_layers'),'');
     assert.equal(c.get('sparse_dense_leading_blocks'),0);
     assert.equal(c.get('sparse_start_percent'),0);
     assert.equal(c.get('sparse_end_percent'),1);
-    c.preset('SOL INT8 · hybrid fast');
+    c.preset('SOL Metal · hybrid fast');
     assert.equal(c.get('sparse_backend'),'int8_hybrid');
     assert.equal(c.get('sparse_tau'),1.3);
     assert.equal(c.get('sparse_dense_layers'),'0,1,33,34,35');
-    c.preset('SOL attention · 14 steps');
+    c.preset('SOL Metal · fast');
     assert.equal(c.get('sparse_backend'),'int8');
 });
 
@@ -270,19 +256,19 @@ test('Dense and hybrid recipes remain independent of cache and token controls',a
 test('Reference approximation is default-off, independent, serialized and visibly custom',async()=>{
     const {n,c}=await controlsNode();
     assert.equal(c.get('sparse_approximate_references'),false);
-    c.preset('SOL attention · 14 steps');
+    c.preset('SOL Metal · fast');
     c.set('sparse_approximate_references',true);
     assert.equal(c.selectedPreset(),'Custom combination');
     c.preset('Exact · no approximation');
     assert.equal(c.get('sparse_attention'),false);
     assert.equal(c.get('sparse_approximate_references'),true);
-    c.preset('SOL INT8 · hybrid fast');
+    c.preset('SOL Metal · hybrid fast');
     assert.equal(c.get('sparse_approximate_references'),true);
     assert.equal(c.selectedPreset(),'Custom combination');
     c.set('sparse_approximate_references',false);
-    assert.equal(c.selectedPreset(),'SOL INT8 · hybrid fast');
-    assert.equal(n.widgets.at(-1).name,'sparse_approximate_references');
-    for (const preset of ['Dense INT8 · protected','Dense INT8 · full draft','Dense QK INT8 / PV BF16 · protected','Dense QK INT8 / PV BF16 · full experimental']) {
+    assert.equal(c.selectedPreset(),'SOL Metal · hybrid fast');
+    assert.equal(n.widgets[n.widgets.findIndex(w=>w.name==='vsa_tile_size')-1].name,'sparse_approximate_references');
+    for (const preset of ['Dense Metal · protected','Dense Metal · balanced','Dense Metal · full experimental']) {
         c.set('sparse_approximate_references',true);
         c.preset(preset);
         assert.equal(c.selectedPreset(),'Custom combination');

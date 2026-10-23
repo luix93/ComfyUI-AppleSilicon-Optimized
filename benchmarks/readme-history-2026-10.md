@@ -148,7 +148,7 @@ substantially; protected retained this reference more closely. Existing
 defaults and exact/SOL/cache routes remain available. The two optional Veda
 starting points live in the existing H3 acceleration node and require the
 released predictor in `models/veda`. Short sequences stay dense by default.
-[Results, errors and generated comparisons](../benchmarks/m5-ultra-h3-veda.md)
+(The Veda report was removed with the Veda backend on 2026-10-23.)
 · [Setup and controls](../docs/h3-acceleration.md#veda-learned-sparse-attention-optional).
 The stock/optimized table above retains its previously published measurements; these
 are additional optional-mode comparisons, not a fresh stock baseline.

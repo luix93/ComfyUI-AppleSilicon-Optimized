@@ -172,7 +172,6 @@ def _layout():
 
 
 def test_reduced_packed_layout_is_coherent_and_original_is_unchanged():
-    from _patches.h3_runtime.veda.core.h3_layout import describe
     full = _layout()
     reduced = structure._reduced_layout(full, 4, 1, 1, 6)
     assert reduced is not full and full.seq_len == 10
@@ -180,8 +179,6 @@ def test_reduced_packed_layout_is_coherent_and_original_is_unchanged():
     assert reduced.seq_len == 7 and reduced.segments[-1] == (4,7,'video')
     assert reduced.position_ids.shape == (7,3)
     assert torch.equal(reduced.img_pos, torch.arange(4,7))
-    spec = describe(reduced)
-    assert spec.target.grid == (1,1,3) and spec.seq_len == 7
 
 
 def test_exception_cleanup_restores_layout_and_sparse_metadata():
@@ -222,7 +219,6 @@ def test_empty_text_segment_is_legal_native_layout():
 
 def test_reduced_layout_preserves_reference_positions_and_modality_masks():
     from types import SimpleNamespace
-    from _patches.h3_runtime.veda.core.h3_layout import describe
     positions=torch.zeros(12,3,dtype=torch.float64)
     positions[2:4,2]=torch.tensor([0.,1.])
     full=SimpleNamespace(seq_len=12, signature=(2,1,2,12,1),
@@ -233,6 +229,4 @@ def test_reduced_layout_preserves_reference_positions_and_modality_masks():
     assert torch.equal(reduced.position_ids[:6],full.position_ids[:6])
     assert torch.equal(reduced.img_pos,torch.tensor([2,3,6,7,8]))
     assert torch.equal(reduced.img_update,torch.tensor([False,False,True,True,True]))
-    spec=describe(reduced)
-    assert spec.references[0].grid == (1,1,2)
-    assert spec.target.grid == (1,1,3)
+    assert reduced.segments[-1] == (6,9,'video')

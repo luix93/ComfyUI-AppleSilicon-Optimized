@@ -4,7 +4,7 @@ Detailed controls, combination experiments and migration notes moved from
 the README. For the current compact-node setup and presets, start with
 [H3 acceleration](h3-acceleration.md). Timings retain their original stack
 and baseline; historical external-node tests do not make those nodes required
-by the bundled MotionCache/Spectrum/Veda runtime.
+by the bundled MotionCache/Spectrum runtime.
 
 ## MiniMax H3 workflow nodes and approximate modes
 
@@ -53,8 +53,8 @@ that boundary.
 
 - **H3 Acceleration · Simple.** A small native-widget node for Nodes 2.0 and
   the classic canvas. Choose **Temporal cache**, **Attention acceleration**, and
-  **Token reduction** independently. The existing cache, SOL, Veda and token
-  recipes remain, alongside Dense INT8 Protected / Full Draft and SOL Hybrid Fast. Defaults are
+  **Token reduction** independently. The existing cache, SOL and token
+  recipes remain, alongside Dense INT8 v3 and SOL Hybrid Fast. Defaults are
   **MotionCache · balanced**, sparse **Off**, tokens **Off**. **Detailed logs** defaults off; each active mechanism prints
   a compact final work/speedup summary. Set all three selectors to Off for pass-through.
   Connect one of the Simple/advanced nodes between the H3 model/LoRA loader
@@ -93,8 +93,8 @@ that boundary.
   still apply.
 
   Other one-click recipes are **Spectrum · protected**, **Spectrum · fast
-  draft**, **FirstBlockCache · 0.20**, **SOL attention · 14 steps**, and
-  **SOL + FirstBlockCache**. Each writes the measured recipe, including the
+  draft**, **FirstBlockCache · 0.20**, **SOL Metal · fast**, and
+  **SOL Metal + FirstBlockCache**. Each writes the measured recipe, including the
   SOL INT8 backend, protected layers, step-fraction schedule and token guard;
   the hybrid uses its own lower cache threshold and one-skip limit. These are
   20-step, non-Turbo measurements. See [controls and bundled-source licenses](../docs/h3-acceleration.md)
@@ -230,7 +230,7 @@ that boundary.
   target-video token reduction. The Simple node adds **Light** and **Fast**
   recipes; the old 40/30-block policy is Fast. Masked video now retains
   per-token modulation, and differing mask partners use unreduced tokens with
-  a logged reason. SOL and Veda packed metadata is reduced/restored together,
+  a logged reason. SOL packed metadata is reduced/restored together,
   including on interruption. See the [validation report](../benchmarks/m5-ultra-h3-presets.md).
 
   - `token_reduction` runs blocks 0–3 at full sequence length, horizontally

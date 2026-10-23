@@ -9,79 +9,10 @@ from pathlib import Path
 import pytest
 import torch
 
-from _patches.h3_runtime.veda.core import tiling, predictor, selection, bundle
-from _patches._vendor.veda.core import tiling as original_tiling
-from _patches._vendor.veda.core import predictor as original_predictor
-from _patches._vendor.veda.core import selection as original_selection
-from _patches._vendor.veda.core import bundle as original_bundle
-
 
 def assert_bytes(a, b):
     assert a.shape == b.shape and a.dtype == b.dtype
     assert torch.equal(a.contiguous().view(torch.uint8), b.contiguous().view(torch.uint8))
-
-
-@pytest.mark.parametrize('device', ['cpu', 'mps'])
-@pytest.mark.parametrize('references', [False, True])
-def test_veda_scores_selection_and_scatter_match_pinned_runtime(device, references):
-    if device == 'mps' and not torch.backends.mps.is_available():
-        pytest.skip('MPS unavailable')
-    generator = torch.Generator().manual_seed(3817)
-    layouts = []
-    for mod in (tiling, original_tiling):
-        spans = [mod.TiledSpan(35, (5, 5, 5), mod.TileShape(4, 4, 8))]
-        if references:
-            spans.insert(0, mod.TiledSpan(0, (1, 3, 3), mod.TileShape(1, 8, 16)))
-        layouts.append(mod.build_tile_layout(spans, 180, device))
-    x = torch.randn(3, 180, 3, 128, generator=generator).to(device, torch.bfloat16)
-    hs = torch.tensor([2, 0], device=device)
-    qkv = [[mod.gather_tiles(t, layout, hs) for t in x]
-           for mod, layout in zip((tiling, original_tiling), layouts)]
-    for new, old in zip(*qkv):
-        assert_bytes(new, old)
-    projections = torch.randn(2, 2, 384, 128, generator=generator).to(device)
-    logits = []
-    selected = []
-    for pool, sel, layout, values in zip((predictor, original_predictor),
-            (selection, original_selection), layouts, qkv):
-        q, k, v = values
-        logits.append(pool.tile_logits(pool.pool_video_tiles(q, layout),
-            pool.pool_video_tiles(k, layout), *projections))
-        budgets = sel.column_blocks(layout, sel.Budget.sparsity(80), sel.Budget.sparsity(50))
-        selected.append(sel.select(logits[-1], layout, budgets))
-    assert_bytes(*logits)
-    for new, old in zip(*selected):
-        assert_bytes(new, old)
-    masks = [mod.block_mask(*chosen, layout) for mod, chosen, layout in
-             zip((selection, original_selection), selected, layouts)]
-    assert_bytes(*masks)
-    outputs = []
-    for mod, layout, values in zip((tiling, original_tiling), layouts, qkv):
-        out = torch.zeros(181, 3, 128, dtype=x.dtype, device=device)
-        mod.scatter_tiles_(out, values[2], layout, hs)
-        outputs.append(out)
-    assert_bytes(*outputs)
-
-
-def test_veda_fp8_checkpoint_dequantization_is_unchanged(tmp_path):
-    from safetensors.torch import save_file
-    # One layer/head with a valid exported geometry plan.
-    plan = {'geometry': 'test', 'grid': [1, 2, 2], 'shapes': ['4x4x8'], 'head_shape': [[0]]}
-    metadata = {'format': bundle.FORMAT, 'num_layers': '1', 'num_heads': '1',
-                'head_dim': '4', 'keep_ratio': '0.1', 'dtype': 'float8_e4m3fn',
-                'plans': json.dumps({'test': plan})}
-    gen = torch.Generator().manual_seed(118)
-    tensors = {}
-    for name in ('proj_q', 'proj_k'):
-        key = 'layers.0.' + name
-        tensors[key] = torch.randn(1, 12, 4, generator=gen).to(torch.float8_e4m3fn)
-        tensors[key + '.__scale'] = torch.tensor([0.017])
-    path = tmp_path / 'predictor.safetensors'
-    save_file(tensors, str(path), metadata=metadata)
-    new, old = bundle.load_bundle(str(path)), original_bundle.load_bundle(str(path))
-    assert new.metadata == old.metadata
-    for a, b in zip(new.proj_q + new.proj_k, old.proj_q + old.proj_k):
-        assert_bytes(a, b)
 
 
 def _motion_modules():
@@ -212,7 +143,7 @@ def test_owned_runtime_has_no_vendor_import_or_public_node_registration():
     root = Path(__file__).parents[1] / '_patches'
     import ast
     paths = list((root / 'h3_runtime').rglob('*.py'))
-    paths += [root / name for name in ('minimax_h3_unified.py', 'minimax_h3_veda.py', 'h3_veda_mps.py')]
+    paths += [root / name for name in ('minimax_h3_unified.py', 'h3_tile_attention_mps.py', 'h3_vsa_mps.py')]
     for path in paths:
         text = path.read_text()
         assert '._vendor' not in text, path
@@ -223,71 +154,3 @@ def test_owned_runtime_has_no_vendor_import_or_public_node_registration():
     for entry in provenance['derived_files'].values():
         reference = root / '_vendor' / entry['package'] / entry['source']
         assert hashlib.sha256(reference.read_bytes()).hexdigest() == entry['source_sha256']
-
-
-def test_veda_projection_cache_reuses_weights_and_clears_at_run_end():
-    from _patches.h3_runtime.veda.runtime import AppleVedaEngine
-    gen = torch.Generator().manual_seed(443)
-    weights = [torch.randn(2, 384, 128, generator=gen).to(torch.bfloat16) for _ in range(2)]
-    model = types.SimpleNamespace(proj_q=weights, proj_k=weights)
-    runtime = AppleVedaEngine(model, selection.Budget.sparsity(90), selection.Budget.sparsity(0),
-        None, torch.device('cpu'), route='veda_metal', memory_budget_gib=1)
-    first = runtime._weights(0)
-    assert runtime._weights(0) is first
-    for value in first:
-        assert_bytes(value, weights[0].float())
-    assert runtime.projection_bytes == 2 * weights[0].numel() * 4
-    runtime._weights(1)
-    assert runtime.projection_bytes == 4 * weights[0].numel() * 4
-    runtime.reset()
-    assert runtime.projections == {} and runtime.projection_bytes == 0
-    assert runtime._tile_layouts == {}
-
-
-def test_bounded_mlx_restores_the_original_cache_limit():
-    from _patches.h3_runtime.veda.runtime import BoundedMlxBackend
-    class Mx:
-        limit = 1234
-        clears = 0
-        def set_cache_limit(self, value):
-            old, self.limit = self.limit, value
-            return old
-        def clear_cache(self): self.clears += 1
-    mx = Mx()
-    backend = BoundedMlxBackend(mx)
-    assert backend.chunk_bytes == 128 * 2**20
-    assert mx.limit == 256 * 2**20
-    backend.close()
-    assert mx.limit == 1234 and mx.clears == 2
-
-
-@pytest.mark.parametrize('interrupt', [False, True])
-def test_veda_runtime_dense_fallback_and_interrupt_propagation(interrupt):
-    pytest.importorskip('comfy.patcher_extension')
-    from _patches.h3_runtime.veda import comfy_patch, settings
-    config = settings.VedaSettings(generated=selection.Budget.sparsity(90),
-                                   reference=selection.Budget.sparsity(0))
-    model = types.SimpleNamespace(num_layers=1, num_heads=2, head_dim=128)
-    class InterruptProcessingException(Exception): pass
-    calls = []
-    class Broken(comfy_patch.VedaPatch):
-        def _sparse(self, *args):
-            calls.append('sparse')
-            if interrupt: raise InterruptProcessingException()
-            raise RuntimeError('workspace unavailable')
-    patch = Broken(model, config, None)
-    def dense(func, q, k, v, heads, **kwargs):
-        calls.append('dense'); return torch.ones_like(q)
-    override = patch.make_override(dense)
-    q = torch.zeros(1, 2, 256, 128)
-    options = {'block_index': 0, 'minimax_h3_layout': types.SimpleNamespace(seq_len=256)}
-    def invoke():
-        return override(None, q, q, q, 2, skip_reshape=True, transformer_options=options)
-    if interrupt:
-        with pytest.raises(InterruptProcessingException): invoke()
-        assert patch.run.failed is None and calls == ['sparse']
-    else:
-        assert_bytes(invoke(), torch.ones_like(q))
-        assert_bytes(invoke(), torch.ones_like(q))
-        assert calls == ['sparse', 'dense', 'dense']
-        assert 'workspace unavailable' in patch.run.failed
