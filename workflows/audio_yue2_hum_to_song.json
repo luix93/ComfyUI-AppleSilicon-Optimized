@@ -1,0 +1,351 @@
+{
+  "id": "cf1fcf4c-8458-42a6-9a3d-e422749da0ab",
+  "revision": 0,
+  "last_node_id": 6,
+  "last_link_id": 6,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "FSAudioAdapterLoader",
+      "title": "1 \u00b7 Hum melody and phrasing",
+      "pos": [
+        20,
+        560
+      ],
+      "size": [
+        440,
+        190
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "adapters",
+          "type": "FS_AUDIO_ADAPTERS",
+          "link": null,
+          "shape": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "adapters",
+          "type": "FS_AUDIO_ADAPTERS",
+          "links": [
+            1
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "FSAudioAdapterLoader",
+        "cnr_id": "comfyui-fs_audio_suite",
+        "ver": "26fe2e91d20ebf3531cf053c0c654fd3b849e5de"
+      },
+      "widgets_values": [
+        "yue2/humsong_yue2_adapter_v1_comfy.safetensors",
+        1.0,
+        "continue from hum",
+        0.0
+      ],
+      "color": "#183a3c",
+      "bgcolor": "#15282d"
+    },
+    {
+      "id": 2,
+      "type": "FSAudioModelLoader",
+      "title": "2 \u00b7 YuE2 INT8 + SheetSage2",
+      "pos": [
+        520,
+        560
+      ],
+      "size": [
+        420,
+        150
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "loras",
+          "type": "FS_AUDIO_LORAS",
+          "link": null,
+          "shape": 7
+        },
+        {
+          "name": "adapters",
+          "type": "FS_AUDIO_ADAPTERS",
+          "link": 1,
+          "shape": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "pipe",
+          "type": "FS_AUDIO_PIPE",
+          "links": [
+            2
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "FSAudioModelLoader",
+        "cnr_id": "comfyui-fs_audio_suite",
+        "ver": "26fe2e91d20ebf3531cf053c0c654fd3b849e5de"
+      },
+      "widgets_values": [
+        "yue2/yue2_3b_int8_convrot.safetensors",
+        "sheetsage2_bf16.safetensors"
+      ],
+      "color": "#183a3c",
+      "bgcolor": "#15282d"
+    },
+    {
+      "id": 3,
+      "type": "HumInput",
+      "title": "3 \u00b7 Record or upload YOUR hum",
+      "pos": [
+        20,
+        20
+      ],
+      "size": [
+        440,
+        450
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "audio_conditioning",
+          "type": "AUDIO",
+          "links": [
+            3
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "HumInput",
+        "cnr_id": "comfyui-fs_audio_suite",
+        "ver": "26fe2e91d20ebf3531cf053c0c654fd3b849e5de"
+      },
+      "widgets_values": [
+        "(record or upload a hum)",
+        0.0,
+        30.0
+      ],
+      "color": "#183a3c",
+      "bgcolor": "#15282d"
+    },
+    {
+      "id": 4,
+      "type": "FSAudioSampler",
+      "title": "4 \u00b7 Compose and render",
+      "pos": [
+        1000,
+        20
+      ],
+      "size": [
+        540,
+        900
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "pipe",
+          "type": "FS_AUDIO_PIPE",
+          "link": 2
+        },
+        {
+          "name": "audio_conditioning",
+          "type": "AUDIO",
+          "link": 3,
+          "shape": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "song",
+          "type": "AUDIO",
+          "links": [
+            4
+          ]
+        },
+        {
+          "name": "score",
+          "type": "STRING",
+          "links": [
+            5
+          ]
+        },
+        {
+          "name": "info",
+          "type": "STRING",
+          "links": [
+            6
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "FSAudioSampler",
+        "cnr_id": "comfyui-fs_audio_suite",
+        "ver": "26fe2e91d20ebf3531cf053c0c654fd3b849e5de"
+      },
+      "widgets_values": [
+        "Melodic heavy rock, soaring lead vocal, distorted rhythm guitars, melodic lead guitar, deep electric bass, powerful live drums, wide chorus, clear dynamic arrangement, 96 BPM.",
+        "[Intro]\n\n[Verse 1]\nA quiet spark beneath the rain\nWe find the road and start again\nThe city fades behind the hill\nI hear your melody there still\n\n[Chorus]\nCarry the fire into the night\nOver the mountains into the light\nOne little song and a sky full of stars\nWe follow the sound wherever we are\n\n[Outro]\n",
+        102419,
+        "fixed",
+        120.0,
+        "full",
+        32,
+        "dpm_2",
+        "sgm_uniform",
+        1.0,
+        0.7,
+        1.0,
+        1.2
+      ],
+      "color": "#183a3c",
+      "bgcolor": "#15282d"
+    },
+    {
+      "id": 5,
+      "type": "FSAudioOutput",
+      "title": "5 \u00b7 Listen, save and inspect score",
+      "pos": [
+        1600,
+        20
+      ],
+      "size": [
+        460,
+        550
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "song",
+          "type": "AUDIO",
+          "link": 4
+        },
+        {
+          "name": "score",
+          "type": "STRING",
+          "link": 5,
+          "shape": 7
+        },
+        {
+          "name": "info",
+          "type": "STRING",
+          "link": 6,
+          "shape": 7
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "FSAudioOutput",
+        "cnr_id": "comfyui-fs_audio_suite",
+        "ver": "26fe2e91d20ebf3531cf053c0c654fd3b849e5de"
+      },
+      "widgets_values": [
+        "audio/YuE2_HumToSong"
+      ],
+      "color": "#183a3c",
+      "bgcolor": "#15282d"
+    },
+    {
+      "id": 6,
+      "type": "Note",
+      "title": "Hum-to-Song \u00b7 quick start",
+      "pos": [
+        520,
+        20
+      ],
+      "size": [
+        420,
+        450
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "properties": {},
+      "widgets_values": [
+        "START HERE\n1. Upload or record 10\u201330 seconds of humming in the audio input. No recording is preselected.\n2. Edit Style and Lyrics. The sample lyrics are original placeholders.\n3. Queue. Output saves FLAC, ABC score and settings under audio/YuE2_HumToSong.\n\nDefaults: 32 steps \u00b7 dpm_2 / sgm_uniform \u00b7 CFG 1 \u00b7 hum influence 1 \u00b7 120 s maximum. The song can end earlier.\n\nThe hum adapter already includes its real-audio decoder LoRA. Do not add the old NAR adapter on top. This separate workflow leaves the instrumental workflow untouched.\n\nRequires FS Audio Suite (installed). Restart ComfyUI and refresh after installation. Models: YuE2 INT8, SheetSage2 and humsong adapter. No auto-download nodes.\n\nHum/voice input and listening quality have not been assessed with user recordings."
+      ],
+      "color": "#23415b",
+      "bgcolor": "#1b2a3a"
+    }
+  ],
+  "links": [
+    [
+      1,
+      1,
+      0,
+      2,
+      1,
+      "FS_AUDIO_ADAPTERS"
+    ],
+    [
+      2,
+      2,
+      0,
+      4,
+      0,
+      "FS_AUDIO_PIPE"
+    ],
+    [
+      3,
+      3,
+      0,
+      4,
+      1,
+      "AUDIO"
+    ],
+    [
+      4,
+      4,
+      0,
+      5,
+      0,
+      "AUDIO"
+    ],
+    [
+      5,
+      4,
+      1,
+      5,
+      1,
+      "STRING"
+    ],
+    [
+      6,
+      4,
+      2,
+      5,
+      2,
+      "STRING"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.65,
+      "offset": [
+        25,
+        80
+      ]
+    },
+    "workflow_name": "YuE2 Hum-to-Song \u00b7 Apple Silicon",
+    "source": "https://github.com/KytraScript/ComfyUI-FS_Audio_Suite",
+    "source_revision": "26fe2e91d20ebf3531cf053c0c654fd3b849e5de"
+  },
+  "version": 0.4
+}

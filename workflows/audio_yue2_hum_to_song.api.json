@@ -1,0 +1,88 @@
+{
+  "1": {
+    "class_type": "FSAudioAdapterLoader",
+    "inputs": {
+      "adapter_name": "yue2/humsong_yue2_adapter_v1_comfy.safetensors",
+      "hum_influence": 1.0,
+      "melody": "continue from hum",
+      "hum_offset_seconds": 0.0
+    },
+    "_meta": {
+      "title": "1 \u00b7 Hum melody and phrasing"
+    }
+  },
+  "2": {
+    "class_type": "FSAudioModelLoader",
+    "inputs": {
+      "yue2_checkpoint": "yue2/yue2_3b_int8_convrot.safetensors",
+      "melody_transcriber": "sheetsage2_bf16.safetensors",
+      "adapters": [
+        "1",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "2 \u00b7 YuE2 INT8 + SheetSage2"
+    }
+  },
+  "3": {
+    "class_type": "HumInput",
+    "inputs": {
+      "audio": "(record or upload a hum)",
+      "start_seconds": 0.0,
+      "max_seconds": 30.0
+    },
+    "_meta": {
+      "title": "3 \u00b7 Record or upload YOUR hum"
+    }
+  },
+  "4": {
+    "class_type": "FSAudioSampler",
+    "inputs": {
+      "pipe": [
+        "2",
+        0
+      ],
+      "audio_conditioning": [
+        "3",
+        0
+      ],
+      "style": "Melodic heavy rock, soaring lead vocal, distorted rhythm guitars, melodic lead guitar, deep electric bass, powerful live drums, wide chorus, clear dynamic arrangement, 96 BPM.",
+      "lyrics": "[Intro]\n\n[Verse 1]\nA quiet spark beneath the rain\nWe find the road and start again\nThe city fades behind the hill\nI hear your melody there still\n\n[Chorus]\nCarry the fire into the night\nOver the mountains into the light\nOne little song and a sky full of stars\nWe follow the sound wherever we are\n\n[Outro]\n",
+      "seed": 102419,
+      "song_length_cap": 120.0,
+      "score_mode": "full",
+      "steps": 32,
+      "sampler": "dpm_2",
+      "scheduler": "sgm_uniform",
+      "Weirdness (cfg)": 1.0,
+      "score_temperature": 0.7,
+      "music_temperature": 1.0,
+      "repetition_penalty": 1.2
+    },
+    "_meta": {
+      "title": "4 \u00b7 Compose and render"
+    }
+  },
+  "5": {
+    "class_type": "FSAudioOutput",
+    "inputs": {
+      "song": [
+        "4",
+        0
+      ],
+      "score": [
+        "4",
+        1
+      ],
+      "info": [
+        "4",
+        2
+      ],
+      "filename_prefix": "audio/YuE2_HumToSong"
+    },
+    "_meta": {
+      "title": "5 \u00b7 Listen, save and inspect score"
+    }
+  }
+}
