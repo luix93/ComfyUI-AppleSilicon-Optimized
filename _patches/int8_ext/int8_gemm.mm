@@ -1806,7 +1806,8 @@ static void encode_fused_cs_pass(
 torch::Tensor i8_matmul2d_nt_fused_cs(torch::Tensor a_i8, torch::Tensor b_i8,
                                       torch::Tensor row_scale, torch::Tensor col_scale,
                                       c10::optional<torch::Tensor> bias_opt,
-                                      bool split_tail, bool long_schedule) {
+                                      bool split_tail, bool long_schedule,
+                                      bool moss_schedule) {
   TORCH_CHECK(a_i8.is_mps() && b_i8.is_mps() && row_scale.is_mps() && col_scale.is_mps(),
               "inputs must be on mps");
   TORCH_CHECK(a_i8.scalar_type() == torch::kChar && b_i8.scalar_type() == torch::kChar,
@@ -1855,8 +1856,22 @@ torch::Tensor i8_matmul2d_nt_fused_cs(torch::Tensor a_i8, torch::Tensor b_i8,
       ((K == 4608 && (N == 12288 || N == 13824 || N == 4608)) ||
        (K == 12288 && N == 4608)) &&
       (!ideogram_flag || std::strcmp(ideogram_flag, "1") == 0);
+  // MOSS-Image projections up to 1024² joined CFG rows (measured faster; larger
+  // joined inputs keep the default): 128-row tiles in an
+  // unswizzled N-major grid. Integer accumulation makes the bytes independent
+  // of tile order; the caller enables it only inside an exact MOSS sample.
+  const bool moss_tile = moss_schedule && !do_split &&
+      M >= 4096 && M <= 8704 && (K == 3072 || K == 8192) &&
+      (N == 9216 || N == 16384 || N == 3072);
   id<MTLComputePipelineState> main_pso;
-  if (ideogram_tile) {
+  if (moss_tile) {
+    main_g.THREADS = 512;
+    main_g.tiles_m = (main_m + 127) / 128;
+    main_g.swizzle_log = 0;
+    main_g.grid_x = main_g.tiles_n;
+    main_g.grid_y = main_g.tiles_m;
+    main_pso = pso_for_fused_cs(false, true);
+  } else if (ideogram_tile) {
     const bool wide = N == 12288 || N == 13824;
     main_g.THREADS = wide ? 256 : 512;
     main_g.tiles_m = (main_m + (wide ? 63 : 127)) / (wide ? 64 : 128);
@@ -2613,7 +2628,8 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
         pybind11::arg("a_i8"), pybind11::arg("b_i8"), pybind11::arg("row_scale"),
         pybind11::arg("col_scale"), pybind11::arg("bias") = c10::optional<torch::Tensor>(),
         pybind11::arg("split_tail") = false,
-        pybind11::arg("long_schedule") = true);
+        pybind11::arg("long_schedule") = true,
+        pybind11::arg("moss_schedule") = false);
   m.def("i8_matmul2d_nt_fused_cs_half", &i8_matmul2d_nt_fused_cs_half,
         "FP16 channelwise-fused NT int8 matmul: D = (A@B^T)*(col_scale[N]*row_scale[M]) + bias",
         pybind11::arg("a_i8"), pybind11::arg("b_i8"), pybind11::arg("row_scale"),

@@ -2,8 +2,10 @@
 
 The exact tile32 route uses hash-checked PyTorch source. The two dense INT8
 routes adapt the pack's attributed CCV shaders (BSD-3-Clause) to MOSS's BNHD
-physical layout. They retain all keys but are NOT exact versus PyTorch.
-The original MOSS attention remains the default. No H3 dispatcher is modified.
+physical layout; int8_v3 uses the pack's general INT8 attention kernel. All
+INT8 routes retain all keys but are NOT exact versus PyTorch.
+The exact tile32 route is the default; the INT8 routes remain opt-in.
+No H3 dispatcher is modified.
 """
 from __future__ import annotations
 
@@ -18,7 +20,7 @@ import torch
 from . import torch_mpp_qcache as mpp
 from . import h3_dense_mps as dense
 
-MODES = ('exact', 'tile32', 'dense_int8', 'dense_int8_floatpv')
+MODES = ('exact', 'tile32', 'dense_int8', 'dense_int8_floatpv', 'int8_v3')
 _dead_modes = set()
 _HASHES = {
     'h3_dense_shaders/int8.metal': '14201ec68f8e0800fbbd58216c287a19df1d665ec6cb2a51b2f12da91a08fc0d',
@@ -27,7 +29,8 @@ _HASHES = {
 
 
 def selected_mode():
-    value = os.environ.get('ASFP8_MOSS_ATTN_MODE', 'exact')
+    # tile32 is exact (byte-identical to the 64-row query-cache kernel) and faster.
+    value = os.environ.get('ASFP8_MOSS_ATTN_MODE', 'tile32')
     return value if value in MODES else 'exact'
 
 
@@ -146,6 +149,11 @@ def _dimensions(n):
 
 def _run(q, k, v, mode):
     n = q.shape[2]
+    if mode == 'int8_v3':
+        # The general M5 INT8 kernel with Kitchen-style numerics (rotation, per-tile P).
+        from . import int8_attention_mps
+        out = torch.empty((1, n, 24, 128), dtype=q.dtype, device=q.device).transpose(1, 2)
+        return int8_attention_mps.attention(q, k, v, out=out, numerics='tiled')
     lib, bindings = _library(mode, n if mode == 'dense_int8' else 0, v.stride(2) if mode == 'dense_int8' else 3072)
     out = torch.empty((1, n, 24, 128), dtype=q.dtype, device=q.device).transpose(1, 2)
     if mode == 'tile32':

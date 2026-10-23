@@ -5,13 +5,12 @@ from _patches import moss_attention_mps as m
 from _patches import torch_mpp_qcache as cache
 
 
-def test_default_invalid_and_explicit_exact_never_compile(monkeypatch):
+def test_default_is_exact_tile32_and_invalid_or_explicit_exact_never_compile(monkeypatch):
+    monkeypatch.delenv('ASFP8_MOSS_ATTN_MODE', raising=False)
+    assert m.selected_mode() == 'tile32'
     monkeypatch.setattr(m, '_run', lambda *a: pytest.fail('unexpected dispatch'))
-    for mode in (None, 'exact', 'unknown'):
-        if mode is None:
-            monkeypatch.delenv('ASFP8_MOSS_ATTN_MODE', raising=False)
-        else:
-            monkeypatch.setenv('ASFP8_MOSS_ATTN_MODE', mode)
+    for mode in ('exact', 'unknown'):
+        monkeypatch.setenv('ASFP8_MOSS_ATTN_MODE', mode)
         assert m.selected_mode() == 'exact'
         assert m.maybe_attention(None, None, None) is None
 
@@ -91,3 +90,32 @@ def test_layout_shape_and_failure_fallback(monkeypatch):
         assert m.maybe_attention(x, x, x) is None
         assert m.maybe_attention(x, x, x) is None
         assert calls == [1]
+
+
+def test_int8_v3_is_opt_in_and_uses_the_general_kernel(monkeypatch):
+    from _patches import int8_attention_mps as i8
+    monkeypatch.delenv('ASFP8_MOSS_ATTN_MODE', raising=False)
+    assert m.selected_mode() == 'tile32'
+    monkeypatch.setenv('ASFP8_MOSS_ATTN_MODE', 'int8_v3')
+    assert m.selected_mode() == 'int8_v3'
+    seen = {}
+    def fake(q, k, v, *, out=None, numerics='running', **kw):
+        seen.update(numerics=numerics, stride=out.stride())
+        return out
+    monkeypatch.setattr(i8, 'attention', fake)
+    q = torch.zeros(1, 24, 4179, 128)
+    assert m._run(q, q, q, 'int8_v3').shape == (1, 24, 4179, 128)
+    assert seen == {'numerics': 'tiled', 'stride': (4179 * 3072, 128, 3072, 1)}
+
+
+@pytest.mark.skipif(not torch.backends.mps.is_available(), reason='requires MPS')
+def test_int8_v3_tracks_exact_on_moss_layout():
+    from _patches import int8_attention_mps as i8
+    if not i8.supported():
+        pytest.skip('requires an M5 GPU')
+    g = torch.Generator().manual_seed(7)
+    q, k, v = (torch.randn(1, 4179, 3072, generator=g).to(torch.bfloat16).to('mps').unflatten(-1, (24, 128)).transpose(1, 2)
+               for _ in range(3))
+    out = m._run(q, k, v, 'int8_v3')
+    ref = torch.nn.functional.scaled_dot_product_attention(q.float(), k.float(), v.float())
+    assert ((out.float() - ref).norm() / ref.norm()).item() < 0.03

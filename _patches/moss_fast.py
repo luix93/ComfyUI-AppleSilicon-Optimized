@@ -2,7 +2,10 @@
 
 SiTU tables are evaluated by PyTorch for every BF16 input bit pattern, retaining
 all intermediate rounding. An opt-in exact FC1/SiTU epilogue can eliminate
-the wide FFN intermediate; RMS reductions, sampler and VAE stay unchanged.
+the wide FFN intermediate. The default RMS/modulation fusion retains PyTorch's
+original FP32 reduction and every BF16 rounding boundary. ASFP8_MOSS_RMS_MODE=
+native opts into native weighted RMSNorm and changes numerical rounding;
+original retains the preceding implementation. Sampler and VAE stay unchanged.
 Patches are active only inside an eligible MOSS sampling call.
 
 Operation semantics follow ComfyUI's MOSS implementation (GPL-3.0) and Comfy
@@ -38,6 +41,7 @@ _cast_lock = RLock()
 _cast_users = 0
 _active_cast = None
 _direct_ffn_supported = False
+_rope_options = False
 _OPS_HASH = '2a5e52fe5176be3ac48becebf1678509867f769c1467fa7c7115d1897c16a429'
 _BLOCK_HASH = 'c6f63b080fee07147e43608d17b499f3adf7ada81c600b9d65f6b61f23e56998'
 _MODEL_HASH = 'c70010e9e51ef21ddd5396ed971c68d6c0c225525cf3ae7cebb79d1071c7f22f'
@@ -116,6 +120,32 @@ def _rope_tensors(q, k, pe):
     return qo, ko
 
 
+def _qk_rope_tensors(q, k, qw, kw, pe, eps):
+    # Native D=128 weighted RMS reduction, retaining the BF16 store before RoPE.
+    # Keep larger batches/shapes and unusual weights on the existing route.
+    if (not _enabled('QK_FUSION') or q.ndim != 4
+            or q.shape != k.shape or q.shape[0] != 1
+            or not 1 <= q.shape[1] <= 6656 or q.shape[2:] != (24, 128)
+            or not all(_bf16(t) for t in (q, k))
+            or not all(type(t) in (torch.Tensor, torch.nn.Parameter)
+                       and t.is_mps and t.dtype == torch.bfloat16 for t in (qw, kw))
+            or not all(t.stride(-1) == 1 and t.stride(-2) == 128
+                       and 0 < t.stride(1) < 2**31 for t in (q, k))
+            or qw.shape != (128,) or kw.shape != (128,)
+            or not qw.is_contiguous() or not kw.is_contiguous()
+            or pe.dtype != torch.float32 or not pe.is_mps
+            or pe.shape != (1, q.shape[1], 1, 64, 2, 2)):
+        return None
+    qo = torch.empty(q.shape, device=q.device, dtype=q.dtype)
+    ko = torch.empty_like(qo)
+    _library.rms_rope_split(q, k, qw, kw, pe.contiguous(), qo, ko, 24,
+                            q.stride(1), k.stride(1), eps,
+                            threads=(q.shape[1] * 32, 24, 2), group_size=(32, 1, 1))
+    state = _scope.get()
+    state['qk_fusion_calls'] = state.get('qk_fusion_calls', 0) + 1
+    return qo, ko
+
+
 def _attention(original, module, q, k, v, q_norm, k_norm, pe, heads, comfy_attention, transformer_options):
     if (not _enabled('ROPE') or not all(_bf16(t) for t in (q, k))
             or q.ndim != 3 or q.shape != k.shape or heads != 24
@@ -129,11 +159,14 @@ def _attention(original, module, q, k, v, q_norm, k_norm, pe, heads, comfy_atten
     try:
         kw, _, ks = ops.cast_bias_weight(k_norm, k, offloadable=True)
         try:
-            # Exactly the same native reductions and BF16 stores as kitchen.
-            q = torch.nn.functional.rms_norm(q, (128,), qw, q_norm.eps)
-            # Upstream rms_rope_split_half applies q_norm.eps to both tensors.
-            k = torch.nn.functional.rms_norm(k, (128,), kw, q_norm.eps)
-            q, k = _rope_tensors(q, k, pe)
+            fused = _qk_rope_tensors(q, k, qw, kw, pe, q_norm.eps)
+            if fused is None:
+                # Upstream applies q_norm.eps to both tensors.
+                q = torch.nn.functional.rms_norm(q, (128,), qw, q_norm.eps)
+                k = torch.nn.functional.rms_norm(k, (128,), kw, q_norm.eps)
+                q, k = _rope_tensors(q, k, pe)
+            else:
+                q, k = fused
         finally:
             ops.uncast_bias_weight(k_norm, kw, None, ks)
     finally:
@@ -151,6 +184,18 @@ def _mod_tensor(x, scale, shift):
     return out
 
 
+def _rms_mod_tensor(x, folded, shift, eps):
+    # Keep PyTorch's original FP32 reduction/add/rsqrt. Only eliminate full-size
+    # cast and normalization intermediates; retain each BF16 rounding boundary.
+    squared = torch.empty_like(x, dtype=torch.float32)
+    _library.square_bf16(x, squared, threads=x.numel(), group_size=256)
+    inv = torch.rsqrt(squared.mean(dim=-1, keepdim=True).add_(eps))
+    out = torch.empty_like(x)
+    _library.rms_mod_tail(x, inv, folded, shift, out, x.shape[-1], x.shape[-2],
+                          threads=x.numel(), group_size=256)
+    return out
+
+
 def _mod(original, x, norm, scale, shift):
     if (not _enabled('MODULATION') or not all(_bf16(t) and t.is_contiguous() for t in (x, scale, shift))
             or x.ndim != 3 or x.shape[-1] != 3072
@@ -161,8 +206,17 @@ def _mod(original, x, norm, scale, shift):
     w, _, stream = ops.cast_bias_weight(norm, x, offloadable=True)
     try:
         folded = w * (1 + scale) - 1
-        normalized = torch.nn.functional.rms_norm(x, (x.shape[-1],), eps=norm.eps)
-        result = _mod_tensor(normalized, folded, shift)
+        mode = os.environ.get('ASFP8_MOSS_RMS_MODE', 'exact')
+        if mode == 'exact':
+            result = _rms_mod_tensor(x, folded, shift, norm.eps)
+        else:
+            # Native weighted RMSNorm changes reduction rounding: opt-in only.
+            unit = torch.ones(x.shape[-1], dtype=x.dtype, device=x.device) if mode == 'native' else None
+            normalized = torch.nn.functional.rms_norm(x, (x.shape[-1],), weight=unit, eps=norm.eps)
+            result = _mod_tensor(normalized, folded, shift)
+        state = _scope.get()
+        key = 'rms_' + (mode if mode in ('exact', 'native') else 'original') + '_calls'
+        state[key] = state.get(key, 0) + 1
     finally:
         ops.uncast_bias_weight(norm, w, None, stream)
     _scope.get()['modulation_calls'] += 1
@@ -186,6 +240,22 @@ def _eligible(guider, model_type):
     if _has_hooks(getattr(guider, 'conds', {})):
         return False
     return not any(m._forward_hooks or m._forward_pre_hooks for m in model.modules())
+
+
+def _specialized_attention(moss_attention_mps, mode, q, k, v, tensors, heads, shape):
+    qq, kk, vv = [t.unflatten(-1, (heads, 128)).transpose(1, 2) for t in tensors]
+    out = moss_attention_mps.maybe_attention(qq, kk, vv)
+    if out is None:
+        return None
+    state = _scope.get()
+    key = mode + '_attention_calls'
+    if not state.get(key):
+        contract = 'exact tile/layout' if mode == 'tile32' else 'approximate dense; all keys retained'
+        logging.info('%s %s attention enabled (%s).', _TAG, mode, contract)
+    state[key] = state.get(key, 0) + 1
+    for container in (q, k, v):
+        container.take()
+    return out.transpose(1, 2).reshape(shape)
 
 
 def _optimized_attention(original, q, k, v, heads, **kwargs):
@@ -214,25 +284,16 @@ def _optimized_attention(original, q, k, v, heads, **kwargs):
     if not (native or routed):
         # Preserve an explicitly selected CLI backend or a third-party dispatcher.
         return original(q, k, v, heads, **kwargs)
-    if os.environ.get('ASFP8_MOSS_ATTN_MODE', 'exact') != 'exact':
-        from . import moss_attention_mps
-        qq, kk, vv = [t.unflatten(-1, (heads, 128)).transpose(1, 2) for t in tensors]
-        out = moss_attention_mps.maybe_attention(qq, kk, vv)
+    from . import moss_attention_mps
+    mode = moss_attention_mps.selected_mode()
+    # Approximate dense INT8 modes are explicit opt-ins and take precedence.
+    if mode not in ('exact', 'tile32'):
+        out = _specialized_attention(moss_attention_mps, mode, q, k, v, tensors, heads, shape)
         if out is not None:
-            state = _scope.get()
-            mode = moss_attention_mps.selected_mode()
-            key = mode + '_attention_calls'
-            if not state.get(key):
-                contract = 'exact tile/layout' if mode == 'tile32' else 'approximate dense; all keys retained'
-                logging.info('%s %s attention enabled (%s).', _TAG, mode, contract)
-            state[key] = state.get(key, 0) + 1
-            for container in (q, k, v):
-                container.take()
-            return out.transpose(1, 2).reshape(shape)
+            return out
     # Experimental and deliberately separate from the exact/default path.
     # Only reviewed MOSS calls with an explicit checkpoint request qualify.
-    if (os.environ.get('ASFP8_MOSS_KITCHEN_INT8', '0') == '1'
-            and os.environ.get('ASFP8_MOSS_ATTN_MODE', 'exact') == 'exact'):
+    if os.environ.get('ASFP8_MOSS_KITCHEN_INT8', '0') == '1':
         from . import kitchen_attention_mps
         state = _scope.get()
         if (not state.get('kitchen_int8_disabled')
@@ -250,6 +311,11 @@ def _optimized_attention(original, q, k, v, heads, **kwargs):
                     logging.info('%s experimental Kitchen-style INT8 attention enabled; non-bit-exact, CUDA parity unverified.', _TAG)
                 state['kitchen_int8_calls'] = state.get('kitchen_int8_calls', 0) + 1
                 return out.transpose(1, 2).reshape(shape)
+    # Default: exact 32-row query tiles, byte-identical to the 64-row kernel below.
+    if mode == 'tile32':
+        out = _specialized_attention(moss_attention_mps, mode, q, k, v, tensors, heads, shape)
+        if out is not None:
+            return out
     try:
         if _attention_library is None:
             _attention_library = torch.mps.compile_shader(torch_mpp_qcache._source())
@@ -426,6 +492,125 @@ def _block(original, module, layer, x, mod, pe, transformer_options={}):
                               x, mod, pe, transformer_options)
 
 
+def _joining():
+    # The opt-in FFN epilogue replaces Block.forward, which joined rows bypass.
+    return _enabled('CFG_JOIN') and os.environ.get('ASFP8_MOSS_FFN_EPILOGUE', '0') != '1'
+
+
+def _can_join(original, a, b):
+    """Let the two CFG branches share a model call despite different prompt lengths.
+
+    MOSS positions depend on each prompt's own token count, so ordinary
+    batching (equal conditioning shapes) never pairs positive and negative.
+    """
+    if not _joining():
+        return original(a, b)
+    if (set(a.conditioning) != {'c_crossattn'} or set(b.conditioning) != {'c_crossattn'}
+            or a.input_x.shape[0] != 1
+            or any(v is not None for v in (a.control, b.control, a.patches, b.patches,
+                                           getattr(a, 'hooks', None), getattr(b, 'hooks', None),
+                                           getattr(a, 'area', None), getattr(b, 'area', None)))):
+        return original(a, b)
+    ta, tb = a.conditioning['c_crossattn'].cond, b.conditioning['c_crossattn'].cond
+    return (ta.shape[0] == tb.shape[0] == 1 and ta.shape[2:] == tb.shape[2:]
+            and ta.device == tb.device
+            and original(a._replace(conditioning={}), b._replace(conditioning={})))
+
+
+def _join(original, conds, device=None):
+    if not _joining() or len(conds) != 2 or any(set(c) != {'c_crossattn'} for c in conds):
+        return original(conds, device)
+    texts = [c['c_crossattn'].cond for c in conds]
+    lengths = [t.shape[1] for t in texts]
+    longest = max(lengths)
+    # Transport padding only; every branch is trimmed back to its own length.
+    context = torch.cat([torch.nn.functional.pad(t, (0, 0, 0, longest - t.shape[1])) for t in texts])
+    if device is not None:
+        context = context.to(device)
+    return {'c_crossattn': context, 'moss_cfg_lengths': lengths}
+
+
+def _int8_projections(model):
+    # Joined rows are exact because INT8 accumulation is independent of the
+    # row count; a floating matmul may round differently for a taller input.
+    try:
+        from comfy_kitchen.tensor import QuantizedTensor
+    except ImportError:
+        return False
+    return all(isinstance(getattr(layer.proj[name], 'weight', None), QuantizedTensor)
+               and getattr(layer.proj[name].weight, '_layout_cls', None) == 'TensorWiseINT8Layout'
+               for layer in model.layers for name in ('qkv', 'o', 'ffn_up_gate', 'ffn_down'))
+
+
+def _joined_block(m, layer, x, mod, branches, sizes):
+    # Block.forward with token rows joined for every projection; attention,
+    # positions and options stay per branch.
+    shift_a, scale_a, gate_a, shift_f, scale_f, gate_f = mod
+    y = m.modulated_rms_norm(x, layer.norm1, scale_a, shift_a)
+    outs = [m.attention(*qkv.chunk(3, dim=-1), layer.q_norm, layer.k_norm, pe, layer.num_heads,
+                        layer.comfy_attention, options)
+            for qkv, (pe, options) in zip(layer.proj['qkv'](y).split(sizes, 1), branches)]
+    x = m.gated_residual(x, layer.proj['o'](torch.cat(outs, 1)), gate_a)
+    y = m.modulated_rms_norm(x, layer.norm2, scale_f, shift_f)
+    return m.gated_residual(x, m.comfy.ops.linear_input_act(
+        layer.proj['ffn_down'], layer.proj['ffn_up_gate'](y), 'situ'), gate_f)
+
+
+def _joined_forward(original, m, model, x, timestep, context, transformer_options={}, **kwargs):
+    lengths = kwargs.pop('moss_cfg_lengths', None)
+    if lengths is None:
+        return original(model, x, timestep, context, transformer_options, **kwargs)
+
+    def branch_options(j):
+        options = transformer_options.copy()
+        for key in ('cond_or_uncond', 'uuids'):
+            if key in options:
+                options[key] = options[key][j:j + 1]
+        return options
+
+    # Upstream _forward ignores extra keywords (model_base always passes control).
+    if (not _joining() or x.shape[0] != 2 or len(lengths) != 2
+            or not all(layer.fused_qkv for layer in model.layers) or not _int8_projections(model)
+            or transformer_options.get('patches_replace', {}).get('dit')
+            or not torch.equal(timestep[0], timestep[1])):
+        # Separate branch calls, exactly as unjoined CFG would run them.
+        return torch.cat([original(model, x[j:j + 1], timestep[j:j + 1], context[j:j + 1, :n],
+                                   branch_options(j), **kwargs)
+                          for j, n in enumerate(lengths)])
+    B, _, H, W = x.shape
+    device = x.device
+    states, branches = [], []
+    for j, n in enumerate(lengths):
+        options = branch_options(j)
+        options.update(total_blocks=len(model.layers), block_type='single')
+        pe = model.rope(H, W, n, device, options) if _rope_options else model.rope(H, W, n, device)
+        vec = model.time_embedding(m.timestep_embedding(timestep[j:j + 1], 256).to(x.dtype))
+        mod = model.shared_block_modulation(vec).unflatten(-1, (6, -1)).unsqueeze(2).unbind(1)
+        head = model.video_head_modulation(vec).unflatten(-1, (2, -1)).unsqueeze(2).unbind(1)
+        txt = model.text_embedder(context[j:j + 1, :n], pe[:, H * W:], options)
+        states.append(torch.cat((model.video_embedder(x[j:j + 1].flatten(2).transpose(1, 2)), txt), dim=1))
+        branches.append((pe, options))
+    del txt
+    sizes = [s.shape[1] for s in states]
+    # Equal timesteps give byte-identical modulation for both branches.
+    joined = torch.cat(states, 1)
+    del states
+    queue = m.comfy.model_prefetch.make_prefetch_queue(list(model.layers), device, transformer_options)
+    m.comfy.model_prefetch.malloc_graph_begin(device)
+    for i, layer in enumerate(model.layers):
+        m.comfy.model_prefetch.prefetch_queue_pop(queue, device, layer, x.dtype, malloc_scope='block')
+        for _, options in branches:
+            options['block_index'] = i
+        joined = _joined_block(m, layer, joined, mod, branches, sizes)
+    m.comfy.model_prefetch.prefetch_queue_pop(queue, device, None, malloc_scope='block')
+    m.comfy.model_prefetch.malloc_graph_end()
+    _scope.get()['joined_cfg_calls'] = _scope.get().get('joined_cfg_calls', 0) + 1
+    head_shift, head_scale = head
+    outs = [model.final_linear_video(m.modulated_rms_norm(y[:, :H * W], model.final_norm_video, head_scale, head_shift))
+            for y in joined.split(sizes, 1)]
+    return torch.cat([out.transpose(1, 2).reshape(1, model.latent_channels, H, W) for out in outs])
+
+
 def _acquire_cast():
     import comfy.ops as ops
     global _cast_users, _active_cast
@@ -461,12 +646,15 @@ def _sample(original, model_type, guider, *args, **kwargs):
                  modules={id(block.proj['ffn_down']) for block in model.layers},
                  cache={}, cache_hits=0, cache_misses=0, cache_bytes=0, budget=_cache_budget())
     token = _scope.set(state)
+    from . import int8_linear_kernel_mps
+    schedule = int8_linear_kernel_mps.moss_gemm_schedule.set(_enabled('GEMM_SCHEDULE'))
     release = None
     try:
         if _enabled('WEIGHT_CACHE') and state['budget'] > 0:
             release = _acquire_cast()
         return original(guider, *args, **kwargs)
     finally:
+        int8_linear_kernel_mps.moss_gemm_schedule.reset(schedule)
         _scope.reset(token)
         if release is not None:
             release()
@@ -478,7 +666,7 @@ def _sample(original, model_type, guider, *args, **kwargs):
 
 
 def install():
-    global _installed, _direct_ffn_supported
+    global _installed, _direct_ffn_supported, _rope_options
     if (_installed or os.environ.get('ASFP8_MOSS_FAST', '1') != '1'
             or os.environ.get('ASFP8_DIT_EXT') != '1'
             or not torch.backends.mps.is_available()
@@ -522,9 +710,16 @@ def install():
     m.MOSSImage.rope = functools.wraps(original_position)(lambda *a, **k: _position(original_position, *a, **k))
     original_text = m.TextEmbedder.forward
     m.TextEmbedder.forward = functools.wraps(original_text)(lambda *a, **k: _text(original_text, *a, **k))
+    _rope_options = 'transformer_options' in inspect.signature(m.MOSSImage.rope).parameters
+    original_can_concat, original_cat = samplers.can_concat_cond, samplers.cond_cat
+    samplers.can_concat_cond = functools.wraps(original_can_concat)(lambda a, b: _can_join(original_can_concat, a, b))
+    samplers.cond_cat = functools.wraps(original_cat)(lambda c, device=None: _join(original_cat, c, device))
+    original_forward = m.MOSSImage._forward
+    m.MOSSImage._forward = functools.wraps(original_forward)(
+        lambda self, *a, **k: _joined_forward(original_forward, m, self, *a, **k))
     original_block = m.Block.forward
     if _function_matches(original_block, _BLOCK_HASH):
         m.Block.forward = functools.wraps(original_block)(
             lambda *a, **k: _block(original_block, m, *a, **k))
     _installed = True
-    logging.info('%s exact SiTU/RoPE/modulation, query reuse and bounded sampling caches enabled.', _TAG)
+    logging.info('%s exact SiTU/RoPE/modulation, query reuse, joined CFG rows, INT8 tile schedule and bounded sampling caches enabled.', _TAG)

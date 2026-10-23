@@ -39,6 +39,7 @@ import inspect
 import os
 import sys
 import weakref
+from contextvars import ContextVar
 
 import torch
 import torch.nn.functional as F
@@ -65,6 +66,9 @@ _RUNTIME_LORA_ATTR = "_asfp8_runtime_lora"
 # identical bytes unless someone mutates it in-place between projections, which
 # comfy's functional model blocks never do. Disable: ASFP8_INT8_ACT_CACHE=0.
 _act_cache = None  # (x_weakref, convrot, groupsize, x_8, x_scale)
+# Set by an exact MOSS sample: 128-row N-major tiles for its projection shapes.
+# The INT8 accumulation is order-independent, so output bytes are unchanged.
+moss_gemm_schedule = ContextVar('asfp8_moss_gemm_schedule', default=False)
 _LINEAR_MAX_ELEMS = 2**31 - 1
 
 
@@ -188,8 +192,12 @@ def _int8_linear_prequant(
         # other H3 projections, so only the SwiGLU down-projection opts in.
         long_schedule = os.environ.get(
             "ASFP8_INT8_LONG_SCHEDULE", "1") == "1"
-        result = _kernel.i8_matmul2d_nt_fused_cs(
-            *args, split_tail, long_schedule)
+        if moss_gemm_schedule.get():
+            result = _kernel.i8_matmul2d_nt_fused_cs(
+                *args, split_tail, long_schedule, True)
+        else:
+            result = _kernel.i8_matmul2d_nt_fused_cs(
+                *args, split_tail, long_schedule)
         return result.reshape(*input_shape[:-1], weight.shape[0])
 
     result = _kernel.i8_matmul2d_nt(x_8.contiguous(), weight.contiguous())

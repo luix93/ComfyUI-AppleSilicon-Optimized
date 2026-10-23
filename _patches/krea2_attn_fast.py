@@ -46,6 +46,9 @@ _glue = None
 _announced = False
 _reasons = set()
 _na_dead = False   # latched when flash_fwd_na fails once (e.g. OS API break)
+_tile32_library = None
+_tile32_dead = False
+_tile32_calls = 0
 
 # Same rationale as the router default: bf16 score tiles match the stock bmm
 # path's rounding; ASFP8_FA41_F32S=1 reverts to fp32 tiles everywhere.
@@ -69,6 +72,42 @@ def _announce():
 def _w1(norm, device):
     # Krea2 RMSNorm stores the weight zero-centered; effective weight is 1+scale.
     return (norm.scale.to(dtype=torch.float32, device=device) + 1.0).contiguous()
+
+
+def _query_tile32(self, q, k, v):
+    """Exact query scheduling for the measured 1.5–3.5 MP floating-weight path."""
+    global _tile32_library, _tile32_dead, _tile32_calls
+    if (_tile32_dead or os.environ.get("ASFP8_KREA2_TILE32", "1") != "1"
+            or torch.__version__.split("+")[0] != "2.14.1"
+            or os.environ.get("PYTORCH_MPS_FAST_MATH", "0") != "0"
+            or q.ndim != 4 or q.shape[1] != 48 or k.shape[1] != 12
+            or not 6144 <= q.shape[2] <= 14336
+            or any(type(getattr(layer, "weight", None)) not in (torch.Tensor, torch.nn.Parameter)
+                   for layer in (self.wq, self.wk, self.wv, self.wo, self.gate))):
+        return None
+    from . import torch_mpp_qcache as mpp
+    kwargs = dict(scale=128 ** -0.5, enable_gqa=True)
+    if not mpp._supports(q, k, v, kwargs):
+        return None
+    try:
+        if _tile32_library is None:
+            old = 'bfloat, 64, 32, 128, 4, 1, false, false, true, bfloat'
+            new = 'bfloat, 32, 32, 128, 2, 1, false, false, true, bfloat'
+            source = mpp._source()
+            if source.count(old) != 1:
+                raise RuntimeError('unreviewed query-cache entry')
+            _tile32_library = torch.mps.compile_shader(source.replace(old, new))
+        out = torch.empty(q.shape, dtype=q.dtype, device=q.device)
+        params = mpp._parameters(tuple(q.shape), tuple(k.shape), q.stride(), k.stride(), v.stride(), 128 ** -0.5, False)
+        _tile32_library.custom_attn(q, k, v, out, params, params, params,
+                                   threads=(((q.shape[2] + 31) // 32) * 64, 48, 1),
+                                   group_size=(64, 1, 1))
+        _tile32_calls += 1
+        return out
+    except Exception as exc:
+        _tile32_dead = True
+        sys.stderr.write(f"{TAG} query tile32 unavailable; retaining existing attention ({exc}).\n")
+        return None
 
 
 def _fast_attn_forward(self, x, freqs=None, mask=None, transformer_options={}):
@@ -123,8 +162,10 @@ def _fast_attn_forward(self, x, freqs=None, mask=None, transformer_options={}):
         # Prefer the v2 per-simdgroup kernel where its Lk % 128 gate allows
         # (kill switch shared with the router: ASFP8_ATTN_NA=0).
         if torch_attention.supports(q, k, v, Hq, skip_reshape=True):
-            out = torch_attention.sdpa(q, k, v, scale=D ** -0.5,
-                                       enable_gqa=Hq != Hkv)
+            out = _query_tile32(self, q, k, v)
+            if out is None:
+                out = torch_attention.sdpa(q, k, v, scale=D ** -0.5,
+                                           enable_gqa=Hq != Hkv)
         elif (os.environ.get("ASFP8_ATTN_NA", "1") == "1" and not _na_dead
                 and hasattr(_fa41, "flash_fwd_na")):
             try:
