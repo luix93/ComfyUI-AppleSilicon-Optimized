@@ -108,3 +108,12 @@ finding: the win comes from a regime that does not exist inside attention.
 The kernel stays in-tree, dark and unrouted: functional, accurate
 (rel ~1.2%), fully documented — re-evaluate only on new silicon or if a
 future MPP release adds a shallow-K int8 path. Do NOT re-attempt on M5.
+
+## Superseded (2026-10-22)
+
+The verdict above was drawn from a standalone K=128 GEMM that wrote a large
+INT32 output, not from a fused kernel. Hardware counters on M5 Ultra later
+showed INT8 running at exactly 2x BF16 on the neural accelerators inside fused
+attention (`diagnostics/int8-attention-profile-oct21`). The general opt-in
+kernel `_patches/int8_attention_mps.metal` measures 1.26-1.53x against exact
+attention for long video sequences; see `benchmarks/m5-ultra-int8-attention.md`.
