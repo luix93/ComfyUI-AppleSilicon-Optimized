@@ -1,0 +1,213 @@
+{
+  "date": "2026-10-21",
+  "hardware": {
+    "chip": "Apple M5 Ultra",
+    "gpu_cores": 80,
+    "unified_memory_gib": 256,
+    "macos": "27.0.1"
+  },
+  "runtime": {
+    "comfyui_version": "0.42.0",
+    "comfyui_revision": "7a28332047b6af638dc6c7f72ef3481a718769fd",
+    "torch": "2.14.1",
+    "torch_revision": "5c4886908584029761b579af026dcfb627c84070"
+  },
+  "checkpoint": "Minimax-H3/fasth3_omniref_8step_pruned_int8_convrot.safetensors",
+  "workflow": "video_fasth3_omniref_metal_vsa.api.json",
+  "scope": {
+    "width": 1376,
+    "height": 768,
+    "frames": 124,
+    "fps": 24,
+    "steps": 8,
+    "sampler": "euler",
+    "scheduler": "simple",
+    "video_shift": 12,
+    "audio_shift": 3,
+    "guidance": 1,
+    "seed": 771204598,
+    "reference_images": 1,
+    "packed_tokens": 40951,
+    "pdd_heads": 32,
+    "trained_gate_layers": 50
+  },
+  "measurement": "Warm workflow execution including sampling, video/audio decode and MP4 save; checkpoint loading, conditioning-cache misses and initial shader compilation excluded. Two serial measured runs per mode, with warmups before first use. Dense control also repeated after both VSA modes.",
+  "baseline": "Exported Model Sparse Attention VSA on MPS has no supported sparse kernel, so it runs dense PyTorch attention. Model Attention Backend explicitly set to pytorch attention in all modes.",
+  "settings": {
+    "cache": "Off",
+    "tokens": "Off",
+    "keep_percent": 10,
+    "start_percent": 0,
+    "end_percent": 1,
+    "dense_blocks": "",
+    "min_tokens": 12288,
+    "heads_per_batch": 4,
+    "scratch_budget_mib": 256,
+    "vsa128_reference_policy": "Images/text/audio dense; each reference video independently retains 10% of tiles.",
+    "vsa64_reference_policy": "All reference conditioning remains dense, matching ComfyUI geometry/policy."
+  },
+  "matched_noise_and_conditioning": true,
+  "all_captured_tensors_finite": true,
+  "modes": {
+    "baseline": {
+      "runs": 2,
+      "e2e_seconds": [
+        320.209,
+        302.08
+      ],
+      "mean_e2e_seconds": 311.1445,
+      "sampling_seconds": [
+        303.18997316702735,
+        285.54835929197725
+      ],
+      "mean_sampling_seconds": 294.3691662295023,
+      "e2e_speedup_vs_baseline": 1.0,
+      "less_total_time_percent": 0.0,
+      "repeats_match_all_captured_tensors": true,
+      "sampled_peak_driver_gib": 57.78875732421875,
+      "activity": [
+        {
+          "pdd_heads": 32,
+          "trained_gate_layers": 50,
+          "native_sparse_calls": 0
+        },
+        {
+          "pdd_heads": 32,
+          "trained_gate_layers": 50,
+          "native_sparse_calls": 0
+        }
+      ],
+      "encoded_frames": 124,
+      "fps": "24",
+      "streams": [
+        {
+          "type": "video",
+          "codec": "h264"
+        },
+        {
+          "type": "audio",
+          "codec": "aac"
+        }
+      ]
+    },
+    "vsa128": {
+      "runs": 2,
+      "e2e_seconds": [
+        197.195,
+        195.038
+      ],
+      "mean_e2e_seconds": 196.1165,
+      "sampling_seconds": [
+        180.61842725001043,
+        178.71402912499616
+      ],
+      "mean_sampling_seconds": 179.6662281875033,
+      "e2e_speedup_vs_baseline": 1.5865289254091317,
+      "less_total_time_percent": 36.96931811425238,
+      "repeats_match_all_captured_tensors": true,
+      "sampled_peak_driver_gib": 58.10906982421875,
+      "activity": [
+        {
+          "pdd_heads": 32,
+          "trained_gate_layers": 50,
+          "native_sparse_calls": 0,
+          "packed_tokens": 40951,
+          "video_regions": 1,
+          "tile_size": 128,
+          "qkv_epilogue_calls": 400,
+          "vsa_calls": 400,
+          "o_projection_calls": 400
+        },
+        {
+          "pdd_heads": 32,
+          "trained_gate_layers": 50,
+          "native_sparse_calls": 0,
+          "packed_tokens": 40951,
+          "video_regions": 1,
+          "tile_size": 128,
+          "qkv_epilogue_calls": 400,
+          "vsa_calls": 400,
+          "o_projection_calls": 400
+        }
+      ],
+      "encoded_frames": 124,
+      "fps": "24",
+      "streams": [
+        {
+          "type": "video",
+          "codec": "h264"
+        },
+        {
+          "type": "audio",
+          "codec": "aac"
+        }
+      ]
+    },
+    "vsa64": {
+      "runs": 2,
+      "e2e_seconds": [
+        197.406,
+        198.289
+      ],
+      "mean_e2e_seconds": 197.8475,
+      "sampling_seconds": [
+        180.98133487498853,
+        181.785049915954
+      ],
+      "mean_sampling_seconds": 181.38319239547127,
+      "e2e_speedup_vs_baseline": 1.5726481254501574,
+      "less_total_time_percent": 36.41298496357802,
+      "repeats_match_all_captured_tensors": true,
+      "sampled_peak_driver_gib": 57.10906982421875,
+      "activity": [
+        {
+          "pdd_heads": 32,
+          "trained_gate_layers": 50,
+          "native_sparse_calls": 0,
+          "packed_tokens": 40951,
+          "video_regions": 1,
+          "tile_size": 64,
+          "qkv_epilogue_calls": 400,
+          "vsa_calls": 400,
+          "o_projection_calls": 400
+        },
+        {
+          "pdd_heads": 32,
+          "trained_gate_layers": 50,
+          "native_sparse_calls": 0,
+          "packed_tokens": 40951,
+          "video_regions": 1,
+          "tile_size": 64,
+          "qkv_epilogue_calls": 400,
+          "vsa_calls": 400,
+          "o_projection_calls": 400
+        }
+      ],
+      "encoded_frames": 124,
+      "fps": "24",
+      "streams": [
+        {
+          "type": "video",
+          "codec": "h264"
+        },
+        {
+          "type": "audio",
+          "codec": "aac"
+        }
+      ]
+    }
+  },
+  "quality_observation": "All 124 frames inspected in the first render of each mode. Both VSA clips preserved a coherent yellow plane/cloud scene, cut and dive, without obvious banding or repeated-edge artifacts in this example. Appearance, markings and motion differ from dense and between VSA layouts. Audio was finite and encoded; no perceptual audio-parity claim. One prompt, one seed and one image reference do not establish general quality.",
+  "limitations": [
+    "Floating-point Metal fine attention is not byte parity with CUDA INT8 VSA.",
+    "No full-render validation on other chips, shapes, checkpoints or video/audio references.",
+    "Metal memory values are sampled driver allocation during sampling, not a process-wide peak or scratch measurement."
+  ],
+  "implementation_sha256": {
+    "_patches/h3_vsa_mps.py": "be3ece2c11747dbf87f07a5556a46aec2e11251086db865c7b5376dae0164958",
+    "_patches/minimax_h3_vsa.py": "f800e127a4f47aea82ad68dca545262e6fec9c5b730de42683d6001408bef298",
+    "_patches/minimax_h3_graph.py": "a73941106fc18a5cf82de3cf8024f5f6aa9128e1c112b285d6e73ec6a3bd201f",
+    "_patches/minimax_h3_presets.py": "bedd5b545ab016e61e1808b78e8e25e2483a97da61e2b4ce2e9889b21fc9d723",
+    "_patches/minimax_h3_unified.py": "ad38a7bef5846753a07ff7a4e194dac2b2c623f4cacc60df9eb80a31de04a5f1"
+  }
+}
