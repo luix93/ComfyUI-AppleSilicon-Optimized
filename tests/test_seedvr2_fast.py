@@ -40,7 +40,8 @@ def test_packing_cache_reuses_invalidates_and_releases():
 
 def test_packing_grad_path_does_not_cache():
     weight = torch.randn(2,3,3,3,3,requires_grad=True)
-    with conv.packing_scope():
+    # Other suites import ComfyUI, which can leave autograd disabled globally.
+    with torch.enable_grad(), conv.packing_scope():
         out = conv._pack_weight(weight,2,3,3,1,3,3)
         assert conv._packing_state.get() == {}
         out.sum().backward()

@@ -1,5 +1,123 @@
 # Release notes
 
+## October 23, 2026 — H3 attention presets trimmed, Veda removed
+
+- **H3 Acceleration · Simple:** ten attention presets were removed. v3 beats
+  Dense INT8 v1/v2 on error at equal or better speed. Dense QK INT8 / PV BF16
+  was only 1.05–1.08× faster than exact. Hybrid balanced was never benchmarked
+  on a full clip. VSA ComfyUI (64) was a comparison recipe, and SOL beat Veda
+  at the same distance from exact. Ten remain: SOL conservative / balanced /
+  fast / top-k wide / top-k all-step draft / hybrid fast, Dense INT8 v3
+  protected / balanced / full experimental, and VSA FastH3 Omni (128).
+- Saved workflows keep loading. Removed names map to the nearest remaining
+  recipe, with a log line, on both the server and the frontend.
+- **Veda removed entirely:** the backend, vendored runtime, predictor setup,
+  workflow template, the `veda-mlx` extra, and its credits and notices. The
+  tile-list Metal attention kernel VSA uses (our PyTorch MPP adaptation) moved
+  to `_patches/h3_tile_attention_mps.py`. On the advanced node, saved Veda
+  selections run SOL INT8. Workflows saved with the four Veda inputs have those
+  positional values dropped on load.
+- The advanced node keeps the Dense INT8 v1, v2 and floating-PV backends
+  selectable; only their presets were removed.
+- Renamed to show the Metal kernels: **SOL Metal** · conservative / balanced /
+  fast / hybrid fast / top-k wide / top-k all-step draft, and **Dense Metal** ·
+  protected / balanced / full experimental (the INT8 v3 kernel). VSA Metal ·
+  FastH3 Omni (128) is unchanged. The former `SOL INT8 · …` and
+  `Dense INT8 v3 · …` names still load and run the same recipes. The advanced
+  panel's presets follow the same names.
+- **Attention Backend (Apple Silicon):** `int8_dense_accurate` is renamed
+  `dense_metal`, the same v3 kernel as the Dense Metal presets and the Metal
+  counterpart to Comfy Kitchen's INT8 attention, and `int8_dense_approximate`
+  is renamed `dense_metal_v2`. `dense_metal` is listed first. Saved workflows
+  using the former names still load, and the frontend updates the values.
+- **SOL Metal · hybrid fast** now runs its protected layers on the Dense Metal
+  (v3) kernel instead of v1. On H3 at 480p it took 113.51 s (v1: 113.90 s, SOL
+  fast: 114.32 s, exact: 145.50 s), with frame PSNR against exact of 17.43 dB
+  (v1: 17.37 dB). Set `ASFP8_H3_HYBRID_DENSE=v1` to get the previous bytes back.
+  [Report](benchmarks/m5-ultra-h3-hybrid-v3.md)
+
+## October 23, 2026 — regression on nightly `7a283320`
+
+- 35 workflow/mode/preprocessor cases run twice on the new dev instance (core
+  `v0.42.0-19-g7a283320`, Kitchen 0.2.39). All are byte-identical to the
+  October 19 regression, or for Fibo to its October 23 benchmark.
+  [Report](benchmarks/m5-ultra-comfy042-nightly-oct23.md)
+- Repair: YuE2's exact single-token RoPE stood down after upstream's top-p fix
+  changed `llama.py`. The reviewed hash is now admitted (Attention/RoPE
+  unchanged). 8 s control: **7.65 → 5.83 s**, identical bytes.
+- H3 coverage this pass: exact, SOL INT8 fast and Dense INT8 v3 balanced. Wan:
+  four-step only, with the 20-step time scaled from it.
+
+## October 23, 2026 — Fibo 2.0
+
+- New exact Fibo 2.0 route (Dev and Edit Turbo, INT8 ConvRot):
+  - Joined CFG rows: both branches run as one batch-2 forward when the
+    prompts share a gist count. The Perceiver, text cross-attention and
+    modulation stay per branch.
+  - Fused RMSNorm+modulate and RMSNorm+gate+residual passes, in PyTorch's
+    RMSNorm reduction order.
+  - tile32 attention for its 28 heads.
+- Dev 1024², 30 steps, CFG 5: **88.49 s stock → 38.47 s (previous pack) →
+  31.87 s**. Edit Turbo 1024², 4 steps: **16.19 → 7.38 → 6.61 s**. Latents
+  and decoded frames are byte-identical to the previous pack.
+- Roll back with `ASFP8_FIBO2_FAST=0`, or switch parts off with
+  `ASFP8_FIBO2_CFG_JOIN`, `ASFP8_FIBO2_GLUE` and `ASFP8_FIBO2_ATTN`.
+  [Report](benchmarks/m5-ultra-fibo2.md) · [Controls](docs/fibo2.md)
+
+## October 23, 2026 — faster exact MOSS route
+
+- MOSS-Image now joins the positive and negative CFG branches through every INT8
+  projection. Attention, positions and text stay per branch. It also uses a
+  128-row INT8 tile order for MOSS shapes, and 32-row exact attention tiles by
+  default.
+- SFT, 25 steps: 1024² **20.43 → 19.31 s** (6.2%), 1248² **32.39 → 31.37 s**
+  (3.2%). Every latent and decoded frame is byte-identical to the previous
+  route.
+- Roll back with `ASFP8_MOSS_CFG_JOIN=0`, `ASFP8_MOSS_GEMM_SCHEDULE=0` and
+  `ASFP8_MOSS_ATTN_MODE=exact`.
+- Beta-tester contributions, re-verified here, all byte-identical:
+  - MOSS: exact RMS/modulation memory-pass fusion and fused Q/K RMS + RoPE. On
+    top of the route above, SFT 1024² **19.47 → 17.48 s** and 1248²
+    **31.65 → 28.43 s**. The total since October 22 is 20.43 → 17.48 s (−14%).
+  - Krea2 INT8: paired gate/up projections with a direct SwiGLU store
+    (about 1% on the Turbo + LoRA fixture).
+  - BF16-only MOSS FC1/SiTU pairing and 32-row Krea2 attention tiles. These
+    need BF16 checkpoints, which we did not have for end-to-end tests here.
+  - Switches: `ASFP8_MOSS_QK_FUSION`, `ASFP8_MOSS_RMS_MODE=original`,
+    `ASFP8_KREA2_FFN_PAIR`, `ASFP8_KREA2_TILE32` and `ASFP8_MOSS_BF16_FFN_PAIR`.
+- `ASFP8_MOSS_ATTN_MODE=int8_v3` adds the general INT8 attention as an opt-in
+  MOSS mode. At 1248², 50 steps it saves about 2% (25 dB PSNR vs exact). The
+  existing `dense_int8_floatpv` saves about 4% (28 dB). Both are off by default.
+- An exact fused ConvRot rotate/quantize kernel was also built. It is
+  byte-identical only on the matrix units, and slower, so it was not adopted.
+  [Measurements](benchmarks/m5-ultra-moss-exact-combo.md).
+
+## October 22, 2026 — opt-in INT8 attention for long sequences
+
+- **v3 / `int8_dense_accurate`:** Kitchen-style numerics (Hadamard Q/K rotation,
+  per-tile probabilities) at v2's end-to-end speed; real-activation error
+  0.0100 vs 0.0238 (v2) at 44.7k tokens, level with the Kitchen policy. H3 15 s
+  at full coverage 799.65 → 588.57 s; Dense INT8 v3 presets added, including
+  **Dense INT8 v3 · balanced** (first 2 and last 1 of 20 steps exact).
+- H3 dense INT8 presets no longer compute the exact text/reference/audio prefix
+  in INT8 before recomputing it. Output is byte-identical. On OmniRef, 41k
+  tokens, each preset call is about 30 ms faster: balanced now saves 0.14 s per
+  quantized call, level with the Attention Backend node.
+- New general M5 INT8 attention kernel: every key retained; 255-level
+  probabilities, per-channel V scales, INT32 accumulation across key tiles with
+  in-place integer rescaling. Never a default; exact routes are unchanged.
+- Select it with **Attention Backend (Apple Silicon) → int8_dense_approximate**
+  (any model using ComfyUI attention; unmasked D=128 calls with ≥8192 keys) or
+  the H3 presets **Dense INT8 v2 · protected / full experimental**.
+- MiniMax H3 864×480 / 20 steps, warm end to end: 15-second clip
+  **799.65 → 604.97 s** (full) / 666.40 s (protected); 5-second clip
+  143.9 → 129.4 s (full, two-run means). Real-activation operator error is about
+  one third lower than the existing Dense INT8 kernel at equal or better speed.
+- Wan 2.2 I2V 14B×2, 512×512 / 81 frames with the backend node: 20 steps
+  **285.72 → 225.52 s**, four-step LoRAs 31.6 → 26.6 s, frames visually close
+  to exact (cosine 0.994).
+  [Measurements, quality and limits](benchmarks/m5-ultra-int8-attention.md).
+
 ## October 19, 2026 — updated-core compatibility repairs
 
 - Restore the reviewed MOSS path on core `8f04fd6e` / Kitchen 0.2.39, adapting

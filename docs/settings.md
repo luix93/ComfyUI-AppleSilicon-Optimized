@@ -27,6 +27,8 @@ Optional workflow approximations remain independently selectable.
 | `ASFP8_QWEN3VL_NORM_ROPE` | 1 | fuse single-token Q/K RMSNorm with the exact RoPE kernel; preserves BF16 intermediate rounding; source/build/hardware guarded; requires `ASFP8_QWEN3VL_ROPE=1` |
 | `ASFP8_DISABLE_MLX_TEXTGEN` | 0 | `1` uses native PyTorch for text-only generation instead of the existing optional MLX route; image-containing requests already use PyTorch |
 | `ASFP8_QWEN21_FAST` | on (under DIT_EXT) | exact Qwen-Image 2.1 fusions on the pinned validated M5 Ultra / PyTorch 2.14.0 and 2.14.1 builds; `0` retains the encoder fix and generic native paths |
+| `ASFP8_H3_HYBRID_DENSE` | `v3` | kernel for SOL Metal hybrid's protected layers: `v3` (Dense Metal) or `v1` (the original dense INT8 kernel, byte-identical to earlier hybrid output). Changes output, not speed. |
+| `ASFP8_INT8_ATTN_MIN_TOKENS` | 8192 | smallest key count that the opt-in **dense_metal** / **dense_metal_v2** attention backends quantize; shorter calls keep the selected exact route. Clamped to at least 1024. Has no effect unless that backend or an H3 Dense INT8 v2 preset is selected |
 | `ASFP8_SOL_LAYOUT` | `head_major` | optional SOL physical layout; `legacy` selects the prior wrapper/shaders for diagnosis. New layout preserves prior SOL output bytes, not exact-native attention bytes; restart after changing it |
 | `ASFP8_YUE2_FAST` | on | exact phase-local cast-weight reuse, guarded vocabulary projection and single-token BF16 RoPE for the MPS YuE2 encoder; scoped acoustic attention under the existing PyTorch query-cache route; `0` restores the preceding YuE2 paths |
 | `ASFP8_YUE2_WEIGHT_CACHE` / `ASFP8_YUE2_VOCAB_HEAD` / `ASFP8_YUE2_ATTN` / `ASFP8_YUE2_ROPE` | on | independent YuE2 switches; exact against the existing GPU stack |
@@ -40,6 +42,8 @@ Optional workflow approximations remain independently selectable.
 | `ASFP8_IDEOGRAM_ATTN_TILE` | 1 | exact M5 Ultra D=256 attention output-channel tiling for S=4096…4608; 0 restores the previous full-width output tile |
 | `ASFP8_IDEOGRAM_GEMM_TILE` | 1 | exact M5 Ultra projection-specific INT8 scheduling for 1MP Ideogram shapes; 0 restores the previous schedule |
 | `ASFP8_KREA2_ATTN_SCHEDULE` | on | exact synchronized Morton attention schedule for M5 Ultra BF16 Krea2, B=1, 48Q/12KV, D=128, 8192–12287 tokens; other geometries keep their existing schedule |
+| `ASFP8_KREA2_FFN_PAIR` | 1 | exact Krea2 INT8 ConvRot gate/up projection pair with a direct SwiGLU store (same quantization, INT32 accumulation and BF16 rounding); 0 restores separate projections |
+| `ASFP8_KREA2_TILE32` | 1 | exact 32-row query tiles for floating-weight Krea2 attention at 6,144–14,336 tokens |
 | `ASFP8_MINIMAX_ATTN` / `ASFP8_MINIMAX_BLOCK` | 1 | MiniMax direct QKV/attention-output layout and segmented block-glue fusions |
 | `ASFP8_MINIMAX_GRAPH` | 1 | exact guarded H3 final-layer graph rewrite (target RMSNorm + modulation + fp32 casts) |
 | `ASFP8_MINIMAX_VAE_FAST` | 1 (under DIT_EXT) | FP16 H3 video-decoder QK normalization/RoPE/layout and elementwise kernels; `0` restores core forwards |
@@ -110,6 +114,14 @@ PyTorch 2.14.1 / Comfy Kitchen 0.2.37 stack.
 The Base multi-view camera fix preserves intended FP32 head computation. It does
 not split long clips automatically. Start joint-frame tests with a short window.
 [Measurements and numerical limits](../benchmarks/m5-ultra-vision-preprocessors.md).
+
+## Fibo 2.0 (core `7a283320`)
+
+`ASFP8_FIBO2_FAST=0` disables the exact Fibo route. Joined CFG rows, fused
+norm/modulation/residual and tile32 attention have independent switches
+(`ASFP8_FIBO2_CFG_JOIN`, `ASFP8_FIBO2_GLUE`, `ASFP8_FIBO2_ATTN`). Output is
+byte-identical to the preceding pack. Reviewed M5 Ultra / PyTorch 2.14.1 and
+the matching Fibo source are required. See [Fibo 2.0 controls](fibo2.md).
 
 ## MOSS-Image (nightly `c06bf5f5`)
 

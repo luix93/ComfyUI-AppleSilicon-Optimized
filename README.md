@@ -15,8 +15,9 @@ every quantized compatibility path or optional approximate mode; see the
 [numerics policy](#numerics-policy).
 
 The pack also includes optional H3 acceleration/LoRA controls, Prompt Studio,
-and Apple Silicon Super Resolution. Cache, sparse attention, token reduction
-and relaxed H3 modes are explicit workflow choices.
+and Apple Silicon Super Resolution. Cache, sparse attention, token reduction,
+opt-in INT8 attention and relaxed H3 modes are explicit workflow choices.
+[Latest changes](#latest-results--m5-ultra-80-gpu-cores).
 
 The complete source bundle is **[GPL-3.0](LICENSE)** because it includes
 Spectrum and ComfyUI-derived code. Original MIT/BSD/Apache notices are retained; model weights have their
@@ -44,29 +45,26 @@ compiler/toolchain; our current measurements use **macOS 27 / M5 Ultra**.
 Older Apple Silicon attempts the enabled routes with existing fallbacks, but
 M1–M4 performance and parity are not yet validated.
 
-**Latest regression: ComfyUI core
-[`8f04fd6e`](https://github.com/Comfy-Org/ComfyUI/commit/8f04fd6ecf4a548937971e840af2a985529fab76)**
-(`v0.42.0-3-g8f04fd6e`; instance reported as the 0.42.1 update), with
-**PyTorch 2.14.1 / Kitchen 0.2.39**. On October 19, 33 workflow/mode/preprocessor
-cases completed twice, including restored SDXL and Wan. Reviewed compatibility
-repairs restore MOSS, Flux.3 and YuE2 paths without changing their captured
-outputs. Wan differs numerically from v0.41.2 after the upstream linear-dispatch
-change; its diagnostic rollback and SeedVR's new synthetic inputs are documented.
-[Timings, repairs and numerical scope](benchmarks/m5-ultra-comfy0421-smoke.md).
-The [preceding nightly check](benchmarks/m5-ultra-comfy0413-nightly-smoke.md)
-and [v0.41.2 check](benchmarks/m5-ultra-comfy0412-smoke.md) retain prior evidence.
-
-**Optional H3 attention:** new INT8 QK / BF16 PV presets measured **8.51 s/step**
-full or **8.76 s/step** protected, versus **9.29 s/step exact**, at 1024×512,
-124 frames, 20 steps. These are approximate, opt-in modes; exact defaults are
-unchanged. [Speed, quality and comparison with SOL](benchmarks/m5-ultra-h3-floatpv.md).
+**Latest regression: ComfyUI nightly core
+[`7a283320`](https://github.com/Comfy-Org/ComfyUI/commit/7a28332047b6af638dc6c7f72ef3481a718769fd)**
+(`v0.42.0-19-g7a283320`, with Fibo 2.0 support), with **PyTorch 2.14.1 / Kitchen
+0.2.39 / frontend 1.57.1**. On October 23, 35 workflow/mode/preprocessor cases
+completed twice. All are byte-identical to the October 19 regression on
+`8f04fd6e`. One reviewed guard repair restores YuE2's exact RoPE path after an
+upstream top-p fix. H3 covered exact, SOL INT8 fast and Dense INT8 v3; Wan
+covered the four-step workflow.
+[Timings, repair and numerical scope](benchmarks/m5-ultra-comfy042-nightly-oct23.md).
+The [October 19 regression](benchmarks/m5-ultra-comfy0421-smoke.md) (core
+`8f04fd6e`, including Wan's upstream numerical change and SeedVR's synthetic inputs),
+the [preceding nightly check](benchmarks/m5-ultra-comfy0413-nightly-smoke.md)
+and the [v0.41.2 check](benchmarks/m5-ultra-comfy0412-smoke.md) retain prior evidence.
 
 **Stock/optimized benchmark core:** `v0.39.0-33-g1d2ea294` — package version **0.39.0**,
 33 commits after the v0.39.0 tag, at
 [`1d2ea2948d33dfda4d7cfe58c6d234968aa62cf8`](https://github.com/Comfy-Org/ComfyUI/commit/1d2ea2948d33dfda4d7cfe58c6d234968aa62cf8).
 This is the checkout used for established stock/optimized pairs, not the tagged
 v0.39.2 release. The complete table also includes Flux.3 on **v0.41.2**, MOSS on
-**nightly `c06bf5f5`**, and latest regression timings. The installer manages the
+**core `7a283320`**, and latest regression timings. The installer manages the
 tested Torch profile; it does not pin or update ComfyUI core.
 
 ### ComfyUI-Manager
@@ -158,19 +156,22 @@ are downloaded by the main installer; their separate setup is documented in
 ## Supported configurations
 
 **Latest ComfyUI releases are supported**, with source checks controlling which
-native fast paths can run. The latest published release is
-[v0.42.1](https://github.com/Comfy-Org/ComfyUI/releases/tag/v0.42.1).
-**Timing-confirmed regression:** October 19, 2026, core
-[`8f04fd6e`](https://github.com/Comfy-Org/ComfyUI/commit/8f04fd6ecf4a548937971e840af2a985529fab76)
-(`v0.42.0-3-g8f04fd6e`), with 33 cases run twice. This is the checkout behind the
-latest timings below. The tagged v0.42.1 release contains subsequent MOSS
-changes and has not yet received that same regression test; unreviewed source
+native fast paths can run.
+**Timing-confirmed regression:** October 23, 2026, nightly core
+[`7a283320`](https://github.com/Comfy-Org/ComfyUI/commit/7a28332047b6af638dc6c7f72ef3481a718769fd)
+(`v0.42.0-19-g7a283320`, master of October 20, the first core with Fibo 2.0),
+with frontend 1.57.1 and Kitchen 0.2.39. 35 cases were run twice, and all are
+byte-identical to the previous regression. This is the checkout behind the
+latest timings below. The latest tagged release,
+[v0.42.5](https://github.com/Comfy-Org/ComfyUI/releases/tag/v0.42.5), is built
+from a release branch without Fibo 2.0. Its guarded MOSS, Llama and ops sources
+match reviewed hashes, but it was not separately timed. Unreviewed source
 revisions use compatibility fallbacks rather than a claim of validated maximum
-acceleration. [Regression results and scope](benchmarks/m5-ultra-comfy0421-smoke.md).
+acceleration. [Regression results and scope](benchmarks/m5-ultra-comfy042-nightly-oct23.md).
 
 | Configuration | Validation status |
 |---|---|
-| M5 Ultra, 80 GPU cores / 256 GB, macOS 27, PyTorch 2.14.1 + torchvision 0.29.1 | Stock/optimized benchmarks use `v0.39.0-33-g1d2ea294`, Flux.3/preprocessing on v0.41.2 and MOSS on nightly `c06bf5f5`. Latest [two-run regression](benchmarks/m5-ultra-comfy0421-smoke.md): core `8f04fd6e`, Kitchen 0.2.39; see its input and numerical scope. |
+| M5 Ultra, 80 GPU cores / 256 GB, macOS 27, PyTorch 2.14.1 + torchvision 0.29.1 | Stock/optimized benchmarks use `v0.39.0-33-g1d2ea294`, Flux.3/preprocessing on v0.41.2 and MOSS on core `7a283320`. Latest [two-run regression](benchmarks/m5-ultra-comfy042-nightly-oct23.md): nightly core `7a283320`, Kitchen 0.2.39; see its input and numerical scope. |
 | PyTorch 2.14.0 + torchvision 0.29.0 | Reviewed build retained by setup; earlier workflow evidence is linked in the reports. |
 | M5 Max | Tested in earlier optimization work. The latest regression and current performance table use M5 Ultra; the current release stack was not retested on a Max. |
 | Latest macOS / Metal 4.1 toolchain | Required for maximum native acceleration. Current benchmarks use macOS 27; install the matching Xcode/Metal tools as described above. |
@@ -182,70 +183,99 @@ geometry. A model loading successfully does not prove that its fast path ran.
 
 ## Latest results — M5 Ultra (80 GPU cores)
 
-**Updated 2026-10-19 · 256 GB unified memory · macOS 27.0 · PyTorch 2.14.1**
+**Table updated 2026-10-23 · 256 GB unified memory · macOS 27.0 · PyTorch 2.14.1**
+
+**Latest changes.** The Fibo and MOSS rows in the table below are measured with these changes; the other figures are incremental comparisons:
+
+- **Fibo 2.0 (new):** Dev and Edit Turbo get an exact route: joined CFG rows,
+  fused norm/modulation/residual passes and tile32 attention. Dev 1024², 30
+  steps: **88.49 s stock → 31.87 s (2.78×)**, of which 38.47 → 31.87 s comes
+  from this route. It is byte-identical to the previous pack.
+  [Report](benchmarks/m5-ultra-fibo2.md) · [Controls](docs/fibo2.md)
+- **MOSS-Image, exact:** the exact route now joins the two CFG branches through
+  its INT8 projections and uses a MOSS INT8 tile schedule and 32-row attention
+  tiles. It also gains contributed RMS/modulation and Q/K-RoPE fusions. SFT at
+  25 steps, warm with the prompt already encoded, now takes **20.43 → 17.48 s**
+  at 1024² and **32.39 → 28.43 s** at 1248², byte-identical to the previous
+  route.
+  [Report and stock pairs](benchmarks/m5-ultra-moss-exact-combo.md#readme-table-pairs-october-23)
+- **Opt-in INT8 attention (M5):** a new `dense_metal` backend (Dense Metal) with
+  Kitchen-style numerics, available for H3 and other long-sequence models. The
+  MiniMax H3 864×480 15-second clip takes **799.65 → 588.57 s (1.36×)** with
+  every call quantized, or **662.04 s** with steps and layers protected. It
+  changes outputs and is never a default.
+  [Report](benchmarks/m5-ultra-int8-attention.md) · [Controls](docs/int8-attention.md)
+- **Krea2 INT8:** an exact paired gate/up FFN, about 1% faster.
 
 ### Complete performance table
 
 **Stock and optimized columns are matched measurements from the linked benchmark
-reports.** Earlier optimized implementations are never used as stock baselines. The last column shows the latest tested core's warm second run, after the
-MOSS, YuE2 and Flux.3 compatibility repairs. Speedups use the paired benchmark columns,
+reports.** Earlier optimized implementations are never used as stock baselines. The last column shows the latest tested core's warm second run. Speedups use the paired benchmark columns,
 not a comparison across different ComfyUI versions.
 
 - Established model pairs: `v0.39.0-33-g1d2ea294`, including later kernel follow-ups.
 - Flux.3 and preprocessing pairs: **v0.41.2 / Kitchen 0.2.37**.
-- MOSS pairs: **nightly `c06bf5f5` / Kitchen 0.2.38**, after v0.41.3.
-- Latest regression: **core `8f04fd6e` / Kitchen 0.2.39**. All use **PyTorch 2.14.1**.
+- MOSS and Fibo 2.0 pairs: measured 2026-10-23 on **core `7a283320` (`v0.42.0-19`) / Kitchen 0.2.39**.
+- Latest regression (last column): **nightly core `7a283320` (`v0.42.0-19`) / Kitchen 0.2.39**, 2026-10-23. All use **PyTorch 2.14.1**.
 
 <!-- Canonical current benchmark table: update the date, measurements and linked report together after validated runs. -->
 
 | Workflow | Before (stock) | After (optimized) | Speedup | Latest core check |
 |---|---:|---:|---:|---:|
-| SDXL, 896×1152 / 12 steps | 2.61 s | **2.40 s** | **1.09×** | 2.49 s |
-| Z-Image Turbo, 1024×1024 / 8 steps | 7.86 s | **3.44 s** | **2.28×** | 3.46 s |
-| Flux.2 Klein 9B, text-to-image / 1024×1024 / 4 steps | 5.61 s | **2.27 s** | **2.47×** | 2.30 s |
-| Flux.2 Klein 9B, image edit / 1024×1024 / 4 steps | 9.25 s | **4.64 s** | **1.99×** | 4.66 s |
-| Ideogram 4, 1024×1024 / 12 steps / dual-model CFG | 43.54 s | **17.78 s** | **2.45×** | 17.44 s |
-| Krea2 Turbo, 1448×1448 / 8 steps + LoKr | 27.45 s | **13.63 s** | **2.01×** | 13.73 s |
-| Krea2 Turbo, same workflow without LoKr | 27.54 s | **13.96 s** | **1.97×** | 13.68 s |
-| Krea2 Turbo, 1024×1024 / 8 steps / no LoKr | 15.63 s | **6.13 s** | **2.55×** | 6.20 s |
-| Qwen-Image 2.1, 1024×1024 / 25 steps | 28.94 s | **12.66 s** | **2.29×** | 12.81 s |
-| Qwen-Image 2.1 edit, generated reference / 1024×1024 / 40 steps | 50.47 s | **23.00 s** | **2.19×** | 23.37 s |
-| MiniMax H3, 864×480 / 124 frames / 20 steps | 236.97 s | **141.65 s** | **1.67×** | 145.62 s |
-| LTX 2.5, diffusion VAE / 1280×704 / 121 frames / 8+3 steps | 90.82 s | **46.16 s** | **1.97×** | 45.48 s |
-| LTX 2.5, convolutional VAE / same clip and original tiling | 50.98 s | **32.05 s** | **1.59×** | 31.36 s |
-| Wan 2.2 I2V 14B×2, 512×512 / 81 frames / 20 steps / CFG 3.5 | 421.16 s | **304.33 s** | **1.38×** | 290.78 s² |
-| Wan 2.2 I2V 14B×2, same clip / 4-step LoRAs / CFG 1 | 46.14 s | **31.90 s** | **1.45×** | 31.07 s² |
-| SeedVR2 7B INT8, 2400×1600 → 7200×4800 / 1 step | 66.29 s | **45.15 s** | **1.47×** | 45.76 s³ |
-| YuE2 3B INT8, controlled 8 s / 128 ABC tokens / 32 steps | 124.19 s | **5.78 s** | **21.49×** | 5.98 s |
-| Flux.3 distilled, T2I / 1024×1024 / 16 steps | 12.12 s | **6.17 s** | **1.96×** | 5.81 s |
-| Flux.3 Base, T2I / 1024×1024 / 50 steps / CFG 3.5 | 69.15 s | **35.47 s** | **1.95×** | 33.39 s |
-| Flux.3 distilled, edit / 1376×752 / 16 steps | 21.94 s | **13.35 s** | **1.64×** | 12.88 s |
-| Flux.3 Base, edit / 896×1152 / 50 steps / CFG 3.5 | 118.77 s | **75.35 s** | **1.58×** | 70.88 s |
-| MOSS-Image SFT, 1024×1024 / 25 steps / CFG 2.5 | 68.47 s | **22.14 s** | **3.09×** | 22.30 s |
-| MOSS-Image Base, 1024×1024 / 25 steps / CFG 2.5 | 69.16 s | **22.44 s** | **3.08×** | 22.30 s |
-| MOSS-Image SFT, 1248×1248 / 25 steps / CFG 2.5 | Not measured | **34.07 s** | — | 34.31 s |
-| MOSS-Image SFT, 1248×1248 / 50 steps / CFG 2.5 | Not measured | **66.73 s** | — | — |
-| SeedVR2 7B INT8 video, 416×736 → 832×1472 / 120 frames | Not measured | **124.66 s** | — | 125.37 s³ |
+| SDXL, 896×1152 / 12 steps | 2.61 s | **2.40 s** | **1.09×** | 2.46 s |
+| Z-Image Turbo, 1024×1024 / 8 steps | 7.86 s | **3.44 s** | **2.28×** | 3.44 s |
+| Flux.2 Klein 9B, text-to-image / 1024×1024 / 4 steps | 5.61 s | **2.27 s** | **2.47×** | 2.31 s |
+| Flux.2 Klein 9B, image edit / 1024×1024 / 4 steps | 9.25 s | **4.64 s** | **1.99×** | 4.65 s |
+| Ideogram 4, 1024×1024 / 12 steps / dual-model CFG | 43.54 s | **17.78 s** | **2.45×** | 17.42 s |
+| Krea2 Turbo, 1448×1448 / 8 steps + LoKr | 27.45 s | **13.63 s** | **2.01×** | 13.52 s |
+| Krea2 Turbo, same workflow without LoKr | 27.54 s | **13.96 s** | **1.97×** | 13.45 s |
+| Krea2 Turbo, 1024×1024 / 8 steps / no LoKr | 15.63 s | **6.13 s** | **2.55×** | 6.03 s |
+| Qwen-Image 2.1, 1024×1024 / 25 steps | 28.94 s | **12.66 s** | **2.29×** | 12.68 s |
+| Qwen-Image 2.1 edit, generated reference / 1024×1024 / 40 steps | 50.47 s | **23.00 s** | **2.19×** | 23.20 s |
+| MiniMax H3, 864×480 / 124 frames / 20 steps | 236.97 s | **141.65 s** | **1.67×** | 146.24 s |
+| LTX 2.5, diffusion VAE / 1280×704 / 121 frames / 8+3 steps | 90.82 s | **46.16 s** | **1.97×** | 45.32 s |
+| LTX 2.5, convolutional VAE / same clip and original tiling | 50.98 s | **32.05 s** | **1.59×** | 31.19 s |
+| Wan 2.2 I2V 14B×2, 512×512 / 81 frames / 20 steps / CFG 3.5 | 421.16 s | **304.33 s** | **1.38×** | ≈288.25 s² |
+| Wan 2.2 I2V 14B×2, same clip / 4-step LoRAs / CFG 1 | 46.14 s | **31.90 s** | **1.45×** | 30.80 s² |
+| SeedVR2 7B INT8, 2400×1600 → 7200×4800 / 1 step | 66.29 s | **45.15 s** | **1.47×** | 44.97 s³ |
+| YuE2 3B INT8, controlled 8 s / 128 ABC tokens / 32 steps | 124.19 s | **5.78 s** | **21.49×** | 5.83 s |
+| Flux.3 distilled, T2I / 1024×1024 / 16 steps | 12.12 s | **6.17 s** | **1.96×** | 5.78 s |
+| Flux.3 Base, T2I / 1024×1024 / 50 steps / CFG 3.5 | 69.15 s | **35.47 s** | **1.95×** | 33.52 s |
+| Flux.3 distilled, edit / 1376×752 / 16 steps | 21.94 s | **13.35 s** | **1.64×** | 12.70 s |
+| Flux.3 Base, edit / 896×1152 / 50 steps / CFG 3.5 | 118.77 s | **75.35 s** | **1.58×** | 71.11 s |
+| MOSS-Image SFT, 1024×1024 / 25 steps / CFG 2.5 | 69.34 s | **19.09 s** | **3.63×** | 18.92 s |
+| MOSS-Image Base, 1024×1024 / 25 steps / CFG 2.5 | 70.38 s | **19.76 s** | **3.56×** | 19.51 s |
+| MOSS-Image SFT, 1248×1248 / 25 steps / CFG 2.5 | 88.41 s | **30.25 s** | **2.92×** | 29.75 s |
+| MOSS-Image SFT, 1248×1248 / 50 steps / CFG 2.5 | 155.49 s | **58.67 s** | **2.65×** | —⁴ |
+| Fibo 2.0 Dev INT8, 1024×1024 / 30 steps / CFG 5 | 88.49 s | **31.87 s** | **2.78×** | 31.43 s |
+| Fibo 2.0 Edit Turbo INT8, 1024×1024 reference / 4 steps | 16.19 s | **6.61 s** | **2.45×** | 6.28 s |
+| SeedVR2 7B INT8 video, 416×736 → 832×1472 / 120 frames | Not measured | **124.66 s** | — | 124.28 s³ |
 | SeedVR2 7B INT8 video, 25-frame processing screen / same dimensions | 34.18 s | **27.81 s** | **1.23×** | — |
-| YuE2, saved full-song workflow / 83.2 s song | Not measured | **34.12 s** | — | 35.35 s¹ |
-| YuE2 Mothersuperior, 20 s | Not measured | **21.94 s** | — | 22.26 s |
-| BiRefNet, 4 synthetic frames | 21.786 s (CPU) | 0.757 s (MPS) | 28.78× | 0.752 s |
-| Multi-person SDPose + detector, 4 frames / 8 crops | 2.943 s | 1.448 s | 2.03× | 1.432 s |
-| DA3 Mono Large, 8 frames | 0.456 s | 0.416 s | 1.10× | 0.415 s |
-| DA3 Base multi-view, 8 frames | — | — | — | 0.115 s |
+| YuE2, saved full-song workflow / 83.2 s song | Not measured | **34.12 s** | — | 35.24 s |
+| YuE2 Mothersuperior, 20 s | Not measured | **21.94 s** | — | 22.15 s |
+| BiRefNet, 4 synthetic frames | 21.786 s (CPU) | 0.757 s (MPS) | 28.78× | 0.748 s |
+| Multi-person SDPose + detector, 4 frames / 8 crops | 2.943 s | 1.448 s | 2.03× | 1.463 s |
+| DA3 Mono Large, 8 frames | 0.456 s | 0.416 s | 1.10× | 0.407 s |
+| DA3 Base multi-view, 8 frames | — | — | — | 0.114 s |
 
 Speedup = stock time ÷ optimized time. **2×** means twice the processing speed;
 **1.2×** means 20% faster. **—** means no measurement is published for that cell.
 
-¹ The full-song YuE2 initial sweep was slower; an isolated two-run confirmation
-returned to the preceding timing range. Both sets are retained in the regression report.
+¹ On October 19 the full-song YuE2 initial sweep was slower; an isolated two-run
+confirmation returned to the preceding timing range. The latest regression matched
+that confirmation (35.24 s).
 
 ² Wan retains current upstream quantized-linear semantics; output bytes differ
-from v0.41.2. The timing comparison crosses that core change.
+from v0.41.2. The timing comparison crosses that core change. The latest regression
+ran only the four-step workflow (31.07 → 30.80 s, byte-identical). The 20-step
+value applies the same −0.9% to its October 19 time and was not re-measured.
 
 ³ SeedVR uses new synthetic media at the same dimensions. Its latest timings
 validate execution and bounded memory, rather than input-matched regression.
-The MOSS 50-step / 1.5 MP and SeedVR 25-frame screens were not rerun.
+The SeedVR 25-frame screen was not rerun.
+
+⁴ MOSS SFT 1248² / 50 steps was not part of the latest regression. Stock MOSS
+1248² values are one run each; the other stock/optimized pairs are two-run means.
 
 The full-song YuE2, Mothersuperior and 120-frame SeedVR2 rows retain their
 optimized timings, but have **no measured full-workflow stock comparison**.
@@ -263,8 +293,8 @@ video export; it is not a measured five-second stock run.
 [25-frame stock comparison](benchmarks/m5-ultra-seedvr2-video-memory.md#scheduling-experiments).
 
 Generation timings include sampling, decode and export; model loading and unchanged
-conditioning are cached. YuE regenerates tokens/conditioning. MOSS also includes
-fresh text encoding, with prompt enhancement off. Flux.3 edit uses identical frozen
+conditioning are cached. YuE regenerates tokens/conditioning. MOSS and Fibo also include
+fresh text encoding (Fibo Edit also re-encodes its reference), with prompt enhancement off. Flux.3 edit uses identical frozen
 expanded prompts, excluding prompt expansion. Preprocessing rows exclude model
 loading and video/file IO. Stock baselines omit this pack; Qwen retains its minimal encoder
 compatibility shim and SeedVR retains scheduling-only memory protection.
@@ -273,26 +303,29 @@ Optional H3 acceleration modes are off in the main table.
 The latest regression is a single warm observation per case, not a replacement
 for repeated benchmark averages. **LTX, Flux.3 and Wan differ from
 v0.41.2 after the upstream linear-dispatch change**; these compatibility repairs
-preserve updated-core outputs. All final cases repeat their own captured bytes.
-The [regression report](benchmarks/m5-ultra-comfy0421-smoke.md)
-includes previous-version timings, before/after repairs and numerical scope.
+preserve updated-core outputs. All final cases repeat their own captured bytes,
+and the October 23 pass matches the October 19 bytes in every compared case.
+H3's SOL INT8 fast preset (113.61 s) and the new Dense INT8 v3 balanced preset
+(131.95 s) were also checked; they are opt-in and not in the main table.
+The [latest regression report](benchmarks/m5-ultra-comfy042-nightly-oct23.md)
+includes previous-version timings, the YuE2 guard repair and numerical scope.
+[October 19 regression](benchmarks/m5-ultra-comfy0421-smoke.md) ·
 [Established baseline](benchmarks/m5-ultra-torch2141-retest.md) ·
 [Krea2 follow-up](benchmarks/m5-ultra-krea2-oct2026.md) ·
 [Ideogram/H3 follow-up](benchmarks/m5-ultra-ideogram-h3-oct2026.md).
 
 ### Model notes and additional measurements
 
-- **MOSS:** exact refinements cut sampling by about 37% versus the preceding
-  pack, preserving its tested latents/decoded bytes. The complete pack is not
+- **MOSS:** the rows include the October 23 exact route, which is byte-identical
+  to the preceding pack (see Latest changes). The complete pack is not
   stock-byte-identical; a separate MOSS-only configuration passed stock-byte
-  comparisons. The later 1.5 MP SFT attention extension preserves output bytes,
-  improving the preceding pack from 35.27 → 34.07 s (25 steps) and
-  68.41 → 66.73 s (50 steps). These are incremental comparisons, not stock.
+  comparisons.
+
+  INT8 attention modes, including the Kitchen policy, quantize every call. At
+  1.5 MP they saved only 2–4% at 25–28 dB PSNR, so they stay opt-in.
   [Initial benchmarks](benchmarks/m5-ultra-moss-image.md) ·
   [1.5 MP follow-up](benchmarks/m5-ultra-moss-15mp.md) ·
-  [1024² execution audit](benchmarks/m5-ultra-moss-execution.md): latest FFN cleanup
-  removes an unused 1.97 GiB cache, with less than 1% measured E2E change.
-  [Controls](docs/moss-image.md). The later [Kitchen-style INT8 / fused FFN experiments](benchmarks/m5-ultra-moss-kitchen-int8.md) were slower end to end and remain disabled; the exact default is unchanged.
+  [Controls](docs/moss-image.md).
 - **Flux.3:** distilled uses CFG 1, Base CFG 3.5; both use Euler/simple and INT8
   ConvRot models. Prepared Qwen3.5 weights reduce prompt expansion from 116–117 s
   to about 10 s. With fresh expansion/reference encoding, the original v0.41.2
@@ -386,9 +419,9 @@ are for controls or new functions:
 | Node | Purpose |
 |---|---|
 | H3 Acceleration · Simple | Combine one cache preset, one attention preset and optional token reduction. SOL/dense quantized reference approximation is a separate default-off switch. Placement defaults to MotionCache balanced; set all three selectors to Off for pass-through. |
-| H3 Apple Silicon Acceleration | Advanced settings for the same runtime. MotionCache, Spectrum and Veda implementations are bundled; Veda predictor weights require separate setup. |
+| H3 Apple Silicon Acceleration | Advanced settings for the same runtime. MotionCache and Spectrum implementations are bundled. |
 | H3 LoRA (Apple Silicon) | Ordered adapter list, including Turbo, with enable/weight/validation per entry. |
-| Attention Backend (Apple Silicon) | Select attention on the connected model. |
+| Attention Backend (Apple Silicon) | Select attention on the connected model, including the opt-in approximate `dense_metal` and `dense_metal_v2` for long video sequences. |
 | H3 Latent Upscale (Apple Silicon) | MPS-aware latent upscaling with device/precision and memory controls. |
 | Apple Silicon Super Resolution | Optional image/video VSR and neural-rendering stages; separate runtime/model installation. |
 
@@ -463,6 +496,7 @@ bounded sampling caches.
 - [Benchmark index and historical experiments](benchmarks/README.md)
 - [Kernel/compatibility implementation](docs/kernel-reference.md)
 - [YuE2 Mothersuperior workflow](docs/yue2-mothersuperior.md)
+- [Separate YuE2 hum-to-song workflow](docs/yue2-hum-to-song.md) — requires FS Audio Suite.
 - [RefMod compatibility](docs/h3-refmod-compatibility.md)
 - [Attribution audit](docs/release-attribution.md) and [privacy audit](docs/privacy-audit.md)
 - [Release-candidate changes and validation](CHANGELOG.md)
@@ -472,12 +506,16 @@ bounded sampling caches.
 Built from Paweł Mazurkiewicz's **ComfyUI-AppleSilicon-FP8** and **mtlflashattn**,
 with adapted/reference work from **Cider/Mininglamp**, **CCV/Liu Liu**, **PyTorch**,
 **MLX/Apple**, **ComfyUI/Comfy Org**, **Comfy Kitchen/Kijai**, **SeedVR/ByteDance**,
-**MotionCache/starsFriday**, **Spectrum/xmarre**, **Veda**, **h3.c/Salvatore Sanfilippo**,
+**MotionCache/starsFriday**, **Spectrum/xmarre**, **h3.c/Salvatore Sanfilippo**,
 **Sol-Attn/NVIDIA**, **LBH-123-AI's H3 upscaler**, **MLX-DLSS/MLX Swift** and
 **DLSSMac/Mappsnet7**. Additional sparse/cache research references are credited too.
 
 [Full author/project credits](docs/credits.md) ·
 [Source inventory and required notices](THIRD_PARTY_NOTICES.md).
+
+## Special thanks
+
+**Neat**, for collaboration on this project and a generous financial donation.
 
 ## License
 

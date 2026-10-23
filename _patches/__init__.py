@@ -5,6 +5,7 @@
 # number order; the comments here use patch numbers, not install positions.
 __all__ = [
     "moss_fast",             # exact MOSS-Image elementwise kernels and sampling-local caches
+    "fibo2_fast",            # exact Fibo 2.0 joined CFG rows, fused glue and tile32 attention
     "vision_preprocessors", # SDPose feature-only execution, bounded DA3 batches and camera dtype fix
     "psutil_vmstat",        # patch #1  — psutil vm_stat fallback (macOS beta crash)
     "comfykitchen_fp8",     # patch #2  — comfy_kitchen eager FP8 dequant (Ideogram 4)

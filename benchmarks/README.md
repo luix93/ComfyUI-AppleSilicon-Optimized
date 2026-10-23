@@ -1,7 +1,13 @@
 # Benchmark reports
 
+- [Opt-in INT8 attention](m5-ultra-int8-attention.md): general M5 kernel, real-activation errors, complete H3 5 s / 15 s and Wan 2.2 workflows, rejected designs.
+
+- [SOL Metal hybrid on Dense Metal v3](m5-ultra-h3-hybrid-v3.md): same speed as v1, PSNR level with SOL Fast; `ASFP8_H3_HYBRID_DENSE=v1` restores prior bytes.
+- [Nightly `7a283320` regression (dev instance, Oct 23)](m5-ultra-comfy042-nightly-oct23.md): 35 cases twice, all byte-identical to Oct 19; YuE2 Llama-guard repair; Fibo 2.0 added.
+- [Fibo 2.0 stock baseline and exact route](m5-ultra-fibo2.md): Dev 88.49 → 31.87 s, Edit Turbo 16.19 → 6.61 s.
 - [Updated ComfyUI 0.42.x regression](m5-ultra-comfy0421-smoke.md): reviewed source/Kitchen repairs, restored SDXL/Wan coverage, two-run timings and numerical scope.
 
+- [MOSS exact route: joined CFG rows, INT8 tile schedule, tile32](m5-ultra-moss-exact-combo.md): default since October 23; 1024² 20.43 → 19.31 s byte-identical; exact rotate/quantize fusion screened and rejected.
 - [MOSS CFG projection grouping](m5-ultra-moss-cfg-projections.md): byte-identical full-render comparisons, small/inconsistent gains, and a screened joined-state refinement; not promoted.
 
 - [MOSS-specific dense attention tuning](m5-ultra-moss-attention-tuning.md): exact query tiles, INT8 preparation/layout changes, full-render comparisons and rejected candidates.
@@ -45,7 +51,7 @@ preceding optimized output without matching stock ComfyUI.
 | Wan 2.2 | [Ordinary and Turbo LoRA workflows](m5-ultra-wan22.md) |
 | SeedVR2 | [2.14.1 exact VAE follow-up](m5-ultra-seedvr2-vae2141.md), [video memory diagnosis](m5-ultra-seedvr2-video-memory.md) |
 | YuE2 | [Initial pass](m5-ultra-yue2.md), [RoPE/full-song follow-up](m5-ultra-yue2-followup.md) |
-| H3 optional attention | [Reference/guide switch and exact prefix attention](m5-ultra-h3-reference-attention.md), [INT8 QK / floating PV at 1024×512](m5-ultra-h3-floatpv.md), [Kitchen/dense/hybrid attention and morphing](m5-ultra-h3-kitchen-attention.md), [SOL/top-k](m5-ultra-h3-sol-topk.md), [Veda](m5-ultra-h3-veda.md) |
+| H3 optional attention | [Reference/guide switch and exact prefix attention](m5-ultra-h3-reference-attention.md), [INT8 QK / floating PV at 1024×512](m5-ultra-h3-floatpv.md), [Kitchen/dense/hybrid attention and morphing](m5-ultra-h3-kitchen-attention.md), [SOL/top-k](m5-ultra-h3-sol-topk.md) |
 | H3 cache/token controls | [Adaptive Fast presets](m5-ultra-h3-token-dynamic.md), [Fast artifact fix](m5-ultra-h3-fast-token-fix.md), [presets](m5-ultra-h3-presets.md), [bundled runtimes](m5-ultra-h3-owned-runtime.md), [combined aggressive tests](m5-ultra-h3-sol-aggressive.md) |
 
 ## Historical experiments

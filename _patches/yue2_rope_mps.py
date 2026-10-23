@@ -20,6 +20,8 @@ _LLAMA_SHAS = {
     '01abd69c5b92730c390b1fe6f686174cea48acb08eaf56850adc89c413ff0aef',
     # ComfyUI 8f04fd6e: generation cleanup added; Attention/RoPE unchanged.
     'a24d5f0a4bf2c19b9af7bc0824981ee4bfed03bae158bb3224db464acbe0d6e4',
+    # ComfyUI 7a283320: top-p sampling fix only; Attention/RoPE unchanged.
+    'e1018068470b24f00ad4cec946e65043fcd4535bf9637905efaf82292a8064fb',
 }
 _EAGER_SHA = '630a3d287bf602046935086f9d43eb6db2ec4971913a1cb3fb35bae6ea4ac9ee'
 _library = None
