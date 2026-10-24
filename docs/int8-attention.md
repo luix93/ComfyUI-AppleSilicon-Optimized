@@ -19,7 +19,10 @@ exact protected steps.
 
 **Eligible calls**: M5 GPU, BF16/FP16, head dimension 128, no mask, equal Q/K/V
 heads, at least `ASFP8_INT8_ATTN_MIN_TOKENS` keys (default 8192; shorter calls
-measured no faster) and at most 65,536 keys. Query and key lengths may differ.
+measured no faster), and at most 262,144 keys for Dense Metal (v3) or 65,536 for
+`dense_metal_v2`. v2 accumulates P·V in INT32 across every key tile, so longer
+sequences could overflow; v3 merges each 64-key tile into FP32 and has no such
+bound. Query and key lengths may differ.
 Inputs and outputs keep ComfyUI's strided layouts without copies.
 
 ## How it works

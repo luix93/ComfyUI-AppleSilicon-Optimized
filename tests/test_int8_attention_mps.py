@@ -222,3 +222,31 @@ def test_dense_metal_name_and_former_name_select_the_same_backend(monkeypatch):
     backend.apply_attention_backend(Model(), "int8_dense_accurate")
     backend.apply_attention_backend(Model(), "int8_dense_approximate")
     assert seen == ["dense_metal", "dense_metal_v2"]
+
+
+def test_dense_metal_v3_has_no_v2_overflow_cap():
+    # v2 accumulates INT32 P·V across every key tile; v3 merges per-tile results in FP32.
+    assert i8.max_keys("running") == 65536
+    assert i8.max_keys("tiled") == i8.MAX_KEYS_TILED > 65536
+    x = torch.zeros(1, 2, 1100, 128)
+    with pytest.raises(ValueError, match="Dense Metal requires"):
+        i8.h3_attention(x, x, x, numerics="tiled")
+    with pytest.raises(ValueError, match="Dense Metal v2 requires"):
+        i8.h3_attention(x, x, x, numerics="running")
+
+
+@pytest.mark.skipif(not torch.backends.mps.is_available(), reason="requires MPS")
+@pytest.mark.parametrize("keys", [70000, 131072])
+def test_dense_metal_v3_beyond_65536_keys_tracks_exact(keys):
+    if not i8.supported():
+        pytest.skip("requires an M5 GPU")
+    g = torch.Generator().manual_seed(keys)
+    q = torch.randn(1, 2, 256, 128, generator=g).to(torch.bfloat16).to("mps")
+    k, v = (torch.randn(1, 2, keys, 128, generator=g).to(torch.bfloat16).to("mps") for _ in range(2))
+    with torch.inference_mode():
+        out = i8.attention(q, k, v, numerics="tiled")
+        ref = torch.nn.functional.scaled_dot_product_attention(q.float(), k.float(), v.float())
+    assert out.isfinite().all()
+    assert ((out.float() - ref).norm() / ref.norm()).item() < 0.03
+    with pytest.raises(ValueError, match="65536 keys"):
+        i8.attention(q, k, v, numerics="running")

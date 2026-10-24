@@ -1,5 +1,16 @@
 # Release notes
 
+## October 24, 2026 — Dense Metal on longer sequences
+
+- Dense Metal (v3) now accepts up to **262,144 keys**; it was 65,536. That cap
+  only protects v2, which accumulates P·V in INT32 across every key tile. v3
+  merges each 64-key tile into FP32. Long or high-resolution H3 clips that
+  previously fell back to exact attention for the whole run now use Dense
+  Metal. On random BF16 attention the relative error rises smoothly, with no
+  break at the old limit: 0.0245 at 60k keys, 0.0248 at 70k, 0.0285 at 131k and
+  0.0307 at 200k. `dense_metal_v2` keeps its 65,536-key limit.
+- The fallback warning now names Dense Metal and states the token count.
+
 ## October 23, 2026 — H3 attention presets trimmed, Veda removed
 
 - **H3 Acceleration · Simple:** ten attention presets were removed. v3 beats

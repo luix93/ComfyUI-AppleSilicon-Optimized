@@ -28,7 +28,10 @@ TAG = "[AppleSilicon-Optimized/int8_attention]"
 HEAD_DIM = 128
 MIN_KEYS = 1024
 DEFAULT_MIN_TOKENS = 8192  # shorter calls measured no faster than exact paths
-MAX_KEYS = 65536  # INT32 PV accumulation bound: 255 * 127 * keys < 2**31
+MAX_KEYS = 65536  # v2 ("running"): INT32 PV accumulates across all key tiles; 255 * 127 * keys < 2**31
+# v3 ("tiled", Dense Metal): INT32 PV spans one 64-key tile before the FP32 merge,
+# so no overflow bound applies; the cap matches the largest validated H3 length.
+MAX_KEYS_TILED = 262144
 _STATS_ROWS = 256
 _DTYPES = {torch.bfloat16: "bfloat", torch.float16: "half"}
 
@@ -58,14 +61,18 @@ def _library(in_t, out_t, levels=255):
     return torch.mps.compile_shader(source)
 
 
-def eligible(q, k, v):
+def max_keys(numerics="running"):
+    return MAX_KEYS_TILED if numerics == "tiled" else MAX_KEYS
+
+
+def eligible(q, k, v, numerics="running"):
     """True when ``attention`` accepts these [B,H,N,D] tensors."""
     return (supported()
             and all(type(t) is torch.Tensor and t.ndim == 4 and t.device.type == "mps"
                     and t.dtype == q.dtype and t.stride(-1) == 1 for t in (q, k, v))
             and q.dtype in _DTYPES and q.shape[-1] == HEAD_DIM
             and k.shape == v.shape and q.shape[:2] == k.shape[:2] and k.shape[-1] == HEAD_DIM
-            and q.shape[2] > 0 and MIN_KEYS <= k.shape[2] <= MAX_KEYS)
+            and q.shape[2] > 0 and MIN_KEYS <= k.shape[2] <= max_keys(numerics))
 
 
 def scratch_bytes(batch_heads, queries, keys):
@@ -90,9 +97,9 @@ def attention(q, k, v, *, scale=None, out=None, headroom=0.0, numerics="running"
     ``out`` may be any [B,H,Lq,128] tensor with unit channel stride, for example
     a transposed [B,Lq,H,128] buffer, so callers avoid layout copies.
     """
-    if not eligible(q, k, v):
+    if not eligible(q, k, v, numerics):
         raise ValueError("INT8 attention requires M5 MPS BF16/FP16 [B,H,N,128] tensors with "
-                         f"{MIN_KEYS}..{MAX_KEYS} keys and equal Q/K/V heads")
+                         f"{MIN_KEYS}..{max_keys(numerics)} keys and equal Q/K/V heads; got {k.shape[2] if k.ndim == 4 else '?'} keys")
     b, h, lq, _ = q.shape
     lk = k.shape[2]
     scale = HEAD_DIM ** -0.5 if scale is None else float(scale)
@@ -185,7 +192,7 @@ def comfy_attention(q, k, v, heads, mask=None, attn_precision=None, skip_reshape
     q4, k4, v4 = (_as_bhsd(t, heads, skip_reshape) for t in (q, k, v))
     if (mask is None and not kwargs.get("enable_gqa", False)
             and q4 is not None and k4 is not None and v4 is not None
-            and k4.shape[2] >= min_tokens() and eligible(q4, k4, v4)):
+            and k4.shape[2] >= min_tokens() and eligible(q4, k4, v4, numerics)):
         b, h, lq, d = q4.shape
         if skip_output_reshape:
             out = torch.empty((b, h, lq, d), dtype=q.dtype, device=q.device)
@@ -219,10 +226,12 @@ def h3_attention(q, k, v, *, tau=0.0, video_start=0, scale=None, exact_prefix=Tr
     from . import h3_dense_mps
     if topk_ratio != 0:
         raise ValueError("Dense INT8 retains all tokens; topk_ratio must be zero")
+    name = "Dense Metal" if numerics == "tiled" else "Dense Metal v2"
     if q.ndim != 4 or q.shape != k.shape or q.shape != v.shape or q.shape[0] != 1:
-        raise ValueError("H3 dense INT8 v2 requires matching [1,H,S,128] tensors")
-    if not eligible(q, k, v):
-        raise ValueError("H3 dense INT8 v2 requires M5 MPS BF16/FP16 D128 inputs, 1024..65536 tokens")
+        raise ValueError(f"{name} requires matching [1,H,S,128] tensors")
+    if not eligible(q, k, v, numerics):
+        raise ValueError(f"{name} requires M5 MPS BF16/FP16 D128 inputs with "
+                         f"{MIN_KEYS}..{max_keys(numerics)} tokens; got {q.shape[2]}")
     heads, tokens = q.shape[1], q.shape[2]
     if protected_ranges is not None:
         from .h3_sol_mps import normalize_protected_ranges
