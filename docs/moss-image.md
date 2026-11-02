@@ -171,6 +171,21 @@ Setting `ASFP8_MOSS_CFG_JOIN=0`, `ASFP8_MOSS_GEMM_SCHEDULE=0` and
 [Measurements](../benchmarks/m5-ultra-moss-exact-combo.md) ·
 [original grouping experiment](../benchmarks/m5-ultra-moss-cfg-projections.md).
 
+## ComfyUI v0.43 compatibility repair
+
+ComfyUI v0.43 adds MOSS-Image edit support: reference latents, a reference K/V
+cache computed once, and an additive attention bias on the text tokens. Kitchen
+also moves to 0.2.40. The guards disabled the route, and SFT 1024² / 25 steps
+rose to 34.17 s.
+
+The repair admits the reviewed sources. Any reference, K/V or bias input keeps
+the upstream path, as does joined CFG, which only ever joins text conditioning.
+Text-to-image returns to 18.92 s, byte-identical to the unrepaired run on the
+same core. The attention override also accepts the `mask=None` the new core always
+passes. The opt-in FFN epilogue (`ASFP8_MOSS_FFN_EPILOGUE=1`) replaces the old
+`Block.forward` and stays off on this core.
+[Regression](../benchmarks/m5-ultra-comfy0432-nov01.md).
+
 ## October 19 core compatibility repair
 
 ComfyUI `8f04fd6e` (`v0.42.0-3-g8f04fd6e`, reported by the instance as the

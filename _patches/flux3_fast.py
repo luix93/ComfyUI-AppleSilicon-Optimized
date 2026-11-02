@@ -339,7 +339,7 @@ def install():
         from comfy.ldm.flux3.model import Flux3, Block, QKNorm
         from comfy.text_encoders.qwen35 import Qwen35
         # Reviewed builds retain the eager RoPE/SwiGLU arithmetic.
-        if version('comfy-kitchen') not in ('0.2.37', '0.2.38', '0.2.39'):
+        if version('comfy-kitchen') not in ('0.2.37', '0.2.38', '0.2.39', '0.2.40'):
             return
     except (ImportError, ModuleNotFoundError):
         return

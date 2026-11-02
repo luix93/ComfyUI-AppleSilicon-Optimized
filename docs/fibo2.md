@@ -9,7 +9,9 @@ core's `TextEncodeFibo2` workflows.
 ## Tested configuration
 
 - M5 Ultra, 80 GPU cores / 256 GB, macOS 27.
-- ComfyUI core `7a283320`, PyTorch 2.14.1, Comfy Kitchen 0.2.39.
+- ComfyUI core `7a283320`, PyTorch 2.14.1, Comfy Kitchen 0.2.39. Also admitted on
+  ComfyUI v0.43.2 / Kitchen 0.2.40 after its RoPE rewrite
+  ([regression](../benchmarks/m5-ultra-comfy0432-nov01.md)).
 - Comfy-Org INT8 ConvRot checkpoints: `fibo2_dev_int8_convrot`,
   `fibo2_edit_turbo_int8_convrot` and `qwen3vl_4b_int8_convrot`, plus
   `flux2-vae`.

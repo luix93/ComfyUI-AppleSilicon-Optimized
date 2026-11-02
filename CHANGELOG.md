@@ -1,5 +1,28 @@
 # Release notes
 
+## November 1, 2026 — ComfyUI v0.43.2 support
+
+- **Regression:** 35 cases on ComfyUI v0.43.2 stable (`423cbd20`) with Kitchen
+  0.2.40 and frontend 1.57.4. Every case repeats its own bytes.
+  [Report](benchmarks/m5-ultra-comfy0432-nov01.md).
+- **Four guard repairs:** each route was reviewed against the new upstream
+  sources and admitted. Every repaired case is byte-identical to its unrepaired
+  run on the same core.
+  - **Fibo 2.0:** the route follows the new `flux.math.rope` construction with
+    NTK axis scales. Dev 38.23 → 31.65 s.
+  - **MOSS-Image:** admits the new model, `ops.py` and Kitchen 0.2.40. The new
+    edit references, reference K/V cache and attention bias keep the upstream
+    path. The always-present `mask=None` no longer disables tile32 attention.
+    SFT 34.17 → 18.92 s.
+  - **Flux.3:** admits Kitchen 0.2.40, whose new fusions are CUDA/HIP only.
+    Base T2I 43.31 → 33.38 s; 64-token prompt expansion 41.80 → 10.44 s.
+  - **YuE2:** admits `llama.py` `c0156a93` (speculative tree decode only).
+    8 s 7.68 → 5.86 s.
+- **Upstream numerical change:** the Flux.2 VAE now runs in FP16 on MPS
+  (`d07dff45`). Decoded images and encoded references for Flux.2, Ideogram 4,
+  Flux.3, MOSS and Fibo differ from October 23 at about 55 dB, with a maximum
+  difference of 4/255. All other compared tensors are unchanged.
+
 ## October 24, 2026 — Dense Metal on longer sequences
 
 - Dense Metal (v3) now accepts up to **262,144 keys**; it was 65,536. That cap

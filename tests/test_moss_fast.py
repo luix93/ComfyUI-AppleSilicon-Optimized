@@ -13,14 +13,14 @@ def test_source_guard_missing_changed(tmp_path):
     assert not p._function_matches(test_source_guard_missing_changed, p._SITU_HASH)
 
 
-@pytest.mark.parametrize('style', ['old', 'positional', 'keyword'])
+@pytest.mark.parametrize('style', ['old', 'positional', 'keyword', 'v043'])
 def test_position_cache_accepts_both_core_signatures(style):
     calls = []
     value = torch.zeros(1, 3)
     def original(*args, **kwargs):
         calls.append((args, kwargs))
         return value
-    args = ({'cond_or_uncond': [0]},) if style == 'positional' else ()
+    args = ({'cond_or_uncond': [0]},) if style == 'positional' else ({'cond_or_uncond': [0]}, [], 0) if style == 'v043' else ()
     kwargs = {'transformer_options': {'cond_or_uncond': [1]}} if style == 'keyword' else {}
     state = dict(positions={}, reuse_bytes=0, position_hits=0)
     with torch.inference_mode():
@@ -51,6 +51,51 @@ def test_position_controls_bypass_cache_and_keep_options():
             p._scope.reset(token)
     assert len(calls) == 3 and not state['positions']
 
+
+
+@pytest.mark.parametrize('extra', [{'ref_shapes': [(32, 32)]}, {'f_offset': -83}])
+def test_position_references_bypass_cache(extra):
+    calls = []
+    def original(*args, **kwargs):
+        calls.append(kwargs)
+        return torch.zeros(1)
+    state = dict(positions={}, reuse_bytes=0, position_hits=0)
+    with torch.inference_mode():
+        token = p._scope.set(state)
+        try:
+            for _ in range(2):
+                p._position(original, None, 64, 64, 83, 'mps', transformer_options={}, **extra)
+        finally:
+            p._scope.reset(token)
+    assert len(calls) == 2 and calls[0] == {'transformer_options': {}, **extra} and not state['positions']
+
+
+@pytest.mark.parametrize('field', ['ref_kv', 'kv_out', 'mask'])
+def test_attention_edit_inputs_keep_upstream(field):
+    seen = []
+    def original(*args):
+        seen.append(args)
+        return 'upstream'
+    extra = {'ref_kv': None, 'kv_out': None, 'mask': None}
+    extra[field] = object()
+    assert p._attention(original, None, *range(9), **extra) == 'upstream'
+    assert seen[0][9:] == (extra['ref_kv'], extra['kv_out'], extra['mask'])
+
+
+def test_text_mask_keeps_upstream():
+    mask = object()
+    assert p._text(lambda *a: a, 'module', 'x', 'pe', {}, mask) == ('module', 'x', 'pe', {}, mask)
+
+
+def test_attention_override_rejects_mask():
+    untouched = object()
+    with torch.inference_mode():
+        token = p._scope.set({})
+        try:
+            assert p._optimized_attention(lambda *a, **k: untouched, None, None, None, 24, mask=torch.zeros(1),
+                                          transformer_options={}) is untouched
+        finally:
+            p._scope.reset(token)
 
 def test_scope_and_grad_required(monkeypatch):
     with torch.inference_mode():

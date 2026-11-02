@@ -31,7 +31,11 @@ import torch
 from . import torch_mpp_qcache
 
 _TAG = '[AppleSilicon-Optimized/fibo2]'
-_MODEL_HASHES = {'f679cade565b098b9d9a9279a52d4350148423f454e34938ee4993724b223889'}
+_MODEL_HASHES = {
+    'f679cade565b098b9d9a9279a52d4350148423f454e34938ee4993724b223889',
+    # ComfyUI v0.43: RoPE built by flux.math.rope with NTK axis scales; at scale 1 the same frequencies.
+    '6311fda7c6d901227fcb9c10751230dc0ae3d6666d865fef022f99fce42459a6',
+}
 _LUMINA_HASHES = {
     'modulate': 'b77735f51a16eb0104eb663bfe2c04ce239fe922a5e4523186cb48ded48d6a03',
     'apply_gate': '58d7dc0f55c1734bcf35ba021574649e551576d5dec4f640e6f2f7b1d66fc124',
@@ -211,10 +215,18 @@ def _fast(model, x, timestep, contexts, transformer_options, ref_latents):
 
     num_gist = f2.gist_count(contexts[0].shape[1], model.max_gist_tokens)
     plane = model.max_gist_tokens + 1
-    ids = [torch.zeros(1, num_gist, 3, dtype=torch.float32, device=device), f2.pos_ids_x(plane, H, W, 1, device, transformer_options=options)]
+    legacy_rope = hasattr(model, 'rope_embedder')
+    if legacy_rope:
+        pos_options = options
+    else:
+        # ComfyUI 0.43: NTK-aware axis scales keep the position spacing; zero collapses an axis.
+        rope_options = options.get('rope_options', {})
+        scales = (1.0, rope_options.get('scale_y', 1.0), rope_options.get('scale_x', 1.0))
+        pos_options = {'rope_options': {**rope_options, 'scale_y': float(scales[1] != 0), 'scale_x': float(scales[2] != 0)}}
+    ids = [torch.zeros(1, num_gist, 3, dtype=torch.float32, device=device), f2.pos_ids_x(plane, H, W, 1, device, transformer_options=pos_options)]
     ids[0][0, :, 0] = torch.arange(1, num_gist + 1, dtype=torch.float32, device=device)
     for k, ref in enumerate(ref_latents):
-        ids.append(f2.pos_ids_x(plane + 1 + k, ref.shape[-2], ref.shape[-1], 1, device, transformer_options=options))
+        ids.append(f2.pos_ids_x(plane + 1 + k, ref.shape[-2], ref.shape[-1], 1, device, transformer_options=pos_options))
     states = []
     for j in range(B):
         tokens = [x[j:j + 1].flatten(2).transpose(1, 2)]
@@ -222,7 +234,12 @@ def _fast(model, x, timestep, contexts, transformer_options, ref_latents):
         states.append(model.x_embedder(torch.cat(tokens, dim=1)))
     img = states[0] if B == 1 else torch.cat(states)
     del states, tokens
-    freqs_cis = model.rope_embedder(torch.cat(ids, dim=1)).movedim(1, 2)
+    ids = torch.cat(ids, dim=1)
+    if legacy_rope:
+        freqs_cis = model.rope_embedder(ids).movedim(1, 2)
+    else:
+        freqs_cis = torch.cat([f2.comfy.ldm.flux.math.rope(ids[..., i], d, 256.0 * (s or 1.0) ** (-d / (d - 2)))
+                               for i, (d, s) in enumerate(zip(model.rope_axes_dim, scales))], dim=-3).unsqueeze(2)
 
     def rows(freqs):
         return freqs.expand(B, *freqs.shape[1:]).reshape(B * freqs.shape[1], -1).contiguous()

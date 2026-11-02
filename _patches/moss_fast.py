@@ -42,13 +42,20 @@ _cast_users = 0
 _active_cast = None
 _direct_ffn_supported = False
 _rope_options = False
-_OPS_HASH = '2a5e52fe5176be3ac48becebf1678509867f769c1467fa7c7115d1897c16a429'
+_OPS_HASHES = {
+    '2a5e52fe5176be3ac48becebf1678509867f769c1467fa7c7115d1897c16a429',
+    # ComfyUI v0.43: writable-weight caching added; linear_input_act and casts unchanged.
+    'fa87356b1dd5aa8ecc5b1e71d5bcd43f5cd7e9eba4a469f72e4f099b00e6cb39',
+}
 _BLOCK_HASH = 'c6f63b080fee07147e43608d17b499f3adf7ada81c600b9d65f6b61f23e56998'
 _MODEL_HASH = 'c70010e9e51ef21ddd5396ed971c68d6c0c225525cf3ae7cebb79d1071c7f22f'
 _MODEL_HASHES = {
     _MODEL_HASH,
     # ComfyUI 8f04fd6e: RoPE options/signature added; block arithmetic unchanged.
     '5384f7e0d1ed36dc78f76ba7f96a600918627f5317cedcd2c58ba92a83c5bbf8',
+    # ComfyUI v0.43: edit references, K/V cache and attention bias added; without them the
+    # text-to-image arithmetic is unchanged. Those inputs keep the upstream path.
+    '3996d11d7a271c35b87eea19906c3dc6819ed2a891d875485a78a8255652abb9',
 }
 _ROPE_HASH = '630a3d287bf602046935086f9d43eb6db2ec4971913a1cb3fb35bae6ea4ac9ee'
 _ADALN_HASH = '0de0af829d63679300911c8765d12a4ddc05be3755f5dd1f6fb8566bd9c3a160'
@@ -146,7 +153,10 @@ def _qk_rope_tensors(q, k, qw, kw, pe, eps):
     return qo, ko
 
 
-def _attention(original, module, q, k, v, q_norm, k_norm, pe, heads, comfy_attention, transformer_options):
+def _attention(original, module, q, k, v, q_norm, k_norm, pe, heads, comfy_attention, transformer_options,
+               ref_kv=None, kv_out=None, mask=None):
+    if ref_kv is not None or kv_out is not None or mask is not None:
+        return original(q, k, v, q_norm, k_norm, pe, heads, comfy_attention, transformer_options, ref_kv, kv_out, mask)
     if (not _enabled('ROPE') or not all(_bf16(t) for t in (q, k))
             or q.ndim != 3 or q.shape != k.shape or heads != 24
             or q.shape[-1] != 3072 or pe.dtype != torch.float32 or not pe.is_mps
@@ -264,7 +274,9 @@ def _optimized_attention(original, q, k, v, heads, **kwargs):
     options = kwargs.get('transformer_options', {})
     if (not _enabled('ATTENTION') or _attention_dead or heads != 24
             or os.environ.get('ASFP8_ATTN_BACKEND', 'pytorch') != 'pytorch'
-            or kwargs.keys() - {'preferred_attention', 'transformer_options'}
+            # Newer core always passes mask (None without an attention bias).
+            or kwargs.keys() - {'preferred_attention', 'transformer_options', 'mask'}
+            or kwargs.get('mask') is not None
             or getattr(preferred, 'function', None) is not None
             or options.get('optimized_attention_override')
             or not all(hasattr(t, 'peek') for t in (q, k, v))):
@@ -338,8 +350,10 @@ def _position(original, module, h, w, text_len, device, *args, **kwargs):
     # Newer core passes transformer_options to rope(). Preserve all arguments
     # and leave non-default positional controls uncached, avoiding stale positions.
     options = args[0] if args else kwargs.get('transformer_options', {})
-    if (not _enabled('REUSE') or len(args) > 1
-            or kwargs.keys() - {'transformer_options'}
+    ref_shapes = args[1] if len(args) > 1 else kwargs.get('ref_shapes', ())
+    f_offset = args[2] if len(args) > 2 else kwargs.get('f_offset', 0)
+    if (not _enabled('REUSE') or len(args) > 3 or len(ref_shapes) or f_offset != 0
+            or kwargs.keys() - {'transformer_options', 'ref_shapes', 'f_offset'}
             or not isinstance(options, dict) or options.get('rope_options')):
         return original(module, h, w, text_len, device, *args, **kwargs)
     state = _scope.get()
@@ -356,7 +370,9 @@ def _position(original, module, h, w, text_len, device, *args, **kwargs):
     return value
 
 
-def _text(original, module, x, pe, transformer_options={}):
+def _text(original, module, x, pe, transformer_options={}, mask=None):
+    if mask is not None:
+        return original(module, x, pe, transformer_options, mask)
     if (not _enabled('REUSE') or transformer_options.get('optimized_attention_override')
             or transformer_options.get('wrappers') or transformer_options.get('patches')):
         return original(module, x, pe, transformer_options)
@@ -568,7 +584,11 @@ def _joined_forward(original, m, model, x, timestep, context, transformer_option
                 options[key] = options[key][j:j + 1]
         return options
 
-    # Upstream _forward ignores extra keywords (model_base always passes control).
+    # Joined rows carry text only (see _join); edit references, their K/V and
+    # attention bias always take the upstream path.
+    if (kwargs.get('ref_latents') or kwargs.get('ref_kv') is not None
+            or kwargs.get('context_attention_bias') is not None):
+        return original(model, x, timestep, context, transformer_options, **kwargs)
     if (not _joining() or x.shape[0] != 2 or len(lengths) != 2
             or not all(layer.fused_qkv for layer in model.layers) or not _int8_projections(model)
             or transformer_options.get('patches_replace', {}).get('dit')
@@ -675,7 +695,7 @@ def install():
             or os.environ.get('PYTORCH_MPS_FAST_MATH', '0') != '0'):
         return
     try:
-        if version('comfy-kitchen') not in ('0.2.38', '0.2.39'):
+        if version('comfy-kitchen') not in ('0.2.38', '0.2.39', '0.2.40'):
             return
         import comfy.ldm.moss_image.model as m
         import comfy.ops as ops
@@ -689,7 +709,7 @@ def install():
             return
     except ImportError:
         return
-    _direct_ffn_supported = _matches(ops, _OPS_HASH)
+    _direct_ffn_supported = any(_matches(ops, sha) for sha in _OPS_HASHES)
     original_input_act = ops.linear_input_act
     ops.linear_input_act = functools.wraps(original_input_act)(
         lambda *a, **k: _linear_input_act(original_input_act, *a, **k))
