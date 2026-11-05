@@ -221,7 +221,8 @@ def install():
         else:
             _dense = False
             print(f"{TAG} optional dense attention unavailable; keeping exact attention.")
-    if vae_qkv_enabled() and hasattr(ops, "_eager_input_act"):
+    from ._common import has_matrix_units
+    if vae_qkv_enabled() and hasattr(ops, "_eager_input_act") and has_matrix_units():
         from .minimax_vae_qkv import Qkv
         _qkv_kernel = Qkv((64, 256, 4))
         print(f"{TAG} optional FP32-accumulating FP16 QKV projection enabled; "

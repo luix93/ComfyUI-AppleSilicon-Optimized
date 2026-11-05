@@ -101,13 +101,13 @@ def install():
     global _norm_type, _norm_forward
     if _installed or os.environ.get("ASFP8_KREA2_GLUE", "1") != "1":
         return
-    # This reduction matches the tested PyTorch release and GPU. Other
-    # versions/devices retain the existing Krea2 implementation.
+    # This reduction matches the tested PyTorch releases; other versions
+    # retain the existing Krea2 implementation. The kernels are portable Metal.
     if not torch.__version__.split("+")[0].startswith(("2.13.", "2.14.")):
         return
     from .krea2_ext.loader import module
     kernel = module()
-    if kernel is None or "M5 Ultra" not in kernel.device_name():
+    if kernel is None:
         return
     import comfy.ldm.krea2.model as krea
     _original_block, _original_mlp, _original_last = (

@@ -106,8 +106,10 @@ def test_current_attention_containers_are_consumed_before_cpu_fallback(monkeypat
 
 @pytest.mark.parametrize('version,build,hardware,expected',[
     ('2.14.1',True,True,True),('2.14.0',True,True,False),
-    ('2.14.1',False,True,False),('2.14.1',True,False,False)])
-def test_current_contract_guard_pins_build_hardware_and_sources(monkeypatch,tmp_path,version,build,hardware,expected):
+    ('2.14.1',False,True,False),
+    # Portable Metal: chips without matrix units keep the current-core route.
+    ('2.14.1',True,False,True)])
+def test_current_contract_guard_pins_build_and_sources_not_chip(monkeypatch,tmp_path,version,build,hardware,expected):
     import hashlib
     from _patches import torch_mpp_qcache as qc
     m,v=tmp_path/'model.py',tmp_path/'vae.py'

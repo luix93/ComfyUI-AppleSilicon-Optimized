@@ -77,7 +77,7 @@ def test_reviewed_attention_defaults_and_idempotence(monkeypatch):
 @pytest.mark.parametrize("version,brand", [
     ("2.13.0", "Apple M5 Max"), ("2.15.0", "Apple M5 Ultra"),
     ("2.14.0.dev20261017", "Apple M5 Max"), ("2.14.1", "Apple M4 Max"),
-    ("2.14.1", "Apple M50"), ("2.14.1", "unknown"),
+    ("2.14.1", "Apple M1"), ("2.14.1", "Apple M50x"), ("2.14.1", "unknown"),
 ])
 def test_other_versions_or_hardware_keep_existing_attention(monkeypatch, version, brand):
     _reviewed_stack(monkeypatch, version, brand)
@@ -86,7 +86,8 @@ def test_other_versions_or_hardware_keep_existing_attention(monkeypatch, version
     assert env == {"ASFP8_NATIVE": "1"}
 
 
-@pytest.mark.parametrize("brand", ["Apple M5", "Apple M5 Pro", "Apple M5 Max", "Apple M5 Ultra"])
+@pytest.mark.parametrize("brand", ["Apple M5", "Apple M5 Pro", "Apple M5 Max", "Apple M5 Ultra",
+                                   "Apple M6", "Apple M6 Pro", "Apple M7 Ultra"])
 @pytest.mark.parametrize("version", ["2.14.0", "2.14.1", "2.14.2+local"])
 def test_native_selection_is_independent_of_custom_kernel_validation(monkeypatch, brand, version):
     _reviewed_stack(monkeypatch, version, brand)
@@ -99,16 +100,30 @@ def test_native_selection_is_independent_of_custom_kernel_validation(monkeypatch
     assert "ASFP8_MPP_QCACHE" not in env
 
 
-def test_max_native_default_does_not_unlock_ultra_shader(monkeypatch):
-    _reviewed_stack(monkeypatch, brand="Apple M5 Max")
+@pytest.mark.parametrize("brand,matrix,ultra", [
+    ("Apple M5 Max", True, False), ("Apple M6", True, False),
+    ("Apple M5 Ultra", True, True), ("Apple M6 Ultra", True, True),
+    ("Apple M4 Ultra", False, False), ("Apple M1", False, False), ("unknown", False, False),
+])
+def test_matrix_unit_gate_is_generation_based_and_ultra_only_for_tuning(monkeypatch, brand, matrix, ultra):
+    _reviewed_stack(monkeypatch, brand=brand)
     qc._hardware.cache_clear()
+    qc._ultra.cache_clear()
     try:
-        env = {"ASFP8_NATIVE": "1"}
-        _common.apply_default_attention_backend(env)
-        assert env["ASFP8_ATTN_BACKEND"] == "pytorch"
-        assert not qc._hardware()
+        assert qc._hardware() is matrix
+        assert qc._ultra() is ultra
     finally:
         qc._hardware.cache_clear()
+        qc._ultra.cache_clear()
+
+
+@pytest.mark.parametrize("brand,expected", [
+    ("Apple M5", (5, "")), ("Apple M6 Pro", (6, "Pro")), ("Apple M12 Ultra", (12, "Ultra")),
+    ("Apple M4 Max", (4, "Max")), ("Apple M7 Super", (7, "Super")), ("Apple M50x", (None, None)),
+    ("Intel(R) Core", (None, None)),
+])
+def test_apple_chip_parsing(brand, expected):
+    assert _common.apple_chip(brand) == expected
 
 
 def test_hardware_probe_failure_keeps_existing_policy(monkeypatch):

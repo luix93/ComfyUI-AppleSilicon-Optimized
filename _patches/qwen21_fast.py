@@ -159,7 +159,7 @@ def install():
     if (_installed or os.environ.get('ASFP8_DIT_EXT') != '1'
             or os.environ.get('ASFP8_QWEN21_FAST', '1') != '1'
             or not torch_mpp_qcache._torch_build_supported()
-            or not torch_mpp_qcache._hardware() or not torch.backends.mps.is_available()):
+            or not torch.backends.mps.is_available()):
         return
     try:
         import comfy.ops as ops

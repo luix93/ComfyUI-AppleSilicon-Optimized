@@ -115,7 +115,7 @@ def install():
     if (_installed or os.environ.get('ASFP8_DIT_EXT') != '1'
             or not torch_mpp_qcache._torch_build_supported()
             or os.environ.get('PYTORCH_MPS_FAST_MATH', '0') != '0'
-            or not torch.backends.mps.is_available() or not torch_mpp_qcache._hardware()):
+            or not torch.backends.mps.is_available()):
         return
     from comfy.ldm.flux.layers import SiLUActivation
     _activation_type = SiLUActivation

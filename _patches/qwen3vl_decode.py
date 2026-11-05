@@ -241,7 +241,7 @@ def _prepare_projection_groups(state, model):
             or state['budget'] <= 0 or model is None):
         return
     from . import torch_mpp_qcache as qc, yue2_rope_mps as yr
-    if (not qc._hardware() or not qc._torch_build_supported()
+    if (not qc._torch_build_supported()
             or not yr._sources_supported() or not _projection_source_supported()
             or os.environ.get('PYTORCH_MPS_FAST_MATH', '0') != '0'):
         return
@@ -310,7 +310,7 @@ def _prepare_qk_norms(state, model):
         return
     from . import torch_mpp_qcache as qc, yue2_rope_mps as yr
     from comfy.text_encoders import llama
-    if (not qc._hardware() or not qc._torch_build_supported()
+    if (not qc._torch_build_supported()
             or not yr._sources_supported() or not _rms_source_supported()):
         return
     for block in model.model.layers:
@@ -427,7 +427,7 @@ def _rope(original, q, k, freqs_cis):
             or not q.is_contiguous() or not k.is_contiguous()):
         return fallback()
     from . import torch_mpp_qcache as qc, yue2_rope_mps as yr
-    if not qc._hardware() or not qc._torch_build_supported() or not yr._sources_supported():
+    if not qc._torch_build_supported() or not yr._sources_supported():
         return fallback()
     llama, eager, registry = yr._dependencies()
     if state.get('rope_frequencies') is not freqs_cis:

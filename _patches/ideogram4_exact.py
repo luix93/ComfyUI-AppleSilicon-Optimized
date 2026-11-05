@@ -1,4 +1,6 @@
-"""Exact current-API Ideogram 4 attention preparation on M5 Ultra / 2.14.
+"""Exact current-API Ideogram 4 attention preparation on MPS / PyTorch 2.14.
+
+The preparation fusion is portable Metal; the D=256 MPP attention kernel needs M5+.
 
 Keep projection hooks, weight casting, the selected attention interface and
 all BF16 rounding. The D=256 attention kernel retains PyTorch's math and
@@ -29,8 +31,7 @@ def _runtime():
             and os.environ.get('ASFP8_IDEOGRAM_FAST', '1') == '1'
             and os.environ.get('ASFP8_IDEOGRAM_EXACT', '1') == '1'
             and os.environ.get('PYTORCH_MPS_FAST_MATH', '0') == '0'
-            and torch_mpp_qcache._torch_build_supported()
-            and torch_mpp_qcache._hardware())
+            and torch_mpp_qcache._torch_build_supported())
 
 
 def _lib():
@@ -133,7 +134,7 @@ def _attention_source(output_tile=256):
 def maybe_attention(q, k, v, *, output_bshd=False, **kwargs):
     global _attention_dead, _attention_calls
     if (not _scope.get() or _attention_dead or not _runtime() or torch.is_grad_enabled()
-            or not output_bshd or os.environ.get('ASFP8_IDEOGRAM_ATTN_LAYOUT', '1') != '1'
+            or not torch_mpp_qcache._hardware() or not output_bshd or os.environ.get('ASFP8_IDEOGRAM_ATTN_LAYOUT', '1') != '1'
             or os.environ.get('ASFP8_ATTN_BACKEND') != 'pytorch'
             or any(type(t) is not torch.Tensor or not t.is_mps or t.ndim != 4
                    or t.dtype != torch.bfloat16 or t.stride(-1) != 1 for t in (q, k, v))
@@ -176,4 +177,6 @@ def install():
     _original = model.Ideogram4Attention.forward
     model.Ideogram4Attention.forward = _attention
     _installed = True
-    print('[AppleSilicon-Optimized/ideogram4_exact] current split-half RoPE and exact attention output layout enabled.')
+    print('[AppleSilicon-Optimized/ideogram4_exact] current split-half RoPE'
+          + (' and exact attention output layout' if torch_mpp_qcache._hardware() else '')
+          + ' enabled.')

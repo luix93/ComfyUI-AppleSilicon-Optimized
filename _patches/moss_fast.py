@@ -273,6 +273,7 @@ def _optimized_attention(original, q, k, v, heads, **kwargs):
     preferred = kwargs.get('preferred_attention')
     options = kwargs.get('transformer_options', {})
     if (not _enabled('ATTENTION') or _attention_dead or heads != 24
+            or not torch_mpp_qcache._hardware()
             or os.environ.get('ASFP8_ATTN_BACKEND', 'pytorch') != 'pytorch'
             # Newer core always passes mask (None without an attention bias).
             or kwargs.keys() - {'preferred_attention', 'transformer_options', 'mask'}
@@ -488,7 +489,8 @@ def _linear_input_act(original, linear, x, input_act, *args, **kwargs):
     if not _owned_dequantizing_cast(ops.cast_bias_weight):
         return original(linear, x, input_act, *args, **kwargs)
     ops.run_every_op()
-    if os.environ.get('ASFP8_MOSS_SITU_QUANT', '0') == '1' and _ready():
+    if (os.environ.get('ASFP8_MOSS_SITU_QUANT', '0') == '1' and torch_mpp_qcache._hardware()
+            and _ready()):
         from . import moss_situ_quant_mps
         result = moss_situ_quant_mps.linear(linear, x, _tables)
         if result is not None:
@@ -501,7 +503,8 @@ def _linear_input_act(original, linear, x, input_act, *args, **kwargs):
 
 
 def _block(original, module, layer, x, mod, pe, transformer_options={}):
-    if os.environ.get('ASFP8_MOSS_FFN_EPILOGUE', '0') != '1':
+    if (os.environ.get('ASFP8_MOSS_FFN_EPILOGUE', '0') != '1'
+            or not torch_mpp_qcache._hardware()):
         return original(layer, x, mod, pe, transformer_options)
     from . import moss_ffn_mps
     return moss_ffn_mps.block(original, module, sys.modules[__name__], layer,
@@ -667,7 +670,8 @@ def _sample(original, model_type, guider, *args, **kwargs):
                  cache={}, cache_hits=0, cache_misses=0, cache_bytes=0, budget=_cache_budget())
     token = _scope.set(state)
     from . import int8_linear_kernel_mps
-    schedule = int8_linear_kernel_mps.moss_gemm_schedule.set(_enabled('GEMM_SCHEDULE'))
+    schedule = int8_linear_kernel_mps.moss_gemm_schedule.set(
+        _enabled('GEMM_SCHEDULE') and torch_mpp_qcache._ultra())
     release = None
     try:
         if _enabled('WEIGHT_CACHE') and state['budget'] > 0:
@@ -691,7 +695,7 @@ def install():
             or os.environ.get('ASFP8_DIT_EXT') != '1'
             or not torch.backends.mps.is_available()
             or torch.__version__.split('+')[0] != '2.14.1'
-            or not torch_mpp_qcache._torch_build_supported() or not torch_mpp_qcache._hardware()
+            or not torch_mpp_qcache._torch_build_supported()
             or os.environ.get('PYTORCH_MPS_FAST_MATH', '0') != '0'):
         return
     try:
@@ -742,4 +746,9 @@ def install():
         m.Block.forward = functools.wraps(original_block)(
             lambda *a, **k: _block(original_block, m, *a, **k))
     _installed = True
-    logging.info('%s exact SiTU/RoPE/modulation, query reuse, joined CFG rows, INT8 tile schedule and bounded sampling caches enabled.', _TAG)
+    parts = ['exact SiTU/RoPE/modulation', 'joined CFG rows', 'bounded sampling caches']
+    if torch_mpp_qcache._hardware():
+        parts.insert(1, 'query-reuse attention')
+    if torch_mpp_qcache._ultra():
+        parts.insert(-1, 'INT8 tile schedule')
+    logging.info('%s %s enabled.', _TAG, ', '.join(parts))

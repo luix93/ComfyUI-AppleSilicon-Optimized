@@ -12,7 +12,6 @@ import os
 from pathlib import Path
 import re
 import struct
-import subprocess
 
 import psutil
 import torch
@@ -22,14 +21,8 @@ import torch
 def supported():
     if not torch.backends.mps.is_available() or not hasattr(torch.mps, "compile_shader"):
         return False
-    try:
-        brand = subprocess.check_output(
-            ["/usr/sbin/sysctl", "-n", "machdep.cpu.brand_string"], text=True,
-            timeout=2,
-        )
-        return "M5" in brand
-    except (OSError, subprocess.SubprocessError):
-        return False
+    from ._common import has_matrix_units
+    return has_matrix_units()
 
 
 def scratch_bytes(tokens, heads):

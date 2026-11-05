@@ -46,6 +46,11 @@ def module():
 
     if os.environ.get("ASFP8_INT8_EXT") != "1":
         return None
+    from .._common import has_matrix_units
+    if not has_matrix_units():
+        # TensorOps matmul2d compiles on M1-M4 but returns wrong results there.
+        print("[int8_ext] this GPU has no M5-class matrix units; int8-native disabled (stock path retained).")
+        return None
     if shutil.which("xcrun") is None:
         print("[int8_ext] no Metal toolchain (xcrun); int8-native disabled.")
         return None

@@ -87,7 +87,7 @@ def _library(dtype, key_block):
 
 def attend_selected(q, k, v, indices, keep, layout, key_block=32):
     if not torch_mpp_qcache._hardware():
-        raise TileAttentionUnavailable('Tile-list Metal attention currently requires M5 Ultra')
+        raise TileAttentionUnavailable('Tile-list Metal attention requires an M5-or-newer GPU')
     if q.dtype not in (torch.bfloat16, torch.float16) or q.shape[-1] != 128:
         raise TileAttentionUnavailable('Tile-list Metal attention needs FP16/BF16 QKV with head dimension 128')
     n, heads, dim = q.shape

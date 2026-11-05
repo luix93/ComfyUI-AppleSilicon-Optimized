@@ -104,11 +104,14 @@ Desktop launched, so no virtual-environment activation is needed. Pip-less
 environments use a disposable pip helper targeting that exact Python.
 
 Start ComfyUI normally. Native acceleration is automatic on macOS/MPS.
-**M5, M5 Pro, M5 Max and M5 Ultra with stable PyTorch 2.14.x use native PyTorch
+**M5-or-newer chips (any tier) with stable PyTorch 2.14.x use native PyTorch
 attention by default**, avoiding the older attention router on eligible calls.
-Custom query-cache kernels retain their separate validated Ultra/build guards;
-selecting native PyTorch does not enable those kernels on a Max. Explicit backend
-settings remain authoritative. First launch/use can take longer while native extensions compile.
+Hardware gating follows what each route needs: portable Metal fusions (for
+example MOSS, Fibo 2, Flux.3, Qwen-Image 2.1, LTX 2.5 and SeedVR2 elementwise,
+RoPE and CFG routes) run on any Apple Silicon; TensorOps/MPP matmul2d kernels
+(INT8 GEMM, flash41, query-cache and tile32 attention, H3 Dense/SOL) need M5 or
+newer, because M1–M4 compile them but compute wrong results; Ultra-measured
+tile schedules apply only to Ultra parts. Explicit backend settings remain authoritative. First launch/use can take longer while native extensions compile.
 If Apple developer tools are missing, `xcode-select --install` opens their
 installer; ensure the selected tools include the required Metal compiler.
 Unavailable extension paths retain their existing fallbacks.
@@ -179,7 +182,8 @@ acceleration. [Regression results and scope](benchmarks/m5-ultra-comfy0432-nov01
 | PyTorch 2.14.0 + torchvision 0.29.0 | Reviewed build retained by setup; earlier workflow evidence is linked in the reports. |
 | M5 Max | Tested in earlier optimization work. The latest regression and current performance table use M5 Ultra; the current release stack was not retested on a Max. |
 | Latest macOS / Metal 4.1 toolchain | Required for maximum native acceleration. Current benchmarks use macOS 27; install the matching Xcode/Metal tools as described above. |
-| M1–M4 / older macOS / other framework builds | Experimental. Available routes are attempted with existing fallbacks; full native acceleration, performance and parity are not established. |
+| M5 Pro / M6 and newer, non-Ultra | Portable and matrix-unit routes enabled by chip generation; not benchmarked, and byte parity with stock is established only on M5 Ultra. |
+| M1–M4 / older macOS / other framework builds | Experimental. Portable Metal routes are attempted with existing fallbacks; TensorOps kernels stay off. Performance and parity are not established. |
 | Intel Mac / Windows / Linux | Automatic Apple runtime setup leaves these environments unchanged; Apple acceleration is not supported. |
 
 Kernel availability depends on the selected compiler, headers, device and input

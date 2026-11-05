@@ -20,7 +20,6 @@ import logging
 import math
 import os
 from pathlib import Path
-import subprocess
 
 import torch
 
@@ -40,12 +39,8 @@ _DTYPES = {torch.bfloat16: "bfloat", torch.float16: "half"}
 def supported():
     if not torch.backends.mps.is_available() or not hasattr(torch.mps, "compile_shader"):
         return False
-    try:
-        brand = subprocess.check_output(
-            ["/usr/sbin/sysctl", "-n", "machdep.cpu.brand_string"], text=True, timeout=2)
-    except (OSError, subprocess.SubprocessError):
-        return False
-    return "M5" in brand
+    from ._common import has_matrix_units
+    return has_matrix_units()
 
 
 # Kitchen-numerics ("tiled") variants: probability levels per key tile.

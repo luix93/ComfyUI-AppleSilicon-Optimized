@@ -80,7 +80,7 @@ def prepare(config):
             or getattr(config, 'num_key_value_heads', None) != 8
             or not qc._torch_build_supported()
             or os.environ.get('PYTORCH_MPS_FAST_MATH', '0') != '0'
-            or not qc._hardware() or not _sources_supported()):
+            or not _sources_supported()):
         return None
     return dict(freqs=None, matrix=None, calls=0, matrices=0)
 

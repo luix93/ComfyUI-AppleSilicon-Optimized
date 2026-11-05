@@ -1,4 +1,4 @@
-"""Exact query-load hoisting for PyTorch 2.14 MPP attention on M5 Ultra.
+"""Exact query-load hoisting for PyTorch 2.14 MPP attention on M5+ GPUs.
 
 Uses installed, hash-checked PyTorch headers. Q loads move outside the key
 loop. Long H3 sequences additionally adjust dispatch order and one scheduling
@@ -12,7 +12,6 @@ import os
 from pathlib import Path
 import re
 import struct
-import subprocess
 
 import torch
 
@@ -37,12 +36,19 @@ def _torch_build_supported():
 
 @functools.lru_cache(maxsize=1)
 def _hardware():
-    try:
-        return 'M5 Ultra' in subprocess.check_output(
-            ['/usr/sbin/sysctl', '-n', 'machdep.cpu.brand_string'], text=True,
-            timeout=2).strip()
-    except (OSError, subprocess.SubprocessError):
-        return False
+    """M5-or-newer matrix units: needed by the MPP attention kernels here.
+
+    Portable-Metal routes must not call this; they run on any Apple Silicon.
+    """
+    from ._common import has_matrix_units
+    return has_matrix_units()
+
+
+@functools.lru_cache(maxsize=1)
+def _ultra():
+    """Ultra-tier matrix-unit GPU: only for tile/schedule tuning measured there."""
+    from ._common import is_ultra
+    return is_ultra()
 
 
 def _source(dtype='bfloat', *, head_dim=128, cache_query=True, h3_long=False):

@@ -33,6 +33,47 @@ NATIVE_IMPLIES = (
 )
 
 
+# Apple Silicon generation policy. Routes fall into three classes:
+#   * portable Metal (plain ALU/simdgroup kernels): any Apple Silicon GPU;
+#   * Metal 4 TensorOps / MPP matmul2d: M5 or newer. M1-M4 compile the same
+#     shaders but cooperative-tensor element ownership differs, so results are
+#     wrong there; never infer support from successful compilation;
+#   * tile/schedule tuning measured on an Ultra: Ultra parts of M5 or newer.
+_CHIP_RE = re.compile(r"^Apple M(\d+)(?:\s+(\w+))?$")
+MATRIX_UNIT_GENERATION = 5
+
+
+def cpu_brand():
+    """machdep.cpu.brand_string, e.g. 'Apple M5 Ultra'; '' when unreadable."""
+    try:
+        return subprocess.check_output(
+            ["/usr/sbin/sysctl", "-n", "machdep.cpu.brand_string"],
+            text=True, timeout=2).strip()
+    except (OSError, subprocess.SubprocessError):
+        return ""
+
+
+def apple_chip(brand=None):
+    """('Apple M6 Pro') -> (6, 'Pro'); base chips give tier ''; unknown -> (None, None)."""
+    match = _CHIP_RE.match((cpu_brand() if brand is None else brand).strip())
+    if match is None:
+        return None, None
+    return int(match[1]), match[2] or ""
+
+
+def has_matrix_units(brand=None):
+    """M5-or-newer GPU: required by every TensorOps/MPP matmul2d kernel."""
+    generation, _ = apple_chip(brand)
+    return generation is not None and generation >= MATRIX_UNIT_GENERATION
+
+
+def is_ultra(brand=None):
+    """Ultra tier with matrix units: gate for Ultra-measured tuning only."""
+    generation, tier = apple_chip(brand)
+    return (generation is not None and generation >= MATRIX_UNIT_GENERATION
+            and tier == "Ultra")
+
+
 def apply_native_master_switch(environ=None):
     """Default to native acceleration on macOS/MPS; explicit values win.
 
@@ -57,7 +98,7 @@ def apply_native_master_switch(environ=None):
 
 
 def apply_default_attention_backend(environ=None):
-    """Prefer native PyTorch 2.14 on M5 independently of custom-kernel gates.
+    """Prefer native PyTorch 2.14 on M5+ independently of custom-kernel gates.
 
     The query-cache's Ultra/build/header guards validate our modified shader,
     not PyTorch's own backend. Reusing those guards here sent M5 Max back to
@@ -73,13 +114,8 @@ def apply_default_attention_backend(environ=None):
     # Native SDPA does not need the private-header/source hash used by qcache.
     if not re.fullmatch(r"2\.14\.\d+", torch.__version__.split("+")[0]):
         return []
-    try:
-        brand = subprocess.check_output(
-            ["/usr/sbin/sysctl", "-n", "machdep.cpu.brand_string"],
-            text=True, timeout=2).strip()
-    except (OSError, subprocess.SubprocessError):
-        return []
-    if re.search(r"\bM5\b", brand) is None:
+    # PyTorch 2.14 SDPA selects its MPP attention only on matrix-unit GPUs.
+    if not has_matrix_units():
         return []
     environ["ASFP8_ATTN_BACKEND"] = "pytorch"
     implied = ["ASFP8_ATTN_BACKEND"]

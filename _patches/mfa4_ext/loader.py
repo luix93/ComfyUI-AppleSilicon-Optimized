@@ -44,6 +44,11 @@ def module():
 
     if os.environ.get("ASFP8_ATTN_ROUTER") != "1":
         return None
+    from .._common import has_matrix_units
+    if not has_matrix_units():
+        # TensorOps matmul2d compiles on M1-M4 but returns wrong results there.
+        print("[mfa4_ext] this GPU has no M5-class matrix units; flash41 disabled (stock path retained).")
+        return None
     if shutil.which("xcrun") is None:
         print("[mfa4_ext] no Metal toolchain (xcrun); flash41 disabled.")
         return None

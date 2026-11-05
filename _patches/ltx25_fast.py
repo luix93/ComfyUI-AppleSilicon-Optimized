@@ -60,7 +60,7 @@ def install():
             or os.environ.get('ASFP8_LTX25_FAST', '1') != '1'
             or os.environ.get('PYTORCH_MPS_FAST_MATH', '0') != '0'
             or not torch_mpp_qcache._torch_build_supported()
-            or not torch_mpp_qcache._hardware() or not torch.backends.mps.is_available()):
+            or not torch.backends.mps.is_available()):
         return
     try:
         import comfy.ldm.lightricks.model as model

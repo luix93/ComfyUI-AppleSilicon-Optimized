@@ -1,4 +1,4 @@
-"""Exact Fibo 2.0 sampling routes for M5 Ultra / PyTorch 2.14.1 MPS.
+"""Exact Fibo 2.0 sampling routes for PyTorch 2.14.1 MPS (tile32 attention: M5+).
 
 Byte-identical to the pack's previous Fibo 2.0 output:
 
@@ -127,7 +127,7 @@ def _gated_residual(x, y, norm, gate, span):
 def _attention_core(q, k, v, heads, options):
     global _attention_dead
     b, h, n, d = q.shape
-    if (_enabled('ATTN') and not _attention_dead and d == 128 and k.shape == q.shape == v.shape
+    if (_enabled('ATTN') and not _attention_dead and torch_mpp_qcache._hardware() and d == 128 and k.shape == q.shape == v.shape
             and all(t.is_contiguous() for t in (q, k, v)) and 2048 <= n <= 32768
             and not options.get('optimized_attention_override')):
         try:
@@ -393,7 +393,7 @@ def install():
             or os.environ.get('ASFP8_DIT_EXT') != '1'
             or not torch.backends.mps.is_available()
             or torch.__version__.split('+')[0] != '2.14.1'
-            or not torch_mpp_qcache._torch_build_supported() or not torch_mpp_qcache._hardware()
+            or not torch_mpp_qcache._torch_build_supported()
             or os.environ.get('PYTORCH_MPS_FAST_MATH', '0') != '0'):
         return
     try:
@@ -421,4 +421,5 @@ def install():
     f2.Fibo2._forward = functools.wraps(original_forward)(
         lambda self, *a, **k: _forward(original_forward, self, *a, **k))
     _installed = True
-    logging.info('%s exact joined CFG rows, fused norm/modulation/residual and tile32 attention enabled.', _TAG)
+    logging.info('%s exact joined CFG rows, fused norm/modulation/residual%s enabled.', _TAG,
+                 ' and tile32 attention' if torch_mpp_qcache._hardware() else '')

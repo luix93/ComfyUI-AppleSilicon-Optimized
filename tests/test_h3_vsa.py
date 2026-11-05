@@ -117,7 +117,7 @@ def test_autograd_is_explicitly_rejected():
 @torch.inference_mode()
 def test_metal_never_silently_uses_cpu_or_dense():
     plan = vsa.build_plan(((1, 1, 1),))
-    with pytest.raises(RuntimeError, match="Metal VSA currently requires"):
+    with pytest.raises(RuntimeError, match="Metal VSA requires"):
         vsa.attention(*inputs(plan), plan)
 
 

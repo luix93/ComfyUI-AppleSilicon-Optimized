@@ -131,7 +131,6 @@ def _head_supported(head, device, dtype, bounds):
             and torch.device(device).type == 'mps' and dtype == torch.bfloat16
             and torch_mpp_qcache._torch_build_supported()
             and os.environ.get('PYTORCH_MPS_FAST_MATH', '0') == '0'
-            and torch_mpp_qcache._hardware()
             and callable(getattr(head, '_forward', None))
             and not getattr(head, 'weight_function', [])
             and not getattr(head, 'bias_function', [])
