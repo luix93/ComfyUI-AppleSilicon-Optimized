@@ -1,5 +1,18 @@
 # Release notes
 
+## November 8, 2026 — ComfyUI v0.44.2 support
+
+- **Regression:** 35 cases on ComfyUI v0.44.2 stable (`e6515b16`) with Kitchen
+  0.2.40 and frontend 1.57.6. Every case repeats its own bytes and matches
+  November 1 in every compared tensor. Timings are in line with November 1.
+  [Report](benchmarks/m5-ultra-comfy0442-nov08.md).
+- **MiniMax H3 VAE:** upstream split `Attention.forward` into `attend`,
+  `rms_rope` and `attention`, and the transformer block now calls `attend`
+  directly. Our exact FP16 QK-norm/RoPE/layout path no longer recognized the
+  decoder and stepped aside. It now wraps `attend`, and older cores keep the
+  previous wrapper. H3 exact decode 11.85 → 10.43 s, same bytes.
+- **MOSS-Image:** admits the new `ops.py` (legacy `fp8_linear` dtype fix only).
+
 ## November 1, 2026 — ComfyUI v0.43.2 support
 
 - **Regression:** 35 cases on ComfyUI v0.43.2 stable (`423cbd20`) with Kitchen

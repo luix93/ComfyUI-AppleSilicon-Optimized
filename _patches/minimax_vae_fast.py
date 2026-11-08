@@ -35,6 +35,8 @@ _qkv_dead = False
 _vm = None
 _ops = None
 _original_attention = None
+_original_attend = None
+_original_post = None
 _original_ff = None
 
 
@@ -119,10 +121,11 @@ def _project_qkv(self, x, rope, pre_norm):
         return None
 
 
-def _attention(self, x, rotary_pos_emb, pre_norm, residual, residual_scale):
+def _fused_attend(self, x, rotary_pos_emb, pre_norm):
+    """Attention output before the out-projection; None keeps the core path."""
     global _attention_dead
     if not _attention_ok(self, x, rotary_pos_emb):
-        return _original_attention(self, x, rotary_pos_emb, pre_norm, residual, residual_scale)
+        return None
     projected = _project_qkv(self, x, rotary_pos_emb, pre_norm)
     if projected is None:
         h = _linear_input_act(self.to_qkv, x, "rms_norm", pre_norm.weight, pre_norm.eps)
@@ -131,24 +134,40 @@ def _attention(self, x, rotary_pos_emb, pre_norm, residual, residual_scale):
         except Exception as exc:
             _attention_dead = True
             print(f"{TAG} QKV fusion disabled ({str(exc)[:180]}).")
-            return _original_attention(self, x, rotary_pos_emb, pre_norm, residual, residual_scale)
+            return None
     q, k, v = projected
     out = _run_attention(q, k, v, self.heads)
     if _merge:
         if _half_mps(out) and out.shape == q.shape:
             try:
-                out = _kernel.merge_sanitize(out)
+                return _kernel.merge_sanitize(out)
             except Exception as exc:
                 # The attention result is still valid; no attention/GEMM is repeated.
                 _attention_dead = True
                 print(f"{TAG} output fusion disabled ({str(exc)[:180]}).")
-                out = torch.nan_to_num(out.transpose(1, 2).reshape(*x.shape))
-        else:
-            out = torch.nan_to_num(out.transpose(1, 2).reshape(*x.shape))
-    else:
-        out = torch.nan_to_num(out)
+        return torch.nan_to_num(out.transpose(1, 2).reshape(*x.shape))
+    return torch.nan_to_num(out)
+
+def _attention(self, x, rotary_pos_emb, pre_norm, residual=None, residual_scale=None):
+    out = _fused_attend(self, x, rotary_pos_emb, pre_norm)
+    if out is None:
+        return _original_attention(self, x, rotary_pos_emb, pre_norm, residual, residual_scale)
     return _linear_input_act(self.to_out, out, None,
                                 residual=residual, residual_scale=residual_scale)
+
+def _attend(self, x, rotary_pos_emb, pre_norm):
+    # ComfyUI v0.44 split API: TransformerBlock calls attend, then post_attention.
+    out = _fused_attend(self, x, rotary_pos_emb, pre_norm)
+    return _original_attend(self, x, rotary_pos_emb, pre_norm) if out is None else out
+
+def _post_attention(self, out, x):
+    # Only the native INT8 out-projection differs from the core block.
+    if _plain_linear(self.attn.to_out) or not minimax_vae_int8.eligible(self.attn.to_out):
+        return _original_post(self, out, x)
+    x = _linear_input_act(self.attn.to_out, out, None,
+                          residual=x, residual_scale=self._residual_scale(self.scale1, x))
+    return self.ff(x, pre_norm=self.norm2, residual=x,
+                   residual_scale=self._residual_scale(self.scale2, x))
 
 def _feed_forward(self, x, pre_norm, residual, residual_scale):
     global _ff_dead
@@ -169,6 +188,14 @@ def _feed_forward(self, x, pre_norm, residual, residual_scale):
     return _linear_input_act(self.w2, activated, None,
                                 residual=residual, residual_scale=residual_scale)
 
+def _names(fn):
+    return set(fn.__code__.co_names)
+
+def _split_api(vm):
+    """ComfyUI v0.44: attend/rms_rope/attention helpers and a post_attention block step."""
+    return (hasattr(vm.Attention, "attend")
+            and "attend" in _names(vm.Attention.forward))
+
 def _compatible(vm, rope_impl):
     """Reject older forwards and the older two-rounded-products rotary formula."""
     try:
@@ -178,15 +205,28 @@ def _compatible(vm, rope_impl):
         if tuple(inspect.signature(vm.FeedForward.forward).parameters) != (
                 "self", "x", "pre_norm", "residual", "residual_scale"):
             return False
-        attn_names = set(vm.Attention.forward.__code__.co_names)
-        rope_names = set(rope_impl.apply_rope_split_half1.__code__.co_names)
-        return ({"linear_input_act", "qk_norm_scale", "nan_to_num", "optimized_attention"}
-                <= attn_names and {"diagonal", "addcmul_"} <= rope_names)
+        rope_names = _names(rope_impl.apply_rope_split_half1)
+        if not {"diagonal", "addcmul_"} <= rope_names:
+            return False
+        if not _split_api(vm):
+            return ({"linear_input_act", "qk_norm_scale", "nan_to_num", "optimized_attention"}
+                    <= _names(vm.Attention.forward))
+        return (tuple(inspect.signature(vm.Attention.attend).parameters) == (
+                    "self", "x", "rotary_pos_emb", "pre_norm")
+                and tuple(inspect.signature(vm.TransformerBlock.post_attention).parameters) == (
+                    "self", "out", "x")
+                and {"linear_input_act", "rms_rope", "attention"} <= _names(vm.Attention.attend)
+                and {"rms_rope_split_half_", "qk_norm_scale"} <= _names(vm.Attention.rms_rope)
+                and {"nan_to_num", "optimized_attention"} <= _names(vm.Attention.attention)
+                and {"attend", "post_attention"} <= _names(vm.TransformerBlock.forward)
+                and {"linear_input_act", "to_out", "_residual_scale", "ff"}
+                    <= _names(vm.TransformerBlock.post_attention))
     except (AttributeError, TypeError, ValueError):
         return False
 
 def install():
     global _installed, _kernel, _vm, _ops, _original_attention, _original_ff, _merge
+    global _original_attend, _original_post
     global _dense, _dense_kernel, _qkv_kernel, _dense_tuning
     if (_installed or sys.platform != "darwin" or os.environ.get("ASFP8_DIT_EXT") != "1"
             or os.environ.get("ASFP8_MINIMAX_VAE_FAST", "1") != "1"
@@ -228,6 +268,14 @@ def install():
         print(f"{TAG} optional FP32-accumulating FP16 QKV projection enabled; "
               "ASFP8_MINIMAX_VAE_QKV=0 and restart restores the exact projection.")
     _original_attention, _original_ff = vm.Attention.forward, vm.FeedForward.forward
+    if _split_api(vm):
+        _original_attend, _original_post = vm.Attention.attend, vm.TransformerBlock.post_attention
+        attend = functools.wraps(_original_attend)(_attend)
+        attend._asfp8_original = _original_attend
+        vm.Attention.attend = attend
+        post = functools.wraps(_original_post)(_post_attention)
+        post._asfp8_original = _original_post
+        vm.TransformerBlock.post_attention = post
     attention = functools.wraps(_original_attention)(_attention)
     attention._asfp8_vae_fp16 = True
     attention._asfp8_original = _original_attention

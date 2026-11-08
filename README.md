@@ -46,21 +46,24 @@ Older Apple Silicon attempts the enabled routes with existing fallbacks, but
 M1–M4 performance and parity are not yet validated.
 
 **Latest regression: ComfyUI
-[v0.43.2](https://github.com/Comfy-Org/ComfyUI/releases/tag/v0.43.2)** (stable,
-`423cbd20`), with **PyTorch 2.14.1 / Kitchen 0.2.40 / frontend 1.57.4**. On
-November 1, 35 workflow/mode/preprocessor cases completed twice.
-- **Repairs:** reviewed guard repairs restore the exact Fibo 2.0, MOSS, Flux.3
-  and YuE2 routes. Each repaired case is byte-identical to the same case run
-  without the repair on this core.
-- **Upstream numerical change:** the Flux.2 VAE now runs in FP16 on MPS. Decoded
-  images and encoded references for Flux.2, Ideogram 4, Flux.3, MOSS and Fibo
-  are about 55 dB from October 23.
-- **Everything else** is byte-identical to the
-  [October 23 regression](benchmarks/m5-ultra-comfy042-nightly-oct23.md).
+[v0.44.2](https://github.com/Comfy-Org/ComfyUI/releases/tag/v0.44.2)** (stable,
+`e6515b16`), with **PyTorch 2.14.1 / Kitchen 0.2.40 / frontend 1.57.6**. On
+November 8, 35 workflow/mode/preprocessor cases completed twice.
+- **Bytes:** every compared tensor is byte-identical to the
+  [November 1 regression](benchmarks/m5-ultra-comfy0432-nov01.md). There is no
+  upstream numerical change.
+- **Repairs:** the H3 VAE fast path follows upstream's split attention API
+  (decode 11.85 → 10.43 s), and MOSS admits the new `ops.py`. Each repaired case
+  is byte-identical to the same case run without the repair.
+- **Timings** are in line with November 1, so the table keeps the v0.43.2
+  values.
 - **Scope:** H3 covered exact, SOL Metal fast and Dense Metal balanced; Wan
   covered the four-step workflow.
 
-[Timings, repairs and numerical scope](benchmarks/m5-ultra-comfy0432-nov01.md).
+[Repairs, timings and scope](benchmarks/m5-ultra-comfy0442-nov08.md). The
+[November 1 regression](benchmarks/m5-ultra-comfy0432-nov01.md) (v0.43.2) holds
+the current timings, the Fibo 2.0 / MOSS / Flux.3 / YuE2 repairs and the Flux.2
+VAE's switch to FP16.
 The [October 19 regression](benchmarks/m5-ultra-comfy0421-smoke.md) (core
 `8f04fd6e`, including Wan's upstream numerical change and SeedVR's synthetic inputs),
 the [preceding nightly check](benchmarks/m5-ultra-comfy0413-nightly-smoke.md)
@@ -167,18 +170,22 @@ are downloaded by the main installer; their separate setup is documented in
 
 **Latest ComfyUI releases are supported**, with source checks controlling which
 native fast paths can run.
+**Latest regression:** November 8, 2026, ComfyUI
+[v0.44.2](https://github.com/Comfy-Org/ComfyUI/releases/tag/v0.44.2) (stable,
+`e6515b16`), with frontend 1.57.6 and Kitchen 0.2.40. 35 cases were run twice
+and match the November 1 bytes in every compared tensor.
+[Regression report](benchmarks/m5-ultra-comfy0442-nov08.md).
 **Timing-confirmed regression:** November 1, 2026, ComfyUI
 [v0.43.2](https://github.com/Comfy-Org/ComfyUI/releases/tag/v0.43.2) (stable,
-`423cbd20`), with frontend 1.57.4 and Kitchen 0.2.40. 35 cases were run twice.
-Bytes match the previous regression except for the Flux.2 VAE's upstream switch
-to FP16. This is the checkout behind the latest timings below. The October 23
-nightly `7a283320` and v0.42.x retain their reviewed hashes. Unreviewed source
+`423cbd20`), with frontend 1.57.4 and Kitchen 0.2.40. This is the checkout
+behind the latest timings below. v0.43.2, the October 23 nightly `7a283320` and
+v0.42.x retain their reviewed hashes. Unreviewed source
 revisions use compatibility fallbacks rather than a claim of validated maximum
 acceleration. [Regression results and scope](benchmarks/m5-ultra-comfy0432-nov01.md).
 
 | Configuration | Validation status |
 |---|---|
-| M5 Ultra, 80 GPU cores / 256 GB, macOS 27, PyTorch 2.14.1 + torchvision 0.29.1 | Stock/optimized benchmarks use `v0.39.0-33-g1d2ea294`, Flux.3/preprocessing on v0.41.2 and MOSS on core `7a283320`. Latest [two-run regression](benchmarks/m5-ultra-comfy0432-nov01.md): ComfyUI v0.43.2, Kitchen 0.2.40; see its input and numerical scope. |
+| M5 Ultra, 80 GPU cores / 256 GB, macOS 27, PyTorch 2.14.1 + torchvision 0.29.1 | Stock/optimized benchmarks use `v0.39.0-33-g1d2ea294`, Flux.3/preprocessing on v0.41.2 and MOSS on core `7a283320`. Latest [two-run regression](benchmarks/m5-ultra-comfy0442-nov08.md): ComfyUI v0.44.2, Kitchen 0.2.40, byte-identical to the [v0.43.2 timing run](benchmarks/m5-ultra-comfy0432-nov01.md); see their input and numerical scope. |
 | PyTorch 2.14.0 + torchvision 0.29.0 | Reviewed build retained by setup; earlier workflow evidence is linked in the reports. |
 | M5 Max | Tested in earlier optimization work. The latest regression and current performance table use M5 Ultra; the current release stack was not retested on a Max. |
 | Latest macOS / Metal 4.1 toolchain | Required for maximum native acceleration. Current benchmarks use macOS 27; install the matching Xcode/Metal tools as described above. |
@@ -195,6 +202,11 @@ geometry. A model loading successfully does not prove that its fast path ran.
 
 **Latest changes.** The Fibo and MOSS rows in the table below are measured with these changes; the other figures are incremental comparisons:
 
+- **ComfyUI v0.44.2 (stable):** every case matches the v0.43.2 bytes. The H3
+  VAE fast path now follows upstream's split attention API. Without that repair
+  it would step aside on v0.44 (decode 11.85 s instead of 10.43 s). MOSS admits
+  the new `ops.py`. The new Sol-H3-VAE decoder runs upstream's code.
+  [Regression report](benchmarks/m5-ultra-comfy0442-nov08.md)
 - **ComfyUI v0.43.2 (stable):** the Fibo 2.0, MOSS, Flux.3 and YuE2 fast routes
   are reviewed and admitted on the new core and Kitchen 0.2.40. Without the repairs,
   those routes would step aside: MOSS 34.2 s instead of 18.9 s, Fibo Dev 38.2 s
@@ -230,7 +242,7 @@ not a comparison across different ComfyUI versions.
 - Established model pairs: `v0.39.0-33-g1d2ea294`, including later kernel follow-ups.
 - Flux.3 and preprocessing pairs: **v0.41.2 / Kitchen 0.2.37**.
 - MOSS and Fibo 2.0 pairs: measured 2026-10-23 on **core `7a283320` (`v0.42.0-19`) / Kitchen 0.2.39**.
-- Latest regression (last column): **ComfyUI v0.43.2 / Kitchen 0.2.40**, 2026-11-01. All use **PyTorch 2.14.1**.
+- Latest regression (last column): **ComfyUI v0.43.2 / Kitchen 0.2.40**, 2026-11-01. ComfyUI v0.44.2 (2026-11-08) reproduces these bytes, with timings in line. All use **PyTorch 2.14.1**.
 
 <!-- Canonical current benchmark table: update the date, measurements and linked report together after validated runs. -->
 
@@ -324,11 +336,13 @@ for repeated benchmark averages. **LTX, Flux.3 and Wan differ from
 v0.41.2 after the upstream linear-dispatch change**; these compatibility repairs
 preserve updated-core outputs. All final cases repeat their own captured bytes,
 and the November 1 pass matches the October 23 bytes in every compared tensor
-outside the Flux.2 VAE (⁵).
+outside the Flux.2 VAE (⁵). The November 8 pass on v0.44.2 matches November 1 in
+every compared tensor.
 H3's SOL Metal fast preset (112.42 s) and Dense Metal balanced preset
 (129.32 s) were also checked; they are opt-in and not in the main table.
-The [latest regression report](benchmarks/m5-ultra-comfy0432-nov01.md)
+The [latest timing report](benchmarks/m5-ultra-comfy0432-nov01.md)
 includes previous-version timings, the four guard repairs and numerical scope.
+[November 8 regression (v0.44.2)](benchmarks/m5-ultra-comfy0442-nov08.md) ·
 [October 23 regression](benchmarks/m5-ultra-comfy042-nightly-oct23.md) ·
 [October 19 regression](benchmarks/m5-ultra-comfy0421-smoke.md) ·
 [Established baseline](benchmarks/m5-ultra-torch2141-retest.md) ·

@@ -46,6 +46,8 @@ _OPS_HASHES = {
     '2a5e52fe5176be3ac48becebf1678509867f769c1467fa7c7115d1897c16a429',
     # ComfyUI v0.43: writable-weight caching added; linear_input_act and casts unchanged.
     'fa87356b1dd5aa8ecc5b1e71d5bcd43f5cd7e9eba4a469f72e4f099b00e6cb39',
+    # ComfyUI v0.44: legacy fp8_linear reads the cast dtype; BF16 linear paths unchanged.
+    'aded085f07c6be80165c93dcbb6811cd011876878cdc8d0bb492f4c8072c5a9a',
 }
 _BLOCK_HASH = 'c6f63b080fee07147e43608d17b499f3adf7ada81c600b9d65f6b61f23e56998'
 _MODEL_HASH = 'c70010e9e51ef21ddd5396ed971c68d6c0c225525cf3ae7cebb79d1071c7f22f'

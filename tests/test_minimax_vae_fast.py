@@ -139,3 +139,21 @@ def test_invalid_kernel_inputs_raise_before_dispatch(kernel):
     with pytest.raises(RuntimeError):kernel.swiglu(x[:,:0])
     with pytest.raises(RuntimeError):kernel.merge_sanitize(x)
     with pytest.raises(RuntimeError):kernel.swiglu(x.float())
+
+def test_installed_core_api_is_recognized():
+    vm=pytest.importorskip('comfy.ldm.minimax.vae')
+    rope=pytest.importorskip('comfy_kitchen.backends.eager.rope')
+    assert patch._compatible(vm,rope)
+
+def test_split_api_falls_back_to_core_steps(monkeypatch):
+    seen=[]
+    monkeypatch.setattr(patch,'_original_attend',lambda *a:seen.append('attend') or 'attend')
+    monkeypatch.setattr(patch,'_original_post',lambda *a:seen.append('post') or 'post')
+    monkeypatch.setattr(patch,'_kernel',None)
+    monkeypatch.setattr(patch,'_ops',SimpleNamespace(QuantizedTensor=type('Q',(),{})))
+    x=torch.zeros(1,5,2048,dtype=torch.float16)
+    layer=SimpleNamespace(weight=x)
+    block=SimpleNamespace(attn=SimpleNamespace(to_out=layer))
+    assert patch._attend(object(),x,None,object())=='attend'
+    assert patch._post_attention(block,x,x)=='post'
+    assert seen==['attend','post']
