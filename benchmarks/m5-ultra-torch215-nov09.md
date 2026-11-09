@@ -4,8 +4,9 @@ November 9, 2026 · M5 Ultra 80 GPU / 256 GiB · macOS 27.0.1 · ComfyUI v0.44.2
 (`e6515b16`) · PyTorch 2.15.0 (`d0f2af8b`) / torchvision 0.29.2 / Comfy Kitchen
 0.2.40 · frontend 1.57.6.
 
-**All 35 cases run on PyTorch 2.15.0 with every pack route active. Every route
-is byte-exact against PyTorch's own path on the same stack, and timings match
+**All 35 cases run on PyTorch 2.15.0 with every pack route active. Every
+build-gated route is byte-exact against PyTorch's own path on the same stack
+(H3's DiT kernels were corrected separately; see below), and timings match
 2.14.1 in a same-session A/B. Two speedups come from 2.15: FP8 weight decode is
 2.3–44× faster through the new native MPS cast (byte-identical), and YuE2's
 language model is about 7% faster from faster native GEMV.**
@@ -21,9 +22,22 @@ language model is about 7% faster from faster native GEMV.**
 | Unit tests | 18 failures: version literals in gates and tests | 1,797 pass (default), 1,994 (GPU extensions), 157 (router/flash/FP8 integration) |
 
 The 7 GPU-extension failures (`test_minimax_fast` gate/final-layer and
-`test_minimax_vae_fast` QKV-strided references) fail identically on 2.14.1.
-Their references predate the current RoPE path, and they are not related to
-2.15.
+`test_minimax_vae_fast` QKV-strided references) fail identically on 2.14.1,
+so 2.15 didn't cause them.
+
+**Correction (same day):** this report first called them stale test
+references. That was wrong for H3's DiT. Since PyTorch 2.14, native MPS
+`F.rms_norm(x, weight)` rounds once, but the H3 norm and Q/K RoPE kernels
+still followed 2.13's double rounding. On 2.14+ they differed from the eager
+ops in about 21% of norm outputs and 18% of rotated outputs, by 1 BF16 ULP.
+The VAE kernels were exact for production's unit Q/K scale.
+
+All of them are now fixed, and the 7 tests pass. See the
+[nightly report](m5-ultra-comfy-nightly-fca60fe7-nov09.md#h3-norm-and-rope-rounding).
+The routes-off reference below closed only the build-gated routes. H3's
+`minimax_fast` kernels aren't gated on the torch build, so they ran in both
+runs, and that comparison doesn't establish their exactness. The H3 timings
+below predate the fix.
 
 ## Exactness
 
@@ -48,7 +62,8 @@ on 2.15.0:
    instance copy only. Native SDPA stays selected.
 
 **Every compared tensor in all 35 cases is byte-identical between the two
-runs** (`prev_diff=0` everywhere), so each fusion is exact on 2.15.0. With the
+runs** (`prev_diff=0` everywhere), so each build-gated fusion is exact on
+2.15.0. With the
 routes off, the reference is 2–310% slower; Flux.3 prompt expansion
 10.17 → 41.65 s is the largest gap. That confirms each route was active.
 

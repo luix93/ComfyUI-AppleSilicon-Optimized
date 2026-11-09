@@ -47,6 +47,38 @@ inline bfloat bf16_rte(float f) {
   return as_type<bfloat>(ushort(u >> 16));
 }
 
+// Sum of squares exactly as PyTorch 2.14/2.15 MPS F.rms_norm(x, weight) computes
+// it (the MLX-derived rms_norm / rms_norm_looped kernels): a virtual threadgroup
+// of VT lanes (1024 when D > 4096, else 32*ceil(ceil(D/4)/32)), each summing 4
+// contiguous squares per stride of 4*VT, simd_sum per 32 lanes, then simd_sum of
+// the up-to-32 group partials (zeros elsewhere). The real threadgroup (nsg
+// simdgroups) emulates the virtual lanes group by group; simd_sum is
+// deterministic for identical lane values, so the fp32 total is bit-identical.
+// Native then normalizes as bf16((x * rsqrt(total / D + eps)) * w), one rounding.
+// All threads of the threadgroup must call it; it returns the total to all.
+template <typename P>
+inline float torch_rms_sumsq(P row, uint D, ushort lid, ushort lane, ushort sg,
+                             ushort nsg, threadgroup float* sums) {
+  const uint VT = D > 4096u ? 1024u : 32u * ((((D + 3u) >> 2) + 31u) >> 5);
+  const uint groups = VT >> 5;
+  if (lid < 32) sums[lid] = 0.0f;
+  threadgroup_barrier(mem_flags::mem_threadgroup);
+  for (uint g = sg; g < groups; g += nsg) {
+    const uint vt = (g << 5) + lane;
+    float acc = 0.0f;
+    for (uint r = 0; r < D; r += VT * 4u) {
+      for (uint i = 0; i < 4u; ++i) {
+        const uint d = r + vt * 4u + i;
+        if (d < D) { const float v = float(row[d]); acc += v * v; }
+      }
+    }
+    acc = simd_sum(acc);
+    if (lane == 0) sums[g] = acc;
+  }
+  threadgroup_barrier(mem_flags::mem_threadgroup);
+  return simd_sum(sums[lane]);
+}
+
 kernel void qkv_norm_rope_bf16(
     device const bfloat* qkv   [[buffer(0)]],  // [B*S, rowStride] (qkv slice at col 0)
     device const float*  freqs [[buffer(1)]],  // [B*S, D/2, 2, 2] fp32
@@ -558,7 +590,8 @@ kernel void silu_mul_bf16(
 // segment, mul_(1+scale) and add_(shift) (4 more) over a 57 MB tensor — twice
 // per block, 50 blocks. Here: one pass, with the token's mod row looked up
 // from a precomputed [S] int32 map. Rounding mirrors eager step for step:
-// bf16(x*inv) -> *w -> *(1+scale) -> +shift, each rounded.
+// bf16((x*inv)*w) (native F.rms_norm, one rounding) -> *(1+scale) -> +shift,
+// each rounded.
 kernel void rms_mod_seg_bf16(
     device const bfloat* x     [[buffer(0)]],  // [S, Dm]
     device const bfloat* w     [[buffer(1)]],  // [Dm]
@@ -573,18 +606,9 @@ kernel void rms_mod_seg_bf16(
     ushort simd_lane [[thread_index_in_simdgroup]],
     ushort simd_id   [[simdgroup_index_in_threadgroup]])
 {
-  threadgroup float tg[8];
+  threadgroup float tg[32];
   const device bfloat* row = x + (ulong)tgid * Dm;
-  float ss = 0.0f;
-  for (uint d = lid; d < Dm; d += 256) {
-    const float v = float(row[d]);
-    ss += v * v;
-  }
-  ss = simd_sum(ss);
-  if (simd_lane == 0) tg[simd_id] = ss;
-  threadgroup_barrier(mem_flags::mem_threadgroup);
-  float tot = 0.0f;
-  for (ushort i = 0; i < 8; i++) tot += tg[i];
+  const float tot = torch_rms_sumsq(row, Dm, lid, simd_lane, simd_id, 8, tg);
   const float inv = precise::rsqrt(precise::divide(tot, float(Dm)) + eps);
 
   const ulong mrow = (ulong)rows[tgid] * Dm;
@@ -592,8 +616,7 @@ kernel void rms_mod_seg_bf16(
   const device bfloat* sh = shift + mrow;
   device bfloat* o = out + (ulong)tgid * Dm;
   for (uint d = lid; d < Dm; d += 256) {
-    const bfloat yn = bf16_rte(float(row[d]) * inv);
-    const bfloat y  = bf16_rte(float(yn) * float(w[d]));
+    const bfloat y  = bf16_rte((float(row[d]) * inv) * float(w[d]));
     const bfloat m  = bf16_rte(1.0f + float(sc[d]));
     o[d] = bf16_rte(bf16_rte(float(y) * float(m)) + float(sh[d]));
   }
@@ -617,18 +640,9 @@ kernel void rms_mod_seg_f32(
     ushort simd_lane [[thread_index_in_simdgroup]],
     ushort simd_id   [[simdgroup_index_in_threadgroup]])
 {
-  threadgroup float tg[8];
+  threadgroup float tg[32];
   const device bfloat* row = x + (ulong)tgid * Dm;
-  float ss = 0.0f;
-  for (uint d = lid; d < Dm; d += 256) {
-    const float value = float(row[d]);
-    ss += value * value;
-  }
-  ss = simd_sum(ss);
-  if (simd_lane == 0) tg[simd_id] = ss;
-  threadgroup_barrier(mem_flags::mem_threadgroup);
-  float total = 0.0f;
-  for (ushort i = 0; i < 8; ++i) total += tg[i];
+  const float total = torch_rms_sumsq(row, Dm, lid, simd_lane, simd_id, 8, tg);
   const float inv = precise::rsqrt(precise::divide(total, float(Dm)) + eps);
 
   const ulong mod_off = (ulong)rows[tgid] * Dm;
@@ -636,8 +650,7 @@ kernel void rms_mod_seg_f32(
   const device bfloat* sh = shift + mod_off;
   device float* output = out + (ulong)tgid * Dm;
   for (uint d = lid; d < Dm; d += 256) {
-    const bfloat yn = bf16_rte(float(row[d]) * inv);
-    const bfloat weighted = bf16_rte(float(yn) * float(w[d]));
+    const bfloat weighted = bf16_rte((float(row[d]) * inv) * float(w[d]));
     const bfloat modulation = bf16_rte(1.0f + float(sc[d]));
     const bfloat shifted = bf16_rte(
         bf16_rte(float(weighted) * float(modulation)) + float(sh[d]));
@@ -665,10 +678,9 @@ kernel void gate_norm_mod_seg_bf16(
     ushort simd_lane [[thread_index_in_simdgroup]],
     ushort simd_id   [[simdgroup_index_in_threadgroup]])
 {
-  threadgroup float tg[8];
+  threadgroup float tg[32];
   const ulong off = (ulong)tgid * Dm;
   const ulong moff = (ulong)rows[tgid] * Dm;
-  float ss = 0.0f;
   for (uint d = lid; d < Dm; d += 256) {
     // MPS addcmul_ accumulates the exact bf16*bf16 product in fp32 and rounds
     // only the sum back to bf16 (the product's 16-bit significand is exactly
@@ -677,18 +689,11 @@ kernel void gate_norm_mod_seg_bf16(
         + float(other[off + d]) * float(gate[moff + d]));
     updated[d] = u;
     x[off + d] = u;
-    const float uf = float(u);
-    ss += uf * uf;
   }
-  ss = simd_sum(ss);
-  if (simd_lane == 0) tg[simd_id] = ss;
-  threadgroup_barrier(mem_flags::mem_threadgroup);
-  float tot = 0.0f;
-  for (ushort i = 0; i < 8; ++i) tot += tg[i];
+  const float tot = torch_rms_sumsq(updated, Dm, lid, simd_lane, simd_id, 8, tg);
   const float inv = precise::rsqrt(precise::divide(tot, float(Dm)) + eps);
   for (uint d = lid; d < Dm; d += 256) {
-    const bfloat yn = bf16_rte(float(updated[d]) * inv);
-    const bfloat y = bf16_rte(float(yn) * float(w[d]));
+    const bfloat y = bf16_rte((float(updated[d]) * inv) * float(w[d]));
     const bfloat m = bf16_rte(1.0f + float(scale[moff + d]));
     out[off + d] = bf16_rte(
         bf16_rte(float(y) * float(m)) + float(shift[moff + d]));
@@ -737,8 +742,8 @@ kernel void silu_mul_split_bf16(
 // strided by 3*H*D). Replaces comfy_kitchen's eager rms_rope_split_half_,
 // which walks ~10 elementwise passes over two 77 MB tensors per block.
 //
-// Rounding mirrors the eager path element for element: fp32 norm accumulation
-// with ONE bf16 round, then the 2x2 rotation evaluated in bf16 STEPS — each
+// Rounding mirrors the eager path element for element: native F.rms_norm's
+// reduction (torch_rms_sumsq) with ONE bf16 round, then the 2x2 rotation evaluated in bf16 STEPS — each
 // product rounded, then their sum rounded — because the rotation table is
 // stored at model dtype (bf16), so torch rounds after every op.
 // Pairs are (i, i+R), NOT adjacent lanes: eager reshapes [.., 2, R] and moves
@@ -769,7 +774,8 @@ kernel void qkv_rms_rope_sh_partial_bf16(
     ushort simd_lane [[thread_index_in_simdgroup]],
     ushort simd_id   [[simdgroup_index_in_threadgroup]])
 {
-  threadgroup float tg[8];
+  threadgroup float tg[32];
+  threadgroup float xbuf[256];
   threadgroup float ybuf[256];
 
   const uint s = tgid.x;
@@ -789,16 +795,12 @@ kernel void qkv_rms_rope_sh_partial_bf16(
 
   const device float* w = (kind == 0u) ? qw : kw;
   const float x = float(src[lid]);
-  const float ss = simd_sum(x * x);
-  if (simd_lane == 0) tg[simd_id] = ss;
-  threadgroup_barrier(mem_flags::mem_threadgroup);
-  float tot = 0.0f;
-  const ushort nsg = ushort(D >> 5);
-  for (ushort i = 0; i < nsg; i++) tot += tg[i];
+  xbuf[lid] = x;
+  const float tot = torch_rms_sumsq(xbuf, D, lid, simd_lane, simd_id,
+                                    ushort(D >> 5), tg);
 
   const float inv = precise::rsqrt(precise::divide(tot, float(D)) + eps);
-  const bfloat yn = bf16_rte(x * inv);
-  const bfloat y = bf16_rte(float(yn) * w[lid]);
+  const bfloat y = bf16_rte((x * inv) * w[lid]);
   ybuf[lid] = float(y);
   threadgroup_barrier(mem_flags::mem_threadgroup);
 
@@ -809,9 +811,12 @@ kernel void qkv_rms_rope_sh_partial_bf16(
   const uint i = (lid < R) ? lid : (lid - R);
   const uint r = (lid < R) ? 0u : 1u;
   const device bfloat* m = fr + (((ulong)s * R + i) * 2u + r) * 2u;
-  const bfloat p0 = bf16_rte(float(m[0]) * ybuf[i]);
-  const bfloat p1 = bf16_rte(float(m[1]) * ybuf[i + R]);
-  dst[lid] = bf16_rte(float(p0) + float(p1));
+  // Kitchen eager RoPE: the diagonal product is rounded, then addcmul_
+  // adds the exact (bf16 x bf16) off-diagonal product with one rounding.
+  const float p0 = float(m[0]) * ybuf[i];
+  const float p1 = float(m[1]) * ybuf[i + R];
+  dst[lid] = r == 0u ? bf16_rte(float(bf16_rte(p0)) + p1)
+                      : bf16_rte(float(bf16_rte(p1)) + p0);
 }
 
 // In-place Q/K norm + partial RoPE for tensors already emitted in attention
@@ -833,7 +838,8 @@ kernel void rms_rope_attention_partial_bf16(
     ushort simd_lane [[thread_index_in_simdgroup]],
     ushort simd_id   [[simdgroup_index_in_threadgroup]])
 {
-  threadgroup float tg[8];
+  threadgroup float tg[32];
+  threadgroup float xbuf[256];
   threadgroup float ybuf[256];
   const uint s = tgid.x;
   const uint slot = tgid.y;
@@ -844,15 +850,11 @@ kernel void rms_rope_attention_partial_bf16(
   const device float* w = kind == 0u ? qw : kw;
 
   const float x = float(base[lid]);
-  const float ss = simd_sum(x * x);
-  if (simd_lane == 0) tg[simd_id] = ss;
-  threadgroup_barrier(mem_flags::mem_threadgroup);
-  float tot = 0.0f;
-  const ushort nsg = ushort(D >> 5);
-  for (ushort i = 0; i < nsg; ++i) tot += tg[i];
+  xbuf[lid] = x;
+  const float tot = torch_rms_sumsq(xbuf, D, lid, simd_lane, simd_id,
+                                    ushort(D >> 5), tg);
   const float inv = precise::rsqrt(precise::divide(tot, float(D)) + eps);
-  const bfloat yn = bf16_rte(x * inv);
-  const bfloat y = bf16_rte(float(yn) * w[lid]);
+  const bfloat y = bf16_rte((x * inv) * w[lid]);
   ybuf[lid] = float(y);
   threadgroup_barrier(mem_flags::mem_threadgroup);
 
@@ -863,9 +865,12 @@ kernel void rms_rope_attention_partial_bf16(
   const uint i = lid < R ? lid : lid - R;
   const uint r = lid < R ? 0u : 1u;
   const device bfloat* m = fr + (((ulong)s * R + i) * 2u + r) * 2u;
-  const bfloat p0 = bf16_rte(float(m[0]) * ybuf[i]);
-  const bfloat p1 = bf16_rte(float(m[1]) * ybuf[i + R]);
-  base[lid] = bf16_rte(float(p0) + float(p1));
+  // Kitchen eager RoPE: the diagonal product is rounded, then addcmul_
+  // adds the exact (bf16 x bf16) off-diagonal product with one rounding.
+  const float p0 = float(m[0]) * ybuf[i];
+  const float p1 = float(m[1]) * ybuf[i + R];
+  base[lid] = r == 0u ? bf16_rte(float(bf16_rte(p0)) + p1)
+                       : bf16_rte(float(bf16_rte(p1)) + p0);
 }
 
 kernel void rms_rope_sh_partial_bf16(
@@ -884,7 +889,8 @@ kernel void rms_rope_sh_partial_bf16(
     ushort simd_lane [[thread_index_in_simdgroup]],
     ushort simd_id   [[simdgroup_index_in_threadgroup]])
 {
-  threadgroup float tg[8];
+  threadgroup float tg[32];
+  threadgroup float xbuf[256];
   threadgroup float ybuf[256];
 
   const uint s = tgid.x;
@@ -897,19 +903,14 @@ kernel void rms_rope_sh_partial_bf16(
   const device float* w = (kind == 0u) ? qw : kw;
 
   const float x = float(base[d]);
-  const float ss = simd_sum(x * x);
-  if (simd_lane == 0) tg[simd_id] = ss;
-  threadgroup_barrier(mem_flags::mem_threadgroup);
-  float tot = 0.0f;
-  const ushort nsg = ushort(D >> 5);
-  for (ushort i = 0; i < nsg; i++) tot += tg[i];
+  xbuf[lid] = x;
+  const float tot = torch_rms_sumsq(xbuf, D, lid, simd_lane, simd_id,
+                                    ushort(D >> 5), tg);
 
   const float inv = precise::rsqrt(precise::divide(tot, float(D)) + eps);
-  // F.rms_norm(x, weight=w) is NOT one fused fp32 expression: it rounds the
-  // normalized value to bf16 and THEN multiplies by the bf16 weight (verified
-  // — eager equals rms_norm(x) * w exactly), so round twice, in that order.
-  const bfloat yn = bf16_rte(x * inv);
-  const bfloat y  = bf16_rte(float(yn) * w[d]);
+  // Native F.rms_norm(x, weight=w), PyTorch 2.14+: (x * inv) * w in fp32 with
+  // one bf16 rounding (PyTorch 2.13's composite rounded before the weight).
+  const bfloat y  = bf16_rte((x * inv) * w[d]);
   ybuf[d] = float(y);
   threadgroup_barrier(mem_flags::mem_threadgroup);
 
@@ -920,9 +921,12 @@ kernel void rms_rope_sh_partial_bf16(
   const uint i = (d < R) ? d : (d - R);
   const uint r = (d < R) ? 0u : 1u;      // row of the 2x2 rotation matrix
   const device bfloat* m = fr + (((ulong)s * R + i) * 2u + r) * 2u;
-  const bfloat p0 = bf16_rte(float(m[0]) * ybuf[i]);
-  const bfloat p1 = bf16_rte(float(m[1]) * ybuf[i + R]);
-  base[d] = bf16_rte(float(p0) + float(p1));
+  // Kitchen eager RoPE: the diagonal product is rounded, then addcmul_
+  // adds the exact (bf16 x bf16) off-diagonal product with one rounding.
+  const float p0 = float(m[0]) * ybuf[i];
+  const float p1 = float(m[1]) * ybuf[i + R];
+  base[d] = r == 0u ? bf16_rte(float(bf16_rte(p0)) + p1)
+                     : bf16_rte(float(bf16_rte(p1)) + p0);
 }
 )MTL";
 

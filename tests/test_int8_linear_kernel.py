@@ -1107,3 +1107,36 @@ def test_merge_quant_norotate_bit_exact():
         torch.mps.synchronize()
         assert torch.equal(q_ref, q_k), f"q not bit-identical at B={B} H={H} S={S}"
         assert torch.equal(s_ref, s_k), f"s not bit-identical at B={B} H={H} S={S}"
+
+
+
+class _PlainLinear(torch.nn.Module):
+    def __init__(self, out):
+        super().__init__()
+        self.out, self.seen = out, []
+
+    def forward(self, x):
+        self.seen.append(x)
+        return self.out
+
+
+def test_plain_linear_input_act_keeps_the_module_call(linear_input_act_wrapper):
+    """fca60fe7 calls linear_input_act(gate_up, x, None) where older cores called
+    gate_up(x); the module call (and its INT8 Linear.forward route) is kept."""
+    ops, calls, _ = linear_input_act_wrapper
+    out, x = object(), object()
+    linear = _PlainLinear(out)
+    assert ops.linear_input_act(linear, x, None) is out
+    assert linear.seen == [x] and calls == []
+
+
+@pytest.mark.parametrize("case", ["opt out", "not a module", "extra args", "residual kwargs"])
+def test_plain_linear_input_act_falls_back(monkeypatch, linear_input_act_wrapper, case):
+    ops, calls, fallback = linear_input_act_wrapper
+    if case == "opt out":
+        monkeypatch.setenv("ASFP8_INT8_PLAIN_LIA", "0")
+    linear = object() if case == "not a module" else _PlainLinear(object())
+    args = (linear, object(), None) + ((object(), 1e-5) if case == "extra args" else ())
+    kwargs = {"residual": object()} if case == "residual kwargs" else {}
+    assert ops.linear_input_act(*args, **kwargs) is fallback
+    assert calls == [(args, kwargs)]

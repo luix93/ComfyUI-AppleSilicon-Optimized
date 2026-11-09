@@ -752,23 +752,23 @@ inline void int8_matmul_fused_cs_qkv_rms_rope_impl(
 #if ASFP8_INT8_ULTRA_SCHEDULE
   const device float *norm_weight = kind == 0u ? qw : kw;
   device bfloat *dst_base = kind == 0u ? Q : Kout;
-  // One simdgroup owns a complete row. Four separate reductions preserve
-  // the old four-simdgroup reduction order, with no cross-group rendezvous.
+  // One simdgroup owns a complete row. The sum of squares follows PyTorch
+  // 2.14+ native F.rms_norm for D=128: lane t sums elements 4t..4t+3 in
+  // order, then one simd_sum; normalization rounds (x * inv) * w once.
   for (uint row_in_tile = sgid; row_in_tile < 128u; row_in_tile += 16u) {
     float x[4];
-    float partial[4];
+    float acc = 0.0f;
     for (uint j = 0; j < 4u; ++j) {
       x[j] = float(work->value[row_in_tile * 128u + j * 32u + lid]);
-      partial[j] = simd_sum(x[j] * x[j]);
+      const float v = float(work->value[row_in_tile * 128u + lid * 4u + j]);
+      acc += v * v;
     }
-    float total = 0.0f;
-    for (uint j = 0; j < 4u; ++j) total += partial[j];
+    const float total = simd_sum(acc);
     const float inv = precise::rsqrt(precise::divide(total, 128.0f) + eps);
     for (uint j = 0; j < 4u; ++j) {
       const uint d = j * 32u + lid;
-      const bfloat normalized = bf16_rte(x[j] * inv);
       work->value[row_in_tile * 128u + d] =
-          bf16_rte(float(normalized) * norm_weight[d]);
+          bf16_rte((x[j] * inv) * norm_weight[d]);
     }
     simdgroup_barrier(mem_flags::mem_threadgroup);
     const uint mi = tile_m_base + row_in_tile;
@@ -783,11 +783,12 @@ inline void int8_matmul_fused_cs_qkv_rms_rope_impl(
           const uint r = d < R ? 0u : 1u;
           const device bfloat *matrix =
               fr + (((ulong)mi * R + i) * 2u + r) * 2u;
-          const bfloat p0 = bf16_rte(
-              float(matrix[0]) * float(work->value[row_in_tile * 128u + i]));
-          const bfloat p1 = bf16_rte(
-              float(matrix[1]) * float(work->value[row_in_tile * 128u + i + R]));
-          dst[d] = bf16_rte(float(p0) + float(p1));
+          // Kitchen eager RoPE: the diagonal product is rounded, then addcmul_
+          // adds the exact (bf16 x bf16) off-diagonal product with one rounding.
+          const float p0 = float(matrix[0]) * float(work->value[row_in_tile * 128u + i]);
+          const float p1 = float(matrix[1]) * float(work->value[row_in_tile * 128u + i + R]);
+          dst[d] = r == 0u ? bf16_rte(float(bf16_rte(p0)) + p1)
+                            : bf16_rte(float(bf16_rte(p1)) + p0);
         }
       }
     }
@@ -799,12 +800,21 @@ inline void int8_matmul_fused_cs_qkv_rms_rope_impl(
   device bfloat *dst_base = kind == 0u ? Q : Kout;
 
   // 512 threads normalize four rows at once.  Each row uses four consecutive
-  // simdgroups, matching rms_rope_attention_partial_bf16's reduction order.
+  // simdgroups; the reduction order is native F.rms_norm's (see below).
   for (uint row_base = 0; row_base < 128u; row_base += 4u) {
     const uint row_in_tile = row_base + row_lane;
     const uint value_index = row_in_tile * 128u + d;
     const float x = float(work->value[value_index]);
-    const float partial = simd_sum(x * x);
+    // PyTorch 2.14+ native F.rms_norm order for D=128: the row's first
+    // simdgroup sums elements 4t..4t+3 per lane; the other three add zeros.
+    float acc = 0.0f;
+    if (d < 32u) {
+      for (uint j = 0; j < 4u; ++j) {
+        const float v = float(work->value[row_in_tile * 128u + d * 4u + j]);
+        acc += v * v;
+      }
+    }
+    const float partial = simd_sum(acc);
     // The aliased sum slots occupy row zero. Every simdgroup must finish its
     // value load before another simdgroup is allowed to overwrite those bytes.
     threadgroup_barrier(mem_flags::mem_threadgroup);
@@ -820,8 +830,7 @@ inline void int8_matmul_fused_cs_qkv_rms_rope_impl(
 
     const float inv = precise::rsqrt(
         precise::divide(total, 128.0f) + eps);
-    const bfloat normalized = bf16_rte(x * inv);
-    const bfloat y = bf16_rte(float(normalized) * norm_weight[d]);
+    const bfloat y = bf16_rte((x * inv) * norm_weight[d]);
     work->value[value_index] = y;
     threadgroup_barrier(mem_flags::mem_threadgroup);
 
@@ -836,12 +845,12 @@ inline void int8_matmul_fused_cs_qkv_rms_rope_impl(
         const uint r = d < R ? 0u : 1u;
         const device bfloat *matrix =
             fr + (((ulong)mi * R + i) * 2u + r) * 2u;
-        const bfloat p0 = bf16_rte(
-            float(matrix[0]) * float(work->value[row_in_tile * 128u + i]));
-        const bfloat p1 = bf16_rte(
-            float(matrix[1]) *
-            float(work->value[row_in_tile * 128u + i + R]));
-        dst[d] = bf16_rte(float(p0) + float(p1));
+        // Kitchen eager RoPE: the diagonal product is rounded, then addcmul_
+        // adds the exact (bf16 x bf16) off-diagonal product with one rounding.
+        const float p0 = float(matrix[0]) * float(work->value[row_in_tile * 128u + i]);
+        const float p1 = float(matrix[1]) * float(work->value[row_in_tile * 128u + i + R]);
+        dst[d] = r == 0u ? bf16_rte(float(bf16_rte(p0)) + p1)
+                          : bf16_rte(float(bf16_rte(p1)) + p0);
       }
     }
     // Protect the current batch's split-half reads from the next batch's
@@ -971,7 +980,16 @@ inline void int8_matmul_fused_cs_qk_lora_rms_rope_impl(
     const uint row_in_tile = row_base + row_lane;
     const uint value_index = row_in_tile * 128u + d;
     const float x = float(work->value[value_index]);
-    const float partial = simd_sum(x * x);
+    // PyTorch 2.14+ native F.rms_norm order for D=128: the row's first
+    // simdgroup sums elements 4t..4t+3 per lane; the other three add zeros.
+    float acc = 0.0f;
+    if (d < 32u) {
+      for (uint j = 0; j < 4u; ++j) {
+        const float v = float(work->value[row_in_tile * 128u + d * 4u + j]);
+        acc += v * v;
+      }
+    }
+    const float partial = simd_sum(acc);
     threadgroup_barrier(mem_flags::mem_threadgroup);
     if (lid == 0u) work->sum[sgid] = partial;
     threadgroup_barrier(mem_flags::mem_threadgroup);
@@ -983,8 +1001,7 @@ inline void int8_matmul_fused_cs_qk_lora_rms_rope_impl(
 
     const float inv = precise::rsqrt(
         precise::divide(total, 128.0f) + eps);
-    const bfloat normalized = bf16_rte(x * inv);
-    const bfloat y = bf16_rte(float(normalized) * norm_weight[d]);
+    const bfloat y = bf16_rte((x * inv) * norm_weight[d]);
     work->value[value_index] = y;
     threadgroup_barrier(mem_flags::mem_threadgroup);
 
@@ -998,12 +1015,12 @@ inline void int8_matmul_fused_cs_qk_lora_rms_rope_impl(
         const uint r = d < R ? 0u : 1u;
         const device bfloat *matrix =
             fr + (((ulong)mi * R + i) * 2u + r) * 2u;
-        const bfloat p0 = bf16_rte(
-            float(matrix[0]) * float(work->value[row_in_tile * 128u + i]));
-        const bfloat p1 = bf16_rte(
-            float(matrix[1]) *
-            float(work->value[row_in_tile * 128u + i + R]));
-        dst[d] = bf16_rte(float(p0) + float(p1));
+        // Kitchen eager RoPE: the diagonal product is rounded, then addcmul_
+        // adds the exact (bf16 x bf16) off-diagonal product with one rounding.
+        const float p0 = float(matrix[0]) * float(work->value[row_in_tile * 128u + i]);
+        const float p1 = float(matrix[1]) * float(work->value[row_in_tile * 128u + i + R]);
+        dst[d] = r == 0u ? bf16_rte(float(bf16_rte(p0)) + p1)
+                          : bf16_rte(float(bf16_rte(p1)) + p0);
       }
     }
     threadgroup_barrier(mem_flags::mem_threadgroup);

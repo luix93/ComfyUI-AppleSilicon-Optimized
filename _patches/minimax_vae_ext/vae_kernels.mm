@@ -12,8 +12,8 @@ static const char* source = R"MTL(
 #include <metal_stdlib>
 using namespace metal;
 
-// Match PyTorch's weighted MPS RMSNorm: four consecutive values per lane,
-// SIMD sum, FP32 rsqrt, FP16 normalization round, FP16 weight multiply.
+// Match PyTorch 2.14+ weighted MPS RMSNorm: four consecutive values per lane,
+// SIMD sum, FP32 rsqrt, then (x * inv) * w in FP32 with one FP16 rounding.
 // The decoder packs [head, qkv, dim], unlike the denoiser's [qkv, head, dim].
 kernel void qkv_fp16(
     device const half* x [[buffer(0)]],
@@ -47,7 +47,7 @@ kernel void qkv_fp16(
   const float inv = precise::rsqrt(acc / 64.0f + eps);
   threadgroup half norm[64];
   for (uint d = lane; d < 64; d += 32)
-    norm[d] = weight[d] * half(float(x[base + d]) * inv);
+    norm[d] = half((float(x[base + d]) * inv) * float(weight[d]));
   threadgroup_barrier(mem_flags::mem_threadgroup);
   device half* out = slot == 0 ? q : k;
   for (uint d = lane; d < 64; d += 32) {

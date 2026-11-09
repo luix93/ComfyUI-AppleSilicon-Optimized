@@ -62,6 +62,7 @@ Optional workflow approximations remain independently selectable.
 | `ASFP8_INT8_OPROJ_FUSE` | 1 | fused o-proj pre-pass: `1` exact D=256 rotation or full cross-head FWHT for D<256, `2` always full FWHT, `0` off |
 | `ASFP8_INT8_SWIGLU` | 1 | keep H3's SwiGLU down-projection in native W8A8; `0` restores ComfyUI's stock dequantized W8A16 seam |
 | `ASFP8_INT8_SWIGLU_ROT` | 1 | fuse SwiGLU + convrot before H3's INT8 FC2 (rare ±1 quantized-byte drift from FWHT reassociation) |
+| `ASFP8_INT8_PLAIN_LIA` | 1 | ComfyUI `fca60fe7`+: keep `gate_up_proj(x)` (and its INT8 kernel route) for Llama's merged gate/up projection without a pre-norm; `0` uses upstream's `linear_input_act(…, None)` (YuE2 DiT about 3× slower on MPS, same bytes) |
 | `ASFP8_INT8_MLP_BRIDGE` | 1 | tiled H3 FC1 → SwiGLU/convrot/premax quant → FC2 bridge; exact relative to the native SwiGLU/convrot route, `0` restores its materialized tensors |
 | `ASFP8_INT8_MLP_LORA_TILE_ROWS` | 2048 | row scratch size for the exact standard-LoRA H3 FC1/SwiGLU/FC2 bridge; minimum/alignment 128 |
 | `ASFP8_MINIMAX_VAE_OVERLAP` | unset (reference 64) | approximate H3 video-VAE tile overlap; 32 is the tested faster setting |

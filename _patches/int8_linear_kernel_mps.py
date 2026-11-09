@@ -957,6 +957,14 @@ def install():
                     res = _try_int8_swiglu_forward(linear, x)
                     if res is not None:
                         return res
+                # ComfyUI fca60fe7+ calls linear_input_act(gate_up_proj, x, None) for a
+                # merged gate/up projection without a pre-norm, where older cores
+                # called gate_up_proj(x). On MPS the quantized branch adds a requant
+                # cast and an eager INT8 attempt (YuE2 DiT 22 -> 8 it/s, same bytes);
+                # keep the module call, which runs this Linear.forward route.
+                if (input_act is None and isinstance(linear, torch.nn.Module)
+                        and os.environ.get("ASFP8_INT8_PLAIN_LIA", "1") == "1"):
+                    return linear(x)
                 if input_act == "swiglu" and runtime_lora is not None:
                     # Eligibility changes (dtype/device/layout/kill switch)
                     # must fall back through Linear.forward, not ComfyUI's

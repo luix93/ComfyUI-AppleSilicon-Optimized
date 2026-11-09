@@ -54,13 +54,32 @@ Older Apple Silicon attempts the enabled routes with existing fallbacks, but
 M1–M4 performance and parity are not yet validated.
 
 **Latest runtime check: PyTorch 2.15.0** (now the default), on ComfyUI v0.44.2,
-November 9. All 35 cases run with every route active, and each route is
-byte-identical to PyTorch's own path on 2.15. A same-session A/B against 2.14.1
+November 9. All 35 cases run with every route active, and each build-gated
+route is byte-identical to PyTorch's own path on 2.15. A same-session A/B against 2.14.1
 gives equal timings. 2.15 adds two gains: FP8 weight decode through the new
 native MPS cast (2.3–44× faster, same bytes) and YuE2 about 7% faster. See the
 [PyTorch 2.15 report](benchmarks/m5-ultra-torch215-nov09.md).
 
-**Latest core regression: ComfyUI
+**Latest nightly check: ComfyUI master `fca60fe7`** (November 9, RelayVSR core),
+with **PyTorch 2.15.0 / Kitchen 0.2.41 / frontend 1.58.5**. All 35 cases are
+byte-identical to v0.44.2 on the same torch. Five routes stood down on the new
+core and were repaired, each byte-identical to its unrepaired run:
+- Kitchen 0.2.41 admitted for Flux.3 and MOSS.
+- New `ops.py`, `llama.py` and SeedVR2 VAE sources admitted.
+- YuE2's INT8 DiT keeps the pack's Metal kernel after upstream changed a merged
+  gate/up call.
+
+Timings match v0.44.2. RelayVSR itself is not yet tested. See the
+[nightly report](benchmarks/m5-ultra-comfy-nightly-fca60fe7-nov09.md).
+
+**H3 exactness fix (November 9):** since PyTorch 2.14, H3's fused DiT
+RMSNorm/RoPE kernels had followed PyTorch 2.13's rounding, off by 1 BF16 ULP
+in about a fifth of values. They now match the eager ops byte for byte, and a
+4-step H3 run equals the upstream DiT path in all 9 compared tensors with the
+o-projection fusion off. Speed is unchanged. H3 output bytes change from
+earlier pack versions.
+
+**Latest stable regression: ComfyUI
 [v0.44.2](https://github.com/Comfy-Org/ComfyUI/releases/tag/v0.44.2)** (stable,
 `e6515b16`), with **PyTorch 2.14.1 / Kitchen 0.2.40 / frontend 1.57.6**. On
 November 8, 35 workflow/mode/preprocessor cases completed twice.
@@ -200,12 +219,12 @@ acceleration. [Regression results and scope](benchmarks/m5-ultra-comfy0432-nov01
 
 | Configuration | Validation status |
 |---|---|
-| M5 Ultra, 80 GPU cores / 256 GB, macOS 27, **PyTorch 2.15.0 + torchvision 0.29.2 (default)** | [35-case check](benchmarks/m5-ultra-torch215-nov09.md) on ComfyUI v0.44.2: every route byte-exact against PyTorch's own path on 2.15, timings equal to 2.14.1 in a same-session A/B. Bytes differ from 2.14.1 where 2.15 changed native ops (single-row linear, softmax, BF16/FP16 `addcmul`/`var`). |
+| M5 Ultra, 80 GPU cores / 256 GB, macOS 27, **PyTorch 2.15.0 + torchvision 0.29.2 (default)** | [35-case check](benchmarks/m5-ultra-torch215-nov09.md) on ComfyUI v0.44.2: every build-gated route byte-exact against PyTorch's own path on 2.15, timings equal to 2.14.1 in a same-session A/B. [Nightly `fca60fe7`](benchmarks/m5-ultra-comfy-nightly-fca60fe7-nov09.md) with Kitchen 0.2.41: byte-identical to v0.44.2, timings in line after its guard repairs. Bytes differ from 2.14.1 where 2.15 changed native ops (single-row linear, softmax, BF16/FP16 `addcmul`/`var`). |
 | M5 Ultra, PyTorch 2.14.1 + torchvision 0.29.1 (Python 3.10 default; reviewed) | Stock/optimized benchmarks use `v0.39.0-33-g1d2ea294`, Flux.3/preprocessing on v0.41.2 and MOSS on core `7a283320`. Latest [two-run regression](benchmarks/m5-ultra-comfy0442-nov08.md): ComfyUI v0.44.2, Kitchen 0.2.40, byte-identical to the [v0.43.2 timing run](benchmarks/m5-ultra-comfy0432-nov01.md); see their input and numerical scope. |
 | PyTorch 2.14.0 + torchvision 0.29.0 | Reviewed build retained by setup; earlier workflow evidence is linked in the reports. |
 | M5 Max | Tested in earlier optimization work. The latest regression and current performance table use M5 Ultra; the current release stack was not retested on a Max. |
 | Latest macOS / Metal 4.1 toolchain | Required for maximum native acceleration. Current benchmarks use macOS 27; install the matching Xcode/Metal tools as described above. |
-| M5 Pro / M6 and newer, non-Ultra | Portable and matrix-unit routes enabled by chip generation; not benchmarked, and byte parity with stock is established only on M5 Ultra. |
+| M5 Pro / M6 and newer, non-Ultra | Portable and matrix-unit routes enabled by chip generation; not benchmarked; byte parity with stock is measured only on M5 Ultra, and only for the routes listed under the [numerics policy](#numerics-policy). |
 | M1–M4 / older macOS / other framework builds | Experimental. Portable Metal routes are attempted with existing fallbacks; TensorOps kernels stay off. Performance and parity are not established. |
 | Intel Mac / Windows / Linux | Automatic Apple runtime setup leaves these environments unchanged; Apple acceleration is not supported. |
 
@@ -258,7 +277,7 @@ not a comparison across different ComfyUI versions.
 - Established model pairs: `v0.39.0-33-g1d2ea294`, including later kernel follow-ups.
 - Flux.3 and preprocessing pairs: **v0.41.2 / Kitchen 0.2.37**.
 - MOSS and Fibo 2.0 pairs: measured 2026-10-23 on **core `7a283320` (`v0.42.0-19`) / Kitchen 0.2.39**.
-- Latest regression (last column): **ComfyUI v0.43.2 / Kitchen 0.2.40**, 2026-11-01. ComfyUI v0.44.2 (2026-11-08) reproduces these bytes, with timings in line. All use **PyTorch 2.14.1**. On PyTorch 2.15.0 (2026-11-09), timings are equal and each route is exact against 2.15's own path; output bytes differ from 2.14.1 where 2.15 changed native ops.
+- Latest regression (last column): **ComfyUI v0.43.2 / Kitchen 0.2.40**, 2026-11-01. ComfyUI v0.44.2 (2026-11-08) reproduces these bytes, with timings in line. All use **PyTorch 2.14.1**. On PyTorch 2.15.0 (2026-11-09), timings are equal and each route is exact against 2.15's own path; output bytes differ from 2.14.1 where 2.15 changed native ops. Nightly `fca60fe7` (2026-11-09) reproduces the 2.15 bytes and timings.
 
 <!-- Canonical current benchmark table: update the date, measurements and linked report together after validated runs. -->
 
@@ -456,6 +475,23 @@ they do not undo numerical changes already introduced by that path.
 | Other default native routes | Some use altered quantization or rounding, such as H3 W8A8 SwiGLU and reassociated ConvRot; the entire pack is not bit-exact to stock. |
 | H3 cache, sparse/dense INT8 attention and token reduction | Explicit workflow approximations. They can alter detail, composition, motion and temporal stability. |
 | Relaxed H3 kernel/VAE flags | Experimental, independently selectable and off by default. |
+
+**Measured against stock (November 9, 2026, PyTorch 2.15.0, M5 Ultra).** On
+ComfyUI `fca60fe7`, each family was run with its default routes and again with
+its fast modules disabled (`ASFP8_DISABLE=<module>`, which keeps ComfyUI's own
+path), and the output bytes were compared. Routes marked † were checked on
+v0.44.2 instead, by the PyTorch 2.15 run with their build gates closed.
+
+| Bytes identical to ComfyUI's own path | Changes output bytes (kill switch) |
+|---|---|
+| SDXL GEGLU, Qwen-Image 2.1 T2I, Krea2 FFN pair, LTX 2.5 RoPE fusion, flux-family `apply_rope`, VAE slice attention, H3 DiT norm/RoPE/glue (with `ASFP8_INT8_OPROJ_FUSE=0`); Fibo 2.0†, Flux.3†, MOSS†, SeedVR2 sampling†, YuE2 RoPE†, Krea2 glue†, MPP query-cache attention† | Z-Image `lumina_attn_fast`, Flux.2 `flux_attn_fast`, Ideogram 4 `ideogram_fast`, Krea2 `krea2_attn_fast`, LTX `ltx_fast`, Wan `wan_fast`; the 3D-convolution decomposition `conv3d_mps` and `wan_vae_fast` in the Wan/LTX VAEs (accumulation order); H3 INT8 o-projection FWHT and W8A8 SwiGLU |
+
+The modules in the right column are documented as per-op exact-or-1-ULP or
+accumulation-order equivalent. Over a full sampler such differences grow into
+a different but comparable render: 20–28 dB PSNR against ComfyUI's own path
+in these runs, and 40 dB for the LTX VAE convolution alone. Disable a module
+to get ComfyUI's bytes for that stage. Details:
+[exactness audit](benchmarks/m5-ultra-comfy-nightly-fca60fe7-nov09.md#exactness-audit-against-stock).
 
 For a quality comparison, keep prompt, seed, model, dimensions, sampler and step
 count fixed; inspect the complete output, especially background stability in

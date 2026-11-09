@@ -51,8 +51,8 @@ kernel void qkv(device half* A [[buffer(0)]], device half* W [[buffer(1)]],
      if(lane<16) for(int i=0;i<4;++i) {float a=float(buf[r*64+lane*4+i]);acc+=a*a;}
      acc=simd_sum(acc);
      const float inv=precise::rsqrt(acc/64.0f+@EPS@f);
-     half v0=SCALE[lane]*half(float(buf[r*64+lane])*inv);
-     half v1=SCALE[lane+32]*half(float(buf[r*64+lane+32])*inv);
+     half v0=half((float(buf[r*64+lane])*inv)*float(SCALE[lane]));
+     half v1=half((float(buf[r*64+lane+32])*inv)*float(SCALE[lane+32]));
      simdgroup_barrier(mem_flags::mem_threadgroup);
      buf[r*64+lane]=v0;buf[r*64+lane+32]=v1;
      simdgroup_barrier(mem_flags::mem_threadgroup);

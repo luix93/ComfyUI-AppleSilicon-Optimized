@@ -17,6 +17,13 @@ _original_resnet = None
 _current_vae_fusions = False
 _CURRENT_MODEL_SHA = 'f88d32b1295cd1064db48a72b22f619a779ffdd6cee64a942aab6101abfb60f8'
 _CURRENT_VAE_SHA = 'e01dd80282d357e183e1c3b732f26747e5caf8f5778cf9eca1f26ab015132532'
+_CURRENT_VAE_SHAS = {
+    _CURRENT_VAE_SHA,
+    # ComfyUI fca60fe7: adaptive slice planning and memory-compiler scopes, CUDA only; on MPS the
+    # plan keeps one-frame head/tail chunks and the previous slice sizes. ResnetBlock3D, the
+    # causal convolutions, norms and CausalMemoryCache.pop are unchanged.
+    '71def8d8f3ad8c2023f510a3ab8bb5310c4c266960da1bd4fc068692e0b3149f',
+}
 
 
 def _current_contract_supported(model, vae):
@@ -25,7 +32,7 @@ def _current_contract_supported(model, vae):
         return False
     try:
         return (hashlib.sha256(Path(model.__file__).read_bytes()).hexdigest() == _CURRENT_MODEL_SHA
-                and hashlib.sha256(Path(vae.__file__).read_bytes()).hexdigest() == _CURRENT_VAE_SHA)
+                and hashlib.sha256(Path(vae.__file__).read_bytes()).hexdigest() in _CURRENT_VAE_SHAS)
     except (AttributeError, OSError, TypeError):
         return False
 

@@ -115,13 +115,15 @@ def test_current_contract_guard_pins_build_and_sources_not_chip(monkeypatch,tmp_
     m,v=tmp_path/'model.py',tmp_path/'vae.py'
     m.write_text('validated model');v.write_text('validated VAE')
     monkeypatch.setattr(fast,'_CURRENT_MODEL_SHA',hashlib.sha256(m.read_bytes()).hexdigest())
-    monkeypatch.setattr(fast,'_CURRENT_VAE_SHA',hashlib.sha256(v.read_bytes()).hexdigest())
+    monkeypatch.setattr(fast,'_CURRENT_VAE_SHAS',{hashlib.sha256(v.read_bytes()).hexdigest()})
     monkeypatch.setattr(torch,'__version__',version)
     monkeypatch.setattr(qc,'_torch_build_supported',lambda:build)
     monkeypatch.setattr(qc,'_hardware',lambda:hardware)
     model,vae=SimpleNamespace(__file__=m),SimpleNamespace(__file__=v)
     assert fast._current_contract_supported(model,vae) is expected
     m.write_text('changed source')
+    assert not fast._current_contract_supported(model,vae)
+    m.write_text('validated model');v.write_text('changed VAE')
     assert not fast._current_contract_supported(model,vae)
     m.unlink()
     assert not fast._current_contract_supported(model,vae)

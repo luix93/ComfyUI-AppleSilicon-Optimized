@@ -24,6 +24,9 @@ _LLAMA_SHAS = {
     'e1018068470b24f00ad4cec946e65043fcd4535bf9637905efaf82292a8064fb',
     # ComfyUI v0.43: speculative tree-decode caches only; Attention/RoPE unchanged.
     'c0156a939950b48b39e37c07115a2f05246387216cf93beff1771bd6e11e3940',
+    # ComfyUI fca60fe7: CombinedLinear Q/K/V and gate/up, active only for INT8-quantized
+    # weights; BF16 projections, Attention and RoPE unchanged.
+    'd371c65dc172d04b2d1237e65a089f771781916d8f5bc689bfb910357fa3d9fb',
 }
 _EAGER_SHA = '630a3d287bf602046935086f9d43eb6db2ec4971913a1cb3fb35bae6ea4ac9ee'
 _library = None

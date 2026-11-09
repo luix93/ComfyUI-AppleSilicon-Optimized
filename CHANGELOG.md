@@ -1,5 +1,49 @@
 # Release notes
 
+## November 9, 2026 — ComfyUI nightly `fca60fe7` (RelayVSR core) support
+
+- **Regression:** 35 cases on master `fca60fe7` with PyTorch 2.15.0, Kitchen
+  0.2.41 and frontend 1.58.5. Every case repeats its bytes and matches v0.44.2
+  on the same torch; timings match after the repairs below.
+  [Report](benchmarks/m5-ultra-comfy-nightly-fca60fe7-nov09.md).
+- **Flux.3 / MOSS:** admit Kitchen 0.2.41, which adds `window_attention`,
+  `memmove` and CUDA/HIP kernels; the eager paths are unchanged. MOSS also
+  admits the new `ops.py` (`CombinedLinear` for INT8 Llama/Qwen 3.5
+  projections). Flux.3 Base T2I 42.88 → 33.15 s; MOSS SFT 34.19 → 18.99 s.
+- **YuE2:** admits the new `llama.py` (exact RoPE active again). Upstream now
+  calls `linear_input_act(gate_up_proj, x, None)` where it called
+  `gate_up_proj(x)`, which bypassed the INT8 Metal kernel on MPS. The pack
+  keeps the module call; `ASFP8_INT8_PLAIN_LIA=0` restores the upstream call.
+  8 s 9.41 → 5.39 s, full song 44.40 → 32.26 s, same bytes.
+- **H3 exactness:** the DiT norm and Q/K RoPE kernels followed PyTorch 2.13's
+  rounding. On 2.14+ they differed from the eager ops in about 21% of norm and
+  18% of rotated values, by 1 BF16 ULP. They now reproduce native
+  `F.rms_norm`'s reduction and single rounding, plus Kitchen's `addcmul` RoPE
+  order: 0 mismatches on 2.14.1 and 2.15.0.
+  [Details](benchmarks/m5-ultra-comfy-nightly-fca60fe7-nov09.md#h3-norm-and-rope-rounding).
+  - The fix covers the block glue, the Q/K kernels, the INT8 QKV epilogue and
+    the VAE weighted-norm multiply (unchanged output for production's unit
+    scale).
+  - A 4-step H3 exact run now equals `ASFP8_MINIMAX_FAST=0` in all compared
+    tensors with `ASFP8_INT8_OPROJ_FUSE=0`; before the fix, 6 of 9 differed.
+  - Speed is unchanged, and H3 output bytes change from earlier versions.
+  - The 7 MiniMax GPU tests that failed since 2.14 now pass, and a new
+    eager-parity test guards the kernels.
+- **Exactness audit against stock:** each family was run with its fast
+  modules on and off on this core, and the README numerics policy now lists
+  both groups. [Audit](benchmarks/m5-ultra-comfy-nightly-fca60fe7-nov09.md#exactness-audit-against-stock).
+  - Byte-identical to ComfyUI's own path: SDXL GEGLU, Qwen-Image 2.1, Krea2
+    FFN pair, LTX 2.5 RoPE, flux-family `apply_rope`, VAE slice attention and
+    the fixed H3 DiT path.
+  - Changes output bytes (20–28 dB PSNR after sampling): Z-Image
+    `lumina_attn_fast`, Flux.2 `flux_attn_fast`, Ideogram `ideogram_fast`,
+    Krea2 `krea2_attn_fast`, LTX `ltx_fast`, Wan `wan_fast`, and the Wan/LTX
+    VAE `conv3d_mps`/`wan_vae_fast`.
+  - Nothing changed in these routes. `ASFP8_DISABLE=<module>` restores
+    ComfyUI's bytes for that stage.
+- **SeedVR2:** admits the new VAE (adaptive slicing is CUDA only; the MPS
+  slices are unchanged). Image 55.15 → 45.03 s, same bytes.
+
 ## November 9, 2026 — PyTorch 2.15.0 support
 
 - **New default runtime:** PyTorch 2.15.0 (`d0f2af8b`) + torchvision 0.29.2,

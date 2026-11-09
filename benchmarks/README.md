@@ -1,5 +1,6 @@
 # Benchmark reports
 
+- [ComfyUI nightly `fca60fe7` (RelayVSR core, Nov 9)](m5-ultra-comfy-nightly-fca60fe7-nov09.md): 35 cases byte-identical to v0.44.2 on PyTorch 2.15; Kitchen 0.2.41, `ops.py`/`llama.py`/SeedVR2 VAE admissions and a YuE2 INT8 call repair.
 - [PyTorch 2.15.0 (dev instance, Nov 9)](m5-ultra-torch215-nov09.md): 35 cases, every route byte-exact against PyTorch's path on 2.15; timings match 2.14.1 in a same-session A/B; native FP8 decode 2.3–44×; YuE2 −7%.
 - [Opt-in INT8 attention](m5-ultra-int8-attention.md): general M5 kernel, real-activation errors, complete H3 5 s / 15 s and Wan 2.2 workflows, rejected designs.
 

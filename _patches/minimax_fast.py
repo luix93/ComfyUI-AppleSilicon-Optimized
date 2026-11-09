@@ -14,16 +14,16 @@ slot), fp32 norm accumulation, the rotary pair (i, i+R) resolved through
 threadgroup memory so no cross-lane traffic is needed, and the non-rotary tail
 written straight through. **1.46 ms per call, 73 ms per step — 9.4x.**
 
-Numerics: the kernel reproduces the eager rounding sequence exactly, which is
-NOT one fused fp32 expression — F.rms_norm rounds the normalized value to bf16
-and then multiplies by the bf16 weight (a second round), and the 2x2 rotation
-rounds each product before rounding their sum (the rotation table is stored at
-model dtype, so torch rounds after every op; verified against torch's own
-`a*b + c*d`). With that sequence the fused output is bit-identical on the norm
-and matches the full path to within fp32->bf16 tie-breaking: measured
-**67 of 38.5M elements differ by exactly 1 bf16 ULP** (1.7e-6 of the tensor) at
-the production shape — three orders of magnitude below the W8A8 error this
-model's linears already carry.
+Numerics: the kernels reproduce the eager ops byte for byte on PyTorch 2.14.1
+and 2.15.0. Native MPS F.rms_norm(x, weight) sums squares in the order of its
+MLX-derived kernel and rounds (x * inv) * w once; the shared torch_rms_sumsq
+helper mirrors that order. Kitchen's eager split-half RoPE rounds the diagonal
+product, then addcmul_ adds the exact off-diagonal product with one rounding;
+the kernels do the same. Measured against those eager calls on 16M-element H3
+tensors: 0 mismatches for rms_mod_seg, rms_mod_seg_f32, gate_norm_mod_seg and
+the three Q/K norm + partial-RoPE kernels. (Before November 9, 2026 the kernels
+followed PyTorch 2.13's rounding and differed by 1 bf16 ULP in about 21% of
+norm outputs and 18% of rotated outputs on 2.14+.)
 
 Kill switch: ASFP8_MINIMAX_FAST=0. Non-MPS, non-bf16, unexpected layouts and
 any other model's rope all fall through to the original implementation.
