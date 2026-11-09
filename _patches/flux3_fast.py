@@ -326,8 +326,7 @@ def install():
     global _installed
     if (_installed or os.environ.get('ASFP8_FLUX3_FAST', '1') != '1'
             or not torch.backends.mps.is_available()
-            or torch.__version__.split('+')[0] != '2.14.1'
-            or not torch_mpp_qcache._torch_build_supported()
+            or not torch_mpp_qcache.current_torch()
             or os.environ.get('PYTORCH_MPS_FAST_MATH', '0') != '0'):
         return
     # Installation runs with grad enabled; runtime guards apply at execution.

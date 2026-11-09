@@ -39,7 +39,7 @@ import sys
 
 import torch
 
-from ._common import FP8_DTYPES, decode_fp8
+from ._common import FP8_DTYPES, decode_fp8, decode_fp8_as
 
 TAG = "[AppleSilicon-Optimized/ops_bias]"
 
@@ -105,7 +105,7 @@ def _to_compute(param, target_dtype, device):
         # comfykitchen_fp8 patch already made MPS-safe.
         return param.dequantize().to(target_dtype)
     if param.dtype in FP8_DTYPES:
-        return decode_fp8(param).to(target_dtype)
+        return decode_fp8_as(param, target_dtype)
     return param.to(dtype=target_dtype)
 
 

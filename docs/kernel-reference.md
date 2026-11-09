@@ -36,7 +36,7 @@ Explicit per-feature values always win (e.g. `ASFP8_NATIVE=1 ASFP8_DIT_EXT=0`).
 and memory fixes. Explicitly enabled individual features still run. Linux,
 Windows and macOS without MPS receive no automatic native settings.
 
-On pinned tested PyTorch 2.14.0/2.14.1 builds and M5 Ultra, the pack also defaults
+On pinned tested PyTorch 2.14.0/2.14.1/2.15.0 builds and M5 Ultra, the pack also defaults
 to `ASFP8_ATTN_BACKEND=pytorch` and `MTLFLASHATTN_SDPA=off`; explicit modern or
 legacy settings retain priority. Other hardware/builds keep the existing router.
 H3 relaxed kernels, sparse attention, caches and token reduction remain optional.

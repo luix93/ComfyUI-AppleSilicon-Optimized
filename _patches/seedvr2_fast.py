@@ -21,8 +21,7 @@ _CURRENT_VAE_SHA = 'e01dd80282d357e183e1c3b732f26747e5caf8f5778cf9eca1f26ab01513
 
 def _current_contract_supported(model, vae):
     from . import torch_mpp_qcache as qc
-    if (torch.__version__.split('+')[0] != '2.14.1'
-            or not qc._torch_build_supported()):
+    if not qc.current_torch():
         return False
     try:
         return (hashlib.sha256(Path(model.__file__).read_bytes()).hexdigest() == _CURRENT_MODEL_SHA

@@ -33,7 +33,7 @@ import sys
 
 import torch
 
-from ._common import FP8_DTYPES, decode_fp8
+from ._common import FP8_DTYPES, decode_fp8, decode_fp8_as
 
 TAG = "[AppleSilicon-Optimized/comfy_kitchen]"
 
@@ -85,7 +85,7 @@ def install():
 
     def dequantize_per_tensor_fp8(x, scale, output_type=torch.bfloat16):
         if x.device.type == "mps" and x.dtype in FP8_DTYPES:
-            return decode_fp8(x).to(output_type) * scale.to(output_type)
+            return decode_fp8_as(x, output_type) * scale.to(output_type)
         return orig_dequant(x, scale, output_type)
 
     def quantize_per_tensor_fp8(x, scale, output_type=torch.float8_e4m3fn):

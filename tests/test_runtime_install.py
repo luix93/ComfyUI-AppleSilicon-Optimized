@@ -44,7 +44,25 @@ def test_profile_builds_match_kernel_guards():
     assert tested["torch_git"] == qc._TORCH_BUILDS[tested["torch"]]
 
 
-@pytest.mark.parametrize("version", ["2.14.0", "2.14.1"])
+def test_preferred_profile_is_2150_with_python310_fallback():
+    current = setup.profile((3, 13))
+    assert (current["torch"], current["torchvision"]) == ("2.15.0", "0.29.2")
+    legacy = setup.profile((3, 10))
+    assert (legacy["torch"], legacy["torchvision"]) == ("2.14.1", "0.29.1")
+    for tested in (current, legacy):
+        row = tested["supported"][tested["torch"]]
+        assert row == {"git": tested["torch_git"], "torchvision": tested["torchvision"]}
+
+
+@pytest.mark.parametrize("tag", ["cp311-cp311", "cp312-cp312", "cp313-cp313", "cp314-cp314", "cp314-cp314t"])
+def test_preferred_wheels_have_reviewed_checksums(tag):
+    tested = setup.profile((3, 13))
+    assert f"torch-2.15.0-{tag}-macosx_14_0_arm64.whl" in tested["wheel_sha256"]
+    assert "torchvision-0.29.2-py3-none-macosx_14_0_arm64.whl" in tested["wheel_sha256"]
+    assert "torch-2.14.1-cp310-cp310-macosx_14_0_arm64.whl" in tested["wheel_sha256"]
+
+
+@pytest.mark.parametrize("version", ["2.14.0", "2.14.1", "2.15.0"])
 def test_existing_reviewed_build_is_kept_without_network_or_mutation(apple_setup, monkeypatch, version):
     monkeypatch.setattr(setup, "probe", lambda: info(version))
     monkeypatch.setattr(setup, "run", lambda *a, **k: pytest.fail("no subprocess/network expected"))

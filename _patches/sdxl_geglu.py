@@ -64,7 +64,7 @@ def install():
     global _original, _installed
     if (_installed or os.environ.get("ASFP8_DIT_EXT") != "1"
             or os.environ.get("ASFP8_SDXL_GEGLU", "1") != "1"
-            or not torch.__version__.split("+")[0].startswith("2.14.")
+            or not torch.__version__.split("+")[0].startswith(("2.14.", "2.15."))
             or not torch.backends.mps.is_available()):
         return
     from comfy.ldm.modules.attention import GEGLU

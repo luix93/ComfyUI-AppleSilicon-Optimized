@@ -1,5 +1,6 @@
 # Benchmark reports
 
+- [PyTorch 2.15.0 (dev instance, Nov 9)](m5-ultra-torch215-nov09.md): 35 cases, every route byte-exact against PyTorch's path on 2.15; timings match 2.14.1 in a same-session A/B; native FP8 decode 2.3–44×; YuE2 −7%.
 - [Opt-in INT8 attention](m5-ultra-int8-attention.md): general M5 kernel, real-activation errors, complete H3 5 s / 15 s and Wan 2.2 workflows, rejected designs.
 
 - [SOL Metal hybrid on Dense Metal v3](m5-ultra-h3-hybrid-v3.md): same speed as v1, PSNR level with SOL Fast; `ASFP8_H3_HYBRID_DENSE=v1` restores prior bytes.

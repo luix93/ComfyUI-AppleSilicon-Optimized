@@ -27,8 +27,15 @@ STATE = ROOT / "_runtime" / "setup"
 TAG = "[AppleSilicon-Optimized/setup]"
 
 
-def profile():
-    return json.loads((ROOT / "dev" / "tested_runtime.json").read_text())
+def profile(version_info=None):
+    """Preferred reviewed build for this Python; older Pythons without a wheel
+    for it get the profile's reviewed fallback build."""
+    tested = json.loads((ROOT / "dev" / "tested_runtime.json").read_text())
+    fallback = tested.get("python_fallback")
+    current = tuple((sys.version_info if version_info is None else version_info)[:2])
+    if fallback and current < tuple(fallback["below"]):
+        tested.update({key: fallback[key] for key in ("torch", "torchvision", "torch_git")})
+    return tested
 
 
 def run(command, **kwargs):

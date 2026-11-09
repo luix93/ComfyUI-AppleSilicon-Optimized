@@ -130,7 +130,7 @@ roughly three quarters of the attention matrix. More total tokens alone therefor
 does not imply a larger SOL speedup.
 
 SOL's exact protected-prefix attention also uses the validated rectangular query-cache
-on M5 / PyTorch 2.14.1, within its tested geometry limits. This changes scheduling,
+on M5 / PyTorch 2.14.1 or 2.15.0, within its tested geometry limits. This changes scheduling,
 not arithmetic. `ASFP8_H3_PREFIX_QCACHE=0` restores native prefix SDPA for debugging;
 unsupported builds/shapes fall back automatically. This optimization is independent
 of the reference-approximation switch.
@@ -296,7 +296,7 @@ before applying a recipe.
 **VSA Metal · FastH3 Omni (128)** uses the checkpoint's trained compression
 gates and 128-token video cubes. It is a separate backend from SOL;
 SOL is not a substitute for this trained VSA branch. Current Metal execution
-requires M5 Ultra and the reviewed PyTorch 2.14.0/2.14.1 builds.
+requires M5 Ultra and the reviewed PyTorch 2.14.0/2.14.1/2.15.0 builds.
 
 For an existing FastH3 Omni reference workflow, replace **Model Sparse
 Attention** with **H3 Acceleration · Simple**. Keep the model input after

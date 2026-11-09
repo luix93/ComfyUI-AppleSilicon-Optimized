@@ -1,4 +1,4 @@
-"""Exact query-load hoisting for PyTorch 2.14 MPP attention on M5+ GPUs.
+"""Exact query-load hoisting for PyTorch 2.14/2.15 MPP attention on M5+ GPUs.
 
 Uses installed, hash-checked PyTorch headers. Q loads move outside the key
 loop. Long H3 sequences additionally adjust dispatch order and one scheduling
@@ -19,13 +19,33 @@ _TORCH_GIT = '08187d9e0fba026dc8217405802ab5381dc88d90'
 _TORCH_BUILDS = {
     '2.14.0': _TORCH_GIT,
     '2.14.1': '5c4886908584029761b579af026dcfb627c84070',
+    '2.15.0': 'd0f2af8b66b20da4baa50644c0cd3f887a2eae2e',
 }
 _SOURCE_HASH = '823c0df0b306a2a82b4c8903439e2b4b70bedb86c28b8f720adb92fb22892cff'
+# Expanded MPP header text per release. 2.15.0 changes only the MPP include
+# guards and adds FP8/complex helpers to c10/metal; the prefill kernel itself
+# (PrefillAttention.h, MppAttention.h body, accum_t/ceil_div/max) is unchanged.
+_SOURCE_HASHES = {
+    '2.14.0': _SOURCE_HASH,
+    '2.14.1': _SOURCE_HASH,
+    '2.15.0': 'a26c125a7ce5600248b237a45a2687256adda3a2fd4070c873bbb56afc59f5b0',
+}
+# Releases that carry the complete-sampler validation first done on 2.14.1.
+_CURRENT_RELEASES = ('2.14.1', '2.15.0')
 _library = None
 _half_library = None
 _h3_long_library = None
 _dead = False
 _calls = 0
+
+
+def torch_release():
+    return torch.__version__.split('+')[0]
+
+
+def current_torch():
+    """A reviewed build at the 2.14.1 validation level (2.14.1 or 2.15.0)."""
+    return torch_release() in _CURRENT_RELEASES and _torch_build_supported()
 
 
 def _torch_build_supported():
@@ -68,8 +88,8 @@ def _source(dtype='bfloat', *, head_dim=128, cache_query=True, h3_long=False):
     source = ('#include <metal_stdlib>\nusing namespace metal;\n'
               + expand('c10/metal/utils.h')
               + expand('ATen/native/mps/kernels/MppAttention.h'))
-    if hashlib.sha256(source.encode()).hexdigest() != _SOURCE_HASH:
-        raise RuntimeError('PyTorch MPP headers differ from the validated 2.14 build')
+    if hashlib.sha256(source.encode()).hexdigest() != _SOURCE_HASHES.get(torch_release()):
+        raise RuntimeError('PyTorch MPP headers differ from the validated build')
     start = source.index('prefill_attention_mpp(')
     prefix, body = source[:start], source[start:]
     before = '  for (int kb = 0; kb < kb_lim; kb++) {'
@@ -179,7 +199,7 @@ def _supports(q, k, v, kwargs, *, h3_protected=False):
             or not (wan or _qwen_edit(q, k) or _ltx25(q, k) or _yue2(q, k) or (
                 h3_protected and q.shape[1] == k.shape[1] == 56
                 and q.shape[2] <= k.shape[2] <= 65536
-                and torch.__version__.split("+")[0] == "2.14.1"
+                and current_torch()
                 and os.environ.get("PYTORCH_MPS_FAST_MATH", "0") == "0"
                 and os.environ.get("ASFP8_H3_PREFIX_QCACHE", "1") == "1") or (
                 k.shape[2:] == q.shape[2:]
@@ -199,9 +219,9 @@ def _supports(q, k, v, kwargs, *, h3_protected=False):
 
 
 def _h3_long_schedule(q, k):
-    # The scheduling refinement has complete-sampler validation on 2.14.1.
+    # The scheduling refinement has complete-sampler validation on 2.14.1/2.15.0.
     # Older validated query-cache builds retain their preceding schedule.
-    return (torch.__version__.split('+')[0] == '2.14.1'
+    return (current_torch()
             and q.shape[1] == k.shape[1] == 56
             and 30000 < q.shape[2] <= 65536
             and os.environ.get('ASFP8_H3_LONG_ATTN', '1') == '1')
@@ -226,7 +246,7 @@ def maybe_attention(q, k, v, *, output_bshd=False, h3_protected=False, **kwargs)
         else:
             if _library is None:
                 _library = torch.mps.compile_shader(_source())
-                print('[AppleSilicon-Optimized/mpp_qcache] exact PyTorch 2.14 query-load hoisting enabled.')
+                print('[AppleSilicon-Optimized/mpp_qcache] exact PyTorch MPP query-load hoisting enabled.')
             library = _library
         scale = kwargs.get('scale')
         output_bshd = output_bshd and (wan or _qwen_edit(q, k) or _ltx25(q, k) or _yue2(q, k))

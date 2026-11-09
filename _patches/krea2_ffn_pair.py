@@ -13,8 +13,7 @@ def _stack_supported():
     qc=patch('torch_mpp_qcache')
     return (os.environ.get('ASFP8_DIT_EXT')=='1'
             and os.environ.get('PYTORCH_MPS_FAST_MATH','0')=='0'
-            and torch.__version__.split('+')[0]=='2.14.1'
-            and qc._torch_build_supported() and qc._hardware())
+            and qc.current_torch() and qc._hardware())
 
 _dead=False
 def _ready():

@@ -75,7 +75,7 @@ def test_reviewed_attention_defaults_and_idempotence(monkeypatch):
 
 
 @pytest.mark.parametrize("version,brand", [
-    ("2.13.0", "Apple M5 Max"), ("2.15.0", "Apple M5 Ultra"),
+    ("2.13.0", "Apple M5 Max"), ("2.16.0", "Apple M5 Ultra"),
     ("2.14.0.dev20261017", "Apple M5 Max"), ("2.14.1", "Apple M4 Max"),
     ("2.14.1", "Apple M1"), ("2.14.1", "Apple M50x"), ("2.14.1", "unknown"),
 ])
@@ -88,7 +88,7 @@ def test_other_versions_or_hardware_keep_existing_attention(monkeypatch, version
 
 @pytest.mark.parametrize("brand", ["Apple M5", "Apple M5 Pro", "Apple M5 Max", "Apple M5 Ultra",
                                    "Apple M6", "Apple M6 Pro", "Apple M7 Ultra"])
-@pytest.mark.parametrize("version", ["2.14.0", "2.14.1", "2.14.2+local"])
+@pytest.mark.parametrize("version", ["2.14.0", "2.14.1", "2.14.2+local", "2.15.0"])
 def test_native_selection_is_independent_of_custom_kernel_validation(monkeypatch, brand, version):
     _reviewed_stack(monkeypatch, version, brand)
     monkeypatch.setattr(qc, "_torch_build_supported", lambda: pytest.fail("native backend used custom build gate"))

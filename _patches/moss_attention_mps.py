@@ -204,7 +204,7 @@ def maybe_attention(q, k, v):
     mode = selected_mode()
     if mode == 'exact' or mode in _dead_modes or torch.is_grad_enabled():
         return None
-    if (torch.__version__.split('+')[0] != '2.14.1' or not mpp._torch_build_supported()
+    if (not mpp.current_torch()
             or not mpp._hardware() or os.environ.get('PYTORCH_MPS_FAST_MATH', '0') != '0'):
         return None
     if any(type(t) is not torch.Tensor or t.ndim != 4 or not t.is_mps

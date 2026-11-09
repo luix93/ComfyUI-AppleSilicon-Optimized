@@ -594,7 +594,7 @@ def install():
     else:
         wide = "bmm (flash41 unavailable)"
     if torch_attention.enabled():
-        print(f"{TAG} PyTorch 2.14 SDPA selected for supported FP16/BF16 calls; "
+        print(f"{TAG} PyTorch {torch.__version__.split('+')[0]} SDPA selected for supported FP16/BF16 calls; "
               "mtlflashattn interception bypassed, model fusions retained.")
     routing = "fallback" if torch_attention.enabled() else "per-call"
     print(f"{TAG} {routing} attention routing on MPS: {flash}; "

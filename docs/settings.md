@@ -92,6 +92,7 @@ Optional workflow approximations remain independently selectable.
 | `ASFP8_MPS_RESERVE_GB` | max(16, 15%) | OS memory reserve held back from comfy's estimate |
 | `ASFP8_FA41_F32S` | off | fp32 score tiles in flash41 |
 | `ASFP8_FP8_EXT_MIN_DIM` | 8192 | fp8 kernel size gate |
+| `ASFP8_FP8_NATIVE_CAST` | 1 | PyTorch 2.15+: decode e4m3fn weights with the native MPS cast after a one-time all-codes bit check (BF16/FP32 targets; FP16 and e5m2 keep the LUT). `0` restores the LUT decode |
 | `ASFP8_ENABLE_ONLY` / `ASFP8_DISABLE` | — | bisection: install only / all except these patch modules |
 | `ASFP8_ATTN_DEBUG` / `ASFP8_EXEC_TRACE` / `ASFP8_PROFILE` | off | route logging / per-node timing / profiling (stderr) |
 | `ASFP8_EXEC_TRACE_SYNC` | off | with EXEC_TRACE: time the GPU tail drain after the sampler loop (splits real overhead from queued GPU work) |

@@ -32,20 +32,35 @@ own terms. See [third-party provenance and notices](THIRD_PARTY_NOTICES.md).
 prestartup runs setup automatically using that instance's Python, including
 ComfyUI Desktop. No separate installer command is needed for a plain clone.
 The installer selects our tested
-**PyTorch 2.14.1 + torchvision 0.29.1** profile when the existing build is not
-reviewed. This includes replacing newer untested builds. Reviewed 2.14.0/0.29.0
-and 2.14.1/0.29.1 installations are kept when their source revision, imports and
-native-extension headers match. Torchaudio is preserved; there is no 2.14.1
-Torchaudio release in this profile.
+**PyTorch 2.15.0 + torchvision 0.29.2** profile when the existing build is not
+reviewed; Python 3.10 gets **2.14.1 + 0.29.1**, because PyTorch 2.15 publishes no
+3.10 wheel. This includes replacing newer untested builds. Reviewed
+2.14.0/0.29.0, 2.14.1/0.29.1 and 2.15.0/0.29.2 installations are kept when their
+source revision, imports and native-extension headers match, so an existing
+2.14.x install is not upgraded automatically. Torchaudio is preserved.
+
+**Moving an existing install to 2.15:** stop ComfyUI and run
+`./.venv/bin/python -m pip install torch==2.15.0 torchvision==0.29.2`, then
+`install.py --check`. Every exact route stays exact on 2.15, and timings equal
+2.14.1, with faster FP8 decode and YuE2. Fixed-seed outputs change slightly,
+because PyTorch 2.15 itself changed some native ops
+([report](benchmarks/m5-ultra-torch215-nov09.md)).
 
 Requirements: an Apple Silicon Mac, ComfyUI in a virtual environment, and Python
-3.10–3.14 supported by the selected wheels. Python 3.14.1 is excluded by
-our torchvision wheel's requirements. The full native kernels need a Metal 4.1
+3.10–3.14 supported by the selected wheels (3.11+ for PyTorch 2.15). Python
+3.14.1 is excluded by our torchvision wheel's requirements. The full native kernels need a Metal 4.1
 compiler/toolchain; our current measurements use **macOS 27 / M5 Ultra**.
 Older Apple Silicon attempts the enabled routes with existing fallbacks, but
 M1–M4 performance and parity are not yet validated.
 
-**Latest regression: ComfyUI
+**Latest runtime check: PyTorch 2.15.0** (now the default), on ComfyUI v0.44.2,
+November 9. All 35 cases run with every route active, and each route is
+byte-identical to PyTorch's own path on 2.15. A same-session A/B against 2.14.1
+gives equal timings. 2.15 adds two gains: FP8 weight decode through the new
+native MPS cast (2.3–44× faster, same bytes) and YuE2 about 7% faster. See the
+[PyTorch 2.15 report](benchmarks/m5-ultra-torch215-nov09.md).
+
+**Latest core regression: ComfyUI
 [v0.44.2](https://github.com/Comfy-Org/ComfyUI/releases/tag/v0.44.2)** (stable,
 `e6515b16`), with **PyTorch 2.14.1 / Kitchen 0.2.40 / frontend 1.57.6**. On
 November 8, 35 workflow/mode/preprocessor cases completed twice.
@@ -107,7 +122,7 @@ Desktop launched, so no virtual-environment activation is needed. Pip-less
 environments use a disposable pip helper targeting that exact Python.
 
 Start ComfyUI normally. Native acceleration is automatic on macOS/MPS.
-**M5-or-newer chips (any tier) with stable PyTorch 2.14.x use native PyTorch
+**M5-or-newer chips (any tier) with stable PyTorch 2.14.x or 2.15.0 use native PyTorch
 attention by default**, avoiding the older attention router on eligible calls.
 Hardware gating follows what each route needs: portable Metal fusions (for
 example MOSS, Fibo 2, Flux.3, Qwen-Image 2.1, LTX 2.5 and SeedVR2 elementwise,
@@ -151,7 +166,7 @@ Installing the pack could therefore select older attention paths instead. The
 startup selection is now independent; this fix has routing-unit-test coverage,
 but the tester's reported 140 → 200 s/step slowdown has not been reproduced or
 re-benchmarked. After updating, restart and look for
-`native PyTorch attention defaults` and `PyTorch 2.14 SDPA selected` in the log.
+`native PyTorch attention defaults` and `PyTorch 2.14.1 SDPA selected` (or `2.15.0`) in the log.
 Existing explicit backend overrides must be checked separately.
 
 Setup downloads and resolves wheels before changing packages, verifies the
@@ -185,7 +200,8 @@ acceleration. [Regression results and scope](benchmarks/m5-ultra-comfy0432-nov01
 
 | Configuration | Validation status |
 |---|---|
-| M5 Ultra, 80 GPU cores / 256 GB, macOS 27, PyTorch 2.14.1 + torchvision 0.29.1 | Stock/optimized benchmarks use `v0.39.0-33-g1d2ea294`, Flux.3/preprocessing on v0.41.2 and MOSS on core `7a283320`. Latest [two-run regression](benchmarks/m5-ultra-comfy0442-nov08.md): ComfyUI v0.44.2, Kitchen 0.2.40, byte-identical to the [v0.43.2 timing run](benchmarks/m5-ultra-comfy0432-nov01.md); see their input and numerical scope. |
+| M5 Ultra, 80 GPU cores / 256 GB, macOS 27, **PyTorch 2.15.0 + torchvision 0.29.2 (default)** | [35-case check](benchmarks/m5-ultra-torch215-nov09.md) on ComfyUI v0.44.2: every route byte-exact against PyTorch's own path on 2.15, timings equal to 2.14.1 in a same-session A/B. Bytes differ from 2.14.1 where 2.15 changed native ops (single-row linear, softmax, BF16/FP16 `addcmul`/`var`). |
+| M5 Ultra, PyTorch 2.14.1 + torchvision 0.29.1 (Python 3.10 default; reviewed) | Stock/optimized benchmarks use `v0.39.0-33-g1d2ea294`, Flux.3/preprocessing on v0.41.2 and MOSS on core `7a283320`. Latest [two-run regression](benchmarks/m5-ultra-comfy0442-nov08.md): ComfyUI v0.44.2, Kitchen 0.2.40, byte-identical to the [v0.43.2 timing run](benchmarks/m5-ultra-comfy0432-nov01.md); see their input and numerical scope. |
 | PyTorch 2.14.0 + torchvision 0.29.0 | Reviewed build retained by setup; earlier workflow evidence is linked in the reports. |
 | M5 Max | Tested in earlier optimization work. The latest regression and current performance table use M5 Ultra; the current release stack was not retested on a Max. |
 | Latest macOS / Metal 4.1 toolchain | Required for maximum native acceleration. Current benchmarks use macOS 27; install the matching Xcode/Metal tools as described above. |
@@ -198,7 +214,7 @@ geometry. A model loading successfully does not prove that its fast path ran.
 
 ## Latest results — M5 Ultra (80 GPU cores)
 
-**Table updated 2026-11-01 · 256 GB unified memory · macOS 27.0 · PyTorch 2.14.1**
+**Table updated 2026-11-01 · 256 GB unified memory · macOS 27.0 · PyTorch 2.14.1** (PyTorch 2.15.0 matches these timings; YuE2 is about 7% faster)
 
 **Latest changes.** The Fibo and MOSS rows in the table below are measured with these changes; the other figures are incremental comparisons:
 
@@ -242,7 +258,7 @@ not a comparison across different ComfyUI versions.
 - Established model pairs: `v0.39.0-33-g1d2ea294`, including later kernel follow-ups.
 - Flux.3 and preprocessing pairs: **v0.41.2 / Kitchen 0.2.37**.
 - MOSS and Fibo 2.0 pairs: measured 2026-10-23 on **core `7a283320` (`v0.42.0-19`) / Kitchen 0.2.39**.
-- Latest regression (last column): **ComfyUI v0.43.2 / Kitchen 0.2.40**, 2026-11-01. ComfyUI v0.44.2 (2026-11-08) reproduces these bytes, with timings in line. All use **PyTorch 2.14.1**.
+- Latest regression (last column): **ComfyUI v0.43.2 / Kitchen 0.2.40**, 2026-11-01. ComfyUI v0.44.2 (2026-11-08) reproduces these bytes, with timings in line. All use **PyTorch 2.14.1**. On PyTorch 2.15.0 (2026-11-09), timings are equal and each route is exact against 2.15's own path; output bytes differ from 2.14.1 where 2.15 changed native ops.
 
 <!-- Canonical current benchmark table: update the date, measurements and linked report together after validated runs. -->
 

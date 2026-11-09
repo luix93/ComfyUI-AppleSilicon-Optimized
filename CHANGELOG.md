@@ -1,5 +1,29 @@
 # Release notes
 
+## November 9, 2026 — PyTorch 2.15.0 support
+
+- **New default runtime:** PyTorch 2.15.0 (`d0f2af8b`) + torchvision 0.29.2,
+  with reviewed PyPI wheel checksums for Python 3.11–3.14.
+  [Report](benchmarks/m5-ultra-torch215-nov09.md).
+  - Python 3.10 keeps 2.14.1 + 0.29.1, because PyTorch 2.15 has no 3.10 wheel.
+  - Existing reviewed 2.14.0/2.14.1 installs are kept, not upgraded
+    automatically. The README gives the manual upgrade command.
+  - Fixed-seed outputs differ slightly from 2.14.1, because 2.15 changed
+    native single-row linear, softmax and BF16/FP16 `addcmul`/`var`.
+- **Every route admitted on 2.15.0:** the gates for the MPP query cache, H3
+  schedules, Fibo 2, Flux.3, MOSS, Krea2, SeedVR2 and SDXL GEGLU now go through
+  one reviewed-build check (`current_torch()`). The new `MppAttention.h` source
+  hash is admitted; it differs only in include guards and new FP8/complex
+  helpers. On 2.15 all 35 cases are byte-identical between routes on and
+  routes off. Timings equal 2.14.1 in a same-session A/B.
+- **Native FP8 decode:** on builds whose MPS `float8_e4m3fn` cast matches the
+  LUT bit for bit (checked once on all 256 codes), BF16/FP32 decode uses the
+  native cast. Results are byte-identical. `torch._scaled_mm` is 2.3–15×
+  faster, Kitchen dequant 3.4–4.3× and transposed weight decode 33–44×. FP16
+  and e5m2 keep the LUT. `ASFP8_FP8_NATIVE_CAST=0` opts out.
+- **YuE2** is about 7% faster on 2.15 from native GEMV.
+- The attention log line now names the running PyTorch release.
+
 ## November 8, 2026 — ComfyUI v0.44.2 support
 
 - **Regression:** 35 cases on ComfyUI v0.44.2 stable (`e6515b16`) with Kitchen

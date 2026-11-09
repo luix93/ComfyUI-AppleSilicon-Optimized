@@ -134,7 +134,10 @@ def test_h3_long_schedule_scope_and_optout(monkeypatch, heads, seq, expected):
     from types import SimpleNamespace
     q = SimpleNamespace(shape=(1, heads, seq, 128))
     monkeypatch.setattr(torch, '__version__', '2.14.1')
+    monkeypatch.setattr(patch, '_torch_build_supported', lambda: True)
     monkeypatch.delenv('ASFP8_H3_LONG_ATTN', raising=False)
+    assert patch._h3_long_schedule(q, q) is expected
+    monkeypatch.setattr(torch, '__version__', '2.15.0')
     assert patch._h3_long_schedule(q, q) is expected
     monkeypatch.setenv('ASFP8_H3_LONG_ATTN', '0')
     assert not patch._h3_long_schedule(q, q)
@@ -146,7 +149,7 @@ def test_h3_long_schedule_scope_and_optout(monkeypatch, heads, seq, expected):
 @pytest.mark.skipif(not _available(), reason='requires validated M5 Ultra / PyTorch 2.14')
 @pytest.mark.parametrize('rows,keys',[(2051,4159),(12352,24789),(33024,65023)])
 def test_h3_rectangular_protected_rows_require_scope_and_preserve_bytes(monkeypatch,rows,keys):
-    if torch.__version__.split('+')[0]!='2.14.1':pytest.skip('rectangular validation is 2.14.1 only')
+    if not patch.current_torch():pytest.skip('rectangular validation is 2.14.1/2.15.0 only')
     monkeypatch.setenv('ASFP8_ATTN_BACKEND','pytorch')
     monkeypatch.setenv('PYTORCH_MPS_FAST_MATH','0')
     monkeypatch.setenv('ASFP8_H3_PREFIX_QCACHE','1')

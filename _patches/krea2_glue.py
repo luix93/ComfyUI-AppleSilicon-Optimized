@@ -103,7 +103,7 @@ def install():
         return
     # This reduction matches the tested PyTorch releases; other versions
     # retain the existing Krea2 implementation. The kernels are portable Metal.
-    if not torch.__version__.split("+")[0].startswith(("2.13.", "2.14.")):
+    if not torch.__version__.split("+")[0].startswith(("2.13.", "2.14.", "2.15.")):
         return
     from .krea2_ext.loader import module
     kernel = module()

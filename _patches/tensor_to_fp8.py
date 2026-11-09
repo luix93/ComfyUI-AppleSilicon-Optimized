@@ -31,7 +31,7 @@ import sys
 
 import torch
 
-from ._common import FP8_DTYPES, decode_fp8
+from ._common import FP8_DTYPES, decode_fp8, decode_fp8_as
 
 TAG = "[AppleSilicon-Optimized/tensor_to]"
 
@@ -129,7 +129,7 @@ def install():
 
         if self_fp8 and not target_fp8:
             # FP8 -> float: LUT decode on the source device, then move.
-            out = decode_fp8(self).to(target_dtype)
+            out = decode_fp8_as(self, target_dtype)
             if out.device != dev:
                 out = _orig_to(out, device=dev, non_blocking=non_blocking)
             return _finish(out)

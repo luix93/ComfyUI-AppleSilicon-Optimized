@@ -1,7 +1,17 @@
 {
-  "torch": "2.14.1",
-  "torchvision": "0.29.1",
-  "torch_git": "5c4886908584029761b579af026dcfb627c84070",
+  "torch": "2.15.0",
+  "torchvision": "0.29.2",
+  "torch_git": "d0f2af8b66b20da4baa50644c0cd3f887a2eae2e",
+  "python_fallback": {
+    "below": [
+      3,
+      11
+    ],
+    "reason": "PyTorch 2.15.0 publishes no Python 3.10 wheel",
+    "torch": "2.14.1",
+    "torchvision": "0.29.1",
+    "torch_git": "5c4886908584029761b579af026dcfb627c84070"
+  },
   "supported": {
     "2.14.0": {
       "git": "08187d9e0fba026dc8217405802ab5381dc88d90",
@@ -10,6 +20,10 @@
     "2.14.1": {
       "git": "5c4886908584029761b579af026dcfb627c84070",
       "torchvision": "0.29.1"
+    },
+    "2.15.0": {
+      "git": "d0f2af8b66b20da4baa50644c0cd3f887a2eae2e",
+      "torchvision": "0.29.2"
     }
   },
   "wheel_sha256": {
@@ -24,6 +38,12 @@
     "torchvision-0.29.1-cp312-cp312-macosx_14_0_arm64.whl": "3b6eb9d2f8fe9b93d9d37637749df361efeed133d96ddd503184a1b5b12bb27f",
     "torchvision-0.29.1-cp313-cp313-macosx_14_0_arm64.whl": "b0b3de76f2ee5678b7950ba9971cf72d9c5887cd7993db61788552f371686fed",
     "torchvision-0.29.1-cp314-cp314-macosx_14_0_arm64.whl": "c33cbd596afa13c24de752ead437eb5da48285efd6dc2a06543948821bfde57a",
-    "torchvision-0.29.1-cp314-cp314t-macosx_14_0_arm64.whl": "8b26ff2c61cd1da60d74cf704cae6007bc38902a60d4a7068fe327db1cb45c62"
+    "torchvision-0.29.1-cp314-cp314t-macosx_14_0_arm64.whl": "8b26ff2c61cd1da60d74cf704cae6007bc38902a60d4a7068fe327db1cb45c62",
+    "torch-2.15.0-cp311-cp311-macosx_14_0_arm64.whl": "e808b63d616a43b326e1a5677d45a2e5babe7a8ce27edb03ddb48e7dd9b6d663",
+    "torch-2.15.0-cp312-cp312-macosx_14_0_arm64.whl": "593e5fd0c204284890d1c3dff643be34e549e1d24523e13402510f960d4da438",
+    "torch-2.15.0-cp313-cp313-macosx_14_0_arm64.whl": "fbefd73b521d3c75c5a1d7c77056b2c6339b81468d14d4e33c55f525418a5855",
+    "torch-2.15.0-cp314-cp314-macosx_14_0_arm64.whl": "0d2b2d9674fa0b9b3f50e83231aa6545a0b19e437a52f0af939a224faaa45515",
+    "torch-2.15.0-cp314-cp314t-macosx_14_0_arm64.whl": "628f54cb55a2363a5f14471a80c1b6efb63724449d2611ad2772fb5d4c42d19d",
+    "torchvision-0.29.2-py3-none-macosx_14_0_arm64.whl": "d412494ff011f24c884a3cffd33eba1cb45a0299d4e26c1e175113f9d3b3ebc7"
   }
 }

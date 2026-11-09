@@ -18,7 +18,7 @@ from . import torch_mpp_qcache
 
 def enabled():
     return (os.environ.get("ASFP8_ATTN_BACKEND") == "pytorch"
-            and torch.__version__.split("+")[0].startswith("2.14."))
+            and torch.__version__.split("+")[0].startswith(("2.14.", "2.15.")))
 
 
 def supports(q, k, v, heads, mask=None, attn_precision=None, skip_reshape=False):

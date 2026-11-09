@@ -295,7 +295,7 @@ def attention(q, k, v, gate, plan, *, backend="metal", sparsity=.9,
         from . import torch_mpp_qcache
         if (q.device.type != "mps" or q.dtype not in (torch.bfloat16, torch.float16)
                 or not torch_mpp_qcache._hardware() or not torch_mpp_qcache._torch_build_supported()):
-            raise RuntimeError("Metal VSA requires an M5-or-newer GPU and reviewed PyTorch 2.14.0/2.14.1")
+            raise RuntimeError("Metal VSA requires an M5-or-newer GPU and reviewed PyTorch 2.14.0/2.14.1/2.15.0")
         fine = _fine_metal
     elif backend == "reference":
         fine = reference_fine

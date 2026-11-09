@@ -1,6 +1,6 @@
 # Flux.3 on Apple Silicon
 
-Flux.3 acceleration is automatic on the reviewed M5 Ultra / PyTorch 2.14.1 stack.
+Flux.3 acceleration is automatic on the reviewed M5 Ultra / PyTorch 2.14.1 and 2.15.0 stacks.
 Use the normal ComfyUI model, text encoder, reference-image and sampler nodes;
 no extra acceleration node is needed.
 

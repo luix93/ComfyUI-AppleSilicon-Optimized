@@ -112,7 +112,7 @@ def apply_default_attention_backend(environ=None):
         return []
     # Keep other Torch generations and prereleases on their existing policy.
     # Native SDPA does not need the private-header/source hash used by qcache.
-    if not re.fullmatch(r"2\.14\.\d+", torch.__version__.split("+")[0]):
+    if not re.fullmatch(r"2\.1[45]\.\d+", torch.__version__.split("+")[0]):
         return []
     # PyTorch 2.14 SDPA selects its MPP attention only on matrix-unit GPUs.
     if not has_matrix_units():
@@ -211,17 +211,58 @@ def fp8_to_float_lut(dtype, device, out_dtype=torch.float32):
     return lut
 
 
+_native_cast_cache = {}
+# FP16 is excluded: PyTorch 2.15 canonicalizes NaN payloads there (0x7E00),
+# while the LUT keeps the CPU cast's sign/payload bits.
+_NATIVE_CAST_TARGETS = (torch.bfloat16, torch.float32)
+
+
+def native_fp8_cast_ok(dtype, device, out_dtype):
+    """True if this build casts FP8 `dtype` to `out_dtype` on an MPS `device`
+    natively and bit-identically to the CPU cast for all 256 codes.
+
+    PyTorch 2.15 added MPS kernels for float8_e4m3fn (not e5m2). The one-time
+    check compares every code, NaNs included, so older builds and any future
+    numerical change keep the LUT. Opt out with ASFP8_FP8_NATIVE_CAST=0.
+    """
+    if (device.type != "mps" or out_dtype not in _NATIVE_CAST_TARGETS
+            or os.environ.get("ASFP8_FP8_NATIVE_CAST", "1") != "1"):
+        return False
+    key = (dtype, out_dtype, device.index)
+    ok = _native_cast_cache.get(key)
+    if ok is None:
+        try:
+            codes = torch.arange(256, dtype=torch.uint8).view(dtype)
+            bits = torch.int16 if out_dtype.itemsize == 2 else torch.int32
+            expected = codes.to(out_dtype).view(bits)
+            # aten ops directly: torch.Tensor.to may be wrapped by tensor_to_fp8.
+            on_device = torch.ops.aten._to_copy.default(codes, device=device)
+            got = torch.ops.aten._to_copy.default(on_device, dtype=out_dtype)
+            got = torch.ops.aten._to_copy.default(got, device="cpu").view(bits)
+            ok = bool(torch.equal(got, expected))
+        except Exception:
+            ok = False
+        _native_cast_cache[key] = ok
+    return ok
+
+
 def decode_fp8(t, out_dtype=torch.float32):
     """Decode an FP8 tensor to `out_dtype` on its own device (MPS-safe).
 
     bf16 and float32 both represent every FP8 value exactly, so either target is
     bit-exact with a real FP8->float cast.
 
+    Where the build has a verified native cast (PyTorch 2.15 e4m3fn), that runs
+    on-device for any layout. The result is contiguous, as with the LUT path.
+
     A *contiguous* FP8 tensor can be bit-viewed as uint8 and gathered entirely on
     its own device (verified on MPS) — no host round-trip. Only the non-contiguous
-    case needs CPU, because MPS cannot run .contiguous() on an FP8 dtype.
+    case needs CPU, because older MPS builds cannot run .contiguous() on FP8.
     """
     device = t.device
+    if native_fp8_cast_ok(t.dtype, device, out_dtype):
+        return torch.ops.aten._to_copy.default(
+            t, dtype=out_dtype, memory_format=torch.contiguous_format)
     lut = fp8_to_float_lut(t.dtype, device, out_dtype)
     if t.is_contiguous():
         idx = t.view(torch.uint8).to(torch.long)
@@ -230,3 +271,12 @@ def decode_fp8(t, out_dtype=torch.float32):
         # bring the integer indices back to the target device for the gather.
         idx = t.cpu().contiguous().view(torch.uint8).to(torch.long).to(device)
     return lut[idx]
+
+
+def decode_fp8_as(t, out_dtype):
+    """Same values and layout as ``decode_fp8(t).to(out_dtype)``, in one pass
+    when the native cast to `out_dtype` is verified (FP8 values are exact in
+    float32, so the intermediate never rounds)."""
+    if native_fp8_cast_ok(t.dtype, t.device, out_dtype):
+        return decode_fp8(t, out_dtype)
+    return decode_fp8(t).to(out_dtype)

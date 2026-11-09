@@ -77,15 +77,15 @@ def _w1(norm, device):
 def _query_tile32(self, q, k, v):
     """Exact query scheduling for the measured 1.5–3.5 MP floating-weight path."""
     global _tile32_library, _tile32_dead, _tile32_calls
+    from . import torch_mpp_qcache as mpp
     if (_tile32_dead or os.environ.get("ASFP8_KREA2_TILE32", "1") != "1"
-            or torch.__version__.split("+")[0] != "2.14.1"
+            or not mpp.current_torch()
             or os.environ.get("PYTORCH_MPS_FAST_MATH", "0") != "0"
             or q.ndim != 4 or q.shape[1] != 48 or k.shape[1] != 12
             or not 6144 <= q.shape[2] <= 14336
             or any(type(getattr(layer, "weight", None)) not in (torch.Tensor, torch.nn.Parameter)
                    for layer in (self.wq, self.wk, self.wv, self.wo, self.gate))):
         return None
-    from . import torch_mpp_qcache as mpp
     kwargs = dict(scale=128 ** -0.5, enable_gqa=True)
     if not mpp._supports(q, k, v, kwargs):
         return None

@@ -117,7 +117,7 @@ preceding H3-derived dense algorithms' output bytes on the tested inputs;
 that does **not** make them exact versus PyTorch. They are not CUDA Kitchen
 byte-equivalence implementations.
 
-The new modes are limited to the tested M5 Ultra / PyTorch 2.14.1 MOSS BF16
+The new modes are limited to the tested M5 Ultra / PyTorch 2.14.1 or 2.15.0 MOSS BF16
 configuration, batch 1, 24 heads, D128 and 4,096–6,656 tokens. Unsupported
 layouts, memory-budget failures and unavailable kernels retain exact attention.
 Explicit backend/transformer overrides are respected. Restart after setting
